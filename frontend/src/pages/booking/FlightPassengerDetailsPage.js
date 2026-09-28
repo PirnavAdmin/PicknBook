@@ -12,6 +12,7 @@ import { isTokenExpired } from "../../services/authSession";
 import { getFlightPricingPreview, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
 import { getPublicPromotions } from "../../services/adminFeaturedOffersService";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
+import BookingTimer from "./BookingTimer";
 
 const TRAVELER_STORAGE_KEY = "my_traveler_data";
 
@@ -182,6 +183,22 @@ export default function FlightPassengerDetailsPage() {
   const [passengers, setPassengers] = useState(() =>
     buildPassengerSeed(selectedSeats, travellers, flowState.passengers)
   );
+
+  const handleRestartSearch = () => {
+    if (!searchContext) {
+      navigate("/");
+      return;
+    }
+    const qs = new URLSearchParams();
+    if (searchContext.source) qs.set("source", searchContext.source);
+    if (searchContext.destination) qs.set("destination", searchContext.destination);
+    if (searchContext.tripType) qs.set("tripType", searchContext.tripType);
+    if (searchContext.cabinClass) qs.set("cabinClass", searchContext.cabinClass);
+    if (searchContext.travellers) qs.set("travellers", searchContext.travellers);
+    if (searchContext.departureDate) qs.set("departureDate", searchContext.departureDate);
+    if (searchContext.returnDate) qs.set("returnDate", searchContext.returnDate);
+    navigate(`/flight-search?${qs.toString()}`, { state: searchContext });
+  };
 
   const filledPassengers = useMemo(() => {
     return passengers.filter(p => p.firstName.trim() || p.lastName.trim());
@@ -733,6 +750,40 @@ export default function FlightPassengerDetailsPage() {
   const tripSecureFee = 0;
   const finalPayable = fareQuoteData?.totalFare ?? 0;
 
+  const initialFareReference = Number(
+    flowState.fareSummary?.totalFare ??
+    flowState.payableAmount ??
+    flight?.fare ??
+    flight?.price ??
+    flight?.selectedTravelClassPriceInr ??
+    0
+  );
+
+  const publishedFare = Number(
+    fqResults?.B2CPublishedFare ??
+    fqResults?.PublishedFare ??
+    fqResults?.OfferedFare ??
+    fqFare?.PublishedFare ??
+    fqFare?.OfferedFare ??
+    0
+  );
+
+  const confirmedFare = Number(
+    fqResults?.B2CFinalFare ??
+    fqResults?.OfferedFare ??
+    fqResults?.B2CPublishedFare ??
+    fqFare?.OfferedFare ??
+    fqFare?.PublishedFare ??
+    fareQuoteData?.totalFare ??
+    finalPayable ??
+    preservedTotal ??
+    initialFareReference ??
+    0
+  );
+
+  const fareDifference = confirmedFare > 0 && initialFareReference > 0 ? confirmedFare - initialFareReference : 0;
+  const hasLiveFareAlert = confirmedFare > 0 && initialFareReference > 0 && Math.abs(fareDifference) > 0;
+  const discountBelowPublished = publishedFare > confirmedFare ? publishedFare - confirmedFare : 0;
 
   const validateForm = () => {
     const newErrors = {};
@@ -1207,6 +1258,7 @@ export default function FlightPassengerDetailsPage() {
 
   return (
     <main className="flight-flow-page">
+      <BookingTimer onRestartSearch={handleRestartSearch} mode="banner" />
 
       {/* ── STEPPER PROGRESS HEADER ── */}
       <div className="flight-stepper-header">
@@ -1344,6 +1396,24 @@ export default function FlightPassengerDetailsPage() {
             )}
           </div>
 
+          <div className="sidebar-card live-price-card">
+            <div className="live-price-header">
+              <span className="live-price-mark"><Check size={16} /></span>
+              <span className="live-price-title">CONFIRMED FLIGHT FARE</span>
+              <span className="live-price-badge"><span className="live-price-badge-dot" /> LIVE PRICE</span>
+            </div>
+
+            <div className="live-price-amount">₹{new Intl.NumberFormat("en-IN").format(Math.round(confirmedFare || 0))}</div>
+            <p className="live-price-subtext">Airline-confirmed fare before optional add-ons</p>
+
+            {discountBelowPublished > 0 && (
+              <div className="live-price-promo-pill">
+                <span className="live-price-promo-icon">↓</span>
+                <span>₹{new Intl.NumberFormat("en-IN").format(Math.round(discountBelowPublished))} below published fare</span>
+              </div>
+            )}
+          </div>
+
           {/* Travellers Details */}
           {filledPassengers.length > 0 && (
             <div className="sidebar-card travellers-card">
@@ -1361,7 +1431,7 @@ export default function FlightPassengerDetailsPage() {
             <h3 className="sidebar-card-title">Fare Summary</h3>
             <div className="fare-row">
               <span>Fare Type</span>
-              <span className="refundable-tag">{flight.isRefundable ? "Refundable" : "Non-Refundable"}</span>
+              <span className="refundable-tag">{flight.isRefundable == null ? "Refund status unavailable" : flight.isRefundable ? "Refundable" : "Non-Refundable"}</span>
             </div>
             <div className="fare-row">
               <span>Base Fare</span>
@@ -1410,6 +1480,20 @@ export default function FlightPassengerDetailsPage() {
 
         {/* ── RIGHT COLUMN MAIN CONTENT ── */}
         <section className="flight-checkout-main">
+          {hasLiveFareAlert && (
+            <div className="fare-alert-card">
+              <div className="fare-alert-icon">
+                <Info size={32} />
+              </div>
+              <div className="fare-alert-copy">
+                <h3>The airline changed this fare</h3>
+                <p>
+                  The airline returned a fare alert during the live check. The confirmed payable fare is now <strong>₹{new Intl.NumberFormat("en-IN").format(Math.round(confirmedFare || 0))}</strong>; review it with the traveller before booking.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Passenger Details input */}
           <div className="flight-main-card flight-main-card--compact">
             <h2 className="flight-main-card-title">
@@ -1744,19 +1828,11 @@ export default function FlightPassengerDetailsPage() {
             </div>
           </div>
 
-          {/* Special Requests & Terms */}
-          <div className="flight-main-card additional-details-card">
-            <h2 className="flight-main-card-title">Additional Details</h2>
-            <div className="input-group additional-request-field">
-              <label>Special Requests / Assistance (Optional)</label>
-              <input
-                className="input-control"
-                type="text"
-                value={specialAssistance}
-                onChange={(e) => setSpecialAssistance(e.target.value)}
-                placeholder="Wheelchair, diabetic meal, etc."
-              />
-            </div>
+          <div className="flight-main-card">
+            <h2 className="flight-main-card-title">
+              <ShieldCheck size={20} className="header-icon" />
+              Acknowledgement
+            </h2>
 
             <div className="terms-consent-field">
               <label className="terms-consent-label">
@@ -1780,146 +1856,15 @@ export default function FlightPassengerDetailsPage() {
                 {formError}
               </p>
             )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
+              <button type="button" className="btn-primary" onClick={handleContinue}>
+                Continue <ArrowRight size={16} />
+              </button>
+            </div>
           </div>
 
-          {/* Coupons & Offers */}
-          {!isAgent && (
-            <div className="flight-main-card">
-              <h2 className="flight-main-card-title">
-                <Tag size={20} className="header-icon" />
-                Apply Coupons & Offers
-              </h2>
-
-              <div style={{ display: "flex", gap: 12 }}>
-                <input
-                  className="input-control"
-                  style={{ textTransform: "uppercase" }}
-                  type="text"
-                  placeholder="Enter promo code"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  disabled={isApplying || selectedFeaturedOfferId !== null}
-                />
-                {couponCode ? (
-                  <button type="button" className="btn-secondary" onClick={handleRemoveCoupon}>Remove</button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={handleApplyCoupon}
-                    disabled={isApplying || selectedFeaturedOfferId !== null}
-                  >
-                    {isApplying ? "Applying..." : "Apply"}
-                  </button>
-                )}
-              </div>
-
-              {couponError && <p style={{ color: "var(--danger-color)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponError}</p>}
-              {couponSuccess && <p style={{ color: "var(--success-color)", fontSize: "0.75rem", marginTop: 6, marginBottom: 0 }}>{couponSuccess}</p>}
-
-              {/* Coupons list */}
-              {availableCoupons.length > 0 && (
-                <div style={{ marginTop: 20 }}>
-                  <h4 style={{ margin: "0 0 10px 0", fontSize: "0.875rem" }}>Available Coupons</h4>
-                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10 }}>
-                    {availableCoupons.map((coupon) => {
-                      const isPercentage =
-                        !String(coupon.couponCode || "").toUpperCase().includes("FLAT") &&
-                        !String(coupon.title || "").toUpperCase().includes("FLAT") &&
-                        !String(coupon.couponCode || "").toUpperCase().includes("INR") &&
-                        coupon.value > 0 &&
-                        coupon.value <= 100 &&
-                        (String(coupon.couponType || "").toLowerCase().includes("percent") ||
-                          String(coupon.couponType || "").toLowerCase().includes("percentage"));
-
-                      const formattedDiscount = isPercentage ? `${coupon.value}% Off` : `₹${coupon.value} Off`;
-                      return (
-                        <div
-                          key={coupon.id || coupon.couponCode}
-                          style={{
-                            minWidth: 220,
-                            border: "1px dashed var(--border-color)",
-                            borderRadius: 8,
-                            padding: 12,
-                            backgroundColor: "#f8fafc",
-                            position: "relative"
-                          }}
-                        >
-                          <strong style={{ display: "block", fontSize: "0.875rem", color: "#1e293b", marginBottom: 4 }}>
-                            {coupon.couponCode}
-                          </strong>
-                          {coupon.title && coupon.title !== coupon.couponCode && (
-                            <span style={{ display: "block", fontSize: "0.75rem", color: "#64748b", marginBottom: 4 }}>
-                              {coupon.title}
-                            </span>
-                          )}
-                          <span style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "#16a34a", marginBottom: 8 }}>
-                            {formattedDiscount}
-                          </span>
-                          <button
-                            type="button"
-                            className="btn-action-outline"
-                            style={{ width: "100%", height: 32, padding: 0, marginTop: 4, fontSize: "0.75rem" }}
-                            onClick={() => loadPricing(coupon.couponCode, null)}
-                            disabled={isApplying || selectedFeaturedOfferId !== null}
-                          >
-                            Apply
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Featured offers list */}
-              {featuredOffers.length > 0 && (
-                <div style={{ marginTop: 20 }}>
-                  <h4 style={{ margin: "0 0 10px 0", fontSize: "0.875rem" }}>Featured Offers</h4>
-                  <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 10 }}>
-                    {featuredOffers.map((offer) => (
-                      <div
-                        key={offer.id}
-                        style={{
-                          minWidth: 200,
-                          border: "1px solid var(--border-color)",
-                          borderRadius: 8,
-                          padding: 10,
-                          backgroundColor: "#fff",
-                          boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
-                        }}
-                      >
-                        <strong style={{ display: "block", fontSize: "0.875rem" }}>{offer.title}</strong>
-                        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: "4px 0" }}>{offer.subtitle}</p>
-                        <button
-                          type="button"
-                          className="btn-action-outline"
-                          style={{ width: "100%", height: 30, padding: 0, marginTop: 4, fontSize: "0.75rem" }}
-                          onClick={() => handleSelectOffer(offer.id)}
-                          disabled={isApplying || couponCode !== ""}
-                        >
-                          Apply
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </section>
-      </div>
-
-      {/* ── BOTTOM STICKY ACTION BAR ── */}
-      <div className="bottom-action-bar">
-        <div className="bottom-price-info">
-          <span className="bottom-price-label">Total Fare</span>
-          <span className="bottom-price-amount">₹ {finalPayable.toLocaleString("en-IN")}</span>
-        </div>
-
-        <button type="button" className="btn-primary" onClick={handleContinue}>
-          Continue <ArrowRight size={16} />
-        </button>
       </div>
 
       {/* ── MODAL 1: REVIEW DETAILS POPUP ── */}

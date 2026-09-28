@@ -1547,7 +1547,7 @@ const HOME_MODE_CONTENT = {
     appBenefits: HOME_APP_BENEFITS,
     aboutTitle: "About Pick&book Bus Booking",
     aboutParagraphs: [
-      "Pick&book makes city-to-city road travel seamless and dependable by letting you easily compare routes, fares, travel durations, and live seat availability across top private operators and state transport corporations. Every booking undergoes real-time verification, direct operator mapping, and instant confirmation, with completely transparent pricing and secure payments. From precise departure dates and live seat selection to boarding point clarity and flexible cancellation policies, every detail of your journey is thoroughly validated before you pay, all backed by 24/7 dedicated customer support for total peace of mind."
+      "Pick&book Bus Booking provides a convenient platform for users to search, compare, and book bus tickets between cities. Users can compare different bus operators, routes, fares, journey durations, seat availability, boarding points, and dropping points before making a booking. Pick&book aims to provide a simple and transparent booking experience with real-time seat availability, clear fare details, secure payments, instant booking confirmation, and flexible cancellation options. The platform also provides features such as live bus tracking, easy seat selection, customer support, and booking-related assistance to make bus travel more convenient. With Pick&book, passengers can select a suitable bus and seat based on their travel requirements, review the booking details, and complete the booking through a streamlined process."
     ],
     bannerBadge: "INTERCITY BUS & SEAT GUARANTEE",
     bannerTitle: "Book Bus Tickets Smarter. Travel Farther.",
@@ -1606,8 +1606,7 @@ const HOME_MODE_CONTENT = {
     appBenefits: HOME_FLIGHT_APP_BENEFITS,
     aboutTitle: "About Pick&book Flight Booking",
     aboutParagraphs: [
-      "Pick&book flight mode provides a clean search and comparison flow for domestic and international flights, helping you compare carriers, dates, and fare options.",
-      "Manage booking passenger details, select your seats, view cabin class conditions, and complete check-in procedures directly from your personalized portal."
+      "Pick&book Flight Booking provides a simple and convenient platform for searching, comparing, and booking domestic and international flights. Users can compare airlines, travel dates, routes, fares, and available flight options based on their travel requirements. The platform allows passengers to manage booking and passenger details, select seats, review cabin-class conditions, and complete check-in procedures through a personalized booking portal. Pick&book aims to provide a smooth flight-booking experience with clear fare information and an easy-to-use booking process."
     ],
     bannerBadge: "FLIGHT DESK & PASSENGER GUARANTEE",
     bannerTitle: "Book Flights Smarter. Fly Higher.",
@@ -1666,8 +1665,7 @@ const HOME_MODE_CONTENT = {
     appBenefits: HOME_HOTEL_APP_BENEFITS,
     aboutTitle: "About Pick&book Hotel Booking",
     aboutParagraphs: [
-      "Pick&book hotel mode is built for destination-first stay planning with clear dates, room counts, guest details, popular city stays, and simple results.",
-      "Whether it is a business trip, weekend break, family stay, or stopover, hotel mode keeps room choices, stay dates, amenities, and booking details easy to compare.",
+      "Pick&book Hotel Booking provides a simple and convenient platform for searching, comparing, and booking hotels based on the user's destination and stay requirements. Users can select their destination, check-in and check-out dates, number of rooms, and guest details to find suitable hotel options. The platform allows users to explore popular city stays, room types, amenities, prices, and booking details before making a reservation. Whether it is a business trip, weekend getaway, family stay, or short stopover, Pick&book helps users compare available accommodation options and complete their hotel booking through an easy and streamlined process."
     ],
     bannerBadge: "STAY & ROOM CONFIRMATION GUARANTEE",
     bannerTitle: "Book Hotels Smarter. Stay Better.",
@@ -2193,6 +2191,7 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
   const [isDragging, setIsDragging] = useState(false);
   const loopItems = useMemo(() => {
     if (!items || items.length === 0) return [];
+    if (items.length <= 2) return items; // Do not duplicate if 1 or 2
     let base = [...items];
     while (base.length < 8) {
       base = [...base, ...items];
@@ -2656,8 +2655,14 @@ export default function HomePage() {
 
   useEffect(() => {
     let isMounted = true;
+    setHomeBlogsLoading(true);
 
-    getPublicBlogs({ page: 1, pageSize: 3 })
+    let category = "";
+    if (activeTab === "flights") category = "Flight Booking";
+    else if (activeTab === "hotels") category = "Hotel Booking";
+    else if (activeTab === "buses") category = "Bus Booking";
+
+    getPublicBlogs({ page: 1, pageSize: 3, category })
       .then((data) => {
         if (isMounted) setHomeBlogs(Array.isArray(data?.blogs) ? data.blogs.slice(0, 3) : []);
       })
@@ -2672,7 +2677,7 @@ export default function HomePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeTab]);
 
   const [selectedRtcOperator, setSelectedRtcOperator] = useState(null);
   const [rtcSearchFrom, setRtcSearchFrom] = useState("");
@@ -7989,9 +7994,9 @@ export default function HomePage() {
               playsInline
               preload="auto"
             >
+              <source src="/assets/videos/gemini_logo_removed.mp4" type="video/mp4" />
               <source src={busHeroVideo} type="video/mp4" />
               <source src="/bus.herobanner.mp4" type="video/mp4" />
-              <source src="/Bus.herobanner.mp4" type="video/mp4" />
             </video>
           )}
           {activeTab === "hotels" && (
@@ -8531,12 +8536,11 @@ export default function HomePage() {
                       : (offer.imageUrl || offer.image || BUS_OFFER_IMAGES[idx % BUS_OFFER_IMAGES.length]);
 
                   return (
-                    <article
+                    <button
                       key={offer.id ? `${offer.id}-${idx}` : idx}
                       className={`img-offer-card theme-${cardTheme}`}
                       onClick={() => setOfferForDetailPopup(offer)}
-                      role="button"
-                      tabIndex={0}
+                      style={{ textAlign: 'left', outline: 'none', appearance: 'none' }}
                     >
                       {/* Right Photo Area */}
                       <div className="img-offer-photo-side">
@@ -8580,22 +8584,13 @@ export default function HomePage() {
                           </span>
                         </div>
 
-                        <h3 className="img-offer-title">{code}</h3>
+                        <h3 className="img-offer-title" title={code}>{code}</h3>
 
                         <p className="img-offer-validity">
                           {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
                         </p>
-
-                        <button
-                          type="button"
-                          className={`img-offer-grab-btn btn-${cardTheme}`}
-                          onClick={(e) => { e.stopPropagation(); handleOfferBooking(offer); }}
-                        >
-                          <span>Grab Offer</span>
-                          <ArrowRight size={11} strokeWidth={2.5} />
-                        </button>
                       </div>
-                    </article>
+                    </button>
                   );
                 }}
               />

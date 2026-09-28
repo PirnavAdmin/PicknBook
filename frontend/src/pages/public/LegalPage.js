@@ -124,15 +124,30 @@ function renderTermsSectionContent(lines, sectionKey) {
   return content;
 }
 
-function renderTermsDocument(lines) {
-  const title = lines[0] || "TERMS & CONDITIONS";
-  const effectiveDate = lines[1] || "";
+function renderTermsDocument(lines, pageTitle) {
+  let title = pageTitle || "DOCUMENT";
+  let effectiveDate = "";
+  let startIndex = 0;
+
+  if (lines[0] && lines[0].toUpperCase().includes("TERMS")) {
+    title = lines[0];
+    effectiveDate = lines[1] || "";
+    startIndex = 2;
+  } else if (lines[0] && lines[0].toLowerCase().includes("last updated")) {
+    title = pageTitle.toUpperCase();
+    effectiveDate = lines[0];
+    startIndex = 1;
+  }
+
   const sections = [];
   let openingLines = [];
   let currentSection = null;
 
-  lines.slice(2).forEach((line) => {
-    if (isTermsSectionHeading(line)) {
+  lines.slice(startIndex).forEach((line) => {
+    // Treat as heading if it matches numbered format or is short and title-cased/uppercase
+    const isHeading = isTermsSectionHeading(line) || (line.length > 2 && line.length < 50 && !line.endsWith('.') && !line.endsWith(':') && (line === line.toUpperCase() || /^[A-Z][a-zA-Z\s]+$/.test(line)));
+    
+    if (isHeading) {
       currentSection = { heading: line, lines: [] };
       sections.push(currentSection);
       return;
@@ -185,7 +200,11 @@ export default function LegalPage() {
   useEffect(() => {
     const fetchPage = async () => {
       try {
-        const data = await getPublicPageBySlug(slug);
+        let apiSlug = slug;
+        if (slug === "privacy-policy") apiSlug = "pickbook-privacy-policy";
+        else if (slug === "refund-cancellation-policy") apiSlug = "return-cancellation-policy";
+
+        const data = await getPublicPageBySlug(apiSlug);
         setPage(
           data?.description?.trim()
             ? data
@@ -256,7 +275,7 @@ export default function LegalPage() {
   const rawDescription = replaceBrandName(page.description || "");
   const isHtml = /<[a-z][\s\S]*>/i.test(rawDescription);
   const contentLines = isHtml ? [] : formatLegalContent(rawDescription);
-  const isTermsDocument = normalizePolicySlug(slug) === "terms-conditions";
+  const isTermsDocument = normalizePolicySlug(slug) === "terms-conditions" || normalizePolicySlug(slug) === "privacy-policy";
 
   return (
     <main className={`legal-page${isTermsDocument ? " legal-page-terms" : ""}`}>
@@ -274,7 +293,7 @@ export default function LegalPage() {
           {isHtml ? (
             <div dangerouslySetInnerHTML={{ __html: rawDescription }} />
           ) : isTermsDocument ? (
-            renderTermsDocument(contentLines)
+            renderTermsDocument(contentLines, page.title)
           ) : contentLines.length > 0 ? (
             contentLines.map((line, index) => {
               // Detect lines that look like headings (numbered, lettered, or short capitalized lines)

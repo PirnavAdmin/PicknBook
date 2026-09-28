@@ -174,18 +174,18 @@ export default function PlaceAutocomplete({
         )}
         {isInline ? (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#000000', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               {label || (tripType === "hotel" ? "STAY DESTINATION" : (field === "to" || field === "destination") ? "TO" : "FROM")}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               {tripType === "flight" ? (
-                <Plane size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                <Plane size={14} color="#000000" style={{ flexShrink: 0 }} />
               ) : tripType === "hotel" ? (
-                <MapPin size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                <MapPin size={14} color="#000000" style={{ flexShrink: 0 }} />
               ) : isBusMode && (field === "to" || field === "destination") ? (
-                <MapPin size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                <MapPin size={14} color="#000000" style={{ flexShrink: 0 }} />
               ) : (
-                <Bus size={18} color="#ffffff" style={{ flexShrink: 0 }} />
+                <Bus size={14} color="#000000" style={{ flexShrink: 0 }} />
               )}
               <input
                 type="text"
@@ -200,19 +200,14 @@ export default function PlaceAutocomplete({
                   border: 'none',
                   outline: 'none',
                   boxShadow: 'none',
-                  color: '#ffffff',
-                  fontWeight: 500, fontSize: '14px',
+                  color: '#000000',
+                  fontWeight: 400, fontSize: '13px',
                   padding: 0,
                   margin: 0,
                   width: '100%'
                 }}
               />
             </div>
-            {sublabel !== false && sublabel !== null && (
-              <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }}>
-                {sublabel !== undefined && sublabel !== "" ? sublabel : (tripType === "hotel" ? "ENTER CITY, AREA OR HOTEL" : tripType === "flight" ? (field === "to" || field === "destination" ? "DESTINATION AIRPORT" : "ORIGIN AIRPORT") : (field === "to" || field === "destination" ? "DROPPING STOP" : "BOARDING STOP"))}
-              </span>
-            )}
           </div>
         ) : (
           <input

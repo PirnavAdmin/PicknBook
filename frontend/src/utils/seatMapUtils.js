@@ -37,6 +37,10 @@ export function extractAllSeatObjects(obj, depth = 0, parentContext = {}) {
     if (obj.FlightNumber || obj.AirlineNumber) currentContext.FlightNumber = obj.FlightNumber || obj.AirlineNumber;
     if (obj.Origin || obj.FromAirportCode) currentContext.Origin = obj.Origin || obj.FromAirportCode;
     if (obj.Destination || obj.ToAirportCode) currentContext.Destination = obj.Destination || obj.ToAirportCode;
+    // Propagate cabin class context so each seat knows which cabin it belongs to
+    if (obj.CabinClass !== undefined) currentContext.CabinClass = obj.CabinClass;
+    if (obj.CabinClassName) currentContext.CabinClassName = obj.CabinClassName;
+    if (obj.CabinCode) currentContext.CabinCode = obj.CabinCode;
   }
 
   if (Array.isArray(obj)) {
@@ -60,6 +64,23 @@ export function extractAllSeatObjects(obj, depth = 0, parentContext = {}) {
   return seats;
 }
 
+/**
+ * Normalise a cabin class string to a canonical key for comparison.
+ * Returns "economy", "premiumeconomy", "business", or "first".
+ */
+export function normalizeCabinClass(str) {
+  const s = String(str || "").toLowerCase().replace(/\s+/g, "");
+  if (s.includes("business")) return "business";
+  if (s.includes("first")) return "first";
+  if (s.includes("premium")) return "premiumeconomy";
+  if (s === "2" || s.includes("economy")) return "economy";
+  // SRDV numeric codes: 1=All, 2=Economy, 3=PremiumEconomy, 4=Business, 5=First
+  if (s === "4") return "business";
+  if (s === "5") return "first";
+  if (s === "3") return "premiumeconomy";
+  return "economy"; // default
+}
+
 export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
   if (!srdvData) return [];
   const selectedLookup = new Set(seedSelectedLabels);
@@ -69,11 +90,11 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
 
   const seenMap = new Map();
 
-  rawSeats.forEach((s, idx) => {
+  rawSeats.forEach((s) => {
     const rawCode = String(s.Code || "");
     if (!rawCode) return;
     let cleanSeatNo = String(s.SeatNumber || s.SeatNo || rawCode).split("SeKey")[0].split("_")[0].trim();
-    
+
     // Extract standard seat format (e.g. 1A, 12C, 24F)
     const match = cleanSeatNo.match(/^(\d{1,3}[A-Z])$/i);
     if (match) {
@@ -94,8 +115,11 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
       seatLetter = seatLetter[0];
     }
 
-    const price = Number(s.Price ?? s.Amount ?? s.Fee);
-    if (!Number.isFinite(price) || price < 0) return;
+    // Allow null/undefined price — treat as 0 (free seat). Only skip seats with explicitly negative price.
+    const rawPrice = s.Price ?? s.Amount ?? s.Fee ?? s.ChargeAmount ?? s.Charge ?? s.SeatCharge ?? null;
+    const price = rawPrice !== null ? Number(rawPrice) : 0;
+    if (price < 0) return; // explicitly skip negative-priced seats (data error)
+
     const isBooked = Boolean(s.AvailablityType === 0 || s.IsBooked === true || s.IsAvailable === false || s.Status === "Booked" || s.Status === 0);
     const isBlocked = Boolean(s.Status === "Blocked" || s.Status === 2);
 
@@ -113,6 +137,10 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
           ? SEAT_TYPES.PREMIUM
           : SEAT_TYPES.STANDARD;
 
+    // Cabin class this seat belongs to (propagated from parent context)
+    const cabinClass = s.CabinClass ?? s.cabinClass ?? null;
+    const cabinClassName = s.CabinClassName || s.cabinClassName || "";
+
     seenMap.set(uniqueKey, {
       id: uniqueKey,
       seatNumber,
@@ -127,6 +155,8 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
       status,
       type,
       isExit,
+      cabinClass,
+      cabinClassName,
       isWindow: ["A", "F"].includes(seatLetter),
       isAisle: ["C", "D"].includes(seatLetter),
       features: {

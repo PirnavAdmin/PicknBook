@@ -15,7 +15,7 @@ export function resetBookingSessionTimer() {
   return null;
 }
 
-export default function BookingTimer({ mode = "banner", hideBanner = false }) {
+export default function BookingTimer({ mode = "banner", hideBanner = false, onRestartSearch = null }) {
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState(600);
   const [isExpired, setIsExpired] = useState(false);
@@ -51,7 +51,11 @@ export default function BookingTimer({ mode = "banner", hideBanner = false }) {
   const handleRestart = () => {
     resetBookingSessionTimer();
     setIsExpired(false);
-    navigate("/");
+    if (onRestartSearch) {
+      onRestartSearch();
+    } else {
+      navigate("/");
+    }
   };
 
   if (isExpired) {

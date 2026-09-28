@@ -450,7 +450,10 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
   const rawId = pickFirst(primaryFare, ["Id", "id"], null) || pickFirst(record, ["id", "Id", "flightId", "FlightId"], null) || exactResultIndex;
   const finalResultIndex = exactResultIndex;
 
-  const isRefundable = pickFirst(primaryFare, ["IsRefundable", "isRefundable"], null) ?? pickFirst(record, ["isRefundable", "IsRefundable"], false);
+  const isRefundable = supplierBoolean(
+    pickFirst(primaryFare, ["IsRefundable", "isRefundable"], null) ??
+    pickFirst(record, ["isRefundable", "IsRefundable"], null)
+  );
 
   const b2cFinalFare = Number(pickFirst(primaryFare?.Fare || {}, ["B2CFinalFare", "b2cFinalFare"], null)) || price;
   const b2cMarkupAmount = Number(pickFirst(primaryFare?.Fare || {}, ["B2CMarkupAmount", "b2cMarkupAmount"], 0));
@@ -460,7 +463,7 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
     srdvIndex: String(fd.SrdvIndex || srdvIndex || ""),
     resultIndex: String(fd.ResultIndex || finalResultIndex),
     isLcc: supplierBoolean(fd.IsLCC ?? isLcc),
-    isRefundable: Boolean(fd.IsRefundable ?? isRefundable),
+    isRefundable: supplierBoolean(fd.IsRefundable ?? isRefundable),
     source: fd.Source || "",
     buttonColor: fd.ButtonColor || "#0000ff",
     textColor: fd.TextColor || "#ffffff",
@@ -576,7 +579,7 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
     brandedFare: pickFirst(record, ["brandedFare", "BrandedFare"], ""),
     brandedFareLabel: pickFirst(record, ["brandedFareLabel", "BrandedFareLabel"], null),
     isLcc: Boolean(isLcc),
-    isRefundable: Boolean(isRefundable),
+    isRefundable,
     segments: segs,
   };
 }
@@ -1457,13 +1460,18 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
   const traceId = String(resObj?.TraceId || resObj?.traceId || data?.TraceId || data?.traceId || "");
 
   const mapSingleItem = (item, idx, defaultFrom, defaultTo, legIndex = 0, tripDirection = "outbound") => {
-    const rawSegments = Array.isArray(item?.Segments?.[0])
+    // MixAPI: segments can be at item.Segments OR inside FareDataMultiple[0].FareSegments
+    let rawSegments = Array.isArray(item?.Segments?.[0])
       ? item.Segments[0]
-      : Array.isArray(item?.Segments)
+      : Array.isArray(item?.Segments) && item.Segments.length > 0
         ? item.Segments
-        : Array.isArray(item?.segments)
+        : Array.isArray(item?.segments) && item.segments.length > 0
           ? item.segments
-          : [item?.segment || item?.Segments?.[0]].filter(Boolean);
+          : Array.isArray(item?.FareDataMultiple?.[0]?.FareSegments) && item.FareDataMultiple[0].FareSegments.length > 0
+            ? item.FareDataMultiple[0].FareSegments
+            : Array.isArray(item?.FareDataMultiple?.[0]?.Segments) && item.FareDataMultiple[0].Segments.length > 0
+              ? item.FareDataMultiple[0].Segments
+              : [item?.segment || item?.Segments?.[0]].filter(Boolean);
 
     const firstSegment = rawSegments[0] || {};
     const lastSegment = rawSegments[rawSegments.length - 1] || firstSegment;
@@ -1594,7 +1602,7 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
           buttonColor: fd?.ButtonColor || "#0000ff",
           textColor: fd?.TextColor || "#ffffff",
           isLcc: supplierBoolean(fd?.IsLCC ?? item?.IsLCC),
-          isRefundable: Boolean(fd?.IsRefundable !== undefined ? (fd.IsRefundable === true || fd.IsRefundable === "true" || fd.IsRefundable === 1) : false),
+          isRefundable: supplierBoolean(fd?.IsRefundable ?? item?.IsRefundable ?? item?.isRefundable),
           airlineRemark: fd?.AirlineRemark || "",
           offeredFare: optOffered,
           b2cFinalFare: Number(fd?.B2CFinalFare || optFare?.B2CFinalFare || optOffered),
@@ -1607,10 +1615,25 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
       : [];
 
     const resultIndex = fareData?.ResultIndex || item?.ResultIndex || item?.resultIndex || "";
-    const srdvIndex = fareData?.SrdvIndex || item?.SrdvIndex || "";
-    const srdvType = fareData?.SrdvType || item?.SrdvType || "";
+    const srdvIndex = String(fareData?.SrdvIndex ?? item?.SrdvIndex ?? "");
+    // MixAPI: SrdvType is at Response level, not per-item. Fall back through all possible locations.
+    const srdvType =
+      fareData?.SrdvType ||
+      item?.SrdvType ||
+      item?.srdvType ||
+      resObj?.SrdvType ||
+      searchParams?.srdvType ||
+      "";
 
     const isLCC = supplierBoolean(fareData?.IsLCC ?? item?.IsLCC ?? item?.isLCC);
+
+    // Ensure selectedTravelClass is always populated for MixAPI fares
+    const cabinFromFareSegment =
+      fareSegment?.CabinClassName ||
+      fareData?.FareSegments?.[0]?.CabinClassName ||
+      item?.FareDataMultiple?.[0]?.FareSegments?.[0]?.CabinClassName ||
+      "";
+    const resolvedTravelClass = cabinFromFareSegment || searchParams.travelClass || "Economy";
 
     return {
       ...item,
@@ -1654,8 +1677,9 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
       stops,
       layoverSummary,
       isLCC,
-      isRefundable: Boolean(fareData?.IsRefundable ?? item?.IsRefundable ?? item?.isRefundable),
-      selectedTravelClass: fareSegment?.CabinClassName || searchParams.travelClass || "",
+      isLcc: Boolean(isLCC),
+      isRefundable: supplierBoolean(fareData?.IsRefundable ?? item?.IsRefundable ?? item?.isRefundable),
+      selectedTravelClass: resolvedTravelClass,
       selectedTravelClassPriceInr: offeredFare,
       selectedTravelClassAvailableSeats: Number(fareSegment?.NoOfSeatAvailable ?? item?.seats ?? null),
       seats: Number(fareSegment?.NoOfSeatAvailable ?? item?.seats ?? null),
@@ -2041,13 +2065,21 @@ export async function getFlightFareRule(params = {}) {
 
     const resObj = rawData?.Response || rawData?.data?.Response || rawData;
     const errObj = resObj?.Error || rawData?.Error;
-    const results = resObj?.Results || rawData?.Results;
+    const resultCandidates = [
+      resObj?.Results,
+      resObj?.Results?.FareRules,
+      resObj?.FareRules,
+      rawData?.Results,
+      rawData?.Results?.FareRules,
+      rawData?.FareRules,
+    ];
+    const results = resultCandidates.find(Array.isArray) || [];
 
     if (errObj && String(errObj.ErrorCode) !== "0") {
       return { success: false, code: "FARE_RULE_ERROR", message: errObj.ErrorMessage, data: null, results: [] };
     }
 
-    if (!results || (Array.isArray(results) && results.length === 0)) {
+    if (results.length === 0) {
       return { success: false, code: "FARE_RULE_UNAVAILABLE", message: "Fare rules not provided by supplier for this flight.", data: [], results: [] };
     }
 
@@ -2097,8 +2129,19 @@ export async function getFlightSSR(params = {}) {
 
     const baggage = results?.Baggage || resObj?.Baggage || rawData?.Baggage || [];
     const meals = results?.MealDynamic || results?.Meal || resObj?.MealDynamic || resObj?.Meal || rawData?.MealDynamic || [];
-    const flatBaggage = Array.isArray(baggage) ? baggage.flat(Infinity) : [];
-    const flatMeals = Array.isArray(meals) ? meals.flat(Infinity) : [];
+
+    const flattenPayload = (value) => {
+      if (Array.isArray(value)) {
+        return value.flat(Infinity);
+      }
+      if (!value || typeof value !== "object") {
+        return [];
+      }
+      return Object.values(value).flatMap((entry) => flattenPayload(entry));
+    };
+
+    const flatBaggage = flattenPayload(baggage);
+    const flatMeals = flattenPayload(meals);
 
     const baggageList = flatBaggage.map((b) => ({
       ...b,

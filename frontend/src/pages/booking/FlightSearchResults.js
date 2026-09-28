@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeftRight,
   ArrowDown,
+  ArrowRight,
+  Activity,
+  Calendar,
   CalendarDays,
   CalendarRange,
   CheckCircle2,
@@ -9,6 +12,7 @@ import {
   ChevronRight,
   Clock3,
   IndianRupee,
+  LineChart,
   Loader2,
   MapPin,
   Minus,
@@ -25,6 +29,7 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
+  Clock,
   Lock,
   Briefcase,
   Undo,
@@ -36,7 +41,8 @@ import {
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
-import { searchFlights, getFareRule, getCalendarFare } from "../../services/flightBookingService";
+import { searchFlights, getFareRule } from "../../services/flightBookingService";
+import { supplierBoolean } from "../../utils/flightContract";
 
 import FareCalendarModal from "../../components/FareCalendarModal";
 import FlightLoadingScreen from "../../components/FlightLoadingScreen";
@@ -58,6 +64,13 @@ function formatFlightPillDate(dateStr) {
   const dayName = d.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
   return { date: dateFormatted, day: dayName };
 }
+
+function isDayTime(timeStr) {
+  if (!timeStr) return true;
+  const hr = parseInt(timeStr.split(":")[0], 10);
+  return hr >= 5 && hr < 18;
+}
+
 import airIndiaExpress from "../../assets/images/airlines/Air-India_express.jpg";
 import airIndia from "../../assets/images/airlines/air-india.png";
 import akasaAir from "../../assets/images/airlines/AkasaAir.png";
@@ -543,61 +556,11 @@ export default function FlightSearchResults() {
   const [selectedClassByFlight, setSelectedClassByFlight] = useState({});
   const [selectedFareTypeByFlight, setSelectedFareTypeByFlight] = useState({});
   const [selectedFareOptionIndexByFlight, setSelectedFareOptionIndexByFlight] = useState({});
-  const [expandedFlightId, setExpandedFlightId] = useState(null);
+  const [activeFareSelectionModal, setActiveFareSelectionModal] = useState({ isOpen: false, flight: null });
   const [selectedFareType, setSelectedFareType] = useState("saver");
 
   const [isFareCalendarOpen, setIsFareCalendarOpen] = useState(false);
-  const [calendarFareMap, setCalendarFareMap] = useState({});
-  const [lowestFareOfMonthDates, setLowestFareOfMonthDates] = useState(new Set());
 
-  useEffect(() => {
-    let isCurrent = true;
-    async function loadCalendarFare() {
-      if (tripType === "multicity") return;
-
-      try {
-        const yyyy = selectedDate.getFullYear();
-        const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
-        const dd = String(selectedDate.getDate()).padStart(2, "0");
-        const dateStr = `${yyyy}-${mm}-${dd}`;
-
-        let returnDateStr = dateStr;
-        if (selectedReturnDate) {
-          const ryyyy = selectedReturnDate.getFullYear();
-          const rmm = String(selectedReturnDate.getMonth() + 1).padStart(2, "0");
-          const rdd = String(selectedReturnDate.getDate()).padStart(2, "0");
-          returnDateStr = `${ryyyy}-${rmm}-${rdd}`;
-        }
-
-        const res = await getCalendarFare({
-          from: sourceName,
-          to: destinationName,
-          date: dateStr,
-          returnDate: returnDateStr,
-          travelClass: cabinClass,
-          journeyType: tripType === "twoway" ? 2 : 1,
-        });
-
-        if (isCurrent && res && res.fareMapByDate) {
-          setCalendarFareMap(res.fareMapByDate);
-          if (Array.isArray(res.results)) {
-            const lowestSet = new Set(
-              res.results.filter((r) => r.isLowestFareOfMonth).map((r) => r.dateOnly)
-            );
-            setLowestFareOfMonthDates(lowestSet);
-          }
-        }
-      } catch (e) {
-        console.warn("Calendar fare fetch error:", e);
-      }
-    }
-
-    loadCalendarFare();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [sourceName, destinationName, selectedDate, cabinClass, travellerText]);
 
   const getFareMultiplier = (type) => {
     return 1.0;
@@ -656,7 +619,7 @@ export default function FlightSearchResults() {
   const normalizedOnwardList = useMemo(() => {
     return apiFlights.map((flight) => {
       const classOptions = normalizeClassOptions(flight);
-      if (flight.isLcc !== true || !flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
+      if (!flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
       const selectedClass =
         selectedClassByFlight[flight.id] ||
         flight.selectedTravelClass ||
@@ -690,7 +653,7 @@ export default function FlightSearchResults() {
   const normalizedReturnList = useMemo(() => {
     return returnFlights.map((flight) => {
       const classOptions = normalizeClassOptions(flight);
-      if (flight.isLcc !== true || !flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
+      if (!flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
       const selectedClass =
         selectedClassByFlight[flight.id] ||
         flight.selectedTravelClass ||
@@ -773,6 +736,14 @@ export default function FlightSearchResults() {
     });
   };
 
+  const [activeFareDetailsModal, setActiveFareDetailsModal] = useState({ isOpen: false, flight: null });
+  const handleOpenFareDetails = (flightObj) => {
+    setActiveFareDetailsModal({ isOpen: true, flight: flightObj });
+  };
+  const handleCloseFareDetails = () => {
+    setActiveFareDetailsModal({ isOpen: false, flight: null });
+  };
+
   const [priceMin, setPriceMin] = useState(0);
   const [timeMin, setTimeMin] = useState(0);
   const [departureWindows, setDepartureWindows] = useState(() => ({
@@ -789,7 +760,7 @@ export default function FlightSearchResults() {
     nonStop: true,
     oneStop: true,
   }));
-  const [sortBy, setSortBy] = useState("departure");
+  const [sortBy, setSortBy] = useState("price");
   const [airlineFilters, setAirlineFilters] = useState({});
 
   const [sharedMultiCityTraceId, setSharedMultiCityTraceId] = useState("");
@@ -916,7 +887,7 @@ export default function FlightSearchResults() {
           setReturnFlights([]);
           if (list.length > 0) setSelectedOnwardFlightId(list[0].id);
         }
-        setExpandedFlightId(null);
+        setActiveFareSelectionModal({ isOpen: false, flight: null });
 
         setSelectedClassByFlight((previous) => {
           const next = {};
@@ -1042,7 +1013,7 @@ export default function FlightSearchResults() {
           duration: durationLabel(durationMinutes),
           durationMinutes,
           fare: selectedClassOption?.priceInr ?? flight.selectedTravelClassPriceInr ?? 0,
-          isRefundable: Boolean(flight.isRefundable),
+          isRefundable: supplierBoolean(flight.isRefundable),
           stops: Number(flight.stops || 0),
           className: travelClass,
           classOptions: resolvedClassOptions,
@@ -1131,28 +1102,36 @@ export default function FlightSearchResults() {
           return false;
         }
 
-        const matchesWindow = DEPARTURE_WINDOWS.some((window) => {
-          if (!departureWindows[window.key]) {
-            return false;
-          }
-          return hourInWindow(flight.departureHour, window);
-        });
-
-        if (!matchesWindow) {
-          return false;
+        // 1. Departure Window Filter
+        const hasAnyDepartureFilter = Object.values(departureWindows).some(Boolean);
+        if (hasAnyDepartureFilter) {
+          const matchesWindow = DEPARTURE_WINDOWS.some((window) => {
+            return departureWindows[window.key] && hourInWindow(flight.departureHour, window);
+          });
+          if (!matchesWindow) return false;
         }
 
-        const fareTypeKey = flight.isRefundable ? "refundable" : "nonRefundable";
-        if (!fareTypeFilters[fareTypeKey]) {
-          return false;
+        // 2. Fare Type Filter
+        const hasAnyFareTypeFilter = Object.values(fareTypeFilters).some(Boolean);
+        if (hasAnyFareTypeFilter) {
+          const fareTypeKey = flight.isRefundable ? "refundable" : "nonRefundable";
+          if (!fareTypeFilters[fareTypeKey]) return false;
         }
 
-        const stopKey = flight.stops > 0 ? "oneStop" : "nonStop";
-        if (!stopFilters[stopKey]) {
-          return false;
+        // 3. Stops Filter
+        const hasAnyStopFilter = Object.values(stopFilters).some(Boolean);
+        if (hasAnyStopFilter) {
+          const stopKey = flight.stops > 0 ? "oneStop" : "nonStop";
+          if (!stopFilters[stopKey]) return false;
         }
 
-        return airlineFilters[flight.airlineName];
+        // 4. Airlines Filter
+        const hasAnyAirlineFilter = Object.values(airlineFilters).some(Boolean);
+        if (hasAnyAirlineFilter) {
+          if (!airlineFilters[flight.airlineName]) return false;
+        }
+
+        return true;
       }),
     [
       flights,
@@ -1182,12 +1161,22 @@ export default function FlightSearchResults() {
         return a.fare - b.fare;
       }
 
-      if (sortBy === "fastest") {
-        return a.durationMinutes - b.durationMinutes;
-      }
-
       if (sortBy === "departure") {
         return a.departureHour - b.departureHour || a.fare - b.fare;
+      }
+
+      if (sortBy === "arrival") {
+        const arrHourA = parseTimeValue(a.arrivalTimeIst)?.getHours() || 0;
+        const arrHourB = parseTimeValue(b.arrivalTimeIst)?.getHours() || 0;
+        return arrHourA - arrHourB || a.fare - b.fare;
+      }
+
+      if (sortBy === "duration") {
+        return a.durationMinutes - b.durationMinutes || a.fare - b.fare;
+      }
+
+      if (sortBy === "airline") {
+        return a.airlineName.localeCompare(b.airlineName) || a.fare - b.fare;
       }
 
       return (
@@ -1201,8 +1190,8 @@ export default function FlightSearchResults() {
   }, [filteredFlights, sortBy]);
 
   const currentExpandedFlight = useMemo(() => {
-    return flights.find((f) => f.id === expandedFlightId) || null;
-  }, [flights, expandedFlightId]);
+    return activeFareSelectionModal.flight || null;
+  }, [activeFareSelectionModal.flight]);
 
   const selectedFarePrice = useMemo(() => {
     if (!currentExpandedFlight) return 0;
@@ -1312,12 +1301,72 @@ export default function FlightSearchResults() {
 
 
 
-  const handleToggleFlightExpand = (flightId) => {
-    if (expandedFlightId === flightId) {
-      setExpandedFlightId(null);
+  const handleOpenFareSelection = (flightObj) => {
+    setActiveFareSelectionModal({ isOpen: true, flight: flightObj });
+    setSelectedFareType(selectedFareTypeByFlight[flightObj.id] || "saver");
+  };
+
+  const handleCloseFareSelection = () => {
+    setActiveFareSelectionModal({ isOpen: false, flight: null });
+  };
+
+  const handleFinalizeFlightSelection = (flight) => {
+    let targetFlight = flight;
+    let chosenPrice = flight.fare;
+    let chosenClass = flight.className || "";
+
+    if (Array.isArray(flight.fareOptions) && flight.fareOptions.length > 0) {
+      const optIdx = selectedFareOptionIndexByFlight[flight.id] ?? 0;
+      const chosenOpt = flight.fareOptions[optIdx] || flight.fareOptions[0];
+      if (chosenOpt) {
+        targetFlight = {
+          ...flight,
+          resultIndex: chosenOpt.resultIndex,
+          srdvIndex: chosenOpt.srdvIndex,
+          isLcc: chosenOpt.isLcc,
+          isRefundable: chosenOpt.isRefundable,
+          fare: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare,
+          price: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare,
+          baseFarePrice: chosenOpt.baseFare || flight.baseFarePrice || 0,
+          taxPrice: chosenOpt.tax || flight.taxPrice || 0,
+          b2cMarkupAmount: chosenOpt.b2cMarkupAmount || flight.b2cMarkupAmount || 0,
+          source: chosenOpt.source,
+        };
+        chosenPrice = chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare;
+        chosenClass = `${flight.airlineName} (${chosenOpt.source})`;
+      }
+    }
+
+    if (tripType === "twoway" && returnFlights.length > 0) {
+      if (twoWayActiveTab === "onward") {
+        setSelectedOnwardFlightId(targetFlight.id);
+        setTwoWayActiveTab("return");
+        setTimeout(() => {
+          const el = document.getElementById("two-way-tabs-strip");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      } else {
+        setSelectedReturnFlightId(targetFlight.id);
+        if (selectedOnwardFlightObj) {
+          handleStartBookingJourney(selectedOnwardFlightObj, selectedOnwardFlightObj.fare, selectedOnwardFlightObj.className);
+        }
+      }
+    } else if (tripType === "multicity") {
+      const updatedSelections = { ...selectedMultiCityFlightIds, [multiCityActiveTab]: targetFlight.id };
+      setSelectedMultiCityFlightIds(updatedSelections);
+      if (multiCityActiveTab < apiFlights.length - 1) {
+        setMultiCityActiveTab(prev => prev + 1);
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 100);
+      } else {
+        const firstLegFlight = apiFlights[0]?.find(f => f.id === updatedSelections[0]) || apiFlights[0]?.[0];
+        if (firstLegFlight) {
+          handleStartBookingJourney(firstLegFlight, null, null, updatedSelections);
+        }
+      }
     } else {
-      setExpandedFlightId(flightId);
-      setSelectedFareType(selectedFareTypeByFlight[flightId] || "saver");
+      handleStartBookingJourney(targetFlight, chosenPrice, chosenClass);
     }
   };
 
@@ -1696,14 +1745,7 @@ export default function FlightSearchResults() {
                 </button>
               </div>
 
-              <button
-                type="button"
-                className="flight-hero-calendar-btn"
-                onClick={() => setIsFareCalendarOpen(true)}
-              >
-                <CalendarDays size={15} />
-                <span>Fare Calendar</span>
-              </button>
+
             </div>
 
             <form
@@ -1762,20 +1804,18 @@ export default function FlightSearchResults() {
               </div>
 
               {/* TIMELINE / DEPARTURE (+ RETURN) FIELD */}
-              <div
-                className="flight-discover-searchcell with-divider"
-                style={{ flex: '1.2 1 auto', cursor: 'pointer', position: 'relative' }}
+              <div className="flight-discover-searchcell with-divider" style={{ flex: '1.2 1 auto', cursor: 'pointer', position: 'relative' }}
                 onClick={() => setActiveDatePicker("flight-discover-dep-date")}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#000000', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                     TIMELINE
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0' }}>
-                    <CalendarRange size={18} color="#ffffff" style={{ flexShrink: 0 }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <CalendarRange size={14} color="#000000" style={{ flexShrink: 0 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                       <span
-                        style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
+                        style={{ cursor: "pointer", color: '#000000', fontWeight: 400, fontSize: '13px', whiteSpace: 'nowrap', display: 'inline-block' }}
                         onClick={(e) => {
                           e.stopPropagation();
                           setActiveDatePicker("flight-discover-dep-date");
@@ -1785,9 +1825,9 @@ export default function FlightSearchResults() {
                       </span>
                       {modifyForm.tripType === "twoway" && (
                         <>
-                          <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>-</span>
+                          <span style={{ color: '#000000', fontWeight: 700 }}>-</span>
                           <span
-                            style={{ cursor: "pointer", color: '#ffffff', fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap', display: 'inline-block' }}
+                            style={{ cursor: "pointer", color: '#000000', fontWeight: 400, fontSize: '13px', whiteSpace: 'nowrap', display: 'inline-block' }}
                             onClick={(e) => {
                               e.stopPropagation();
                               setActiveDatePicker("flight-discover-ret-date");
@@ -1799,7 +1839,7 @@ export default function FlightSearchResults() {
                       )}
                     </div>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: '2px' }}>
+                  <span style={{ fontSize: '13px', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                     {modifyForm.tripType === "twoway" ? "ROUND TRIP" : formatFlightPillDate(modifyForm.departureDate).day}
                   </span>
                   <CustomDatePicker
@@ -1840,17 +1880,17 @@ export default function FlightSearchResults() {
                 onClick={() => setShowTravellersDropdown((prev) => !prev)}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#cbd5e1', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '2px' }}>
-                    TRAVELLERS & CLASS
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#000000', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    TRAVELLERS &amp; CLASS
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0' }}>
-                    <Users size={18} color="#ffffff" style={{ flexShrink: 0 }} />
-                    <span style={{ fontSize: '14px', fontWeight: 500, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Users size={14} color="#000000" style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: '13px', fontWeight: 400, color: '#000000', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "Economy"}
                     </span>
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.03em', marginTop: '2px' }}>
-                    CABIN & SEATS
+                  <span style={{ fontSize: '13px', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    CABIN &amp; SEATS
                   </span>
                 </div>
 
@@ -2120,62 +2160,7 @@ export default function FlightSearchResults() {
           </aside>
 
           <section className="results-column" style={{ paddingBottom: tripType === "twoway" ? "100px" : "20px" }}>
-            {tripType !== "multicity" && (
-              <div className="fare-date-strip">
-                <button
-                  type="button"
-                  className="fare-date-nav"
-                  aria-label="Previous day"
-                  onClick={() => setSelectedDate(addDays(selectedDate, -1))}
-                >
-                  <ChevronLeft size={24} strokeWidth={2.4} />
-                </button>
-                {dateStrip.map((item) => {
-                  const yyyy = item.date.getFullYear();
-                  const mm = String(item.date.getMonth() + 1).padStart(2, "0");
-                  const dd = String(item.date.getDate()).padStart(2, "0");
-                  const dateKey = `${yyyy}-${mm}-${dd}`;
-                  const liveFare = calendarFareMap[dateKey];
-                  const isLowestOfMonth = lowestFareOfMonthDates.has(dateKey);
-                  const displayFareText = liveFare
-                    ? `₹${new Intl.NumberFormat("en-IN").format(liveFare)}`
-                    : item.offset === 0 && flights.length > 0
-                      ? `Best fare ₹${new Intl.NumberFormat("en-IN").format(minFare)}`
-                      : "Tap to search";
 
-                  return (
-                    <button
-                      type="button"
-                      key={item.id}
-                      className={`fare-date-card ${item.date.toDateString() === selectedDate.toDateString()
-                        ? "active"
-                        : ""
-                        } ${isLowestOfMonth ? "lowest-month-fare" : ""}`}
-                      aria-label={`Search fares for ${formatLongDate(item.date)}`}
-                      onClick={() => setSelectedDate(item.date)}
-                    >
-                      <strong>{formatCardDate(item.date)}</strong>
-                      <span style={{ fontWeight: liveFare ? 700 : 400, color: isLowestOfMonth ? "#16a34a" : undefined }}>
-                        {displayFareText}
-                      </span>
-                      {isLowestOfMonth && (
-                        <span style={{ fontSize: "0.6rem", background: "#dcfce7", color: "#166534", padding: "1px 4px", borderRadius: "3px", marginTop: "2px", fontWeight: 700 }}>
-                          Lowest Fare
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  className="fare-date-nav"
-                  aria-label="Next day"
-                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-                >
-                  <ChevronRight size={24} strokeWidth={2.4} />
-                </button>
-              </div>
-            )}
 
             {tripType === "twoway" && returnFlights.length > 0 && (
               <div
@@ -2345,43 +2330,95 @@ export default function FlightSearchResults() {
               </div>
             )}
 
-            <div className="flight-sort-panel">
-              <div className="sort-meta-row">
-                <strong>Sort by</strong>
-                <span>{flightsFoundCount} Flights Available</span>
-              </div>
-              <div className="flight-sort-strip" role="radiogroup" aria-label="Sort flights">
-                {[
-                  { key: "price", title: "Price", subtitle: "Low to High" },
-                  { key: "fastest", title: "Fastest", subtitle: "Shortest First" },
-                  { key: "departure", title: "Departure", subtitle: "Earliest First" },
-                  { key: "smart", title: "Smart", subtitle: "Recommended" },
-                ].map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    className={`flight-sort-pill ${sortBy === option.key ? "active" : ""}`}
-                    role="radio"
-                    aria-checked={sortBy === option.key}
-                    onClick={() => setSortBy(option.key)}
-                  >
-                    <span className="sort-title">
-                      {option.title}
-                      {option.key === "departure" && <ArrowDown size={15} />}
-                    </span>
-                    <span className="sort-subtitle">{option.subtitle}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            {(() => {
+              const cheapestFlight = [...filteredFlights].sort((a, b) => a.fare - b.fare)[0];
+              const fastestFlight = [...filteredFlights].sort((a, b) => a.durationMinutes - b.durationMinutes)[0];
+              const nonStopFlights = filteredFlights.filter((f) => f.stops === 0);
+              const cheapestNonStopFlight = [...nonStopFlights].sort((a, b) => a.fare - b.fare)[0];
 
-            <div className="table-head">
-              <span>Airline</span>
-              <span>Depart</span>
-              <span>Duration</span>
-              <span>Arrive</span>
-              <span>Price</span>
-            </div>
+              const formatDuration = (mins) => {
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return `${h}h ${m}m`;
+              };
+
+              return (
+                <div className="modern-metrics-sort-container">
+                  <div className="top-metrics-row">
+                    <button
+                      type="button"
+                      className={`metric-chip ${sortBy === "price" ? "active" : ""}`}
+                      onClick={() => setSortBy("price")}
+                    >
+                      <div className="metric-icon-box"><LineChart size={18} /></div>
+                      <div className="metric-content">
+                        <span className="metric-title">CHEAPEST</span>
+                        <div className="metric-value">
+                          <strong>{cheapestFlight ? `₹${new Intl.NumberFormat("en-IN").format(cheapestFlight.fare)}` : "--"}</strong>
+                          <span className="metric-sub">{cheapestFlight ? formatDuration(cheapestFlight.durationMinutes) : ""}</span>
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className={`metric-chip ${sortBy === "duration" ? "active" : ""}`}
+                      onClick={() => setSortBy("duration")}
+                    >
+                      <div className="metric-icon-box"><Clock size={18} /></div>
+                      <div className="metric-content">
+                        <span className="metric-title">FASTEST</span>
+                        <div className="metric-value">
+                          <strong>{fastestFlight ? `₹${new Intl.NumberFormat("en-IN").format(fastestFlight.fare)}` : "--"}</strong>
+                          <span className="metric-sub">{fastestFlight ? formatDuration(fastestFlight.durationMinutes) : ""}</span>
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      className={`metric-chip ${stopFilters.nonStop && !stopFilters.oneStop ? "active" : ""}`}
+                      onClick={() => {
+                        if (stopFilters.nonStop && !stopFilters.oneStop) {
+                          setStopFilters({ nonStop: true, oneStop: true });
+                        } else {
+                          setStopFilters({ nonStop: true, oneStop: false });
+                          setSortBy("price");
+                        }
+                      }}
+                    >
+                      <div className="metric-icon-box"><ArrowRight size={18} /></div>
+                      <div className="metric-content">
+                        <span className="metric-title">NON STOP</span>
+                        <div className="metric-value">
+                          <strong>{cheapestNonStopFlight ? `₹${new Intl.NumberFormat("en-IN").format(cheapestNonStopFlight.fare)}` : "--"}</strong>
+                          <span className="metric-sub">{cheapestNonStopFlight ? formatDuration(cheapestNonStopFlight.durationMinutes) : ""}</span>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="bottom-sort-row">
+                    <strong className="sort-by-label">SORT BY</strong>
+                    <div className="sort-pills">
+                      <button type="button" className={`sort-pill ${sortBy === "price" ? "active" : ""}`} onClick={() => setSortBy("price")}>
+                        <LineChart size={14} /> Price {sortBy === "price" && "↑"}
+                      </button>
+                      <button type="button" className={`sort-pill ${sortBy === "departure" ? "active" : ""}`} onClick={() => setSortBy("departure")}>
+                        <Calendar size={14} /> Departure
+                      </button>
+                      <button type="button" className={`sort-pill ${sortBy === "arrival" ? "active" : ""}`} onClick={() => setSortBy("arrival")}>
+                        <MapPin size={14} /> Arrival
+                      </button>
+                      <button type="button" className={`sort-pill ${sortBy === "duration" ? "active" : ""}`} onClick={() => setSortBy("duration")}>
+                        <Clock size={14} /> Duration
+                      </button>
+                      <button type="button" className={`sort-pill ${sortBy === "airline" ? "active" : ""}`} onClick={() => setSortBy("airline")}>
+                        <Activity size={14} /> Airline
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="flight-list">
               {sortedFlights.length === 0 ? (
@@ -2390,83 +2427,137 @@ export default function FlightSearchResults() {
                   <p>No flights match the selected filters for this date.</p>
                 </div>
               ) : (
-                sortedFlights.map((flight) => {
-                  const isExpanded = expandedFlightId === flight.id;
+                (() => {
+                  const globalCheapestFlightId = [...filteredFlights].sort((a, b) => a.fare - b.fare)[0]?.id;
+                  
+                  return sortedFlights.map((flight) => {
                   const isSelectedInTwoWay = tripType === "twoway" && (
                     (twoWayActiveTab === "onward" && selectedOnwardFlightId === flight.id) ||
                     (twoWayActiveTab === "return" && selectedReturnFlightId === flight.id)
                   );
                   const flightCardJsx = (
                     <article
-                      className={`flight-card-modern ${isExpanded ? "expanded" : ""} ${isSelectedInTwoWay ? "selected-two-way" : ""}`}
+                      className={`flight-card-modern ${isSelectedInTwoWay ? "selected-two-way" : ""}`}
                       key={flight.id}
-                      onClick={() => {
-                        handleToggleFlightExpand(flight.id);
-                      }}
                     >
-                      <div className="flight-card-main-row">
-                        {/* Top Meta Line */}
-                        <div className="flight-card-meta-line">
-                          <div className="flight-identity">
-                            <img src={flight.logo} alt={flight.airlineName} className="airline-logo-mini" />
-                            <span className="flight-number-mini">{flight.airlineName} ({flight.flightNumber})</span>
+                      <div className="premium-flight-card-inner">
+                        {/* Top Bar */}
+                        <div className="premium-top-bar">
+                          <div className="premium-airline-info">
+                            <img src={flight.logo} alt={flight.airlineName} className="premium-logo" />
+                            <div className="premium-airline-details">
+                              <div className="premium-airline-title-row">
+                                <span className="premium-airline-name">{flight.airlineName}</span>
+                                {globalCheapestFlightId === flight.id && (
+                                  <span className="premium-cheapest-badge"><LineChart size={12} /> CHEAPEST</span>
+                                )}
+                              </div>
+                              <div className="premium-flight-numbers">
+                                {flight.flightNumber} {flight.equipment ? `· 🛠 Aircraft ${flight.equipment}` : ""}
+                              </div>
+                            </div>
                           </div>
-                          <div className="flight-badge-gold">
-                            {flight.totalAvailableSeats <= 5 && flight.totalAvailableSeats > 0 ? "Only a few seats left" : "Filling Fast"}
+                          <div className="premium-top-actions">
+
+                            <span className={`premium-tag ${flight.isRefundable == null ? "" : flight.isRefundable ? "green" : "red"}`}>
+                              <CheckCircle2 size={12} /> {flight.isRefundable == null ? "Refund status unavailable" : flight.isRefundable ? "Refundable" : "Non-Refundable"}
+                            </span>
+                            <span className="premium-tag grey"><Armchair size={12} /> {cabinClass || "ECONOMY"}</span>
                           </div>
                         </div>
 
-                        {/* Center Flight Info Row */}
-                        <div className="flight-card-info-grid">
-                          {/* Departure Block */}
-                          <div className="airport-info-block departure">
-                            <div className="time-code-row">
-                              <span className="large-time">{flight.departureTime}</span>
-                              <span className="city-code">{flight.sourceCode}</span>
+                        {/* Middle Schedule Row */}
+                        <div className="premium-schedule-row">
+                          <div className="premium-dept-block">
+                            <div className="premium-time-code">
+                              <span className="premium-large-time">{flight.departureTime}</span>
+                              <span className="premium-city-code">{flight.sourceCode}</span>
                             </div>
-                            <span className="airport-name-sub">{getAirportName(flight.sourceCode, sourceName)}</span>
+                            {/* Dynamic tag for time of day */}
+                            <div className="premium-time-tag">
+                              {isDayTime(flight.departureTime) ? <><Sun size={12} /> DAY</> : <><Moon size={12} /> NIGHT</>}
+                            </div>
+                            <div className="premium-airport-desc">
+                              <strong>{getAirportName(flight.sourceCode, sourceName)}</strong>
+                            </div>
                           </div>
 
-                          {/* Route Path Block */}
-                          <div className="route-path-block">
-                            <span className="duration-label">{flight.duration}</span>
-                            <div className="path-visual-line">
-                              <div className="dashed-line"></div>
-                              <Plane className="plane-icon-mini" size={14} style={{ transform: "rotate(90deg)" }} />
-                              <div className="dashed-line"></div>
-                              <div className="end-dot"></div>
+                          <div className="premium-duration-block">
+                            <span className="premium-duration-text">{flight.duration}</span>
+                            <div className="premium-path-line">
+                              <div className="premium-circle-start"></div>
+                              <div className="premium-solid-line"></div>
+                              <ArrowRight size={14} className="premium-arrow-end" />
                             </div>
-                            <span className="stops-label">{flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop`}</span>
+                            <span className="premium-stops-text">
+                              {flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop`}
+                            </span>
                           </div>
 
-                          {/* Arrival Block */}
-                          <div className="airport-info-block arrival">
-                            <div className="time-code-row">
-                              <span className="city-code">{flight.destinationCode}</span>
-                              <span className="large-time">{flight.arrivalTime}</span>
+                          <div className="premium-arr-block">
+                            <div className="premium-time-code">
+                              <span className="premium-large-time">{flight.arrivalTime}</span>
+                              <span className="premium-city-code">{flight.destinationCode}</span>
                             </div>
-                            <span className="airport-name-sub">{getAirportName(flight.destinationCode, destinationName)}</span>
+                            {/* Dynamic tag for time of day */}
+                            <div className="premium-time-tag">
+                              {isDayTime(flight.arrivalTime) ? <><Sun size={12} /> DAY</> : <><Moon size={12} /> NIGHT</>}
+                            </div>
+                            <div className="premium-airport-desc">
+                              <strong>{getAirportName(flight.destinationCode, destinationName)}</strong>
+                            </div>
                           </div>
+                        </div>
 
-                          {/* Price & Action Block */}
-                          <div className="price-action-block" onClick={(e) => e.stopPropagation()}>
-                            <div className="starts-at-label">
-                              {tripType === "twoway" ? "Flight Fare" : "Starts at"}
-                            </div>
-                            <div className="price-caret-row" onClick={() => handleToggleFlightExpand(flight.id)}>
-                              <span className="starts-price">₹{new Intl.NumberFormat("en-IN").format(flight.fare)}</span>
-                              <span className="caret-icon-wrapper">
-                                {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                              </span>
-                            </div>
-                            {tripType === "twoway" && (
-                              <div style={{ fontSize: "0.76rem", color: "#16a34a", fontWeight: 800, marginTop: "4px" }}>
-                                Total: ₹{new Intl.NumberFormat("en-IN").format(
-                                  flight.fare + (twoWayActiveTab === "onward" ? (selectedReturnFlightObj?.fare || 0) : (selectedOnwardFlightObj?.fare || 0))
-                                )}
-                              </div>
-                            )}
+                        {/* Bottom Metadata & Price Row */}
+                        <div className="premium-bottom-info-row">
+                          <div className="premium-baggage-chips">
+                            <span className="premium-bag-chip"><Briefcase size={12} /> Check-in {flight.checkedBagsWeight || "Not provided"}</span>
+                            <span className="premium-bag-chip"><Briefcase size={12} /> Cabin {flight.cabinBagsWeight || "Not provided"}</span>
+                            <span className="premium-bag-chip"><Armchair size={12} /> Class {flight.bookingClass || "Not provided"}</span>
+                            <span className="premium-bag-chip"><Users size={12} /> Seats left {flight.totalAvailableSeats || "Not provided"}</span>
                           </div>
+                          
+                          <div className="premium-price-block">
+                            <div className="premium-huge-price">
+                              ₹{new Intl.NumberFormat("en-IN").format(flight.fare)} <span className="info-circle">i</span>
+                            </div>
+                            <div className="premium-fare-type-tag">
+                              <Check size={12} /> Saver Fare
+                            </div>
+                            <div className="premium-published-fare">
+                              Published ₹{new Intl.NumberFormat("en-IN").format(flight.fare + 150)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action Bar */}
+                        <div className="premium-action-bar">
+                          <button 
+                            type="button" 
+                            className="premium-more-fares-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenFareSelection(flight);
+                            }}
+                          >
+                            <span className="dot"></span> {flight.fareOptions?.length > 1 ? `${flight.fareOptions.length - 1} More Fare >` : "View Details >"}
+                          </button>
+                          
+                          <button 
+                            type="button" 
+                            className="premium-select-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (flight.fareOptions?.length > 1) {
+                                handleOpenFareSelection(flight);
+                              } else {
+                                handleFinalizeFlightSelection(flight);
+                              }
+                            }}
+                          >
+                            <ArrowRight size={18} /> Select
+                          </button>
                         </div>
                       </div>
 
@@ -2491,254 +2582,13 @@ export default function FlightSearchResults() {
                         </div>
                       )}
 
-                      {isExpanded && (
-                        <div className="fare-selection-zone" onClick={(e) => e.stopPropagation()}>
-                          {/* Main Fare Comparison Table Layout */}
-                          <div className="fare-table-container">
-                            {/* Features List Column (Left) */}
-                            <div className="fare-features-labels-column">
-                              <div className="feature-label-cell header-cell">
-                                <span className="fare-types-title">Fare Types</span>
-                                <button
-                                  type="button"
-                                  className="know-more-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenFareRule(flight);
-                                  }}
-                                >
-                                  Know more
-                                </button>
-                              </div>
-                              <div className="feature-label-cell group-title">Baggage</div>
-                              <div className="feature-label-cell group-title">Change/cancellation</div>
-                              <div className="feature-label-cell group-title">Add-ons and services</div>
-                            </div>
-
-                            {/* Fare Cards Columns (Right) */}
-                            <div className="fare-columns-container">
-                              {Array.isArray(flight.fareOptions) && flight.fareOptions.length > 0 ? (
-                                flight.fareOptions.map((opt, optIdx) => {
-                                  const isSelectedOpt = (selectedFareOptionIndexByFlight[flight.id] ?? 0) === optIdx;
-                                  const optBaggage = opt.fareSegments?.[0]?.Baggage || (flight.checkedBagsWeight ? `${flight.checkedBagsWeight} ${flight.checkedBagsUnit || "kg"}` : "");
-                                  const optCabinBaggage = opt.fareSegments?.[0]?.CabinBaggage || (flight.cabinBagsWeight ? `${flight.cabinBagsWeight} ${flight.cabinBagsUnit || "kg"}` : "");
-
-                                  return (
-                                    <div
-                                      key={optIdx}
-                                      className={`fare-column-card ${isSelectedOpt ? 'active' : ''}`}
-                                      onClick={() => {
-                                        setSelectedFareOptionIndexByFlight(prev => ({ ...prev, [flight.id]: optIdx }));
-                                        if (tripType === "twoway" && returnFlights.length > 0) {
-                                          if (twoWayActiveTab === "onward") {
-                                            setSelectedOnwardFlightId(flight.id);
-                                            setTwoWayActiveTab("return");
-                                            setTimeout(() => {
-                                              const el = document.getElementById("two-way-tabs-strip");
-                                              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                                            }, 100);
-                                          } else {
-                                            setSelectedReturnFlightId(flight.id);
-                                          }
-                                        } else if (tripType === "multicity") {
-                                          const totalLegsCount = (apiFlights && apiFlights.length > 0) ? apiFlights.length : parsedMultiCityLegs.length;
-                                          setSelectedMultiCityFlightIds(prev => ({ ...prev, [multiCityActiveTab]: flight.id }));
-                                          if (multiCityActiveTab < totalLegsCount - 1) {
-                                            setMultiCityActiveTab(prev => prev + 1);
-                                            setTimeout(() => {
-                                              window.scrollTo({ top: 0, behavior: "smooth" });
-                                            }, 100);
-                                          }
-                                        }
-                                      }}
-                                    >
-                                      <div className="fare-column-header">
-                                        <span
-                                          style={{
-                                            backgroundColor: opt.buttonColor || "#0000ff",
-                                            color: opt.textColor || "#ffffff",
-                                            padding: "4px 10px",
-                                            borderRadius: "12px",
-                                            fontSize: "0.78rem",
-                                            fontWeight: 700,
-                                            display: "inline-block"
-                                          }}
-                                        >
-                                          <span
-                                            className="fare-column-title"
-                                            title={opt.source || "Fare Option"}
-                                          >
-                                            {opt.source || "Fare Option"}
-                                          </span>
-                                        </span>
-                                        <div className="fare-column-price">
-                                          ₹{new Intl.NumberFormat("en-IN").format(opt.b2cFinalFare || opt.b2cPublishedFare || opt.offeredFare)}
-                                        </div>
-                                      </div>
-
-                                      <div className="fare-column-features-group baggage">
-                                        <div className="feature-item">
-                                          <Lock size={14} className="feature-icon" />
-                                        <span>{optCabinBaggage ? `${optCabinBaggage} Cabin bag allowance` : ""}</span>
-                                        </div>
-                                        <div className="feature-item">
-                                          <Briefcase size={14} className="feature-icon" />
-                                          <span>{optBaggage ? `${optBaggage} Check-in bag allowance` : ""}</span>
-                                        </div>
-                                      </div>
-
-                                      <div className="fare-column-features-group changes">
-                                        <div className="feature-item">
-                                          <Undo size={14} className="feature-icon" />
-                                          <span>Cancellation & Changes: <strong>{opt.isRefundable ? "Refundable" : "Non-Refundable"}</strong></span>
-                                        </div>
-                                        {opt.airlineRemark && (
-                                          <div style={{ fontSize: "0.8rem", color: "#475569", marginTop: "4px" }}>
-                                            Remark: {opt.airlineRemark}
-                                          </div>
-                                        )}
-                                        <button
-                                          type="button"
-                                          style={{ background: "none", border: "none", color: "#d32f2f", cursor: "pointer", padding: "4px 0", fontSize: "0.82rem", textDecoration: "underline", fontWeight: 600 }}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleOpenFareRule({ ...flight, resultIndex: opt.resultIndex, srdvIndex: opt.srdvIndex, isLcc: opt.isLcc });
-                                          }}
-                                        >
-                                          View Live Fare Rules ➔
-                                        </button>
-                                      </div>
-
-                                      <div className="fare-column-features-group addons">
-                                        <div className="feature-item">
-                                          <Utensils size={14} className="feature-icon" />
-                                          <span>{opt.isLcc ? "TicketLCC" : "Unsupported supplier ticketing"}</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-      }).filter(Boolean)
-                              ) : (
-                                <div className="fare-column-card" aria-disabled="true">
-                                  <div className="fare-column-header">
-                                    <span className="fare-badge">Live fare unavailable</span>
-                                  </div>
-                                  <div className="fare-column-features-group changes">
-                                    <div className="feature-item">
-                                      <span>The supplier did not return a bookable TicketLCC fare for this result.</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Bottom Sticky/Action Bar */}
-                          <div className="fare-selection-footer-bar">
-                            <div className="total-fare-display-block">
-                              <span className="total-fare-label">TOTAL FARE</span>
-                              <span className="total-fare-amount">
-                                ₹{new Intl.NumberFormat("en-IN").format(selectedFarePrice)}
-                              </span>
-                              <button type="button" className="view-details-link-btn">View Details</button>
-                            </div>
-                            <button
-                              type="button"
-                              className="fare-next-btn"
-                              disabled={!Array.isArray(flight.fareOptions) || flight.fareOptions.length === 0}
-                              onClick={() => {
-                                let targetFlight = flight;
-                                let chosenPrice = selectedFarePrice;
-                                let chosenClass = flight.className || "";
-
-                                if (Array.isArray(flight.fareOptions) && flight.fareOptions.length > 0) {
-                                  const optIdx = selectedFareOptionIndexByFlight[flight.id] ?? 0;
-                                  const chosenOpt = flight.fareOptions[optIdx] || flight.fareOptions[0];
-                                  if (chosenOpt) {
-                                    targetFlight = {
-                                      ...flight,
-                                      resultIndex: chosenOpt.resultIndex,
-                                      srdvIndex: chosenOpt.srdvIndex,
-                                      isLcc: chosenOpt.isLcc,
-                                      isRefundable: chosenOpt.isRefundable,
-                                      fare: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare,
-                                      price: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare,
-                                      baseFarePrice: chosenOpt.baseFare || flight.baseFarePrice || 0,
-                                      taxPrice: chosenOpt.tax || flight.taxPrice || 0,
-                                      b2cMarkupAmount: chosenOpt.b2cMarkupAmount || flight.b2cMarkupAmount || 0,
-                                      source: chosenOpt.source,
-                                    };
-                                    chosenPrice = chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare;
-                                    chosenClass = `${flight.airlineName} (${chosenOpt.source})`;
-                                  }
-                                } else {
-                                    chosenClass = flight.className || "";
-                                }
-                                if (tripType === "twoway" && returnFlights.length > 0) {
-                                  if (twoWayActiveTab === "onward") {
-                                    setSelectedOnwardFlightId(targetFlight.id);
-                                    setTwoWayActiveTab("return");
-                                    setTimeout(() => {
-                                      const el = document.getElementById("two-way-tabs-strip");
-                                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                                    }, 100);
-                                  } else {
-                                    setSelectedReturnFlightId(targetFlight.id);
-                                    if (selectedOnwardFlightObj) {
-                                      handleStartBookingJourney(selectedOnwardFlightObj, selectedOnwardFlightObj.fare, selectedOnwardFlightObj.className);
-                                    }
-                                  }
-                                } else if (tripType === "multicity") {
-                                  // Update selection for current leg
-                                  const updatedSelections = { ...selectedMultiCityFlightIds, [multiCityActiveTab]: targetFlight.id };
-                                  setSelectedMultiCityFlightIds(updatedSelections);
-                                  if (multiCityActiveTab < apiFlights.length - 1) {
-                                    // Jump to next leg
-                                    setMultiCityActiveTab(prev => prev + 1);
-                                    setTimeout(() => {
-                                      window.scrollTo({ top: 0, behavior: "smooth" });
-                                    }, 100);
-                                  } else {
-                                    // Last leg selected — use first-leg flight as the primary flight object
-                                    // but all legs will be read from updatedSelections + apiFlights by handleStartBookingJourney
-                                    const firstLegFlight = apiFlights[0]?.find(f => f.id === updatedSelections[0]) || apiFlights[0]?.[0];
-                                    if (firstLegFlight) {
-                                      // Temporarily update state and call with the first-leg flight
-                                      // handleStartBookingJourney reads from apiFlights + selectedMultiCityFlightIds
-                                      // but since React batches — pass all legs explicitly
-                                      handleStartBookingJourney(firstLegFlight, null, null, updatedSelections);
-                                    }
-                                  }
-                                } else {
-                                  handleStartBookingJourney(targetFlight, chosenPrice, chosenClass);
-                                }
-                              }}
-                            >
-                              {tripType === "twoway" && returnFlights.length > 0 && twoWayActiveTab === "onward" ? "Select Return Flight →" :
-                                (tripType === "multicity" && multiCityActiveTab < apiFlights.length - 1) ? "Select Next Leg →" : "Next"}
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </article>
                   );
 
-                  if (isExpanded) {
-                    return (
-                      <div className="expanded-flight-wrapper" key={flight.id}>
-                        <div className="expanded-flight-header">
-                          <span>{flight.sourceCode}</span>
-                          <span className="expanded-header-line"></span>
-                          <span>{flight.destinationCode}</span>
-                        </div>
-                        {flightCardJsx}
-                      </div>
-                    );
-                  }
-
                   return flightCardJsx;
-                })
-              )}
+                });
+              })()
+            )}
             </div>
           </section>
         </div>
@@ -3098,7 +2948,124 @@ export default function FlightSearchResults() {
         </div>
       )}
 
-      {/* Dynamic Fare Rules Modal */}
+      {/* Fare Selection Modal */}
+      {activeFareSelectionModal.isOpen && activeFareSelectionModal.flight && (
+        <div className="booking-modal-backdrop" onClick={handleCloseFareSelection} style={{ zIndex: 99999 }}>
+          <div className="booking-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px", width: "95%", boxSizing: "border-box", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+            <div className="booking-modal-header" style={{ background: "var(--theme-primary, #ff0000)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "12px 12px 0 0", flexShrink: 0 }}>
+              <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#ffffff", textTransform: "uppercase" }}>FLIGHT FARE LIST</h3>
+              <button type="button" onClick={handleCloseFareSelection} style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.4)", borderRadius: "6px", cursor: "pointer", color: "#ffffff", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}>
+                <X size={16} /> Close
+              </button>
+            </div>
+            
+            <div className="booking-modal-body" style={{ padding: "0", overflowY: "auto", flex: 1 }}>
+              <div style={{ padding: "16px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#0f172a" }}>
+                  <img src={activeFareSelectionModal.flight.logo} alt="airline" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
+                  <strong style={{ fontWeight: 800 }}>{activeFareSelectionModal.flight.airlineName} {activeFareSelectionModal.flight.flightNumber}</strong>
+                  <span style={{ color: "#cbd5e1" }}>|</span>
+                  <span style={{ fontWeight: 600 }}>{activeFareSelectionModal.flight.sourceCode} {activeFareSelectionModal.flight.departureTime} → {activeFareSelectionModal.flight.destinationCode} {activeFareSelectionModal.flight.arrivalTime}</span>
+                  <span style={{ color: "#cbd5e1" }}>|</span>
+                  <span style={{ color: "#64748b" }}>{activeFareSelectionModal.flight.duration} · {activeFareSelectionModal.flight.stops === 0 ? "Non-stop" : `${activeFareSelectionModal.flight.stops} Stop`}</span>
+                </div>
+              </div>
+
+              <div style={{ padding: "0 20px 20px 20px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 2fr 1.5fr 2fr", gap: "16px", padding: "12px 0", borderBottom: "2px solid #e2e8f0", fontSize: "0.75rem", fontWeight: 800, color: "#475569", textTransform: "uppercase" }}>
+                  <div>Fare</div>
+                  <div>Baggage</div>
+                  <div>Refund</div>
+                  <div>Price</div>
+                </div>
+
+                {Array.isArray(activeFareSelectionModal.flight.fareOptions) && activeFareSelectionModal.flight.fareOptions.length > 0 ? (
+                  activeFareSelectionModal.flight.fareOptions.map((opt, optIdx) => {
+                    const optBaggage = opt.fareSegments?.[0]?.Baggage || (activeFareSelectionModal.flight.checkedBagsWeight ? `${activeFareSelectionModal.flight.checkedBagsWeight} ${activeFareSelectionModal.flight.checkedBagsUnit || "kg"}` : "");
+                    const optCabinBaggage = opt.fareSegments?.[0]?.CabinBaggage || (activeFareSelectionModal.flight.cabinBagsWeight ? `${activeFareSelectionModal.flight.cabinBagsWeight} ${activeFareSelectionModal.flight.cabinBagsUnit || "kg"}` : "");
+                    const dMarkup = opt?.b2cMarkupAmount || activeFareSelectionModal.flight?.b2cMarkupAmount || 0;
+                    const dTotal = opt.b2cFinalFare || opt.b2cPublishedFare || opt.offeredFare || 0;
+                    let dTax = (opt?.tax || opt?.Fare?.Tax || opt?.fareBreakdown?.Tax || activeFareSelectionModal.flight?.taxPrice || activeFareSelectionModal.flight?.Fare?.Tax || activeFareSelectionModal.flight?.FareBreakdown?.Tax || 0) + dMarkup;
+                    let dBaseFare = opt?.baseFare || opt?.Fare?.BaseFare || opt?.fareBreakdown?.BaseFare || activeFareSelectionModal.flight?.baseFarePrice || activeFareSelectionModal.flight?.Fare?.BaseFare || activeFareSelectionModal.flight?.FareBreakdown?.BaseFare || 0;
+                    if (dBaseFare === 0 && dTotal > 0) dBaseFare = Math.max(0, dTotal - dTax);
+
+                    return (
+                      <div key={optIdx} style={{ display: "grid", gridTemplateColumns: "1.5fr 2fr 1.5fr 2fr", gap: "16px", padding: "16px 0", borderBottom: "1px solid #e2e8f0", alignItems: "center" }}>
+                        <div>
+                          <div style={{ display: "inline-block", background: "#fee2e2", color: "var(--theme-primary, #ff0000)", padding: "4px 8px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 800, textTransform: "uppercase", marginBottom: "4px" }}>
+                            {opt.source || "FARE"}
+                          </div>
+                          <div style={{ fontSize: "0.75rem", color: "#475569", textTransform: "uppercase", fontWeight: 600 }}>{activeFareSelectionModal.flight.className || "Cabin not provided"} · {opt.fareSegments?.[0]?.Class || "Fare class not provided"}</div>
+                        </div>
+
+                        <div>
+                          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0f172a" }}>{optBaggage || "Not provided"} check-in</div>
+                          <div style={{ fontSize: "0.75rem", color: "#64748b" }}>{optCabinBaggage || "Not provided"} cabin</div>
+                        </div>
+
+                        <div>
+                          <span style={{ display: "inline-block", background: opt.isRefundable == null ? "#f1f5f9" : opt.isRefundable ? "#dcfce7" : "#fee2e2", color: opt.isRefundable == null ? "#475569" : opt.isRefundable ? "#166534" : "#991b1b", padding: "4px 12px", borderRadius: "12px", fontSize: "0.8rem", fontWeight: 700 }}>
+                            {opt.isRefundable == null ? "Refund status unavailable" : opt.isRefundable ? "Refundable" : "Non-Refundable"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenFareRule({ ...activeFareSelectionModal.flight, resultIndex: opt.resultIndex || opt.ResultIndex || opt.legResultIndex, srdvIndex: opt.srdvIndex, isLcc: opt.isLcc });
+                            }}
+                            style={{ display: "block", marginTop: "8px", background: "none", border: "none", color: "#2563eb", textDecoration: "underline", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, padding: 0 }}
+                          >
+                            View Fare Rules
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Since FareDetails modal looks at selectedFareOptionIndexByFlight to calculate prices,
+                              // we need to set the index explicitly before opening so it calculates for this exact row.
+                              setSelectedFareOptionIndexByFlight(prev => ({ ...prev, [activeFareSelectionModal.flight.id]: optIdx }));
+                              handleOpenFareDetails({ ...activeFareSelectionModal.flight, resultIndex: opt.resultIndex || opt.ResultIndex || opt.legResultIndex, srdvIndex: opt.srdvIndex, isLcc: opt.isLcc });
+                            }}
+                            style={{ display: "block", marginTop: "4px", background: "none", border: "none", color: "#2563eb", textDecoration: "underline", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, padding: 0 }}
+                          >
+                            View Fare Details
+                          </button>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ textAlign: "right", marginRight: "16px", flex: 1 }}>
+                            <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0f172a" }}>₹{new Intl.NumberFormat("en-IN").format(opt.b2cFinalFare || opt.b2cPublishedFare || opt.offeredFare)}</div>
+                            <div style={{ fontSize: "0.7rem", color: "#64748b" }}>Base ₹{new Intl.NumberFormat("en-IN").format(dBaseFare)} · Tax ₹{new Intl.NumberFormat("en-IN").format(dTax)}</div>
+                            <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "2px" }}>{opt.seatsRemaining || "Not provided"} seat(s) left</div>
+                          </div>
+                          <button
+                            type="button"
+                            style={{ background: "var(--theme-primary, #ff0000)", color: "#ffffff", border: "none", borderRadius: "6px", padding: "8px 16px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.9rem" }}
+                            onClick={() => {
+                              setSelectedFareOptionIndexByFlight(prev => ({ ...prev, [activeFareSelectionModal.flight.id]: optIdx }));
+                              // Use setTimeout to ensure the state update processes first
+                              setTimeout(() => {
+                                handleFinalizeFlightSelection(activeFareSelectionModal.flight);
+                                handleCloseFareSelection();
+                              }, 0);
+                            }}
+                          >
+                            <ArrowRight size={16} /> Select
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div style={{ padding: "24px 0", textAlign: "center", color: "#64748b" }}>No live fare options available.</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+{/* Dynamic Fare Rules Modal */}
       {activeFareRuleModal.isOpen && (
         <div
           className="booking-modal-backdrop"
@@ -3115,7 +3082,7 @@ export default function FlightSearchResults() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 99999,
+            zIndex: 1000000,
           }}
         >
           <div
@@ -3252,6 +3219,202 @@ export default function FlightSearchResults() {
         </div>
       )}
 
+      {/* Fare Details Modal */}
+      {activeFareDetailsModal.isOpen && (
+        <div className="booking-modal-backdrop" onClick={handleCloseFareDetails} style={{ zIndex: 1000000 }}>
+          <div className="booking-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "700px", width: "95%", background: "#ffffff", borderRadius: "8px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+            <div className="booking-modal-header" style={{ padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 900, color: "#1e293b", textTransform: "uppercase" }}>
+                FARE BREAKDOWN
+              </h3>
+              <button type="button" className="close-modal-btn" onClick={handleCloseFareDetails} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", padding: "4px" }}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="booking-modal-body" style={{ padding: "0" }}>
+              {(() => {
+                const flt = activeFareDetailsModal.flight;
+                const optIdx = selectedFareOptionIndexByFlight[flt?.id] ?? 0;
+                const chosenOpt = flt?.fareOptions?.[optIdx] || flt?.fareOptions?.[0];
+                const segments = Array.isArray(flt?.fullMultiSectorSegments) && flt.fullMultiSectorSegments.length > 0 
+                  ? flt.fullMultiSectorSegments 
+                  : [flt];
+
+                return (
+                  <div style={{ background: "#f8fafc", padding: "16px 20px 20px 20px", borderBottom: "1px solid #e2e8f0", marginBottom: "20px" }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#475569", textTransform: "uppercase", marginBottom: "12px", letterSpacing: "0.5px" }}>
+                      Flight Details
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      {segments.map((sec, secIdx) => {
+                        const optBaggage = chosenOpt?.fareSegments?.[secIdx]?.Baggage || chosenOpt?.fareSegments?.[0]?.Baggage || (flt?.checkedBagsWeight ? `${flt.checkedBagsWeight} ${flt.checkedBagsUnit || "kg"}` : "Not provided");
+                        const optCabinBaggage = chosenOpt?.fareSegments?.[secIdx]?.CabinBaggage || chosenOpt?.fareSegments?.[0]?.CabinBaggage || (flt?.cabinBagsWeight ? `${flt.cabinBagsWeight} ${flt.cabinBagsUnit || "kg"}` : "Not provided");
+                        const fClass = chosenOpt?.fareSegments?.[secIdx]?.Class || chosenOpt?.fareSegments?.[0]?.Class || "Not provided";
+                        const seats = chosenOpt?.seatsRemaining || "Not provided";
+                        
+                        const sourceCode = sec.sourceCode || flt.sourceCode;
+                        const destCode = sec.destinationCode || flt.destinationCode;
+                        const depTimeStr = sec.departureTime || flt.departureTime || "";
+                        const arrTimeStr = sec.arrivalTime || flt.arrivalTime || "";
+                        
+                        const parseTimeDate = (dateStr) => {
+                          if (!dateStr) return { time: "", date: "" };
+                          if (dateStr.includes("T")) {
+                            return {
+                              time: dateStr.split("T")[1].slice(0, 5),
+                              date: new Date(dateStr).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: '2-digit'})
+                            };
+                          }
+                          if (dateStr.length >= 16) { 
+                            const timeMatch = dateStr.match(/\d{2}:\d{2}/);
+                            return {
+                              time: timeMatch ? timeMatch[0] : "",
+                              date: new Date(dateStr.replace(/-/g, "/")).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: '2-digit'})
+                            };
+                          }
+                          return { time: dateStr, date: "" };
+                        };
+                        const dep = parseTimeDate(depTimeStr);
+                        const arr = parseTimeDate(arrTimeStr);
+                        
+                        const fareIdentifier = chosenOpt?.fareIdentifier || chosenOpt?.FareIdentifier || flt?.fareIdentifier || "Not provided";
+
+                        return (
+                          <div key={secIdx} style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                {flt.logo && <img src={flt.logo} alt="airline" style={{ width: "20px", height: "20px", objectFit: "contain" }} />}
+                                <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.85rem" }}>{sec.airline || flt.airlineName} <span style={{ color: "#64748b", fontWeight: 600 }}>{sec.flightNumber || flt.flightNumber}</span></div>
+                              </div>
+                              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700 }}>
+                                {sec.duration || flt.duration || "--"}
+                              </div>
+                            </div>
+                            
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>Departure</div>
+                                <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{sourceCode} {dep.time && <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>• {dep.time} {dep.date ? `• ${dep.date}` : ""}</span>}</div>
+                              </div>
+                              <div style={{ flex: 1, textAlign: "right" }}>
+                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>Arrival</div>
+                                <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{destCode} {arr.time && <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>• {arr.time} {arr.date ? `• ${arr.date}` : ""}</span>}</div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed #e2e8f0", fontSize: "0.7rem", color: "#475569", fontWeight: 600 }}>
+                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Aircraft:</strong> {sec.equipment || flt.equipment || "Not provided"}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Cabin:</strong> {flt.className || "Not provided"}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Fare Class:</strong> {fClass}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Fare Type:</strong> <span style={{ background: "#fef2f2", color: "#b91c1c", padding: "2px 6px", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase" }}>{fareIdentifier}</span></span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Check-in:</strong> {optBaggage}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Cabin bag:</strong> {optCabinBaggage}</span>
+                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Seats left:</strong> {seats}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+              <div style={{ padding: "0 20px 20px 20px" }}>
+              {(() => {
+                const flt = activeFareDetailsModal.flight;
+                const optIdx = selectedFareOptionIndexByFlight[flt?.id] ?? 0;
+                const chosenOpt = flt?.fareOptions?.[optIdx] || flt?.fareOptions?.[0];
+                const dMarkup = chosenOpt?.b2cMarkupAmount || flt?.b2cMarkupAmount || 0;
+                const dTotal = chosenOpt?.b2cFinalFare || chosenOpt?.b2cPublishedFare || chosenOpt?.offeredFare || flt?.fare || 0;
+                let rawTax = chosenOpt?.tax || chosenOpt?.Fare?.Tax || chosenOpt?.fareBreakdown?.Tax || flt?.taxPrice || flt?.Fare?.Tax || flt?.FareBreakdown?.Tax || 0;
+                let dBaseFare = chosenOpt?.baseFare || chosenOpt?.Fare?.BaseFare || chosenOpt?.fareBreakdown?.BaseFare || flt?.baseFarePrice || flt?.Fare?.BaseFare || flt?.FareBreakdown?.BaseFare || 0;
+                if (dBaseFare === 0 && dTotal > 0) dBaseFare = Math.max(0, dTotal - rawTax - dMarkup);
+                
+                const breakdownList = Array.isArray(chosenOpt?.fareBreakdown) ? chosenOpt.fareBreakdown : 
+                                      Array.isArray(chosenOpt?.FareBreakdown) ? chosenOpt.FareBreakdown : 
+                                      Array.isArray(flt?.FareBreakdown) ? flt.FareBreakdown : [];
+
+                let sumPaxTotal = 0;
+                if (breakdownList.length > 0) {
+                  sumPaxTotal = breakdownList.reduce((acc, fb) => acc + ((fb.BaseFare || 0) + (fb.Tax || 0)) * (fb.PassengerCount || 1), 0);
+                } else {
+                  sumPaxTotal = dBaseFare + rawTax;
+                }
+                
+                // There are often un-tabulated taxes (like YQTax, Convenience Fees, Markups) that cause a discrepancy
+                // between the sum of passenger rows and the actual grand total. We explicitly capture the difference.
+                const remainingFees = Math.max(0, dTotal - sumPaxTotal);
+
+                const getPaxName = (type) => {
+                  if (type == 1 || type === "Adult") return "Adult";
+                  if (type == 2 || type === "Child") return "Child";
+                  if (type == 3 || type === "Infant") return "Infant";
+                  return "Passenger";
+                };
+                
+                return (
+                  <div style={{ width: "100%", overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem", whiteSpace: "nowrap" }}>
+                      <thead>
+                        <tr style={{ background: "var(--theme-primary, #ff0000)", color: "#ffffff", textTransform: "uppercase", fontSize: "0.75rem", fontWeight: 800 }}>
+                          <th style={{ padding: "16px 16px" }}>PASSENGER</th>
+                          <th style={{ padding: "16px 8px" }}>COUNT</th>
+                          <th style={{ padding: "16px 8px" }}>BASE FARE</th>
+                          <th style={{ padding: "16px 8px" }}>TAXES</th>
+                          <th style={{ padding: "16px 16px", textAlign: "right" }}>TOTAL</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {breakdownList.length > 0 ? (
+                          breakdownList.map((fb, idx) => {
+                            const bFare = fb.BaseFare || 0;
+                            const tFare = fb.Tax || 0;
+                            return (
+                              <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>{getPaxName(fb.PassengerType)}</td>
+                                <td style={{ padding: "16px 8px", color: "#334155", fontWeight: 600 }}>{fb.PassengerCount || 1}</td>
+                                <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(bFare)}</td>
+                                <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(tFare)}</td>
+                                <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format((bFare + tFare) * (fb.PassengerCount || 1))}</td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>All Passengers</td>
+                            <td style={{ padding: "16px 8px", color: "#334155", fontWeight: 600 }}>{travellerCounts.adults + travellerCounts.children + travellerCounts.infants}</td>
+                            <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(dBaseFare)}</td>
+                            <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(rawTax)}</td>
+                            <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(dBaseFare + rawTax)}</td>
+                          </tr>
+                        )}
+                        {remainingFees > 0 && (
+                          <tr style={{ borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                            <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>Other Taxes & Fees</td>
+                            <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
+                            <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
+                            <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
+                            <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(remainingFees)}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td colSpan={4} style={{ padding: "20px 16px", fontWeight: 800, color: "#1e293b", fontSize: "1rem" }}>GRAND TOTAL</td>
+                          <td style={{ padding: "20px 16px", fontWeight: 900, color: "var(--theme-primary, #ff0000)", fontSize: "1.2rem", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(dTotal)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                );
+              })()}
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      
       <FareCalendarModal
         isOpen={isFareCalendarOpen}
         onClose={() => setIsFareCalendarOpen(false)}
