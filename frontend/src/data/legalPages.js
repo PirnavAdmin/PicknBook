@@ -288,7 +288,7 @@ Pick&book, operated by PIRNAV SOFTWARE SOLUTIONS
 Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India.
 Email: contact@picknbook.in
 Phone: +91 999-999-9999
-Website: https://picknbook.in/?tab=buses`;
+Website: https://picknbook.in`;
 
 export const PRIVACY_POLICY_TEXT = `
 <div class="legal-doc-container">
@@ -505,10 +505,10 @@ export function ensureCurrentLegalPageContent(pages) {
       return {
         ...DEFAULT_CMS_PAGES[2],
         ...page,
-        title: "Refund & Cancellation Policy",
+        title: page?.title || "Refund & Cancellation Policy",
         slug: "refund-cancellation-policy",
         status: page?.status || "Active",
-        description: REFUND_CANCELLATION_POLICY_TEXT,
+        description: page?.description || REFUND_CANCELLATION_POLICY_TEXT,
         metaTitle: page?.metaTitle || DEFAULT_CMS_PAGES[2].metaTitle,
         metaKeyword: page?.metaKeyword || DEFAULT_CMS_PAGES[2].metaKeyword,
         metaDescription: page?.metaDescription || DEFAULT_CMS_PAGES[2].metaDescription,
@@ -519,10 +519,10 @@ export function ensureCurrentLegalPageContent(pages) {
       return {
         ...DEFAULT_CMS_PAGES[1],
         ...page,
-        title: "Privacy Policy",
+        title: page?.title || "Privacy Policy",
         slug: "privacy-policy",
         status: page?.status || "Active",
-        description: PRIVACY_POLICY_TEXT,
+        description: page?.description || PRIVACY_POLICY_TEXT,
         metaTitle: page?.metaTitle || DEFAULT_CMS_PAGES[1].metaTitle,
         metaKeyword: page?.metaKeyword || DEFAULT_CMS_PAGES[1].metaKeyword,
         metaDescription: page?.metaDescription || DEFAULT_CMS_PAGES[1].metaDescription,
@@ -536,10 +536,10 @@ export function ensureCurrentLegalPageContent(pages) {
     return {
       ...DEFAULT_CMS_PAGES[0],
       ...page,
-      title: "Terms & Conditions",
+      title: page?.title || "Terms & Conditions",
       slug: "terms-conditions",
       status: page?.status || "Active",
-      description: TERMS_CONDITIONS_TEXT,
+      description: page?.description || TERMS_CONDITIONS_TEXT,
       metaTitle: page?.metaTitle || DEFAULT_CMS_PAGES[0].metaTitle,
       metaKeyword: page?.metaKeyword || DEFAULT_CMS_PAGES[0].metaKeyword,
       metaDescription: page?.metaDescription || DEFAULT_CMS_PAGES[0].metaDescription,

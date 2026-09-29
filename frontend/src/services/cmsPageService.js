@@ -109,7 +109,18 @@ export function normalizeCmsPage(page) {
       }
     }
 
-    const updated = { ...page };
+    const updated = {
+      ...page,
+      id: page.id ?? page.Id,
+      title: page.title ?? page.Title,
+      slug: page.slug ?? page.Slug,
+      status: page.status ?? page.Status,
+      module: page.module ?? page.Module,
+      metaTitle: page.metaTitle ?? page.MetaTitle,
+      metaKeyword: page.metaKeyword ?? page.MetaKeyword,
+      metaDescription: page.metaDescription ?? page.MetaDescription,
+      description: page.description ?? page.Description,
+    };
 
     const finalImg = isImgRemoved ? null : (imgVal || null);
     updated.imagePath = finalImg;
@@ -181,7 +192,7 @@ export async function updateAdminAboutUs(data) {
 }
 
 export async function getPublicPageBySlug(slug) {
-  const response = await cmsApi.get(`/api/CmsPages/${encodeURIComponent(slug)}`);
+  const response = await cmsApi.get(`/api/CmsPages/${encodeURIComponent(slug)}?_t=${Date.now()}`);
   return normalizeCmsPage(response.data);
 }
 

@@ -9,9 +9,36 @@ import { DEFAULT_CMS_PAGES, normalizePolicySlug } from "../../data/legalPages";
 
 function replaceBrandName(text) {
   if (!text || typeof text !== "string") return text;
+  // Avoid touching emails or URLs (contains @ or ://)
   return text
-    .replace(/Pick\s*N\s*Book/gi, "Pick&book")
-    .replace(/Pick&Book/gi, "Pick&book");
+    .split(/(\S+@\S+|https?:\/\/\S+)/g)
+    .map((part, i) => {
+      if (i % 2 === 1) return part; // skip email/url tokens
+      return part
+        .replace(/Pick\s*N\s*Book/gi, "Pick&book")
+        .replace(/Pick&Book/gi, "Pick&book");
+    })
+    .join("");
+}
+
+// Converts plain text containing emails and URLs into React nodes with <a> tags
+function renderTextWithLinks(text) {
+  if (!text) return text;
+  const emailFixed = text.replace(/contact@Pick&book\.in/gi, "contact@picknbook.in");
+  const urlFixed = emailFixed.replace(/https?:\/\/Pick&book\.in\/?/gi, "https://picknbook.in");
+  const parts = urlFixed.split(/(https?:\/\/[^\s]+|[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/g);
+  if (parts.length === 1) return urlFixed;
+  return parts.map((part, idx) => {
+    if (idx % 2 === 1) {
+      if (/^https?:\/\//.test(part)) {
+        return <a key={idx} href={part} target="_blank" rel="noopener noreferrer">{part}</a>;
+      }
+      if (part.includes('@')) {
+        return <a key={idx} href={`mailto:${part}`}>{part}</a>;
+      }
+    }
+    return part;
+  });
 }
 
 function formatLegalContent(text) {
@@ -22,170 +49,91 @@ function formatLegalContent(text) {
     .filter((p) => p !== "");
 }
 
-function isTermsSectionHeading(line) {
-  return /^\d{1,2}\.\s+[A-Z]/.test(line) && !/^\d+\.\d+\s+/.test(line);
-}
+function renderTermsDocument(lines) {
+  const elements = [];
+  let inOpeningCopy = true;
+  let openingParagraphs = [];
+  let sections = [];
+  let currentSec = null;
 
-function renderTermsSectionContent(lines, sectionKey) {
-  const content = [];
-  let index = 0;
-  const isPlainLineSection = /(?:^|-)section-(?:23|30)$/.test(sectionKey);
-
-  while (index < lines.length) {
-    const line = lines[index];
-    const clauseMatch = line.match(/^(\d+\.\d+)\s+(.*)$/);
-
-    if (clauseMatch) {
-      content.push(
-        <div className="terms-clause" key={`${sectionKey}-clause-${index}`}>
-          <span className="terms-clause-number">{clauseMatch[1]}</span>
-          <span className="terms-clause-text">{clauseMatch[2]}</span>
-        </div>
-      );
-      index += 1;
-
-      if (clauseMatch[2].trim().endsWith(":") && !isPlainLineSection) {
-        const items = [];
-        while (
-          index < lines.length &&
-          !/^\d+\.\d+\s+/.test(lines[index]) &&
-          !/^[a-i]\.\s+/.test(lines[index])
-        ) {
-          items.push(lines[index]);
-          index += 1;
-        }
-        if (items.length > 0) {
-          content.push(
-            <ul className="terms-bullet-list" key={`${sectionKey}-clause-list-${index}`}>
-              {items.map((item, itemIndex) => (
-                <li key={`${sectionKey}-clause-item-${itemIndex}`}>{item}</li>
-              ))}
-            </ul>
-          );
-        }
-      }
-      continue;
-    }
-
-    if (/^[a-i]\.\s+/.test(line)) {
-      const bullets = [];
-      while (index < lines.length && /^[a-i]\.\s+/.test(lines[index])) {
-        bullets.push(lines[index].replace(/^[a-i]\.\s+/, ""));
-        index += 1;
-      }
-      content.push(
-        <ul className="terms-bullet-list" key={`${sectionKey}-list-${index}`}>
-          {bullets.map((bullet, bulletIndex) => (
-            <li key={`${sectionKey}-bullet-${bulletIndex}`}>{bullet}</li>
-          ))}
-        </ul>
-      );
-      continue;
-    }
-
-    if (line.endsWith(":") && !isPlainLineSection) {
-      content.push(
-        <p className="terms-body-line" key={`${sectionKey}-intro-${index}`}>
-          {line}
-        </p>
-      );
-      index += 1;
-
-      const items = [];
-      while (
-        index < lines.length &&
-        !/^\d+\.\d+\s+/.test(lines[index]) &&
-        !/^[a-i]\.\s+/.test(lines[index]) &&
-        !lines[index].endsWith(":")
-      ) {
-        items.push(lines[index]);
-        index += 1;
-      }
-      if (items.length > 0) {
-        content.push(
-          <ul className="terms-bullet-list" key={`${sectionKey}-plain-list-${index}`}>
-            {items.map((item, itemIndex) => (
-              <li key={`${sectionKey}-plain-item-${itemIndex}`}>{item}</li>
-            ))}
-          </ul>
-        );
-      }
-      continue;
-    }
-
-    content.push(
-      <p className="terms-body-line" key={`${sectionKey}-body-${index}`}>
-        {line}
-      </p>
+  if (lines.length > 0) {
+    elements.push(<h1 className="terms-document-title" key="title">{lines[0]}</h1>);
+  }
+  
+  if (lines.length > 1) {
+    const dates = lines[1].split('|').map(s => s.trim());
+    elements.push(
+      <div className="terms-effective-date" key="date">
+        <span>{dates[0]}</span>
+        {dates.length > 1 && <span>{dates[1]}</span>}
+      </div>
     );
-    index += 1;
   }
 
-  return content;
-}
-
-function renderTermsDocument(lines, pageTitle) {
-  let title = pageTitle || "DOCUMENT";
-  let effectiveDate = "";
-  let startIndex = 0;
-
-  if (lines[0] && lines[0].toUpperCase().includes("TERMS")) {
-    title = lines[0];
-    effectiveDate = lines[1] || "";
-    startIndex = 2;
-  } else if (lines[0] && lines[0].toLowerCase().includes("last updated")) {
-    title = pageTitle.toUpperCase();
-    effectiveDate = lines[0];
-    startIndex = 1;
-  }
-
-  const sections = [];
-  let openingLines = [];
-  let currentSection = null;
-
-  lines.slice(startIndex).forEach((line) => {
-    // Treat as heading if it matches numbered format or is short and title-cased/uppercase
-    const isHeading = isTermsSectionHeading(line) || (line.length > 2 && line.length < 50 && !line.endsWith('.') && !line.endsWith(':') && (line === line.toUpperCase() || /^[A-Z][a-zA-Z\s]+$/.test(line)));
+  for (let i = 2; i < lines.length; i++) {
+    const line = lines[i];
+    const isMainHeading = /^\d+\.\s+[A-Z]/.test(line) && line === line.toUpperCase();
     
-    if (isHeading) {
-      currentSection = { heading: line, lines: [] };
-      sections.push(currentSection);
-      return;
+    if (isMainHeading) {
+      if (currentSec) sections.push(currentSec);
+      currentSec = { title: line, items: [] };
+      inOpeningCopy = false;
+    } else if (inOpeningCopy) {
+      openingParagraphs.push(line);
+    } else if (currentSec) {
+      currentSec.items.push(line);
     }
+  }
+  if (currentSec) sections.push(currentSec);
 
-    if (currentSection) {
-      currentSection.lines.push(line);
-    } else {
-      openingLines.push(line);
-    }
+  if (openingParagraphs.length > 0) {
+    elements.push(
+      <div className="terms-opening-copy" key="opening">
+        {openingParagraphs.map((p, idx) => <p key={idx}>{renderTextWithLinks(p)}</p>)}
+      </div>
+    );
+  }
+
+  sections.forEach((sec, sIdx) => {
+    const secElements = [];
+    secElements.push(<h2 key={`h2-${sIdx}`}>{sec.title}</h2>);
+    
+    const contentNodes = [];
+
+    sec.items.forEach((item, iIdx) => {
+      const clauseMatch = item.match(/^(\d+\.\d+)\s+(.*)/);
+      const letterMatch = item.match(/^([a-zA-Z]\.)\s+(.*)/);
+      
+      if (clauseMatch) {
+        contentNodes.push(
+          <div className="terms-clause" key={`clause-${iIdx}`}>
+            <span className="terms-clause-number">{clauseMatch[1]}</span>
+            <span className="terms-clause-text">{renderTextWithLinks(clauseMatch[2])}</span>
+          </div>
+        );
+      } else if (letterMatch) {
+        contentNodes.push(
+          <div className="terms-clause" key={`clause-${iIdx}`}>
+            <span className="terms-clause-number">{letterMatch[1]}</span>
+            <span className="terms-clause-text">{renderTextWithLinks(letterMatch[2])}</span>
+          </div>
+        );
+      } else {
+        contentNodes.push(<p className="terms-body-line" key={`p-${iIdx}`}>{renderTextWithLinks(item)}</p>);
+      }
+    });
+
+    elements.push(
+      <div className="terms-section" key={`sec-${sIdx}`}>
+        {secElements}
+        <div className="terms-section-content">
+          {contentNodes}
+        </div>
+      </div>
+    );
   });
 
-  return (
-    <>
-      <div className="terms-effective-date">
-        {effectiveDate
-          .split(/\s*\|\s*/)
-          .filter(Boolean)
-          .map((dateLabel, index) => (
-            <span key={`terms-date-${index}`}>{dateLabel}</span>
-          ))}
-      </div>
-          <h1 className="terms-document-title">{title}</h1>
-      <div className="terms-opening-copy">
-        {openingLines.map((line, index) => (
-          <p key={`terms-opening-${index}`}>{line}</p>
-        ))}
-      </div>
-      {sections.map((section, index) => (
-        <section className="terms-section" key={`terms-section-${index}`}>
-          <h2>{section.heading}</h2>
-          <div className="terms-section-content">
-            {renderTermsSectionContent(section.lines, `terms-section-${index}`)}
-          </div>
-        </section>
-      ))}
-    </>
-  );
+  return elements;
 }
 
 export default function LegalPage() {
@@ -194,24 +142,25 @@ export default function LegalPage() {
     (candidate) => normalizePolicySlug(candidate.slug) === normalizePolicySlug(slug)
   );
   const [page, setPage] = useState(() => fallbackPage || null);
-  const [loading, setLoading] = useState(() => !fallbackPage);
+  const [loading, setLoading] = useState(() => Boolean(slug));
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchPage = async () => {
+      setLoading(true);
       try {
         let apiSlug = slug;
         if (slug === "privacy-policy") apiSlug = "pickbook-privacy-policy";
         else if (slug === "refund-cancellation-policy") apiSlug = "return-cancellation-policy";
 
         const data = await getPublicPageBySlug(apiSlug);
-        setPage(
-          data?.description?.trim()
-            ? data
-            : fallbackPage
-              ? { ...fallbackPage, ...data, description: fallbackPage.description }
-              : data
-        );
+        if (data && data.description && data.description.trim()) {
+          setPage(data);
+        } else if (fallbackPage) {
+          setPage({ ...fallbackPage, ...data, description: fallbackPage.description || data?.description });
+        } else {
+          setPage(data);
+        }
         setError(null);
       } catch (err) {
         console.error("Error fetching legal page:", err);
@@ -292,27 +241,29 @@ export default function LegalPage() {
         <article className="legal-content-card">
           {isHtml ? (
             <div dangerouslySetInnerHTML={{ __html: rawDescription }} />
-          ) : isTermsDocument ? (
-            renderTermsDocument(contentLines, page.title)
           ) : contentLines.length > 0 ? (
-            contentLines.map((line, index) => {
-              // Detect lines that look like headings (numbered, lettered, or short capitalized lines)
-              const isHeading = /^\d+\.\s+[A-Za-z]/.test(line) || /^[a-z]\.\s+[A-Za-z]/.test(line) || (line.length < 60 && !line.includes('.') && line === line.toUpperCase()) || line.endsWith(':');
+            isTermsDocument ? (
+              renderTermsDocument(contentLines)
+            ) : (
+              contentLines.map((line, index) => {
+                // Detect lines that look like headings (numbered, lettered, or short capitalized lines)
+                const isHeading = /^\d+\.\s+[A-Za-z]/.test(line) || /^[a-z]\.\s+[A-Za-z]/.test(line) || (line.length < 60 && !line.includes('.') && line === line.toUpperCase()) || line.endsWith(':');
 
-              if (isHeading) {
+                if (isHeading) {
+                  return (
+                    <h3 className="policy-heading" key={index}>
+                      {line}
+                    </h3>
+                  );
+                }
+
                 return (
-                  <h3 className={`policy-heading${isTermsDocument && index === 0 ? " terms-document-title" : ""}`} key={index}>
+                  <p className="policy-paragraph" key={index}>
                     {line}
-                  </h3>
+                  </p>
                 );
-              }
-
-              return (
-                <p className={`policy-paragraph${isTermsDocument && index === 1 ? " terms-effective-date" : ""}`} key={index}>
-                  {line}
-                </p>
-              );
-            })
+              })
+            )
           ) : (
             <p className="legal-intro">This policy content is being updated.</p>
           )}
