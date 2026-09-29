@@ -19,6 +19,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import "../../STYLES/FlightBookingFlow.css";
+import "../../STYLES/FlightSeatSelection.css";
 import { getFlightSeatMap, getFlightSSR } from "../../services/flightBookingService";
 import {
   readFlightBookingFlowState,
@@ -40,7 +41,6 @@ function parseTravellerSummary(summary) {
   const infants = Number((text.match(/(\d+)\s*Infant/i) || [])[1] || 0);
 
   return {
-    adults,
     children,
     infants,
     seatRequired: Math.max(1, adults + children),
@@ -389,6 +389,34 @@ export default function FlightSeatSelectionPage() {
       };
     }
 
+    // PRE-VALIDATE: check SRDV identity fields before calling APIs.
+    // flightIdentity() throws if traceId, resultIndex, srdvType, or srdvIndex are missing/invalid.
+    // For RoundTrip and MultiCity, we MUST use the combined flowState values (like ResultIndex: "1_OB4,1_IB3")
+    // otherwise the SRDV backend will return "Supplier Logs Not found" because it expects the full journey context.
+    const isMultiItinerary = flowState.isMultiCity || (flowState.selectedLegs && flowState.selectedLegs.length > 1 && Array.from(new Set(flowState.selectedLegs.map(l => l.resultIndex || l.ResultIndex))).length > 1);
+
+    const resolvedTraceId = currentLeg.traceId || currentLeg.TraceId || flowState.TraceId || flowState.traceId;
+    const resolvedResultIndex = isMultiItinerary 
+      ? (currentLeg.ResultIndex || currentLeg.resultIndex || "")
+      : (flowState.ResultIndex || flowState.resultIndex || currentLeg.ResultIndex || currentLeg.resultIndex);
+    
+    const hasValidTraceId = /^[1-9]\d*$/.test(String(resolvedTraceId || "").trim());
+    const hasValidResultIndex = !!(resolvedResultIndex) &&
+      !/^(flight-|flt-)/.test(String(resolvedResultIndex || "").trim());
+    const hasValidSrdvType = !!(currentLeg.srdvType || currentLeg.SrdvType || "").trim();
+    const hasValidSrdvIndex = !!(currentLeg.srdvIndex || currentLeg.SrdvIndex || "").trim();
+
+    if (!hasValidTraceId || !hasValidResultIndex || !hasValidSrdvType || !hasValidSrdvIndex) {
+      console.warn("[SeatMap/SSR] Skipping API call — missing SRDV identity fields:", {
+        traceId: resolvedTraceId, resultIndex: resolvedResultIndex,
+        srdvType: currentLeg.srdvType, srdvIndex: currentLeg.srdvIndex,
+      });
+      setIsSeatMapLoading(false);
+      setSsrOptionsByLeg(prev => ({ ...prev, [activeSegmentIndex]: { baggage: [], meal: [] } }));
+      setSeatMapError("Seat map is not available for this flight. You can continue without selecting seats.");
+      return () => { isCurrent = false; };
+    }
+
     // Check if we already fetched seat map for this leg
     if (seatMapCabinByLeg[activeSegmentIndex]) {
       setIsSeatMapLoading(false);
@@ -403,7 +431,12 @@ export default function FlightSeatSelectionPage() {
 
     (async () => {
       try {
-        const [seatMap, ssr] = await Promise.all([getFlightSeatMap(currentLeg), getFlightSSR(currentLeg)]);
+        // If it's a mixed itinerary (multiple unique ResultIndices), we query it as an independent OneWay (journeyType: 1)
+        const queryJourneyType = isMultiItinerary ? 1 : (flowState.isMultiCity ? 3 : (flowState.isTwoWay ? 2 : 1));
+        const [seatMap, ssr] = await Promise.all([
+          getFlightSeatMap({ ...currentLeg, TraceId: resolvedTraceId, traceId: resolvedTraceId, ResultIndex: resolvedResultIndex, resultIndex: resolvedResultIndex, journeyType: queryJourneyType }),
+          getFlightSSR({ ...currentLeg, TraceId: resolvedTraceId, traceId: resolvedTraceId, ResultIndex: resolvedResultIndex, resultIndex: resolvedResultIndex, journeyType: queryJourneyType })
+        ]);
         if (!isCurrent) return;
 
         console.log("[SeatMap] raw response:", seatMap);
@@ -636,7 +669,7 @@ export default function FlightSeatSelectionPage() {
   };
 
   return (
-    <main className="flight-flow-page">
+    <main className="flight-flow-page flight-seat-selection-page">
       <BookingTimer onRestartSearch={handleRestartSearch} mode="banner" />
       {/* ── STEPPER PROGRESS HEADER ── */}
       <div className="flight-stepper-header">
@@ -723,6 +756,18 @@ export default function FlightSeatSelectionPage() {
         <section className="flight-checkout-main">
           {/* Seat Layout Main Card */}
           <div className="flight-main-card">
+            <div className="seat-selection-heading">
+              <div>
+                <span className="seat-selection-eyebrow">FLIGHT ADD-ONS</span>
+                <h2>Choose your seats</h2>
+                <p>Select seats for your trip. Seat selection is optional.</p>
+              </div>
+              <div className="seat-selection-counter" aria-live="polite">
+                <strong>{selectedSeatLabels.length} / {travellers.seatRequired}</strong>
+                <span>seats selected</span>
+              </div>
+            </div>
+
             <div className="seat-tabs-container">
               <span
                 className={`seat-tab ${activeTab === "seat" ? "active" : ""}`}
@@ -791,7 +836,7 @@ export default function FlightSeatSelectionPage() {
                 {/* Airplane Cabin Legends */}
                 <div className="airplane-legend-container">
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                    <h4 className="legend-title" style={{ margin: 0, textAlign: "left" }}>Select Your Preferred Seat</h4>
+                    <h4 className="legend-title" style={{ margin: 0, textAlign: "left" }}>Filter by seat type</h4>
                     {activeSeatFilter && (
                       <button
                         type="button"
@@ -888,6 +933,13 @@ export default function FlightSeatSelectionPage() {
                 </div>
 
                 {/* Seat Map Panel */}
+                <div className="seatmap-section-heading">
+                  <div>
+                    <h3>Aircraft seat map</h3>
+                    <p>Choose an available seat. Any additional price is shown on the seat.</p>
+                  </div>
+                  {cabinData.rows.length > 0 && <span>{cabinData.rows.length} rows</span>}
+                </div>
                 <div className="seatmap-panel">
                   {isSeatMapLoading && (
                     <div className="seatmap-loading-overlay">

@@ -286,9 +286,9 @@ These Terms, together with the Privacy Policy and any booking-specific terms app
 For general queries, booking assistance or support:
 Pick&book, operated by PIRNAV SOFTWARE SOLUTIONS
 Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India.
-Email: contact@Pick&book.in
+Email: contact@picknbook.in
 Phone: +91 999-999-9999
-Website: https://Pick&book.in/?tab=buses`;
+Website: https://picknbook.in/?tab=buses`;
 
 export const PRIVACY_POLICY_TEXT = `
 <div class="legal-doc-container">

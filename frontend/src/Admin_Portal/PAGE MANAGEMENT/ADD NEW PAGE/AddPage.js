@@ -49,6 +49,24 @@ const AddPage = () => {
     }
   };
 
+  const isBannerRemovedInOverrides = (page) => {
+    if (!page) return false;
+    try {
+      const overrides = JSON.parse(localStorage.getItem("cms_page_banner_overrides") || "{}");
+      const keys = [
+        page.slug,
+        page.slug ? buildSlug(page.slug) : "",
+        page.title,
+        page.title ? buildSlug(page.title) : "",
+        page.id,
+        page.id ? String(page.id) : ""
+      ].filter(Boolean);
+      return keys.some(k => overrides[k] === "__REMOVED__" || overrides[k] === "" || overrides[k] === null);
+    } catch {
+      return false;
+    }
+  };
+
   const [formData, setFormData] = useState(() => {
     const isRemoved = isImageRemovedInOverrides(editingPage);
     const initialImgPath = isRemoved ? "" : (editingPage?.imagePath || editingPage?.image || "");
@@ -57,6 +75,14 @@ const AddPage = () => {
       : initialImgPath
       ? initialImgPath.split(/[/\\]/).pop()
       : (editingPage?.imageName || "");
+
+    const isBnrRemoved = isBannerRemovedInOverrides(editingPage);
+    const initialBnrPath = isBnrRemoved ? "" : (editingPage?.bannerPath || editingPage?.banner || "");
+    const initialBnrName = isBnrRemoved
+      ? ""
+      : initialBnrPath
+      ? initialBnrPath.split(/[/\\]/).pop()
+      : (editingPage?.bannerName || "");
 
     return {
       ...DEFAULT_FORM,
@@ -69,7 +95,7 @@ const AddPage = () => {
       metaDescription: editingPage?.metaDescription || "",
       description: editingPage?.description || "",
       imageName: initialImgName,
-      bannerName: editingPage?.bannerPath ? editingPage.bannerPath.split(/[/\\]/).pop() : (editingPage?.bannerName || ""),
+      bannerName: initialBnrName,
     };
   });
 
@@ -92,6 +118,14 @@ const AddPage = () => {
         ? initialImgPath.split(/[/\\]/).pop()
         : (editingPage.imageName || "");
 
+      const isBnrRemoved = isBannerRemovedInOverrides(editingPage);
+      const initialBnrPath = isBnrRemoved ? "" : (editingPage.bannerPath || editingPage.banner || "");
+      const initialBnrName = isBnrRemoved
+        ? ""
+        : initialBnrPath
+        ? initialBnrPath.split(/[/\\]/).pop()
+        : (editingPage.bannerName || "");
+
       setFormData({
         title: editingPage.title || "",
         slug: editingPage.slug || "",
@@ -102,7 +136,7 @@ const AddPage = () => {
         metaDescription: editingPage.metaDescription || "",
         description: editingPage.description || "",
         imageName: initialImgName,
-        bannerName: editingPage.bannerPath ? editingPage.bannerPath.split(/[/\\]/).pop() : (editingPage.bannerName || ""),
+        bannerName: initialBnrName,
       });
 
       if (isRemoved) {
@@ -202,6 +236,36 @@ const AddPage = () => {
       setFormData((previous) => ({ ...previous, bannerName: "" }));
       const fileInput = document.getElementById("banner-input");
       if (fileInput) fileInput.value = "";
+      try {
+        const pageSlug = formData.slug?.trim() || formData.title?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        const pageTitle = formData.title?.trim();
+        const current = JSON.parse(localStorage.getItem("cms_page_banner_overrides") || "{}");
+        if (pageSlug) {
+          current[pageSlug] = "__REMOVED__";
+          const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (norm) current[norm] = "__REMOVED__";
+        }
+        if (pageTitle) {
+          current[pageTitle] = "__REMOVED__";
+          const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (normTitle) current[normTitle] = "__REMOVED__";
+        }
+        if (editingPage?.id) {
+          current[editingPage.id] = "__REMOVED__";
+          current[String(editingPage.id)] = "__REMOVED__";
+        }
+        if (editingPage?.slug) {
+          current[editingPage.slug] = "__REMOVED__";
+          const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (normEditSlug) current[normEditSlug] = "__REMOVED__";
+        }
+        if (editingPage?.title) {
+          current[editingPage.title] = "__REMOVED__";
+          const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+          if (normEditTitle) current[normEditTitle] = "__REMOVED__";
+        }
+        localStorage.setItem("cms_page_banner_overrides", JSON.stringify(current));
+      } catch (e) {}
     }
   };
 
@@ -236,6 +300,10 @@ const AddPage = () => {
 
     // Deletion flags for image
     if (!formData.imageName) {
+      data.append("imagePath", "");
+      data.append("ImagePath", "");
+      data.append("Image", "");
+      data.append("image", "");
       data.append("DeleteImage", "true");
       data.append("RemoveImage", "true");
       data.append("ClearImage", "true");
@@ -246,6 +314,10 @@ const AddPage = () => {
 
     // Deletion flags for banner
     if (!formData.bannerName) {
+      data.append("bannerPath", "");
+      data.append("BannerPath", "");
+      data.append("Banner", "");
+      data.append("banner", "");
       data.append("DeleteBanner", "true");
       data.append("RemoveBanner", "true");
       data.append("ClearBanner", "true");
@@ -302,6 +374,37 @@ const AddPage = () => {
         } catch (e) {}
       };
 
+      const setBannerOverrideValue = (val) => {
+        try {
+          const current = JSON.parse(localStorage.getItem("cms_page_banner_overrides") || "{}");
+          if (pageSlug) {
+            current[pageSlug] = val;
+            const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (norm) current[norm] = val;
+          }
+          if (pageTitle) {
+            current[pageTitle] = val;
+            const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (normTitle) current[normTitle] = val;
+          }
+          if (editingPage?.id) {
+            current[editingPage.id] = val;
+            current[String(editingPage.id)] = val;
+          }
+          if (editingPage?.slug) {
+            current[editingPage.slug] = val;
+            const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (normEditSlug) current[normEditSlug] = val;
+          }
+          if (editingPage?.title) {
+            current[editingPage.title] = val;
+            const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
+            if (normEditTitle) current[normEditTitle] = val;
+          }
+          localStorage.setItem("cms_page_banner_overrides", JSON.stringify(current));
+        } catch (e) {}
+      };
+
       if (imageFile) {
         try {
           const base64Url = await new Promise((resolve) => {
@@ -318,6 +421,22 @@ const AddPage = () => {
         setOverrideValue("__REMOVED__");
       }
 
+      if (bannerFile) {
+        try {
+          const base64BannerUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result || null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(bannerFile);
+          });
+          if (base64BannerUrl) {
+            setBannerOverrideValue(base64BannerUrl);
+          }
+        } catch (e) {}
+      } else if (!formData.bannerName) {
+        setBannerOverrideValue("__REMOVED__");
+      }
+
       let res = null;
       if (editingPage && editingPage.id && !String(editingPage.id).startsWith("default-")) {
         res = await updateAdminPage(editingPage.id, data);
@@ -327,8 +446,17 @@ const AddPage = () => {
 
       if (res) {
         const savedImg = res.imagePath || res.ImagePath || res.image || res.Image;
-        if (savedImg) {
+        if (savedImg && formData.imageName) {
           setOverrideValue(savedImg);
+        } else if (!formData.imageName) {
+          setOverrideValue("__REMOVED__");
+        }
+
+        const savedBnr = res.bannerPath || res.BannerPath || res.banner || res.Banner;
+        if (savedBnr && formData.bannerName) {
+          setBannerOverrideValue(savedBnr);
+        } else if (!formData.bannerName) {
+          setBannerOverrideValue("__REMOVED__");
         }
       }
 

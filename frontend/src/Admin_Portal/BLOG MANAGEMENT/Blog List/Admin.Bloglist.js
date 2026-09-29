@@ -20,7 +20,7 @@ import {
     ChevronDown,
 } from 'lucide-react';
 import AdminPagination from '../../../components/AdminPagination';
-import { getAdminBlogs, deleteAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories, getBlogImageSrc, saveBlogImageLocally } from '../../../services/blogService';
+import { getAdminBlogs, deleteAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories, getBlogImageSrc, saveBlogImageLocally, removeBlogImageLocally } from '../../../services/blogService';
 import { toApiAssetUrl, NgrokSafeImage, normalizeResponseMessage, getDisplayFileName } from '../../../services/apiClient';
 
 const formatDate = (dateString) => {
@@ -152,7 +152,13 @@ function BlogList() {
                 isPublished: isPublishedParam
             });
             const mapped = (data.blogs || []).map(blog => {
-                const resolvedImg = getBlogImageSrc(blog) || blog.imageUrl || blog.ImageUrl || blog.image || '';
+                const isExplicitNullOrEmpty = blog.imageUrl === null || blog.imageUrl === '' || blog.ImageUrl === null || blog.ImageUrl === '' || blog.image === null || blog.image === '';
+                if (isExplicitNullOrEmpty) {
+                    removeBlogImageLocally(blog.id);
+                    if (blog.title) removeBlogImageLocally(blog.title);
+                    if (blog.slug) removeBlogImageLocally(blog.slug);
+                }
+                const resolvedImg = getBlogImageSrc(blog) || '';
                 if (resolvedImg) {
                     saveBlogImageLocally(blog.id, resolvedImg);
                     if (blog.title) saveBlogImageLocally(blog.title, resolvedImg);
@@ -391,6 +397,13 @@ function BlogList() {
             [labelField]: '',
         }));
         if (previewSetter) previewSetter('');
+        if (editingBlog?.id) {
+            if (name === 'image') {
+                removeBlogImageLocally(editingBlog.id);
+                if (editingBlog.title) removeBlogImageLocally(editingBlog.title);
+                if (editingBlog.slug) removeBlogImageLocally(editingBlog.slug);
+            }
+        }
     };
 
     const buildSlug = (title) =>
@@ -461,12 +474,33 @@ function BlogList() {
 
             if (editFormData.image && typeof editFormData.image !== "string") {
                 dataToSend.append("Image", editFormData.image);
-            }
-            if (editFormData.ogImage && typeof editFormData.ogImage !== "string") {
-                dataToSend.append("OgImage", editFormData.ogImage);
+            } else {
+                dataToSend.append("ImageUrl", editFormData.imageName || "");
+                dataToSend.append("Image", editFormData.imageName || "");
+                if (!editFormData.imageName && !editImagePreview) {
+                    dataToSend.append("RemoveImage", "true");
+                    dataToSend.append("ClearImage", "true");
+                }
             }
 
-            if (editImagePreview) {
+            if (editFormData.ogImage && typeof editFormData.ogImage !== "string") {
+                dataToSend.append("OgImage", editFormData.ogImage);
+            } else {
+                dataToSend.append("OgImageUrl", editFormData.ogImageName || "");
+                dataToSend.append("OgImage", editFormData.ogImageName || "");
+                if (!editFormData.ogImageName && !editOgImagePreview) {
+                    dataToSend.append("RemoveOgImage", "true");
+                    dataToSend.append("ClearOgImage", "true");
+                }
+            }
+
+            if (!editImagePreview && !editFormData.imageName) {
+                removeBlogImageLocally(editingBlog.id);
+                if (editingBlog.title) removeBlogImageLocally(editingBlog.title);
+                if (editingBlog.slug) removeBlogImageLocally(editingBlog.slug);
+                if (editFormData.title) removeBlogImageLocally(editFormData.title);
+                if (computedSlug) removeBlogImageLocally(computedSlug);
+            } else if (editImagePreview) {
                 saveBlogImageLocally(editingBlog.id, editImagePreview);
                 saveBlogImageLocally(editFormData.title, editImagePreview);
                 saveBlogImageLocally(computedSlug, editImagePreview);

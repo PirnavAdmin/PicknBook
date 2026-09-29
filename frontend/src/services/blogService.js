@@ -59,9 +59,18 @@ async function sendUpdateWithFallback(endpointPath, payload) {
   if (isFormData && !hasFile) {
     const jsonObj = {};
     for (const [k, v] of payload.entries()) {
-      jsonObj[k] = v;
-      // Add camelCase key as well for ASP.NET ModelBinder flexibility
-      jsonObj[k.charAt(0).toLowerCase() + k.slice(1)] = v;
+      let val = v;
+      if (val === "true") val = true;
+      if (val === "false") val = false;
+
+      jsonObj[k] = val;
+      const camelKey = k.charAt(0).toLowerCase() + k.slice(1);
+      jsonObj[camelKey] = val;
+
+      if (val === "" && (k.toLowerCase().includes("image") || k.toLowerCase().includes("photo") || k.toLowerCase().includes("picture"))) {
+        jsonObj[k] = null;
+        jsonObj[camelKey] = null;
+      }
     }
 
     try {
@@ -90,8 +99,18 @@ async function sendUpdateWithFallback(endpointPath, payload) {
         if (isFormData) {
           const jsonFallback = {};
           for (const [k, v] of payload.entries()) {
-            jsonFallback[k] = v;
-            jsonFallback[k.charAt(0).toLowerCase() + k.slice(1)] = v;
+            let val = v;
+            if (val === "true") val = true;
+            if (val === "false") val = false;
+
+            jsonFallback[k] = val;
+            const camelKey = k.charAt(0).toLowerCase() + k.slice(1);
+            jsonFallback[camelKey] = val;
+
+            if (val === "" && (k.toLowerCase().includes("image") || k.toLowerCase().includes("photo") || k.toLowerCase().includes("picture"))) {
+              jsonFallback[k] = null;
+              jsonFallback[camelKey] = null;
+            }
           }
           const jsonRes = await blogApi.put(endpointPath, jsonFallback, {
             headers: { "Content-Type": "application/json" }
@@ -216,8 +235,22 @@ export async function getPublicBlogBySlug(slug) {
   return response.data;
 }
 
+export function removeBlogImageLocally(key) {
+  if (typeof window === "undefined" || !key) return;
+  try {
+    const k = `blog_img_${String(key)}`;
+    window.localStorage.removeItem(k);
+  } catch (err) {
+    // ignore
+  }
+}
+
 export function saveBlogImageLocally(key, value) {
-  if (typeof window === "undefined" || !key || !value) return;
+  if (typeof window === "undefined" || !key) return;
+  if (!value) {
+    removeBlogImageLocally(key);
+    return;
+  }
   try {
     const k = `blog_img_${String(key)}`;
     window.localStorage.setItem(k, value);
@@ -242,6 +275,13 @@ export function getBlogImageLocally(blog) {
 
 export function getBlogImageSrc(blog) {
   if (!blog) return "";
+
+  const hasRawProperty =
+    Object.prototype.hasOwnProperty.call(blog, "imageUrl") ||
+    Object.prototype.hasOwnProperty.call(blog, "ImageUrl") ||
+    Object.prototype.hasOwnProperty.call(blog, "image") ||
+    Object.prototype.hasOwnProperty.call(blog, "Image");
+
   const raw =
     blog.imageUrl ||
     blog.ImageUrl ||
@@ -259,6 +299,21 @@ export function getBlogImageSrc(blog) {
       return raw;
     }
     return toApiAssetUrl(raw);
+  }
+
+  if (
+    hasRawProperty &&
+    (blog.imageUrl === null ||
+      blog.imageUrl === "" ||
+      blog.ImageUrl === null ||
+      blog.ImageUrl === "" ||
+      blog.image === null ||
+      blog.image === "")
+  ) {
+    if (blog.id) removeBlogImageLocally(blog.id);
+    if (blog.slug) removeBlogImageLocally(blog.slug);
+    if (blog.title) removeBlogImageLocally(blog.title);
+    return "";
   }
 
   const local = getBlogImageLocally(blog);

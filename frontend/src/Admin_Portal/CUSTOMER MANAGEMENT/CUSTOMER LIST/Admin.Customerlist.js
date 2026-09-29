@@ -208,7 +208,7 @@ function CustomerList() {
         showToast('Wallet balance updated & activated successfully.', 'success');
 
         try {
-            await addWalletBalance(targetId, amount);
+            await addWalletBalance(targetId, { amount });
         } catch (error) {
             console.error("Error adding balance:", error);
         }

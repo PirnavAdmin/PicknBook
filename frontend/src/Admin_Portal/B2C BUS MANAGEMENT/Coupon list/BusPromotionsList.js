@@ -25,13 +25,10 @@ import {
   deleteBusCouponCondition,
   uploadCouponImage,
   getImagePreviewSrc,
-  saveCouponImageLocally,
-  saveCouponCategoryLocally,
-  saveCouponServiceLocally,
-  saveCouponMetadataLocally,
   validateImageUrlForPayload,
   isValidImageUrl,
   APPROVED_IMAGE_EXTENSIONS,
+  saveCouponMetadataLocally,
 } from "../../../services/busPromotionsService";
 
 const DEFAULT_COUPON_SORT_BY = "entryDate";
@@ -102,10 +99,115 @@ function sanitizeImageUrl(rawUrl) {
   if (url.startsWith("//")) {
     return `https:${url}`;
   }
-  if (!/^https:\/\//i.test(url) && !url.startsWith("/")) {
-    return `https://${url}`;
+  if (/^https:\/\//i.test(url)) {
+    return url;
   }
-  return url;
+  if (url.startsWith("/")) {
+    return url;
+  }
+  if (url.startsWith("uploads/") || url.startsWith("images/") || url.startsWith("static/") || url.startsWith("api/")) {
+    return `/${url}`;
+  }
+  if (!url.includes(".")) {
+    return `/${url}`;
+  }
+  return url.startsWith("/") ? url : `/${url}`;
+}
+
+function getConditionValuePlaceholder(type, isValue2 = false) {
+  if (isValue2) return "Optional secondary range value";
+
+  switch (type) {
+    case "DayOfWeek":
+      return "e.g. Monday, Wednesday, Friday";
+    case "Airline":
+      return "e.g. 6E, AI, SG (or Indigo)";
+    case "CabinClass":
+      return "e.g. Economy, Business, First";
+    case "HotelName":
+      return "e.g. Taj Hotel, Marriott";
+    case "RoomType":
+      return "e.g. Deluxe, Suite, Standard";
+    case "City":
+      return "e.g. Mumbai, Delhi, Goa";
+    case "OperatorName":
+      return "e.g. VRL Travels, SRS Travels";
+    case "Route":
+      return "e.g. Bangalore-Hyderabad";
+    case "BusType":
+      return "e.g. Sleeper, AC Seater, Volvo";
+    case "DepartureTime":
+      return "e.g. 06:00-12:00";
+    case "MinimumFare":
+      return "e.g. 500";
+    default:
+      return "e.g. Enter value (or 'ALL' for no restriction)";
+  }
+}
+
+function renderCouponConditionsSummary(coupon) {
+  if (!coupon) return <span style={{ fontSize: "11px", color: "#94a3b8" }}>---</span>;
+
+  const condList = [];
+
+  const conditions = coupon.conditions || coupon.Conditions || coupon.conditionList || [];
+  if (Array.isArray(conditions) && conditions.length > 0) {
+    conditions.forEach((c) => {
+      const type = c.conditionType || c.type || c.ConditionType || c.Type || "";
+      const rawOp = c.conditionOperator || c.operator || c.ConditionOperator || c.Operator || "=";
+      const op = (rawOp === "Equals" || rawOp === "=") ? "" : rawOp;
+
+      let val1 = "";
+      if (c.value1 !== undefined && c.value1 !== null) val1 = String(c.value1);
+      else if (c.value !== undefined && c.value !== null) val1 = String(c.value);
+      else if (c.Value1 !== undefined && c.Value1 !== null) val1 = String(c.Value1);
+      else if (c.Value !== undefined && c.Value !== null) val1 = String(c.Value);
+
+      let val2 = "";
+      if (c.value2 !== undefined && c.value2 !== null) val2 = String(c.value2);
+      else if (c.Value2 !== undefined && c.Value2 !== null) val2 = String(c.Value2);
+
+      const valStr = val2 ? `${val1} - ${val2}` : val1;
+
+      if (type && valStr) {
+        condList.push(op ? `${type} ${op} ${valStr}`.trim() : `${type}: ${valStr}`.trim());
+      } else if (valStr) {
+        condList.push(op ? `${op} ${valStr}`.trim() : valStr.trim());
+      } else if (type) {
+        condList.push(type);
+      }
+    });
+  }
+
+  if (condList.length === 0) {
+    return <span style={{ fontSize: "11px", color: "#94a3b8" }}>---</span>;
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "3px", fontSize: "10.5px" }}>
+      {condList.map((item, idx) => (
+        <span
+          key={idx}
+          style={{
+            background: "#eff6ff",
+            color: "#1d4ed8",
+            border: "1px solid #bfdbfe",
+            padding: "2px 6px",
+            borderRadius: "4px",
+            fontWeight: "600",
+            whiteSpace: "nowrap",
+            maxWidth: "140px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "inline-block"
+          }}
+          title={item}
+        >
+          {item}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function createEmptyCouponForm(category = "Offer", type = "bus") {
@@ -282,7 +384,9 @@ export default function AdminBusCouponListPage() {
         const seen = new Set();
         const uniqueCoupons = list.filter((item) => {
           const resolved = getServiceLabel(item).toLowerCase();
-          const key = `${item.id || item.couponCode}-${resolved}`;
+          const code = String(item.couponCode || item.code || "").toUpperCase();
+          const cat = String(item.promotionCategory || item.category || "").toLowerCase();
+          const key = `${resolved}-${item.id || code}-${code}-${cat}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
@@ -527,11 +631,6 @@ export default function AdminBusCouponListPage() {
         serviceType: targetType,
         promotionCategory: category,
       };
-      saveCouponCategoryLocally(couponCode, couponToStore.id, category);
-      saveCouponServiceLocally(couponCode, couponToStore.id, targetType);
-      if (generateForm.imageUrl) {
-        saveCouponImageLocally(couponCode, couponToStore.id, generateForm.imageUrl);
-      }
       setCoupons((previous) => [couponToStore, ...previous]);
       setIsGenerateModalOpen(false);
       setGenerateError("");
@@ -627,8 +726,10 @@ export default function AdminBusCouponListPage() {
     if (finalImageUrl && !/^https?:\/\//i.test(finalImageUrl) && !finalImageUrl.startsWith("data:") && !finalImageUrl.startsWith("blob:")) {
       if (finalImageUrl.startsWith("//")) {
         finalImageUrl = `https:${finalImageUrl}`;
+      } else if (!finalImageUrl.startsWith("/") && (finalImageUrl.startsWith("uploads/") || finalImageUrl.startsWith("images/") || finalImageUrl.startsWith("api/"))) {
+        finalImageUrl = `/${finalImageUrl}`;
       } else if (!finalImageUrl.startsWith("/")) {
-        finalImageUrl = `https://${finalImageUrl}`;
+        finalImageUrl = `/${finalImageUrl}`;
       }
     }
 
@@ -681,26 +782,18 @@ export default function AdminBusCouponListPage() {
       const updatedCoupon = {
         ...(savedCoupon && typeof savedCoupon === "object" ? savedCoupon : {}),
         ...nextCoupon,
+        imageUrl: finalImageUrl,
+        ImageUrl: finalImageUrl,
+        imageURL: finalImageUrl,
+        ImageURL: finalImageUrl,
+        image: finalImageUrl,
+        Image: finalImageUrl,
         type: targetType,
         bookingType: targetType,
         serviceType: targetType,
         promotionCategory: editCoupon.promotionCategory,
         status: finalStatus,
       };
-      saveCouponMetadataLocally(editCoupon.couponCode, updatedCoupon.id, {
-        title: updatedCoupon.title,
-        description: updatedCoupon.description,
-        remark: updatedCoupon.remark,
-        imageUrl: updatedCoupon.imageUrl,
-        status: finalStatus,
-        promotionCategory: editCoupon.promotionCategory,
-        serviceType: targetType,
-      });
-      saveCouponCategoryLocally(editCoupon.couponCode, updatedCoupon.id, editCoupon.promotionCategory);
-      saveCouponServiceLocally(editCoupon.couponCode, updatedCoupon.id, targetType);
-      if (editCoupon.imageUrl) {
-        saveCouponImageLocally(editCoupon.couponCode, updatedCoupon.id, editCoupon.imageUrl);
-      }
       setCoupons((previous) =>
         previous.map((coupon) => (coupon.id === editCoupon.id ? updatedCoupon : coupon))
       );
@@ -761,7 +854,6 @@ export default function AdminBusCouponListPage() {
         ...(savedCoupon && typeof savedCoupon === "object" ? savedCoupon : {}),
         status: nextStatus,
       };
-      saveCouponMetadataLocally(currentCoupon.couponCode, couponId, { status: nextStatus });
       setCoupons((previous) =>
         previous.map((coupon) => (coupon.id === couponId ? updatedCoupon : coupon))
       );
@@ -791,7 +883,18 @@ export default function AdminBusCouponListPage() {
         "bus"
       ).toLowerCase();
       const conditions = await getBusCouponConditions(coupon.id, sType);
-      setConditionsList(Array.isArray(conditions) ? conditions : []);
+      const fetched = Array.isArray(conditions) && conditions.length > 0 ? conditions : (coupon.conditions || []);
+      setConditionsList(fetched);
+      if (fetched.length > 0) {
+        setCoupons((prev) =>
+          prev.map((c) =>
+            String(c.id) === String(coupon.id) && getServiceLabel(c).toLowerCase() === sType
+              ? { ...c, conditions: fetched, Conditions: fetched }
+              : c
+          )
+        );
+        saveCouponMetadataLocally(coupon.couponCode, coupon.id, { conditions: fetched }, sType);
+      }
     } catch (error) {
       setConditionsList(coupon.conditions || []);
       setConditionError(error.message || "Unable to fetch conditions.");
@@ -826,15 +929,42 @@ export default function AdminBusCouponListPage() {
         "bus"
       ).toLowerCase();
 
-      const result = await createBusCouponCondition(conditionsCoupon.id, payload, sType);
+      let createdRule = null;
+      try {
+        createdRule = await createBusCouponCondition(conditionsCoupon.id, payload, sType);
+      } catch (apiErr) {
+        console.warn("Condition API create warning:", apiErr);
+      }
 
+      const newRuleObj = {
+        id: createdRule?.id || createdRule?.Id || Date.now(),
+        conditionType: payload.conditionType,
+        conditionOperator: payload.conditionOperator,
+        operator: payload.conditionOperator,
+        value1: payload.value1,
+        value2: payload.value2,
+        value: payload.value1,
+      };
+
+      let nextConditions = [];
       if (newConditionForm.value1.trim().toUpperCase() === "ALL") {
-        setConditionsList((prev) =>
-          prev.filter((item) => item.conditionType !== newConditionForm.conditionType)
-        );
+        nextConditions = conditionsList.filter((item) => item.conditionType !== newConditionForm.conditionType);
       } else {
-        const refreshed = await getBusCouponConditions(conditionsCoupon.id, sType);
-        setConditionsList(Array.isArray(refreshed) ? refreshed : [result, ...conditionsList]);
+        const existingFiltered = conditionsList.filter((c) => c.conditionType !== payload.conditionType);
+        nextConditions = [...existingFiltered, newRuleObj];
+      }
+
+      setConditionsList(nextConditions);
+
+      if (conditionsCoupon) {
+        setCoupons((prev) =>
+          prev.map((c) =>
+            String(c.id) === String(conditionsCoupon.id) && getServiceLabel(c).toLowerCase() === sType
+              ? { ...c, conditions: nextConditions, Conditions: nextConditions }
+              : c
+          )
+        );
+        saveCouponMetadataLocally(conditionsCoupon.couponCode, conditionsCoupon.id, { conditions: nextConditions }, sType);
       }
 
       setNewConditionForm({
@@ -858,7 +988,19 @@ export default function AdminBusCouponListPage() {
         "bus"
       ).toLowerCase();
       await deleteBusCouponCondition(conditionId, sType);
-      setConditionsList((prev) => prev.filter((item) => item.id !== conditionId));
+      const nextConditions = conditionsList.filter((item) => item.id !== conditionId);
+      setConditionsList(nextConditions);
+
+      if (conditionsCoupon) {
+        setCoupons((prev) =>
+          prev.map((c) =>
+            String(c.id) === String(conditionsCoupon.id) && getServiceLabel(c).toLowerCase() === sType
+              ? { ...c, conditions: nextConditions, Conditions: nextConditions }
+              : c
+          )
+        );
+        saveCouponMetadataLocally(conditionsCoupon.couponCode, conditionsCoupon.id, { conditions: nextConditions }, sType);
+      }
     } catch (error) {
       setConditionError(error.message || "Unable to delete condition.");
     }
@@ -876,7 +1018,7 @@ export default function AdminBusCouponListPage() {
       "Max Discount",
       "Start Date",
       "Expiry Date",
-      "Use Limit",
+      "Conditions",
       "Used Count",
       "Status",
       "Auto Apply",
@@ -897,7 +1039,11 @@ export default function AdminBusCouponListPage() {
       csvCell(c.maxDiscountAmount ?? ""),
       csvCell(c.startDate),
       csvCell(c.expiryDate),
-      csvCell(c.useLimit),
+      csvCell(
+        Array.isArray(c.conditions) && c.conditions.length > 0
+          ? c.conditions.map(cond => `${cond.conditionType || cond.type || ''} ${cond.conditionOperator || cond.operator || '='} ${cond.value1 || cond.value || ''}`).join('; ')
+          : (c.minBookingAmount ? `Min Amt: ₹${c.minBookingAmount}` : "None")
+      ),
       csvCell(c.usedCount),
       csvCell(c.status),
       csvCell(c.isAutoApply ? "Yes" : "No"),
@@ -1291,7 +1437,7 @@ export default function AdminBusCouponListPage() {
                 <th>Value</th>
                 <th>Type</th>
                 <th>Start / Expiry Date</th>
-                <th>Use Limit</th>
+                <th>Conditions</th>
                 <th className="status-col">Status</th>
                 <th className="action-col">Action</th>
               </tr>
@@ -1426,7 +1572,7 @@ export default function AdminBusCouponListPage() {
                           </span>
                         </div>
                       </td>
-                      <td>{`${coupon.usedCount || 0} / ${coupon.useLimit || "∞"}`}</td>
+                      <td>{renderCouponConditionsSummary(coupon)}</td>
                       <td className="status-col">
                         <button
                           type="button"
@@ -1748,93 +1894,95 @@ export default function AdminBusCouponListPage() {
                     <span>Is Exclusive</span>
                   </label>
                 </div>
-                <div className="modal-field wide">
-                  <span>Promotion Image URL (Optional) or Choose File</span>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
-                    <input
-                      type="text"
-                      value={generateForm.imageUrl || ""}
-                      onChange={(e) => {
-                        setCreateImageUploadError("");
-                        const rawVal = e.target.value;
-                        const formattedUrl = sanitizeImageUrl(rawVal);
-                        setGenerateForm({ ...generateForm, imageUrl: formattedUrl });
-                      }}
-                      placeholder="https://your-domain.com/uploads/offers/summer-offer.jpg"
-                      style={{ flex: 1 }}
-                      disabled={isCreateImageUploading}
-                    />
-                    <label
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        padding: "8px 14px",
-                        background: isCreateImageUploading ? "#94a3b8" : "#A51C49",
-                        color: "#ffffff",
-                        borderRadius: "8px",
-                        cursor: isCreateImageUploading ? "not-allowed" : "pointer",
-                        fontSize: "0.80rem",
-                        fontWeight: "600",
-                        whiteSpace: "nowrap",
-                        boxShadow: "0 2px 4px rgba(165, 28, 73, 0.2)",
-                        transition: "all 0.2s ease"
-                      }}
-                    >
-                      {isCreateImageUploading ? "Uploading..." : "Choose File"}
+                {generateForm.promotionCategory !== "Coupon" && (
+                  <div className="modal-field wide">
+                    <span>Promotion Image URL (Optional) or Choose File</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
                       <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/avif,.jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tif,.tiff,.ico,.avif"
-                        style={{ display: "none" }}
-                        disabled={isCreateImageUploading}
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          e.target.value = "";
-                          if (!file) return;
+                        type="text"
+                        value={generateForm.imageUrl || ""}
+                        onChange={(e) => {
                           setCreateImageUploadError("");
-                          setIsCreateImageUploading(true);
-                          try {
-                            const rawUrl = await uploadCouponImage(file);
-                            const formattedUrl = sanitizeImageUrl(rawUrl);
-                            setGenerateForm((prev) => ({ ...prev, imageUrl: formattedUrl }));
-                          } catch (err) {
-                            setCreateImageUploadError(err.message || "Image upload failed.");
-                          } finally {
-                            setIsCreateImageUploading(false);
-                          }
+                          const rawVal = e.target.value;
+                          const formattedUrl = sanitizeImageUrl(rawVal);
+                          setGenerateForm({ ...generateForm, imageUrl: formattedUrl });
                         }}
+                        placeholder="https://your-domain.com/uploads/offers/summer-offer.jpg"
+                        style={{ flex: 1 }}
+                        disabled={isCreateImageUploading}
                       />
-                    </label>
-                  </div>
-                  {createImageUploadError && (
-                    <div style={{ marginTop: "6px", color: "#b91c1c", fontSize: "12px", fontWeight: 600 }}>
-                      {createImageUploadError}
-                    </div>
-                  )}
-                  {generateForm.imageUrl && (
-                    <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px", background: "#f8fafc", padding: "6px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
-                      <img
-                        src={getImagePreviewSrc(generateForm.imageUrl)}
-                        alt="Promotion Banner Preview"
-                        style={{ maxHeight: "45px", maxWidth: "120px", objectFit: "cover", borderRadius: "4px", border: "1px solid #cbd5e1" }}
-                      />
-                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                        <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Image Preview</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setGenerateForm((prev) => ({ ...prev, imageUrl: "" }));
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 14px",
+                          background: isCreateImageUploading ? "#94a3b8" : "#A51C49",
+                          color: "#ffffff",
+                          borderRadius: "8px",
+                          cursor: isCreateImageUploading ? "not-allowed" : "pointer",
+                          fontSize: "0.80rem",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                          boxShadow: "0 2px 4px rgba(165, 28, 73, 0.2)",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        {isCreateImageUploading ? "Uploading..." : "Choose File"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/avif,.jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tif,.tiff,.ico,.avif"
+                          style={{ display: "none" }}
+                          disabled={isCreateImageUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
                             setCreateImageUploadError("");
+                            setIsCreateImageUploading(true);
+                            try {
+                              const rawUrl = await uploadCouponImage(file);
+                              const formattedUrl = sanitizeImageUrl(rawUrl);
+                              setGenerateForm((prev) => ({ ...prev, imageUrl: formattedUrl }));
+                            } catch (err) {
+                              setCreateImageUploadError(err.message || "Image upload failed.");
+                            } finally {
+                              setIsCreateImageUploading(false);
+                            }
                           }}
-                          style={{ background: "none", border: "none", padding: 0, color: "#ef4444", fontSize: "11px", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}
-                        >
-                          Remove Image
-                        </button>
-                      </div>
+                        />
+                      </label>
                     </div>
-                  )}
-                </div>
+                    {createImageUploadError && (
+                      <div style={{ marginTop: "6px", color: "#b91c1c", fontSize: "12px", fontWeight: 600 }}>
+                        {createImageUploadError}
+                      </div>
+                    )}
+                    {generateForm.imageUrl && (
+                      <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px", background: "#f8fafc", padding: "6px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
+                        <img
+                          src={getImagePreviewSrc(generateForm.imageUrl)}
+                          alt="Promotion Banner Preview"
+                          style={{ maxHeight: "45px", maxWidth: "120px", objectFit: "cover", borderRadius: "4px", border: "1px solid #cbd5e1" }}
+                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Image Preview</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGenerateForm((prev) => ({ ...prev, imageUrl: "" }));
+                              setCreateImageUploadError("");
+                            }}
+                            style={{ background: "none", border: "none", padding: 0, color: "#ef4444", fontSize: "11px", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="modal-field wide">
                   <span>Description / Terms</span>
@@ -2127,18 +2275,25 @@ export default function AdminBusCouponListPage() {
                   </div>
                 )}
 
-                {Array.isArray(viewingCoupon.conditions) && viewingCoupon.conditions.length > 0 && (
-                  <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                    <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>Applied Rule Conditions ({viewingCoupon.conditions.length})</span>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
-                      {viewingCoupon.conditions.map((cond, idx) => (
-                        <div key={idx} style={{ fontSize: "12px", color: "#1e293b", background: "#ffffff", padding: "6px 10px", borderRadius: "6px", border: "1px solid #e2e8f0" }}>
-                          <strong>{cond.conditionType}</strong> — {cond.conditionOperator} {cond.value1} {cond.value2 ? `(${cond.value2})` : ""}
+                {/* Rule Conditions */}
+                <div style={{ gridColumn: "1 / -1", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "10.5px", color: "#64748b", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.5px" }}>
+                    Applied Rule Conditions ({Array.isArray(viewingCoupon.conditions) ? viewingCoupon.conditions.length : 0})
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "6px" }}>
+                    {Array.isArray(viewingCoupon.conditions) && viewingCoupon.conditions.length > 0 ? (
+                      viewingCoupon.conditions.map((cond, idx) => (
+                        <div key={idx} style={{ fontSize: "12px", color: "#1e293b", background: "#ffffff", padding: "8px 12px", borderRadius: "6px", border: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <strong style={{ color: "#A51C49" }}>{cond.conditionType || cond.type || "Condition"}</strong> — {cond.conditionOperator || cond.operator || "="} <span style={{ fontWeight: 600 }}>{cond.value1 || cond.value || "--"}</span> {cond.value2 ? `(${cond.value2})` : ""}
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>No specific condition rules attached.</div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Footer */}
@@ -2221,10 +2376,16 @@ export default function AdminBusCouponListPage() {
                     style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px" }}
                   >
                     <option value="DayOfWeek">Day Of Week (e.g. Monday,Wednesday,Friday)</option>
+                    <option value="Airline">Airline (e.g. 6E, AI)</option>
+                    <option value="CabinClass">Cabin Class (Economy, Business)</option>
+                    <option value="HotelName">Hotel Name</option>
+                    <option value="RoomType">Room Type</option>
+                    <option value="City">City / Destination</option>
                     <option value="OperatorName">Bus Operator Name</option>
                     <option value="Route">Route (Origin-Destination)</option>
                     <option value="BusType">Bus Seating / AC Type</option>
                     <option value="DepartureTime">Departure Time Range</option>
+                    <option value="MinimumFare">Minimum Fare</option>
                   </select>
                 </div>
 
@@ -2239,6 +2400,11 @@ export default function AdminBusCouponListPage() {
                     <option value="In">In (List of values)</option>
                     <option value="NotEquals">Not Equals / Exclude</option>
                     <option value="Contains">Contains</option>
+                    <option value=">">&gt; (Greater than)</option>
+                    <option value=">=">&gt;= (Greater than or equal)</option>
+                    <option value="<">&lt; (Less than)</option>
+                    <option value="<=">&lt;= (Less than or equal)</option>
+                    <option value="Between">Between (Range)</option>
                   </select>
                 </div>
 
@@ -2248,7 +2414,7 @@ export default function AdminBusCouponListPage() {
                     type="text"
                     value={newConditionForm.value1}
                     onChange={(e) => setNewConditionForm({ ...newConditionForm, value1: e.target.value })}
-                    placeholder="e.g. VRL Travels (or 'ALL' for no restriction)"
+                    placeholder={getConditionValuePlaceholder(newConditionForm.conditionType)}
                     style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
                     required
                   />
@@ -2260,7 +2426,7 @@ export default function AdminBusCouponListPage() {
                     type="text"
                     value={newConditionForm.value2}
                     onChange={(e) => setNewConditionForm({ ...newConditionForm, value2: e.target.value })}
-                    placeholder="Optional secondary value"
+                    placeholder={getConditionValuePlaceholder(newConditionForm.conditionType, true)}
                     style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #cbd5e1", fontSize: "13px", boxSizing: "border-box" }}
                   />
                 </div>
@@ -2288,29 +2454,47 @@ export default function AdminBusCouponListPage() {
               </p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {conditionsList.map((cond, idx) => (
-                  <div key={cond.id || idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#ffffff", border: "1px solid #e2e8f0", padding: "10px 14px", borderRadius: "8px" }}>
-                    <div style={{ fontSize: "13px", color: "#334155" }}>
-                      <strong style={{ color: "#A51C49" }}>{cond.conditionType}</strong> — {cond.conditionOperator} <span style={{ background: "#eff6ff", color: "#2563eb", padding: "2px 8px", borderRadius: "6px", fontWeight: 600 }}>{cond.value1}</span>
-                      {cond.value2 ? ` (${cond.value2})` : ""}
+                {conditionsList.map((cond, idx) => {
+                  const cType = cond.conditionType || cond.type || cond.ConditionType || "Condition";
+                  const cOp = cond.conditionOperator || cond.operator || cond.ConditionOperator || "=";
+                  const val1 = cond.value1 !== undefined && cond.value1 !== null ? String(cond.value1) : (cond.value !== undefined && cond.value !== null ? String(cond.value) : "");
+                  const val2 = cond.value2 !== undefined && cond.value2 !== null ? String(cond.value2) : "";
+
+                  return (
+                    <div key={cond.id || idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#ffffff", border: "1px solid #e2e8f0", padding: "10px 14px", borderRadius: "8px" }}>
+                      <div style={{ fontSize: "13px", color: "#334155" }}>
+                        <strong style={{ color: "#A51C49" }}>{cType}</strong> — {cOp} <span style={{ background: "#eff6ff", color: "#2563eb", padding: "2px 8px", borderRadius: "6px", fontWeight: 600 }}>{val1}</span>
+                        {val2 ? ` (${val2})` : ""}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCondition(cond.id || idx)}
+                        style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
+                      >
+                        Remove
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCondition(cond.id)}
-                      style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca", padding: "4px 10px", borderRadius: "6px", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
               <button
                 type="button"
-                onClick={() => setConditionsCoupon(null)}
-                style={{ background: "#64748b", color: "#fff", border: "none", padding: "10px 24px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}
+                onClick={() => {
+                  if (conditionsCoupon) {
+                    setCoupons((prev) =>
+                      prev.map((c) =>
+                        String(c.id) === String(conditionsCoupon.id)
+                          ? { ...c, conditions: conditionsList }
+                          : c
+                      )
+                    );
+                  }
+                  setConditionsCoupon(null);
+                }}
+                style={{ background: "#A51C49", color: "#fff", border: "none", padding: "10px 28px", borderRadius: "8px", fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 12px rgba(165, 28, 73, 0.25)" }}
               >
                 Done
               </button>
@@ -2527,93 +2711,95 @@ export default function AdminBusCouponListPage() {
                     <span>Is Exclusive</span>
                   </label>
                 </div>
-                <div className="modal-field wide">
-                  <span>Promotion Image URL (Optional) or Choose File</span>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
-                    <input
-                      type="text"
-                      value={editCoupon.imageUrl || ""}
-                      onChange={(e) => {
-                        setEditImageUploadError("");
-                        const rawVal = e.target.value;
-                        const formattedUrl = sanitizeImageUrl(rawVal);
-                        setEditCoupon({ ...editCoupon, imageUrl: formattedUrl });
-                      }}
-                      placeholder="https://your-domain.com/uploads/offers/summer-offer.jpg"
-                      style={{ flex: 1 }}
-                      disabled={isEditImageUploading}
-                    />
-                    <label
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        padding: "8px 14px",
-                        background: isEditImageUploading ? "#94a3b8" : "#A51C49",
-                        color: "#ffffff",
-                        borderRadius: "8px",
-                        cursor: isEditImageUploading ? "not-allowed" : "pointer",
-                        fontSize: "0.80rem",
-                        fontWeight: "600",
-                        whiteSpace: "nowrap",
-                        boxShadow: "0 2px 4px rgba(165, 28, 73, 0.2)",
-                        transition: "all 0.2s ease"
-                      }}
-                    >
-                      {isEditImageUploading ? "Uploading..." : "Choose File"}
+                {editCoupon.promotionCategory !== "Coupon" && (
+                  <div className="modal-field wide">
+                    <span>Promotion Image URL (Optional) or Choose File</span>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginTop: "4px" }}>
                       <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/avif,.jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tif,.tiff,.ico,.avif"
-                        style={{ display: "none" }}
-                        disabled={isEditImageUploading}
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          e.target.value = "";
-                          if (!file) return;
+                        type="text"
+                        value={editCoupon.imageUrl || ""}
+                        onChange={(e) => {
                           setEditImageUploadError("");
-                          setIsEditImageUploading(true);
-                          try {
-                            const rawUrl = await uploadCouponImage(file);
-                            const formattedUrl = sanitizeImageUrl(rawUrl);
-                            setEditCoupon((prev) => ({ ...prev, imageUrl: formattedUrl }));
-                          } catch (err) {
-                            setEditImageUploadError(err.message || "Image upload failed.");
-                          } finally {
-                            setIsEditImageUploading(false);
-                          }
+                          const rawVal = e.target.value;
+                          const formattedUrl = sanitizeImageUrl(rawVal);
+                          setEditCoupon({ ...editCoupon, imageUrl: formattedUrl });
                         }}
+                        placeholder="https://your-domain.com/uploads/offers/summer-offer.jpg"
+                        style={{ flex: 1 }}
+                        disabled={isEditImageUploading}
                       />
-                    </label>
-                  </div>
-                  {editImageUploadError && (
-                    <div style={{ marginTop: "6px", color: "#b91c1c", fontSize: "12px", fontWeight: 600 }}>
-                      {editImageUploadError}
-                    </div>
-                  )}
-                  {editCoupon.imageUrl && (
-                    <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px", background: "#f8fafc", padding: "6px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
-                      <img
-                        src={getImagePreviewSrc(editCoupon.imageUrl)}
-                        alt="Promotion Banner Preview"
-                        style={{ maxHeight: "45px", maxWidth: "120px", objectFit: "cover", borderRadius: "4px", border: "1px solid #cbd5e1" }}
-                      />
-                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
-                        <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Image Preview</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditCoupon((prev) => ({ ...prev, imageUrl: "" }));
+                      <label
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "6px",
+                          padding: "8px 14px",
+                          background: isEditImageUploading ? "#94a3b8" : "#A51C49",
+                          color: "#ffffff",
+                          borderRadius: "8px",
+                          cursor: isEditImageUploading ? "not-allowed" : "pointer",
+                          fontSize: "0.80rem",
+                          fontWeight: "600",
+                          whiteSpace: "nowrap",
+                          boxShadow: "0 2px 4px rgba(165, 28, 73, 0.2)",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        {isEditImageUploading ? "Uploading..." : "Choose File"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,image/bmp,image/tiff,image/x-icon,image/avif,.jpg,.jpeg,.png,.webp,.gif,.svg,.bmp,.tif,.tiff,.ico,.avif"
+                          style={{ display: "none" }}
+                          disabled={isEditImageUploading}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
                             setEditImageUploadError("");
+                            setIsEditImageUploading(true);
+                            try {
+                              const rawUrl = await uploadCouponImage(file);
+                              const formattedUrl = sanitizeImageUrl(rawUrl);
+                              setEditCoupon((prev) => ({ ...prev, imageUrl: formattedUrl }));
+                            } catch (err) {
+                              setEditImageUploadError(err.message || "Image upload failed.");
+                            } finally {
+                              setIsEditImageUploading(false);
+                            }
                           }}
-                          style={{ background: "none", border: "none", padding: 0, color: "#ef4444", fontSize: "11px", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}
-                        >
-                          Remove Image
-                        </button>
-                      </div>
+                        />
+                      </label>
                     </div>
-                  )}
-                </div>
+                    {editImageUploadError && (
+                      <div style={{ marginTop: "6px", color: "#b91c1c", fontSize: "12px", fontWeight: 600 }}>
+                        {editImageUploadError}
+                      </div>
+                    )}
+                    {editCoupon.imageUrl && (
+                      <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "10px", background: "#f8fafc", padding: "6px 10px", borderRadius: "6px", border: "1px solid #cbd5e1" }}>
+                        <img
+                          src={getImagePreviewSrc(editCoupon.imageUrl)}
+                          alt="Promotion Banner Preview"
+                          style={{ maxHeight: "45px", maxWidth: "120px", objectFit: "cover", borderRadius: "4px", border: "1px solid #cbd5e1" }}
+                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontSize: "11px", fontWeight: "600", color: "#334155" }}>Image Preview</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditCoupon((prev) => ({ ...prev, imageUrl: "" }));
+                              setEditImageUploadError("");
+                            }}
+                            style={{ background: "none", border: "none", padding: 0, color: "#ef4444", fontSize: "11px", cursor: "pointer", textDecoration: "underline", textAlign: "left" }}
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="modal-field wide">
                   <span>Description / Terms</span>

@@ -305,7 +305,12 @@ export default function AdminLogin() {
         return;
       }
 
-      setErrorMessage(data?.message || "Invalid email or password.");
+      // 2-Factor / OTP required flow: Save challengeId and transition to VERIFY_OTP mode
+      const challengeId = data?.challengeId || data?.ChallengeId || data?.data?.challengeId || data?.data?.ChallengeId || "";
+      setAdminChallengeId(challengeId);
+      startOtpTimer();
+      setSuccessMessage(data?.message || data?.Message || "OTP sent to your email. Please enter it below.");
+      setMode("VERIFY_OTP");
     } catch (err) {
       setErrorMessage(err?.message || "Invalid email or password.");
     } finally {

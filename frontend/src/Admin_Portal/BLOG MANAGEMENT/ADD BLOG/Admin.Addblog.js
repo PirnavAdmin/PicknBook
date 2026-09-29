@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { createAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories } from '../../../services/blogService';
+import { createAdminBlog, updateAdminBlog, getBlogCategories, getBlogSubCategories, removeBlogImageLocally, saveBlogImageLocally } from '../../../services/blogService';
 import { toApiAssetUrl, NgrokSafeImage, normalizeResponseMessage } from '../../../services/apiClient';
 
 const DEFAULT_FORM_STATE = {
@@ -155,6 +155,12 @@ const AddBlogForm = () => {
             [labelField]: '',
         }));
         if (previewSetter) previewSetter('');
+        const targetId = blogId || editingBlog?.id;
+        if (targetId && name === 'image') {
+            removeBlogImageLocally(targetId);
+            if (editingBlog?.title) removeBlogImageLocally(editingBlog.title);
+            if (editingBlog?.slug) removeBlogImageLocally(editingBlog.slug);
+        }
     };
 
     const buildSlug = (title) =>
@@ -227,14 +233,38 @@ const AddBlogForm = () => {
 
             if (formData.image && typeof formData.image !== "string") {
                 dataToSend.append("Image", formData.image);
+            } else {
+                dataToSend.append("ImageUrl", formData.imageName || "");
+                dataToSend.append("Image", formData.imageName || "");
+                if (!formData.imageName && !imagePreview) {
+                    dataToSend.append("RemoveImage", "true");
+                    dataToSend.append("ClearImage", "true");
+                }
             }
+
             if (formData.ogImage && typeof formData.ogImage !== "string") {
                 dataToSend.append("OgImage", formData.ogImage);
+            } else {
+                dataToSend.append("OgImageUrl", formData.ogImageName || "");
+                dataToSend.append("OgImage", formData.ogImageName || "");
+                if (!formData.ogImageName && !ogImagePreview) {
+                    dataToSend.append("RemoveOgImage", "true");
+                    dataToSend.append("ClearOgImage", "true");
+                }
             }
 
             const targetId = blogId || editingBlog?.id;
 
             if (isEditing && targetId) {
+                if (!imagePreview && !formData.imageName) {
+                    removeBlogImageLocally(targetId);
+                    if (editingBlog?.title) removeBlogImageLocally(editingBlog.title);
+                    if (editingBlog?.slug) removeBlogImageLocally(editingBlog.slug);
+                    if (formData.title) removeBlogImageLocally(formData.title);
+                } else if (imagePreview) {
+                    saveBlogImageLocally(targetId, imagePreview);
+                    if (formData.title) saveBlogImageLocally(formData.title, imagePreview);
+                }
                 await updateAdminBlog(targetId, dataToSend);
                 showToast('Blog updated successfully.', 'success');
             } else {

@@ -709,19 +709,30 @@ function toDateValue(value) {
   return Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
 }
 
-function formatSearchDate(value) {
+function formatSearchTime(value) {
   const parsed = parseUtcDate(value);
-  if (Number.isNaN(parsed.getTime())) {
+  if (!parsed || Number.isNaN(parsed.getTime())) {
     return "--";
   }
 
-  return parsed.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return parsed.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
+    timeZone: "Asia/Kolkata",
+  }).toLowerCase();
+}
+
+function formatSearchDate(value) {
+  const parsed = parseUtcDate(value);
+  if (!parsed || Number.isNaN(parsed.getTime())) {
+    return "--";
+  }
+
+  return parsed.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
     timeZone: "Asia/Kolkata",
   }).replace(/\//g, "-");
 }
@@ -957,7 +968,7 @@ export default function AdminBusSearchHistoryPage() {
       normalizeText(record.fromCity, "--"),
       normalizeText(record.toCity, "--"),
       formatDepartDate(record.departDate),
-      formatSearchDate(record.searchDateUtc),
+      formatSearchDate(record.searchDateUtc) ? `${formatSearchDate(record.searchDateUtc)}, ${formatSearchTime(record.searchDateUtc)}` : "--",
     ]);
 
     const csvBody = [
@@ -1119,7 +1130,12 @@ export default function AdminBusSearchHistoryPage() {
                   <span style={{ fontWeight: 500, color: "#1e293b" }}>{startIndex + index + 1}</span>
                 </div>
                 <div className="admin-search-history-cell">
-                  <span style={{ fontWeight: 500, color: "#1e293b" }}>{formatSearchDate(row.searchDateUtc)}</span>
+                  <strong style={{ fontWeight: 500, color: "#1e293b" }}>{formatSearchDate(row.searchDateUtc)}</strong>
+                  {row.searchDateUtc ? (
+                    <small style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 400 }}>
+                      {formatSearchTime(row.searchDateUtc)}
+                    </small>
+                  ) : null}
                 </div>
                 <div className="admin-search-history-cell">
                   <span style={{ fontWeight: 500, color: "#1e293b" }}>{formatDepartDate(row.departDate)}</span>
@@ -1298,7 +1314,9 @@ export default function AdminBusSearchHistoryPage() {
 
               <div style={{ gridColumn: "1 / -1" }}>
                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Search Date & Time (IST)</span>
-                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#A51C49", fontSize: "0.95rem" }}>{formatSearchDate(selectedRecord.searchDateUtc)}</p>
+                <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#A51C49", fontSize: "0.95rem" }}>
+                  {formatSearchDate(selectedRecord.searchDateUtc)}, {formatSearchTime(selectedRecord.searchDateUtc)}
+                </p>
               </div>
 
               <div>

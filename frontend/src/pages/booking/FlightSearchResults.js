@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   ArrowLeftRight,
   ArrowDown,
@@ -545,6 +545,12 @@ export default function FlightSearchResults() {
   const [selectedReturnFlightId, setSelectedReturnFlightId] = useState(null);
   const [twoWayActiveTab, setTwoWayActiveTab] = useState("onward"); // "onward" | "return"
 
+  // useRef to synchronously hold the latest selected flights — avoids React's async
+  // state-batching bug where setSelectedReturnFlightId() + handleStartBookingJourney()
+  // would read stale state for the return flight id.
+  const latestSelectedOnwardFlightRef = useRef(null);
+  const latestSelectedReturnFlightRef = useRef(null);
+
   // Multicity state
   const [multiCityActiveTab, setMultiCityActiveTab] = useState(0);
   const [selectedMultiCityFlightIds, setSelectedMultiCityFlightIds] = useState({});
@@ -556,6 +562,12 @@ export default function FlightSearchResults() {
   const [selectedClassByFlight, setSelectedClassByFlight] = useState({});
   const [selectedFareTypeByFlight, setSelectedFareTypeByFlight] = useState({});
   const [selectedFareOptionIndexByFlight, setSelectedFareOptionIndexByFlight] = useState({});
+  const latestFareOptionIndexRef = useRef({});
+
+  const handleSelectFareOption = (flightId, idx) => {
+    latestFareOptionIndexRef.current[flightId] = idx;
+    setSelectedFareOptionIndexByFlight(prev => ({ ...prev, [flightId]: idx }));
+  };
   const [activeFareSelectionModal, setActiveFareSelectionModal] = useState({ isOpen: false, flight: null });
   const [selectedFareType, setSelectedFareType] = useState("saver");
 
@@ -840,6 +852,17 @@ export default function FlightSearchResults() {
         if (typeof legsParam === "string" && legsParam.includes("%")) {
           try { legsParam = decodeURIComponent(legsParam); } catch (e) { }
         }
+        if (typeof legsParam === "string") {
+          try { legsParam = JSON.parse(legsParam); } catch (e) { }
+        }
+
+        if (Array.isArray(legsParam)) {
+          legsParam = legsParam.map((leg) => ({
+            ...leg,
+            fromCode: leg.fromCode || cityCode(leg.from || "", ""),
+            toCode: leg.toCode || cityCode(leg.to || "", "")
+          }));
+        }
 
         const result = await searchFlights({
           from: sourceName.trim(),
@@ -940,13 +963,47 @@ export default function FlightSearchResults() {
     return apiFlights;
   }, [tripType, twoWayActiveTab, multiCityActiveTab, returnFlights, apiFlights]);
 
+  const resolveFlightFareOption = useCallback((baseFlight) => {
+    if (!baseFlight) return null;
+    if (Array.isArray(baseFlight.fareOptions) && baseFlight.fareOptions.length > 0) {
+      const optIdx = latestFareOptionIndexRef.current[baseFlight.id] ?? selectedFareOptionIndexByFlight[baseFlight.id] ?? 0;
+      const chosenOpt = baseFlight.fareOptions[optIdx] || baseFlight.fareOptions[0];
+      if (chosenOpt) {
+        return {
+          ...baseFlight,
+          resultIndex: chosenOpt.resultIndex || baseFlight.resultIndex,
+          ResultIndex: chosenOpt.ResultIndex || chosenOpt.resultIndex,
+          srdvIndex: chosenOpt.srdvIndex || baseFlight.srdvIndex,
+          Fare: chosenOpt.fare,
+          FareBreakdown: chosenOpt.fareBreakdown,
+          isLCC: chosenOpt.isLcc,
+          isLcc: chosenOpt.isLcc !== undefined ? chosenOpt.isLcc : baseFlight.isLcc,
+          IsLCC: chosenOpt.isLcc !== undefined ? chosenOpt.isLcc : baseFlight.IsLCC,
+          isRefundable: chosenOpt.isRefundable,
+          fare: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.fare,
+          price: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.price,
+          priceInr: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.priceInr,
+          selectedTravelClassPriceInr: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.selectedTravelClassPriceInr,
+          baseFarePrice: chosenOpt.baseFare || baseFlight.baseFarePrice || 0,
+          taxPrice: chosenOpt.tax || baseFlight.taxPrice || 0,
+          b2cMarkupAmount: chosenOpt.b2cMarkupAmount || baseFlight.b2cMarkupAmount || 0,
+          source: chosenOpt.source || baseFlight.source,
+          className: chosenOpt.className || baseFlight.className || "",
+        };
+      }
+    }
+    return baseFlight;
+  }, [selectedFareOptionIndexByFlight]);
+
   const selectedOnwardFlightObj = useMemo(() => {
-    return normalizedOnwardList.find((f) => f.id === selectedOnwardFlightId) || normalizedOnwardList[0] || null;
-  }, [normalizedOnwardList, selectedOnwardFlightId]);
+    const raw = normalizedOnwardList.find((f) => f.id === selectedOnwardFlightId) || normalizedOnwardList[0] || null;
+    return resolveFlightFareOption(raw);
+  }, [normalizedOnwardList, selectedOnwardFlightId, resolveFlightFareOption]);
 
   const selectedReturnFlightObj = useMemo(() => {
-    return normalizedReturnList.find((f) => f.id === selectedReturnFlightId) || normalizedReturnList[0] || null;
-  }, [normalizedReturnList, selectedReturnFlightId]);
+    const raw = normalizedReturnList.find((f) => f.id === selectedReturnFlightId) || normalizedReturnList[0] || null;
+    return resolveFlightFareOption(raw);
+  }, [normalizedReturnList, selectedReturnFlightId, resolveFlightFareOption]);
 
   const combinedFare = useMemo(() => {
     if (tripType === "multicity") {
@@ -954,14 +1011,15 @@ export default function FlightSearchResults() {
       apiFlights.forEach((legArray, index) => {
         const selectedId = selectedMultiCityFlightIds[index];
         const selectedObj = legArray?.find(f => f.id === selectedId) || legArray?.[0];
-        if (selectedObj) total += Number(selectedObj.fare || 0);
+        const resolvedObj = resolveFlightFareOption(selectedObj);
+        if (resolvedObj) total += Number(resolvedObj.fare || 0);
       });
       return total;
     }
     const onwardFare = selectedOnwardFlightObj ? Number(selectedOnwardFlightObj.fare || 0) : 0;
     const returnFare = selectedReturnFlightObj ? Number(selectedReturnFlightObj.fare || 0) : 0;
     return onwardFare + returnFare;
-  }, [tripType, apiFlights, selectedMultiCityFlightIds, selectedOnwardFlightObj, selectedReturnFlightObj]);
+  }, [tripType, apiFlights, selectedMultiCityFlightIds, selectedOnwardFlightObj, selectedReturnFlightObj, resolveFlightFareOption]);
 
   const flights = useMemo(
     () =>
@@ -1316,7 +1374,7 @@ export default function FlightSearchResults() {
     let chosenClass = flight.className || "";
 
     if (Array.isArray(flight.fareOptions) && flight.fareOptions.length > 0) {
-      const optIdx = selectedFareOptionIndexByFlight[flight.id] ?? 0;
+      const optIdx = latestFareOptionIndexRef.current[flight.id] ?? selectedFareOptionIndexByFlight[flight.id] ?? 0;
       const chosenOpt = flight.fareOptions[optIdx] || flight.fareOptions[0];
       if (chosenOpt) {
         targetFlight = {
@@ -1339,6 +1397,8 @@ export default function FlightSearchResults() {
 
     if (tripType === "twoway" && returnFlights.length > 0) {
       if (twoWayActiveTab === "onward") {
+        // Store onward flight in ref for synchronous access later
+        latestSelectedOnwardFlightRef.current = targetFlight;
         setSelectedOnwardFlightId(targetFlight.id);
         setTwoWayActiveTab("return");
         setTimeout(() => {
@@ -1346,9 +1406,23 @@ export default function FlightSearchResults() {
           if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 100);
       } else {
+        // FIX: Store return flight in ref BEFORE calling handleStartBookingJourney.
+        // React's state updates are async — setSelectedReturnFlightId() won't have
+        // updated by the time handleStartBookingJourney runs, so we pass the flight
+        // directly via ref to avoid using stale state.
+        latestSelectedReturnFlightRef.current = targetFlight;
         setSelectedReturnFlightId(targetFlight.id);
-        if (selectedOnwardFlightObj) {
-          handleStartBookingJourney(selectedOnwardFlightObj, selectedOnwardFlightObj.fare, selectedOnwardFlightObj.className);
+
+        // Use latestSelectedOnwardFlightRef (sync) as the source of truth for onward
+        const onwardFlight = latestSelectedOnwardFlightRef.current || selectedOnwardFlightObj;
+        if (onwardFlight) {
+          handleStartBookingJourney(
+            onwardFlight,
+            onwardFlight.fare,
+            onwardFlight.className,
+            null,
+            targetFlight // returnFlightOverride — passed synchronously, bypasses stale state
+          );
         }
       }
     } else if (tripType === "multicity") {
@@ -1371,39 +1445,18 @@ export default function FlightSearchResults() {
   };
 
 
-  const resolveFlightFareOption = (baseFlight) => {
-    if (!baseFlight) return null;
-    if (Array.isArray(baseFlight.fareOptions) && baseFlight.fareOptions.length > 0) {
-      const optIdx = selectedFareOptionIndexByFlight[baseFlight.id] ?? 0;
-      const chosenOpt = baseFlight.fareOptions[optIdx] || baseFlight.fareOptions[0];
-      if (chosenOpt) {
-        return {
-          ...baseFlight,
-          resultIndex: chosenOpt.resultIndex || baseFlight.resultIndex,
-          ResultIndex: chosenOpt.ResultIndex || chosenOpt.resultIndex,
-          srdvIndex: chosenOpt.srdvIndex || baseFlight.srdvIndex,
-          Fare: chosenOpt.fare,
-          FareBreakdown: chosenOpt.fareBreakdown,
-          isLCC: chosenOpt.isLcc,
-          isLcc: chosenOpt.isLcc !== undefined ? chosenOpt.isLcc : baseFlight.isLcc,
-          IsLCC: chosenOpt.isLcc !== undefined ? chosenOpt.isLcc : baseFlight.IsLCC,
-          isRefundable: chosenOpt.isRefundable,
-          fare: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.fare,
-          price: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.price,
-          priceInr: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.priceInr,
-          selectedTravelClassPriceInr: chosenOpt.b2cFinalFare || chosenOpt.b2cPublishedFare || chosenOpt.offeredFare || baseFlight.selectedTravelClassPriceInr,
-          baseFarePrice: chosenOpt.baseFare || baseFlight.baseFarePrice || 0,
-          taxPrice: chosenOpt.tax || baseFlight.taxPrice || 0,
-          b2cMarkupAmount: chosenOpt.b2cMarkupAmount || baseFlight.b2cMarkupAmount || 0,
-          source: chosenOpt.source || baseFlight.source,
-          className: chosenOpt.className || baseFlight.className || "",
-        };
-      }
-    }
-    return baseFlight;
-  };
 
-  const handleStartBookingJourney = (flight, selectedPrice = null, selectedClass = null, explicitMultiCitySelections = null) => {
+
+  // returnFlightOverride: when provided, skips reading stale selectedReturnFlightId state.
+  // This is the production-safe approach: pass the just-clicked return flight object
+  // directly rather than relying on React state that may not have flushed yet.
+  const handleStartBookingJourney = (
+    flight,
+    selectedPrice = null,
+    selectedClass = null,
+    explicitMultiCitySelections = null,
+    returnFlightOverride = null
+  ) => {
 
     setBookingError("");
     setBookingSuccess("");
@@ -1439,8 +1492,17 @@ export default function FlightSearchResults() {
         });
       }
 
-      if (tripType === "twoway" && returnFlights.length > 0) {
-        const rawReturnObj = returnFlights.find(f => f.id === selectedReturnFlightId) || returnFlights[0];
+      if (tripType === "twoway") {
+        // Priority: use returnFlightOverride (synchronous, freshly clicked) >
+        //           latestSelectedReturnFlightRef (sync ref) >
+        //           find by selectedReturnFlightId in returnFlights (may be stale) >
+        //           fallback to returnFlights[0]
+        const rawReturnObj =
+          returnFlightOverride ||
+          latestSelectedReturnFlightRef.current ||
+          (returnFlights.length > 0
+            ? (returnFlights.find(f => f.id === selectedReturnFlightId) || returnFlights[0])
+            : null);
         if (rawReturnObj) {
           const returnFlightObj = resolveFlightFareOption(rawReturnObj);
           allSelectedLegs.push({
@@ -2162,173 +2224,7 @@ export default function FlightSearchResults() {
           <section className="results-column" style={{ paddingBottom: tripType === "twoway" ? "100px" : "20px" }}>
 
 
-            {tripType === "twoway" && returnFlights.length > 0 && (
-              <div
-                id="two-way-tabs-strip"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "16px",
-                  backgroundColor: "#ffffff",
-                  padding: "12px 16px",
-                  borderRadius: "12px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                  border: "1px solid #cbd5e1"
-                }}
-              >
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: "10px 16px",
-                    borderRadius: "8px",
-                    border: twoWayActiveTab === "onward" ? "2px solid #d32f2f" : "1px solid #cbd5e1",
-                    backgroundColor: twoWayActiveTab === "onward" ? "#fff5f5" : "#ffffff",
-                    color: twoWayActiveTab === "onward" ? "#d32f2f" : "#475569",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between"
-                  }}
-                  onClick={() => setTwoWayActiveTab("onward")}
-                >
-                  <div style={{ textAlign: "left" }}>
-                    <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", display: "block" }}>1. ONWARD FLIGHT</span>
-                    <strong>{sourceName} ➔ {destinationName}</strong>
-                    {selectedOnwardFlightObj && (
-                      <span style={{ display: "block", fontSize: "0.8rem", color: "#d32f2f", fontWeight: 700, marginTop: "2px" }}>
-                        Selected: ₹{new Intl.NumberFormat("en-IN").format(selectedOnwardFlightObj.fare)}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: "0.85rem", background: "#f1f5f9", padding: "4px 8px", borderRadius: "6px" }}>
-                    {apiFlights.length} Available
-                  </span>
-                </button>
 
-                <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <span style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", fontWeight: 700, display: "block" }}>
-                    TOTAL FARE
-                  </span>
-                  <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#16a34a" }}>
-                    ₹{new Intl.NumberFormat("en-IN").format(combinedFare)}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  style={{
-                    flex: 1,
-                    padding: "10px 16px",
-                    borderRadius: "8px",
-                    border: twoWayActiveTab === "return" ? "2px solid #ff0000" : "1px solid #cbd5e1",
-                    backgroundColor: twoWayActiveTab === "return" ? "#fef2f2" : "#ffffff",
-                    color: twoWayActiveTab === "return" ? "#ff0000" : "#475569",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between"
-                  }}
-                  onClick={() => setTwoWayActiveTab("return")}
-                >
-                  <div style={{ textAlign: "left" }}>
-                    <span style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#64748b", display: "block" }}>2. RETURN FLIGHT</span>
-                    <strong>{destinationName} ➔ {sourceName}</strong>
-                    {selectedReturnFlightObj && (
-                      <span style={{ display: "block", fontSize: "0.8rem", color: "#ff0000", fontWeight: 700, marginTop: "2px" }}>
-                        Selected: ₹{new Intl.NumberFormat("en-IN").format(selectedReturnFlightObj.fare)}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: "0.85rem", background: "#f1f5f9", padding: "4px 8px", borderRadius: "6px" }}>
-                    {returnFlights.length} Available
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {tripType === "multicity" && (apiFlights.length > 0 ? apiFlights : parsedMultiCityLegs).length > 0 && (
-              <div
-                id="multi-city-tabs-strip"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "16px",
-                  backgroundColor: "#ffffff",
-                  padding: "12px 16px",
-                  borderRadius: "12px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                  border: "1px solid #cbd5e1",
-                  overflowX: "auto"
-                }}
-              >
-                {(apiFlights.length > 0 ? apiFlights : parsedMultiCityLegs).map((legItemOrArray, index) => {
-                  const legArray = Array.isArray(legItemOrArray) ? legItemOrArray : (apiFlights[index] || []);
-                  const selectedId = selectedMultiCityFlightIds[index];
-                  const selectedObj = legArray?.find(f => f.id === selectedId) || legArray?.[0];
-                  const isActive = multiCityActiveTab === index;
-                  const legInfo = parsedMultiCityLegs[index] || {};
-                  const displaySrc = cityCode(selectedObj?.sourceCode || legInfo.from || legInfo.fromCity || legInfo.source || "");
-                  const displayDest = cityCode(selectedObj?.destinationCode || legInfo.to || legInfo.toCity || legInfo.destination || "");
-                  const displayAirline = selectedObj?.airline || selectedObj?.airlineName || "Select Flight";
-                  const displayFare = selectedObj?.fare;
-
-                  return (
-                    <button
-                      key={`mc-top-tab-${index}`}
-                      type="button"
-                      style={{
-                        flex: 1,
-                        minWidth: "210px",
-                        padding: "10px 14px",
-                        borderRadius: "8px",
-                        border: isActive ? "2px solid #ff0000" : "1px solid #cbd5e1",
-                        backgroundColor: isActive ? "#fff1f2" : "#ffffff",
-                        color: isActive ? "#ff0000" : "#475569",
-                        fontWeight: 700,
-                        fontSize: "0.88rem",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "10px"
-                      }}
-                      onClick={() => setMultiCityActiveTab(index)}
-                    >
-                      <div style={{ textAlign: "left" }}>
-                        <span style={{ fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.5px", color: isActive ? "#ff0000" : "#64748b", display: "block", fontWeight: 800 }}>
-                          {index + 1}. FLIGHT LEG {index + 1}
-                        </span>
-                        <strong style={{ color: "#0f172a" }}>{displaySrc} ➔ {displayDest}</strong>
-                        {selectedObj && (
-                          <span style={{ display: "block", fontSize: "0.78rem", color: "#ff0000", fontWeight: 700, marginTop: "2px" }}>
-                            {displayAirline} {displayFare ? `· ₹${new Intl.NumberFormat("en-IN").format(displayFare)}` : ""}
-                          </span>
-                        )}
-                      </div>
-                      <span style={{ fontSize: "0.8rem", background: isActive ? "#ffe4e6" : "#f1f5f9", color: isActive ? "#ff0000" : "#475569", padding: "4px 8px", borderRadius: "6px", fontWeight: 700, whiteSpace: "nowrap" }}>
-                        {legArray.length} Available
-                      </span>
-                    </button>
-                  );
-                })}
-
-                <div style={{ textAlign: "center", padding: "0 12px", borderLeft: "1px solid #e2e8f0", flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.7rem", textTransform: "uppercase", color: "#64748b", fontWeight: 700, display: "block" }}>
-                    TOTAL FARE
-                  </span>
-                  <span style={{ fontSize: "1.15rem", fontWeight: 900, color: "#16a34a" }}>
-                    ₹{new Intl.NumberFormat("en-IN").format(combinedFare)}
-                  </span>
-                </div>
-              </div>
-            )}
 
             {(() => {
               const cheapestFlight = [...filteredFlights].sort((a, b) => a.fare - b.fare)[0];
@@ -2757,7 +2653,21 @@ export default function FlightSearchResults() {
                     handleStartBookingJourney(firstLegFlight, null, null, selectedMultiCityFlightIds);
                   }
                 } else if (selectedOnwardFlightObj) {
-                  handleStartBookingJourney(selectedOnwardFlightObj, selectedOnwardFlightObj.fare, selectedOnwardFlightObj.className);
+                  // For two-way, pass the currently selected return flight synchronously via ref.
+                  // This ensures the latest selected return flight is always used, even if
+                  // React state hasn't flushed yet at the time of button click.
+                  const returnOverride = latestSelectedReturnFlightRef.current
+                    || (selectedReturnFlightId
+                        ? returnFlights.find(f => f.id === selectedReturnFlightId)
+                        : null)
+                    || (returnFlights.length > 0 ? returnFlights[0] : null);
+                  handleStartBookingJourney(
+                    selectedOnwardFlightObj,
+                    selectedOnwardFlightObj.fare,
+                    selectedOnwardFlightObj.className,
+                    null,
+                    returnOverride
+                  );
                 }
               }}
             >
@@ -3023,7 +2933,7 @@ export default function FlightSearchResults() {
                               e.stopPropagation();
                               // Since FareDetails modal looks at selectedFareOptionIndexByFlight to calculate prices,
                               // we need to set the index explicitly before opening so it calculates for this exact row.
-                              setSelectedFareOptionIndexByFlight(prev => ({ ...prev, [activeFareSelectionModal.flight.id]: optIdx }));
+                              handleSelectFareOption(activeFareSelectionModal.flight.id, optIdx);
                               handleOpenFareDetails({ ...activeFareSelectionModal.flight, resultIndex: opt.resultIndex || opt.ResultIndex || opt.legResultIndex, srdvIndex: opt.srdvIndex, isLcc: opt.isLcc });
                             }}
                             style={{ display: "block", marginTop: "4px", background: "none", border: "none", color: "#2563eb", textDecoration: "underline", cursor: "pointer", fontSize: "0.75rem", fontWeight: 600, padding: 0 }}
@@ -3042,7 +2952,7 @@ export default function FlightSearchResults() {
                             type="button"
                             style={{ background: "var(--theme-primary, #ff0000)", color: "#ffffff", border: "none", borderRadius: "6px", padding: "8px 16px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.9rem" }}
                             onClick={() => {
-                              setSelectedFareOptionIndexByFlight(prev => ({ ...prev, [activeFareSelectionModal.flight.id]: optIdx }));
+                              handleSelectFareOption(activeFareSelectionModal.flight.id, optIdx);
                               // Use setTimeout to ensure the state update processes first
                               setTimeout(() => {
                                 handleFinalizeFlightSelection(activeFareSelectionModal.flight);
@@ -3235,7 +3145,7 @@ export default function FlightSearchResults() {
             <div className="booking-modal-body" style={{ padding: "0" }}>
               {(() => {
                 const flt = activeFareDetailsModal.flight;
-                const optIdx = selectedFareOptionIndexByFlight[flt?.id] ?? 0;
+                const optIdx = latestFareOptionIndexRef.current[flt?.id] ?? selectedFareOptionIndexByFlight[flt?.id] ?? 0;
                 const chosenOpt = flt?.fareOptions?.[optIdx] || flt?.fareOptions?.[0];
                 const segments = Array.isArray(flt?.fullMultiSectorSegments) && flt.fullMultiSectorSegments.length > 0 
                   ? flt.fullMultiSectorSegments 
@@ -3322,7 +3232,7 @@ export default function FlightSearchResults() {
               <div style={{ padding: "0 20px 20px 20px" }}>
               {(() => {
                 const flt = activeFareDetailsModal.flight;
-                const optIdx = selectedFareOptionIndexByFlight[flt?.id] ?? 0;
+                const optIdx = latestFareOptionIndexRef.current[flt?.id] ?? selectedFareOptionIndexByFlight[flt?.id] ?? 0;
                 const chosenOpt = flt?.fareOptions?.[optIdx] || flt?.fareOptions?.[0];
                 const dMarkup = chosenOpt?.b2cMarkupAmount || flt?.b2cMarkupAmount || 0;
                 const dTotal = chosenOpt?.b2cFinalFare || chosenOpt?.b2cPublishedFare || chosenOpt?.offeredFare || flt?.fare || 0;

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAdminDashboardSummary, deriveAdminMetrics } from '../../services/adminDashboardService';
 import { adminNotificationService } from '../../services/adminNotificationService';
@@ -269,6 +269,50 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+    const notificationRef = useRef(null);
+
+    // Click outside handler to close notification popup when clicking anywhere on screen
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setShowNotifications(false);
+            }
+        };
+        if (showNotifications) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showNotifications]);
+
+    // Map notification types/titles to related page table routes
+    const getNotificationPath = (notif) => {
+        if (notif?.path) return notif.path;
+        const title = (notif?.title || '').toLowerCase();
+        const message = (notif?.message || '').toLowerCase();
+        const category = (notif?.category || notif?.severity || '').toLowerCase();
+
+        if (title.includes('cancellation') || message.includes('cancellation')) {
+            return '/admin/b2c-bus/cancellation-list';
+        }
+        if (title.includes('payment') || title.includes('deposit') || message.includes('payment') || message.includes('deposit') || message.includes('failed')) {
+            return '/admin/customer-management/deposit-request-list';
+        }
+        if (title.includes('hotel') || message.includes('hotel')) {
+            return '/admin/b2c-hotel/booking-list';
+        }
+        if (title.includes('flight') || message.includes('flight')) {
+            return '/admin/b2c-flight/booking-list';
+        }
+        if (title.includes('bus') || message.includes('bus') || title.includes('summary') || message.includes('summary')) {
+            return '/admin/b2c-bus/booking-list';
+        }
+        if (title.includes('customer') || title.includes('traveler') || message.includes('customer')) {
+            return '/admin/customer-management/customer-list';
+        }
+        return '/admin/notifications';
+    };
     const [showCacheLoader, setShowCacheLoader] = useState(false);
     const [cacheLoaderText, setCacheLoaderText] = useState('');
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -428,12 +472,22 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     });
                 }
 
+                const isAllCleared = localStorage.getItem('admin_notifications_marked_all_read') === 'true';
+
                 // 1. Fetch live unread count from API Endpoint 2
                 try {
                     const count = await adminNotificationService.getUnreadCount();
                     if (typeof count === 'number') {
-                        setNotificationCount(count);
-                        setHasUnread(count > 0);
+                        if (isAllCleared && count === 0) {
+                            setNotificationCount(0);
+                            setHasUnread(false);
+                        } else {
+                            if (count > 0) {
+                                localStorage.removeItem('admin_notifications_marked_all_read');
+                            }
+                            setNotificationCount(count);
+                            setHasUnread(count > 0);
+                        }
                     }
                 } catch (cntErr) {
                     console.error("Unread count fetch error:", cntErr);
@@ -453,7 +507,13 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     console.error("Notifications list fetch error:", notifErr);
                 }
 
-                if (apiItems.length > 0) {
+                const unreadApiItems = apiItems.filter(item => !item.isRead);
+
+                if (isAllCleared && unreadApiItems.length === 0) {
+                    setNotifications([]);
+                    setNotificationCount(0);
+                    setHasUnread(false);
+                } else if (apiItems.length > 0) {
                     const mappedList = apiItems.map(item => ({
                         id: item.id || item.notificationId || `notif-${Math.random()}`,
                         title: item.title || item.type || 'Notification',
@@ -463,9 +523,10 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         time: item.createdAt || item.timestamp || item.createdDate || '',
                         color: item.severity === 'Critical' ? '#ef4444' : item.severity === 'Warning' ? '#f59e0b' : '#1e75ff'
                     }));
-                    setNotifications(mappedList);
-                } else {
-                    // Fallback to dynamic dashboard action items if no API notifications returned yet
+                    const listToDisplay = isAllCleared ? mappedList.filter(n => !n.isRead) : mappedList;
+                    setNotifications(listToDisplay);
+                } else if (!isAllCleared) {
+                    // Fallback to dynamic dashboard action items if no API notifications returned yet and user hasn't marked all read
                     const list = [];
                     const pending = summary?.pendingActions || {};
                     const bus = summary?.busBookings || {};
@@ -511,6 +572,10 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         setNotificationCount(list.length);
                         setHasUnread(true);
                     }
+                } else {
+                    setNotifications([]);
+                    setNotificationCount(0);
+                    setHasUnread(false);
                 }
             } catch (err) {
                 console.error("Error fetching Topbar dashboard summary data:", err);
@@ -1231,30 +1296,108 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     </button>
 
                     {/* Notification Bell Button */}
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            style={styles.notificationBtn}
-                            type="button"
-                            aria-label="Notifications"
-                            onClick={() => {
-                                const nextShow = !showNotifications;
-                                setShowNotifications(nextShow);
-                                setShowDatePicker(false);
-                                if (nextShow) {
-                                    setHasUnread(false);
-                                }
-                            }}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                            </svg>
-                            {hasUnread && notificationCount > 0 && (
-                                <span style={styles.notificationBadge}>
-                                    {notificationCount > 99 ? '99+' : notificationCount}
-                                </span>
-                            )}
-                        </button>
+                    <div style={{ position: 'relative' }} ref={notificationRef}>
+                        {(() => {
+                            const hasActiveMessages = hasUnread && (notificationCount > 0 || notifications.length > 0);
+                            return (
+                                <button
+                                    className="notification-bell-btn-vibrate"
+                                    style={{
+                                        ...styles.notificationBtn,
+                                        width: hasActiveMessages ? '48px' : '42px',
+                                        backgroundColor: showNotifications ? 'rgba(30, 117, 255, 0.14)' : 'var(--admin-soft)',
+                                        borderColor: showNotifications ? '#3b82f6' : 'var(--admin-border)',
+                                        color: showNotifications ? '#1e75ff' : (hasActiveMessages ? '#1e75ff' : 'var(--admin-muted)'),
+                                        boxShadow: showNotifications ? '0 0 0 3px rgba(59, 130, 246, 0.2)' : '0 4px 12px rgba(15, 23, 42, 0.02)',
+                                        transition: 'all 0.25 ease',
+                                    }}
+                                    type="button"
+                                    aria-label="Notifications"
+                                    onClick={() => {
+                                        const nextShow = !showNotifications;
+                                        setShowNotifications(nextShow);
+                                        setShowDatePicker(false);
+                                        if (nextShow) {
+                                            setHasUnread(false);
+                                        }
+                                    }}
+                                >
+                                    <style>{`
+                                        @keyframes bellSideSway {
+                                            0%, 100% { transform: rotate(0deg); }
+                                            15% { transform: rotate(10deg); }
+                                            30% { transform: rotate(-8deg); }
+                                            45% { transform: rotate(6deg); }
+                                            60% { transform: rotate(-4deg); }
+                                            75% { transform: rotate(2deg); }
+                                        }
+                                        @keyframes waveSymbolPulse {
+                                            0%, 100% { opacity: 0.35; transform: scale(0.95); }
+                                            50% { opacity: 1; transform: scale(1.08); }
+                                        }
+                                        @keyframes bellVibrateTwoSides {
+                                            0% { transform: scale(1) rotate(0deg); }
+                                            15% { transform: scale(1.08) rotate(-14deg); }
+                                            30% { transform: scale(1.08) rotate(14deg); }
+                                            45% { transform: scale(1.08) rotate(-10deg); }
+                                            60% { transform: scale(1.08) rotate(10deg); }
+                                            75% { transform: scale(1.05) rotate(-5deg); }
+                                            90% { transform: scale(1.05) rotate(5deg); }
+                                            100% { transform: scale(1) rotate(0deg); }
+                                        }
+                                        .notification-bell-btn-vibrate:hover {
+                                            animation: bellVibrateTwoSides 0.45s ease-in-out !important;
+                                        }
+                                        .animated-bell-icon {
+                                            animation: bellSideSway 2.5s infinite ease-in-out;
+                                            transform-origin: 10px 4px;
+                                        }
+                                        .wave-symbol-1 {
+                                            animation: waveSymbolPulse 1.4s infinite ease-in-out;
+                                            animation-delay: 0s;
+                                        }
+                                        .wave-symbol-2 {
+                                            animation: waveSymbolPulse 1.4s infinite ease-in-out;
+                                            animation-delay: 0.2s;
+                                        }
+                                        .wave-symbol-3 {
+                                            animation: waveSymbolPulse 1.4s infinite ease-in-out;
+                                            animation-delay: 0.4s;
+                                        }
+                                    `}</style>
+                                    <svg
+                                        width={hasActiveMessages ? "26" : "20"}
+                                        height="20"
+                                        viewBox={hasActiveMessages ? "0 0 30 22" : "0 0 20 22"}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className={hasActiveMessages ? "animated-bell-icon" : ""}
+                                    >
+                                        {/* Bell Icon */}
+                                        <g>
+                                            <path d="M14 6A5 5 0 0 0 4 6c0 6-2.5 7.5-2.5 7.5h15S14 12 14 6"></path>
+                                            <path d="M9.73 17.5a1.8 1.8 0 0 1-3.46 0"></path>
+                                        </g>
+                                        {/* 3 Wave symbols on the side of the bell ONLY when active messages exist */}
+                                        {hasActiveMessages && (
+                                            <g stroke="#1e75ff">
+                                                <path d="M18.5 6.5a4.5 4.5 0 0 1 0 7" className="wave-symbol-1" strokeWidth="1.8" />
+                                                <path d="M21.5 4.5a8 8 0 0 1 0 11" className="wave-symbol-2" strokeWidth="1.8" />
+                                                <path d="M24.5 2.5a11.5 11.5 0 0 1 0 15" className="wave-symbol-3" strokeWidth="1.8" />
+                                            </g>
+                                        )}
+                                    </svg>
+                                    {hasUnread && notificationCount > 0 && (
+                                        <span style={styles.notificationBadge}>
+                                            {notificationCount > 99 ? '99+' : notificationCount}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })()}
                         {showNotifications && (
                             <div style={{
                                 position: 'absolute',
@@ -1284,9 +1427,10 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                             onClick={async (e) => {
                                                 e.stopPropagation();
                                                 await adminNotificationService.markAllAsRead();
+                                                localStorage.setItem('admin_notifications_marked_all_read', 'true');
                                                 setHasUnread(false);
                                                 setNotificationCount(0);
-                                                setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+                                                setNotifications([]);
                                                 showToastMessage("All notifications marked as read", "success");
                                             }}
                                             style={{
@@ -1320,11 +1464,12 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                                                 onClick={async () => {
                                                     if (notif.id) {
                                                         await adminNotificationService.markAsRead(notif.id);
-                                                        setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n));
+                                                        setNotifications(prev => prev.filter(n => n.id !== notif.id));
                                                         setNotificationCount(prev => Math.max(0, prev - 1));
                                                     }
-                                                    if (notif.path) {
-                                                        navigate(notif.path);
+                                                    const targetPath = getNotificationPath(notif);
+                                                    if (targetPath) {
+                                                        navigate(targetPath);
                                                         setShowNotifications(false);
                                                     }
                                                 }}

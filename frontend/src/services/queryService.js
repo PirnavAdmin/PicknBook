@@ -45,8 +45,12 @@ export async function getAdminQueries() {
 }
 
 // 3. Admin Update Status
-export async function updateQueryStatus(id, status) {
-  const response = await queriesApi.put(`/api/contactqueries/admin/${id}/status`, { status });
+export async function updateQueryStatus(id, statusInput) {
+  const payload =
+    typeof statusInput === "object" && statusInput !== null
+      ? statusInput
+      : { status: statusInput };
+  const response = await queriesApi.put(`/api/contactqueries/admin/${id}/status`, payload);
   return response.data;
 }
 

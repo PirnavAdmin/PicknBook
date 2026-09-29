@@ -18,7 +18,7 @@ async function adminWalletRequest(path, options = {}) {
   const url = toApiUrl(path);
   const headers = withNgrokSkipWarningHeader(path, {
     Accept: "application/json",
-    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   });

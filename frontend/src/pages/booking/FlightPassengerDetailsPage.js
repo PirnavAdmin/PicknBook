@@ -180,6 +180,23 @@ export default function FlightPassengerDetailsPage() {
   const searchContext = flowState.searchContext || null;
   const travellers = parseTravellerSummary(searchContext?.travellers);
 
+  // Normalize isTwoWay / isMultiCity — prefer explicit flags, fall back to searchContext.tripType.
+  // This guards against older session data or the stale-state bug where isTwoWay was dropped.
+  const isTwoWayNormalized =
+    Boolean(flowState.isTwoWay) ||
+    searchContext?.tripType === "twoway";
+  const isMultiCityNormalized =
+    Boolean(flowState.isMultiCity) ||
+    searchContext?.tripType === "multicity";
+
+  // Resolve returnFlight from explicit field, or fall back to selectedLegs[1].
+  // selectedLegs always contains all legs in order, so legs[1] is the return leg for round trips.
+  const returnFlightNormalized =
+    flowState.returnFlight ||
+    (isTwoWayNormalized && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 1
+      ? flowState.selectedLegs[1]
+      : null);
+
   const [passengers, setPassengers] = useState(() =>
     buildPassengerSeed(selectedSeats, travellers, flowState.passengers)
   );
@@ -384,19 +401,89 @@ export default function FlightPassengerDetailsPage() {
     async function runFareQuote() {
       if (!flight) return;
       try {
-        const quoteRes = await getFareQuote({
-          flight,
-          returnFlight: flowState.returnFlight,
-          legs: flowState.selectedLegs || flowState.legs,
-          selectedLegs: flowState.selectedLegs || flowState.legs,
-          traceId: flight.traceId || flowState.traceId || flowState.TraceId,
-          resultIndex: flowState.resultIndex || flowState.ResultIndex || flight.resultIndex || flight.ResultIndex,
-          srdvType: flight.srdvType,
-          srdvIndex: flight.srdvIndex,
-          journeyType: flowState.isMultiCity ? 3 : (flowState.isTwoWay ? 2 : 1),
-          adults: travellers.adults, children: travellers.children, infants: travellers.infants,
-          isMultiCity: flowState.isMultiCity
-        });
+        const selectedLegs = flowState.selectedLegs || flowState.legs || (flight ? [flight] : []);
+        
+        // Deduplicate itineraries based on resultIndex
+        const uniqueItineraries = [];
+        const seenIndices = new Set();
+        for (const leg of selectedLegs) {
+          const idx = leg.resultIndex || leg.ResultIndex || "";
+          if (idx && !seenIndices.has(idx)) {
+            seenIndices.add(idx);
+            uniqueItineraries.push(leg);
+          }
+        }
+        
+        // Fallback to primary flight if uniqueItineraries is empty
+        if (uniqueItineraries.length === 0) uniqueItineraries.push(flight);
+
+        let quoteRes;
+        
+        // If we have mixed independent itineraries (e.g., MixAPI multi-city), quote them individually
+        if (uniqueItineraries.length > 1) {
+          const promises = uniqueItineraries.map(leg => getFareQuote({
+            flight: leg,
+            traceId: leg.traceId || leg.TraceId || flowState.traceId || flowState.TraceId,
+            resultIndex: leg.resultIndex || leg.ResultIndex,
+            srdvType: leg.srdvType,
+            srdvIndex: leg.srdvIndex,
+            journeyType: 1, // Quote as independent OneWay
+            adults: travellers.adults, children: travellers.children, infants: travellers.infants,
+            isMultiCity: false
+          }));
+          
+          const results = await Promise.all(promises);
+          const failed = results.find(r => !r.success);
+          
+          if (failed) {
+            quoteRes = failed;
+          } else {
+            let sumFinal = 0, sumBase = 0, sumTax = 0;
+            let isPassportRequired = false;
+            
+            for (const r of results) {
+              const fqRes = r.results || r.rawResponse?.Results || r.rawResponse?.Response?.Results || {};
+              const fqF = fqRes?.Fare || r.fare || {};
+              sumFinal += Number(fqRes?.B2CFinalFare ?? fqRes?.B2CPublishedFare ?? fqRes?.OfferedFare ?? fqF?.PublishedFare ?? fqF?.OfferedFare ?? 0);
+              sumBase += Number(fqRes?.DisplayBaseFare ?? fqRes?.B2CBaseFare ?? fqRes?.BaseFare ?? fqF?.BaseFare ?? 0);
+              sumTax += Number(fqRes?.DisplayTax ?? fqRes?.B2CTax ?? fqRes?.Tax ?? fqF?.Tax ?? 0);
+              isPassportRequired = isPassportRequired || r.isPassportRequiredAtBook || fqRes?.IsPassportRequiredAtTicket;
+            }
+            
+            quoteRes = {
+              success: true,
+              results: {
+                ...results[0].results,
+                Fare: { PublishedFare: sumFinal, BaseFare: sumBase, Tax: sumTax },
+                B2CFinalFare: sumFinal,
+                DisplayBaseFare: sumBase,
+                DisplayTax: sumTax,
+                IsPassportRequiredAtTicket: isPassportRequired
+              },
+              identity: {
+                TraceId: flight.traceId || flowState.traceId || flowState.TraceId,
+                ResultIndex: flowState.resultIndex || flowState.ResultIndex || flight.resultIndex || flight.ResultIndex
+              },
+              fare: { PublishedFare: sumFinal, BaseFare: sumBase, Tax: sumTax }
+            };
+          }
+        } else {
+          // Standard single FareQuote
+          quoteRes = await getFareQuote({
+            flight,
+            returnFlight: returnFlightNormalized,
+            legs: selectedLegs,
+            selectedLegs: selectedLegs,
+            traceId: flight.traceId || flowState.traceId || flowState.TraceId,
+            resultIndex: uniqueItineraries[0].resultIndex || uniqueItineraries[0].ResultIndex,
+            srdvType: flight.srdvType,
+            srdvIndex: flight.srdvIndex,
+            journeyType: isMultiCityNormalized ? 3 : (isTwoWayNormalized ? 2 : 1),
+            adults: travellers.adults, children: travellers.children, infants: travellers.infants,
+            isMultiCity: isMultiCityNormalized
+          });
+        }
+
         if (isCurrent && quoteRes && quoteRes.success) {
           console.log("FareQuote API validated successfully:", quoteRes);
           setFareQuoteData(quoteRes);
@@ -604,7 +691,7 @@ export default function FlightPassengerDetailsPage() {
       };
 
       const pricing = await getFlightPricingPreview({ ...payload, couponCode: code || null,
-        journeyType: flowState.isMultiCity ? 3 : flowState.isTwoWay ? 2 : 1,
+        journeyType: isMultiCityNormalized ? 3 : isTwoWayNormalized ? 2 : 1,
         adults: travellers.adults, children: travellers.children, infants: travellers.infants });
       setFareQuoteData(pricing);
       writeFlightBookingFlowState({ fareQuote: pricing });
@@ -984,7 +1071,7 @@ export default function FlightPassengerDetailsPage() {
       if (!fareQuoteData?.success) throw new Error(fareQuoteError || "Wait for a valid fare quote before continuing.");
       const currentQuote = await getFareQuote({ flight,
         ...fareQuoteData.identity, couponCode: couponCode.trim().toUpperCase() || null,
-        journeyType: flowState.isMultiCity ? 3 : flowState.isTwoWay ? 2 : 1,
+        journeyType: isMultiCityNormalized ? 3 : isTwoWayNormalized ? 2 : 1,
         adults: travellers.adults, children: travellers.children, infants: travellers.infants });
       payload.fareQuote = currentQuote;
       payload.payableAmount = currentQuote.totalFare;
@@ -1158,16 +1245,6 @@ export default function FlightPassengerDetailsPage() {
         </>
       )}
 
-      <label className="passenger-field passenger-field--full">
-        <span>Passenger Email (Optional)</span>
-        <input
-          type="email"
-          placeholder="Email Address"
-          value={passenger.email || ""}
-          onChange={(event) => updatePassenger(index, "email", event.target.value)}
-        />
-      </label>
-
       <div className="special-assistance-grid-row">
         <span>Special Assistance</span>
         <div className="special-assistance-trigger-box" onClick={() => handleOpenSpecialAssistance(index)}>
@@ -1257,7 +1334,7 @@ export default function FlightPassengerDetailsPage() {
   );  // Sidebar helpers
 
   return (
-    <main className="flight-flow-page">
+    <main className="flight-flow-page flight-passenger-details-page">
       <BookingTimer onRestartSearch={handleRestartSearch} mode="banner" />
 
       {/* ── STEPPER PROGRESS HEADER ── */}
@@ -1289,14 +1366,14 @@ export default function FlightPassengerDetailsPage() {
           {/* Your Flight Details */}
           <div className="sidebar-card your-flight-card">
             <h3 className="sidebar-card-title">
-              {flowState.isMultiCity
+              {isMultiCityNormalized
                 ? "Your Flights (Multi-city)"
-                : flowState.isTwoWay
+                : isTwoWayNormalized
                   ? "Your Flights (Roundtrip)"
                   : "Your Flight"}
             </h3>
 
-            {flowState.isMultiCity && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0 ? (
+            {isMultiCityNormalized && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0 ? (
               flowState.selectedLegs.map((leg, index) => (
                 <div key={`mc-pax-leg-${index}`} style={{ marginTop: index > 0 ? 16 : 0, paddingTop: index > 0 ? 16 : 0, borderTop: index > 0 ? "1px dashed #cbd5e1" : "none" }}>
                   <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
@@ -1330,8 +1407,8 @@ export default function FlightPassengerDetailsPage() {
             ) : (
               <>
                 {/* Onward Flight Segment */}
-                <div style={{ marginBottom: flowState.isTwoWay ? 16 : 0 }}>
-                  {flowState.isTwoWay && (
+                <div style={{ marginBottom: isTwoWayNormalized ? 16 : 0 }}>
+                  {isTwoWayNormalized && (
                     <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
                       1. Onward Flight
                     </div>
@@ -1362,31 +1439,32 @@ export default function FlightPassengerDetailsPage() {
                 </div>
 
                 {/* Return Flight Segment */}
-                {flowState.isTwoWay && flowState.returnFlight && (
+                {/* Return Flight Segment — uses returnFlightNormalized which falls back to selectedLegs[1] */}
+                {isTwoWayNormalized && returnFlightNormalized && (
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed #cbd5e1" }}>
                     <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ff0000", textTransform: "uppercase", marginBottom: 6 }}>
                       2. Return Flight
                     </div>
                     <div className="flight-segment">
                       <div className="flight-city-info">
-                        <span className="flight-city-code">{flowState.returnFlight.sourceCode || "--"}</span>
+                        <span className="flight-city-code">{returnFlightNormalized.sourceCode || "--"}</span>
                         <span className="flight-city-name">{searchContext?.destination || "--"}</span>
                       </div>
                       <div className="flight-stops-indicator">
-                        <span className="stops-text">{Number(flowState.returnFlight.stops || 0) > 0 ? `${flowState.returnFlight.stops} stop` : "Non stop"}</span>
+                        <span className="stops-text">{Number(returnFlightNormalized.stops || 0) > 0 ? `${returnFlightNormalized.stops} stop` : "Non stop"}</span>
                         <div className="stops-line"></div>
                       </div>
                       <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                        <span className="flight-city-code">{flowState.returnFlight.destinationCode || "--"}</span>
+                        <span className="flight-city-code">{returnFlightNormalized.destinationCode || "--"}</span>
                         <span className="flight-city-name">{searchContext?.source || "--"}</span>
                       </div>
                     </div>
                     <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>{flowState.returnFlight.airlineName || flowState.returnFlight.airline} ({flowState.returnFlight.flightNumber})</span>
+                      <span>{returnFlightNormalized.airlineName || returnFlightNormalized.airline} ({returnFlightNormalized.flightNumber})</span>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        <span className="flight-date-badge">{flowState.returnFlight.departDate || searchContext?.returnDate || "--"}</span>
+                        <span className="flight-date-badge">{returnFlightNormalized.departDate || searchContext?.returnDate || "--"}</span>
                         <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                          ₹{new Intl.NumberFormat("en-IN").format(Number(flowState.returnFlight.fare || flowState.returnFlight.price || flowState.returnFlight.priceInr || flowState.returnFlight.selectedTravelClassPriceInr || 0))}
+                          ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized.fare || returnFlightNormalized.price || returnFlightNormalized.priceInr || returnFlightNormalized.selectedTravelClassPriceInr || 0))}
                         </span>
                       </div>
                     </div>

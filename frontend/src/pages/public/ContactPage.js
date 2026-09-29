@@ -83,7 +83,7 @@ export default function ContactPage() {
             </div>
             <div className="info-text-content">
               <h4>Write us on !</h4>
-              <p>contact@pick&book.in</p>
+              <p>contact@picknbook.in</p>
             </div>
           </div>
 

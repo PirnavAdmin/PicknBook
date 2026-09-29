@@ -47,7 +47,7 @@ export async function fetchCouponsAndOffers({ serviceType = 'all', type, booking
   const targetType = type || (serviceType !== 'all' ? serviceType : bookingType);
   const query = {};
   if (targetType && targetType !== 'all') {
-    query.serviceType = String(targetType).toLowerCase();
+    query.type = String(targetType).toLowerCase();
   }
   if (category && category !== 'all') {
     query.category = category;
@@ -64,34 +64,7 @@ export async function fetchCouponsAndOffers({ serviceType = 'all', type, booking
     throw new Error(`Failed to fetch coupons: ${response.statusText}`);
   }
 
-  const data = await response.json();
-
-  console.log(`[CouponService] Raw response for type="${targetType}" category="${category}":`, data);
-
-  // Unwrap common backend response envelope patterns
-  let list = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.data) ? data.data
-    : Array.isArray(data?.items) ? data.items
-    : Array.isArray(data?.coupons) ? data.coupons
-    : Array.isArray(data?.result) ? data.result
-    : [];
-
-  console.log(`[CouponService] Unwrapped list (${list.length} items):`, list);
-
-  // Client-side safeguard: filter by serviceType if backend doesn't filter correctly
-  const normalizedType = (targetType || '').toLowerCase();
-  if (normalizedType && normalizedType !== 'all' && list.length > 0) {
-    list = list.filter(c => {
-      const st = String(c.serviceType || c.ServiceType || '').toLowerCase();
-      return !st || st === normalizedType || st === 'all';
-    });
-    console.log(`[CouponService] After client filter (${list.length} items):`, list);
-  }
-
-  return list;
-
-
+  return response.json();
 }
 
 /**

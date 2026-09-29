@@ -46,6 +46,7 @@ import LegalPage from "./pages/public/LegalPage";
 import ContactUsPage from "./pages/public/ContactUsPage";
 import BlogListPage from "./pages/public/BlogListPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
+import NotificationsPage from "./pages/public/NotificationsPage";
 
 import AdminLayout from "./Admin_Portal/adminlayout";
 import AdminLogin from "./Admin_Portal/ADMIN_AUTH/AdminLogin";
@@ -443,6 +444,7 @@ function AppContent() {
         <Route path="/legal/:slug" element={<LegalPage />} />
         <Route path="/contact-us" element={<ContactUsPage />} />
         <Route path="/contact" element={<ContactUsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/travel-guide" element={<BlogListPage />} />
         <Route path="/travel-guide/:slug" element={<BlogDetailPage />} />
         <Route path="/blogs" element={<BlogListPage />} />

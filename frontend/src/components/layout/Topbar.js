@@ -14,9 +14,18 @@ import {
   LogOut,
   Menu,
   X,
+  Bell,
+  CheckCheck,
 } from "lucide-react";
 import '../../STYLES/Topbar.css';
+import '../../STYLES/Notifications.css';
 import { clearAuthSession, subscribeAuthSession } from "../../services/authSession";
+import {
+  getNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "../../services/notificationsService";
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.png";
 
 
@@ -116,17 +125,26 @@ const NAV_ITEMS = [
 
 export default function Topbar() {
   const [open, setOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [notificationItems, setNotificationItems] = useState([]);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const [notificationError, setNotificationError] = useState("");
   const [authProfile, setAuthProfile] = useState(() => getAuthProfile());
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const dropdownRef = useRef(null);
+  const notificationRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   const isDashboard = location.pathname.startsWith("/dashboard");
   const isB2BDashboard = location.pathname.startsWith("/b2b");
   const isDashboardOrB2B = isDashboard || isB2BDashboard;
+  const showB2CNotifications = authProfile.isLoggedIn &&
+    !isB2BDashboard && sessionStorage.getItem("active_portal") !== "b2b";
   const dashboardLink = "/dashboard";
   const tabParam = new URLSearchParams(location.search).get("tab");
   const currentHomeTab = ["flights", "buses", "hotels"].includes(tabParam)
@@ -141,8 +159,36 @@ export default function Topbar() {
   useEffect(() => {
     syncAuthState();
     setOpen(false);
+    setNotificationOpen(false);
     setMobileMenuOpen(false);
   }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!showB2CNotifications) {
+      setNotificationCount(0);
+      setNotificationOpen(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const refreshUnreadCount = async () => {
+      try {
+        const count = await getUnreadNotificationCount();
+        if (!cancelled) setNotificationCount(count);
+      } catch {
+        if (!cancelled) setNotificationCount(0);
+      }
+    };
+
+    refreshUnreadCount();
+    const intervalId = window.setInterval(refreshUnreadCount, 30000);
+    window.addEventListener("notificationsUpdated", refreshUnreadCount);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("notificationsUpdated", refreshUnreadCount);
+    };
+  }, [showB2CNotifications]);
 
   useEffect(() => {
     const handleAuth = () => syncAuthState();
@@ -162,6 +208,9 @@ export default function Topbar() {
     const handleOutsideClick = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpen(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setNotificationOpen(false);
       }
     };
 
@@ -187,6 +236,64 @@ export default function Topbar() {
     setAuthProfile({ isLoggedIn: false, displayName: "User", email: "" });
     setOpen(false);
     navigate("/");
+  };
+
+  const handleNotificationToggle = async () => {
+    if (notificationOpen) {
+      setNotificationOpen(false);
+      return;
+    }
+
+    setNotificationOpen(true);
+    setNotificationLoading(true);
+    setNotificationError("");
+    try {
+      const result = await getNotifications({ page: 1, pageSize: 10 });
+      setNotificationItems(Array.isArray(result?.items) ? result.items : []);
+      setNotificationCount(Number(result?.unreadCount) || 0);
+    } catch (error) {
+      setNotificationError(error.message || "Could not load notifications.");
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  const handleNotificationClick = async (item) => {
+    try {
+      if (!item.isRead) {
+        await markNotificationRead(item.id);
+        setNotificationItems((items) => items.map((entry) =>
+          entry.id === item.id ? { ...entry, isRead: true } : entry
+        ));
+        setNotificationCount((count) => Math.max(0, count - 1));
+      }
+      setNotificationOpen(false);
+      if (typeof item.actionUrl === "string" && item.actionUrl.startsWith("/") && !item.actionUrl.startsWith("//")) {
+        navigate(item.actionUrl);
+      }
+    } catch (error) {
+      setNotificationError(error.message || "Could not mark notification as read.");
+    }
+  };
+
+  const handleMarkAllNotificationsRead = async () => {
+    setNotificationBusy(true);
+    setNotificationError("");
+    try {
+      await markAllNotificationsRead();
+      setNotificationItems((items) => items.map((item) => ({ ...item, isRead: true })));
+      setNotificationCount(0);
+    } catch (error) {
+      setNotificationError(error.message || "Could not mark notifications as read.");
+    } finally {
+      setNotificationBusy(false);
+    }
+  };
+
+  const notificationDate = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString();
   };
 
   const handleLogoClick = (e) => {
@@ -293,6 +400,66 @@ export default function Topbar() {
             <EmojiHelp size={20} />
             <span>Help</span>
           </a>
+
+          {showB2CNotifications && (
+            <div className="notification-bell-wrap" ref={notificationRef}>
+              <button
+                type="button"
+                className="notification-bell-button"
+                onClick={handleNotificationToggle}
+                aria-label={notificationCount ? `Notifications, ${notificationCount} unread` : "Notifications"}
+                aria-haspopup="dialog"
+                aria-expanded={notificationOpen}
+                title="Notifications"
+              >
+                <Bell size={20} />
+                {notificationCount > 0 && (
+                  <span className="notification-bell-badge">
+                    {notificationCount > 99 ? "99+" : notificationCount}
+                  </span>
+                )}
+              </button>
+
+              {notificationOpen && (
+                <div className="notification-popover" role="dialog" aria-label="Notifications">
+                  <div className="notification-popover-header">
+                    <strong>Notifications</strong>
+                    <button
+                      type="button"
+                      onClick={handleMarkAllNotificationsRead}
+                      disabled={notificationBusy || notificationCount === 0}
+                    >
+                      <CheckCheck size={14} /> Mark all as read
+                    </button>
+                  </div>
+                  {notificationError && <div className="notification-popover-error" role="alert">{notificationError}</div>}
+                  {notificationLoading ? (
+                    <div className="notification-popover-state">Loading notifications...</div>
+                  ) : notificationItems.length ? (
+                    <div className="notification-popover-list">
+                      {notificationItems.map((item) => (
+                        <button
+                          type="button"
+                          key={item.id}
+                          className={`notification-popover-item ${item.isRead ? "" : "is-unread"}`}
+                          onClick={() => handleNotificationClick(item)}
+                        >
+                          <strong>{item.title}</strong>
+                          <span>{item.message}</span>
+                          <time dateTime={item.createdAtUtc}>{notificationDate(item.createdAtUtc)}</time>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="notification-popover-state">No notifications yet.</div>
+                  )}
+                  <div className="notification-popover-footer">
+                    <Link to="/notifications" onClick={() => setNotificationOpen(false)}>View all notifications</Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {authProfile.isLoggedIn ? (
             <div className="user-section" ref={dropdownRef}>

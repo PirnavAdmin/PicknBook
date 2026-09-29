@@ -17,8 +17,8 @@ import {
   Shield,
   Clock3
 } from "lucide-react";
-import contactBanner from "../../assets/images/contact-banner.png";
-import journeyIllustration from "../../assets/images/journey-illustration.png";
+import contactBanner from "../../assets/images/contact_hero_image.png";
+import journeyIllustration from "../../assets/images/contact_hero_image.png";
 
 export default function ContactUsPage() {
   const { userData } = useContext(UserContext);
@@ -148,16 +148,16 @@ export default function ContactUsPage() {
           min-height: 100vh;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           padding-bottom: 60px;
+          margin-top: -35px;
         }
 
         /* HERO BANNER */
         .contact-banner-section {
           position: relative;
           width: 100%;
-          background: url(${contactBanner}) center center / 100% auto no-repeat;
+          background: url(${contactBanner}) center center / cover no-repeat;
           background-color: #f0f4f8;
-          aspect-ratio: 4 / 1;
-          max-height: 250px;
+          min-height: 380px;
           overflow: hidden;
         }
 
@@ -173,19 +173,21 @@ export default function ContactUsPage() {
         /* CONTENT LAYOUT */
         .contact-content-grid {
           max-width: 1200px;
-          margin: 40px auto 0 auto;
+          margin: -40px auto 40px auto;
           padding: 0 24px;
           display: grid;
           grid-template-columns: 1.55fr 1fr;
           gap: 28px;
+          position: relative;
+          z-index: 10;
         }
 
         /* CARDS */
         .contact-card-box {
           background: #ffffff;
-          border-radius: 16px;
+          border-radius: 20px;
           padding: 36px;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+          box-shadow: 0 8px 30px rgba(0,0,0,0.08);
           border: 1px solid #ecedf2;
         }
 
@@ -342,14 +344,15 @@ export default function ContactUsPage() {
 
         /* RESPONSIVE */
         @media (max-width: 960px) {
-          .contact-content-grid { grid-template-columns: 1fr; padding: 0 16px; margin-top: 32px; }
+          .contact-content-grid { grid-template-columns: 1fr; padding: 0 16px; margin-top: -30px; }
           .contact-banner-overlay { padding: 0 5% 40px; }
+          .contact-banner-section { min-height: 320px; }
         }
 
         @media (max-width: 600px) {
           .contact-form-grid { grid-template-columns: 1fr; }
           .contact-card-box { padding: 24px 20px; }
-          .contact-banner-section { aspect-ratio: 2.5 / 1; max-height: 260px; }
+          .contact-banner-section { min-height: 280px; }
         }
       `}</style>
 
@@ -552,7 +555,7 @@ export default function ContactUsPage() {
                   </div>
                   <div className="contact-info-text-box">
                     <h4>Email</h4>
-                    <p>contact@pick&book.in</p>
+                    <p>contact@picknbook.in</p>
                   </div>
                 </div>
 
@@ -565,7 +568,7 @@ export default function ContactUsPage() {
                     <p>
                       Pirnav Software Solutions Private Limited,<br />
                       4th Floor, Jain Sadguru Images Capital Park,<br />
-                      Madhapur, Hyderabad, Telangana, India ( 500081 )
+                      Madhapur, Hyderabad, Telangana, India <span style={{ whiteSpace: "nowrap" }}>(500081)</span>
                     </p>
                   </div>
                 </div>

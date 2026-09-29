@@ -28,15 +28,16 @@ function getBlogImageUrl(blog) {
   const cat = (blog?.category || "").toLowerCase();
   const slug = (blog?.slug || "").toLowerCase();
 
-  if (cat.includes("hotel") || slug.includes("hotel")) return "/blog-assets/hotel.jpg";
-  if (cat.includes("flight") || slug.includes("flight")) return "/blog-assets/flight.jpg";
-  if (cat.includes("bus") || slug.includes("bus")) return "/blog-assets/bus.jpg";
-
   const rawUrl = blog?.imageUrl || blog?.ImageUrl || blog?.image || blog?.Image ||
     blog?.imagePath || blog?.ImagePath || blog?.filePath || blog?.photoUrl ||
     blog?.picture || blog?.url || "";
 
-  return rawUrl ? toApiAssetUrl(rawUrl) : "";
+  if (rawUrl) return toApiAssetUrl(rawUrl);
+  if (cat.includes("hotel") || slug.includes("hotel")) return "/blog-assets/hotel.jpg";
+  if (cat.includes("flight") || slug.includes("flight")) return "/blog-assets/flight.jpg";
+  if (cat.includes("bus") || slug.includes("bus")) return "/blog-assets/bus.jpg";
+
+  return "";
 }
 import "../../STYLES/BlogPage.css";
 

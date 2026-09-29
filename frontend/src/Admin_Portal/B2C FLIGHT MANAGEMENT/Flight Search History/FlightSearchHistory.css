@@ -13,8 +13,8 @@
 
 .admin-flight-search-history-page .admin-search-history-table-head span {
   color: #ffffff !important;
-  font-size: 0.73rem !important;
-  font-weight: 600 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
   text-transform: none !important;
   letter-spacing: 0.02em !important;
   display: inline-flex !important;
@@ -207,9 +207,14 @@
 }
 
 .admin-flight-search-history-page .admin-search-history-cell strong {
-  font-size: 0.81rem !important;
+  font-size: 11px !important;
   font-weight: 500 !important;
-  color: #334155 !important;
+  color: #1e293b !important;
+}
+
+.admin-flight-search-history-page .admin-search-history-cell span {
+  font-size: 11px !important;
+  font-weight: 500 !important;
 }
 
 .admin-search-history-view-btn {

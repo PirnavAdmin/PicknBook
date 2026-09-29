@@ -135,6 +135,34 @@ const AllPages = () => {
     }
   };
 
+  const getStoredBannerOverrides = () => {
+    try {
+      return JSON.parse(localStorage.getItem("cms_page_banner_overrides") || "{}");
+    } catch {
+      return {};
+    }
+  };
+
+  const setStoredBannerOverride = (slugOrId, bannerPath, extraTitle = "") => {
+    try {
+      const current = getStoredBannerOverrides();
+      if (slugOrId !== undefined && slugOrId !== null) {
+        current[slugOrId] = bannerPath;
+        current[String(slugOrId)] = bannerPath;
+        const norm = normalizeKey(slugOrId);
+        if (norm) current[norm] = bannerPath;
+      }
+      if (extraTitle) {
+        current[extraTitle] = bannerPath;
+        const normTitle = normalizeKey(extraTitle);
+        if (normTitle) current[normTitle] = bannerPath;
+      }
+      localStorage.setItem("cms_page_banner_overrides", JSON.stringify(current));
+    } catch (e) {
+      console.warn("Failed to save banner override:", e);
+    }
+  };
+
   const getStoredDeletedSlugs = () => {
     try {
       return JSON.parse(localStorage.getItem("cms_page_deleted_slugs") || "[]");
@@ -207,6 +235,8 @@ const AllPages = () => {
 
       const overrides = getStoredStatusOverrides();
       const imageOverrides = getStoredImageOverrides();
+      const bannerOverrides = getStoredBannerOverrides();
+
       const finalPages = filteredMerged.map((p) => {
         const pSlug = p.slug || "";
         const pTitle = p.title || "";
@@ -251,12 +281,44 @@ const AllPages = () => {
           finalImg = overrideImg;
         }
 
+        const isBnrRemoved = keysToCheck.some(
+          (k) => bannerOverrides[k] === "__REMOVED__" || bannerOverrides[k] === "" || bannerOverrides[k] === null
+        );
+
+        let overrideBnr = undefined;
+        if (isBnrRemoved) {
+          overrideBnr = "__REMOVED__";
+        } else {
+          for (const k of keysToCheck) {
+            if (bannerOverrides[k] !== undefined && bannerOverrides[k] !== null) {
+              overrideBnr = bannerOverrides[k];
+              break;
+            }
+          }
+        }
+
+        let finalBnr = getPageBannerVal(p);
+        if (overrideBnr === "__REMOVED__" || overrideBnr === "" || overrideBnr === null) {
+          finalBnr = "";
+        } else if (overrideBnr) {
+          finalBnr = overrideBnr;
+        }
+
         return {
           ...p,
           ...(overrideStatus ? { status: overrideStatus } : {}),
-          imagePath: finalImg,
-          image: finalImg,
-          imageUrl: finalImg,
+          imagePath: finalImg || null,
+          ImagePath: finalImg || null,
+          image: finalImg || null,
+          Image: finalImg || null,
+          imageUrl: finalImg || null,
+          ImageUrl: finalImg || null,
+          bannerPath: finalBnr || null,
+          BannerPath: finalBnr || null,
+          banner: finalBnr || null,
+          Banner: finalBnr || null,
+          bannerUrl: finalBnr || null,
+          BannerUrl: finalBnr || null,
         };
       });
 
@@ -285,6 +347,31 @@ const AllPages = () => {
 
   const getPageImageVal = (page) => {
     if (!page) return "";
+    const pSlug = page.slug || "";
+    const pTitle = page.title || "";
+    const pId = String(page.id || "");
+
+    const keysToCheck = [
+      pSlug,
+      normalizeKey(pSlug),
+      pTitle,
+      normalizeKey(pTitle),
+      pId,
+      String(pId)
+    ].filter(Boolean);
+
+    const imageOverrides = getStoredImageOverrides();
+    const isRemoved = keysToCheck.some(
+      (k) => imageOverrides[k] === "__REMOVED__" || imageOverrides[k] === "" || imageOverrides[k] === null
+    );
+    if (isRemoved) return "";
+
+    for (const k of keysToCheck) {
+      if (imageOverrides[k] && imageOverrides[k] !== "__REMOVED__") {
+        return imageOverrides[k];
+      }
+    }
+
     return (
       page.imagePath ||
       page.ImagePath ||
@@ -296,10 +383,48 @@ const AllPages = () => {
     );
   };
 
+  const getPageBannerVal = (page) => {
+    if (!page) return "";
+    const pSlug = page.slug || "";
+    const pTitle = page.title || "";
+    const pId = String(page.id || "");
+
+    const keysToCheck = [
+      pSlug,
+      normalizeKey(pSlug),
+      pTitle,
+      normalizeKey(pTitle),
+      pId,
+      String(pId)
+    ].filter(Boolean);
+
+    const bannerOverrides = getStoredBannerOverrides();
+    const isRemoved = keysToCheck.some(
+      (k) => bannerOverrides[k] === "__REMOVED__" || bannerOverrides[k] === "" || bannerOverrides[k] === null
+    );
+    if (isRemoved) return "";
+
+    for (const k of keysToCheck) {
+      if (bannerOverrides[k] && bannerOverrides[k] !== "__REMOVED__") {
+        return bannerOverrides[k];
+      }
+    }
+
+    return (
+      page.bannerPath ||
+      page.BannerPath ||
+      page.banner ||
+      page.Banner ||
+      page.bannerUrl ||
+      page.BannerUrl ||
+      ""
+    );
+  };
+
   const handleOpenEdit = (pageToEdit) => {
     setEditingPage(pageToEdit);
     const imgPath = getPageImageVal(pageToEdit);
-    const bnrPath = pageToEdit.bannerPath || pageToEdit.BannerPath || pageToEdit.banner || pageToEdit.Banner || "";
+    const bnrPath = getPageBannerVal(pageToEdit);
     setEditFormData({
       title: pageToEdit.title || pageToEdit.Title || "",
       slug: pageToEdit.slug || pageToEdit.Slug || "",
@@ -388,17 +513,39 @@ const AllPages = () => {
       setStoredStatusOverride(editingPage.id, editFormData.status);
     }
 
+    const isImageExplicitlyRemoved = !editImageFile && !editFormData.imageName;
+    const isBannerExplicitlyRemoved = !editBannerFile && !editFormData.bannerName;
+
     if (editImageFile) {
       const localDataUrl = await fileToDataURL(editImageFile);
       if (localDataUrl) {
         updatedData.imagePath = localDataUrl;
-        setStoredImageOverride(slug, localDataUrl);
-        if (editingPage.id) setStoredImageOverride(editingPage.id, localDataUrl);
+        updatedData.image = localDataUrl;
+        updatedData.imageUrl = localDataUrl;
+        setStoredImageOverride(slug, localDataUrl, editFormData.title);
+        if (editingPage.id) setStoredImageOverride(editingPage.id, localDataUrl, editFormData.title);
       }
-    } else if (!editFormData.imageName) {
+    } else if (isImageExplicitlyRemoved) {
       updatedData.imagePath = "";
-      setStoredImageOverride(slug, "__REMOVED__");
-      if (editingPage.id) setStoredImageOverride(editingPage.id, "__REMOVED__");
+      updatedData.image = "";
+      updatedData.imageUrl = "";
+      setStoredImageOverride(slug, "__REMOVED__", editFormData.title);
+      if (editingPage.id) setStoredImageOverride(editingPage.id, "__REMOVED__", editFormData.title);
+    }
+
+    if (editBannerFile) {
+      const localBannerUrl = await fileToDataURL(editBannerFile);
+      if (localBannerUrl) {
+        updatedData.bannerPath = localBannerUrl;
+        updatedData.banner = localBannerUrl;
+        setStoredBannerOverride(slug, localBannerUrl, editFormData.title);
+        if (editingPage.id) setStoredBannerOverride(editingPage.id, localBannerUrl, editFormData.title);
+      }
+    } else if (isBannerExplicitlyRemoved) {
+      updatedData.bannerPath = null;
+      updatedData.banner = null;
+      setStoredBannerOverride(slug, "__REMOVED__", editFormData.title);
+      if (editingPage.id) setStoredBannerOverride(editingPage.id, "__REMOVED__", editFormData.title);
     }
 
     try {
@@ -417,16 +564,34 @@ const AllPages = () => {
         formData.append("image", editImageFile);
         formData.append("PageImage", editImageFile);
         formData.append("file", editImageFile);
-      } else if (!editFormData.imageName) {
+      } else if (isImageExplicitlyRemoved) {
+        formData.append("ImagePath", "");
+        formData.append("imagePath", "");
+        formData.append("Image", "");
+        formData.append("image", "");
         formData.append("DeleteImage", "true");
         formData.append("RemoveImage", "true");
         formData.append("ClearImage", "true");
         formData.append("IsImageDeleted", "true");
+        formData.append("imageDeleted", "true");
+        formData.append("removeImage", "true");
       }
+
       if (editBannerFile) {
         formData.append("Banner", editBannerFile);
         formData.append("banner", editBannerFile);
         formData.append("BannerImage", editBannerFile);
+      } else if (isBannerExplicitlyRemoved) {
+        formData.append("BannerPath", "");
+        formData.append("bannerPath", "");
+        formData.append("Banner", "");
+        formData.append("banner", "");
+        formData.append("DeleteBanner", "true");
+        formData.append("RemoveBanner", "true");
+        formData.append("ClearBanner", "true");
+        formData.append("IsBannerDeleted", "true");
+        formData.append("bannerDeleted", "true");
+        formData.append("removeBanner", "true");
       }
 
       let res = null;
@@ -439,14 +604,46 @@ const AllPages = () => {
       if (res) {
         const savedImg = res.imagePath || res.ImagePath || res.image || res.Image;
         const savedBnr = res.bannerPath || res.BannerPath || res.banner || res.Banner;
-        if (savedImg) {
+        if (savedImg && !isImageExplicitlyRemoved) {
           updatedData.imagePath = savedImg;
-          setStoredImageOverride(slug, savedImg);
-          if (editingPage.id) setStoredImageOverride(editingPage.id, savedImg);
+          updatedData.ImagePath = savedImg;
+          updatedData.image = savedImg;
+          updatedData.Image = savedImg;
+          updatedData.imageUrl = savedImg;
+          updatedData.ImageUrl = savedImg;
+          setStoredImageOverride(slug, savedImg, editFormData.title);
+          if (editingPage.id) setStoredImageOverride(editingPage.id, savedImg, editFormData.title);
+        } else if (isImageExplicitlyRemoved) {
+          updatedData.imagePath = null;
+          updatedData.ImagePath = null;
+          updatedData.image = null;
+          updatedData.Image = null;
+          updatedData.imageUrl = null;
+          updatedData.ImageUrl = null;
+          setStoredImageOverride(slug, "__REMOVED__", editFormData.title);
+          if (editingPage.id) setStoredImageOverride(editingPage.id, "__REMOVED__", editFormData.title);
         }
-        if (savedBnr) {
+
+        if (savedBnr && !isBannerExplicitlyRemoved) {
           updatedData.bannerPath = savedBnr;
+          updatedData.BannerPath = savedBnr;
+          updatedData.banner = savedBnr;
+          updatedData.Banner = savedBnr;
+          updatedData.bannerUrl = savedBnr;
+          updatedData.BannerUrl = savedBnr;
+          setStoredBannerOverride(slug, savedBnr, editFormData.title);
+          if (editingPage.id) setStoredBannerOverride(editingPage.id, savedBnr, editFormData.title);
+        } else if (isBannerExplicitlyRemoved) {
+          updatedData.bannerPath = null;
+          updatedData.BannerPath = null;
+          updatedData.banner = null;
+          updatedData.Banner = null;
+          updatedData.bannerUrl = null;
+          updatedData.BannerUrl = null;
+          setStoredBannerOverride(slug, "__REMOVED__", editFormData.title);
+          if (editingPage.id) setStoredBannerOverride(editingPage.id, "__REMOVED__", editFormData.title);
         }
+
         if (res.id) {
           updatedData.id = res.id;
         }
@@ -533,7 +730,7 @@ const AllPages = () => {
         <table className="page-table">
           <thead>
             <tr>
-              <th>SN.</th>
+              <th>S.No</th>
               <th>Title</th>
               <th>Slug</th>
               <th>Image</th>
@@ -1116,10 +1313,34 @@ const AllPages = () => {
                       <NgrokSafeImage src={editImagePreview} alt="Page Image Preview" style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1" }} />
                     )}
                     <div>
-                      <label style={{ padding: "6px 12px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "6px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "#334155" }}>
-                        Choose File
-                        <input type="file" accept="image/*" onChange={handleEditFileChange("image")} style={{ display: "none" }} />
-                      </label>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <label style={{ padding: "6px 12px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "6px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "#334155" }}>
+                          Choose File
+                          <input type="file" accept="image/*" onChange={handleEditFileChange("image")} style={{ display: "none" }} />
+                        </label>
+                        {(editImagePreview || editFormData.imageName) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditImageFile(null);
+                              setEditImagePreview("");
+                              setEditFormData((prev) => ({ ...prev, imageName: "" }));
+                            }}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#fee2e2",
+                              color: "#991b1b",
+                              border: "1px solid #fca5a5",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "0.78rem",
+                              fontWeight: 600
+                            }}
+                          >
+                            Remove Image
+                          </button>
+                        )}
+                      </div>
                       <span style={{ display: "block", fontSize: "0.75rem", color: "#64748b", marginTop: "4px" }}>
                         {editFormData.imageName || "No file chosen"}
                       </span>
@@ -1134,10 +1355,34 @@ const AllPages = () => {
                       <NgrokSafeImage src={editBannerPreview} alt="Banner Image Preview" style={{ width: "90px", height: "60px", objectFit: "cover", borderRadius: "6px", border: "1px solid #cbd5e1" }} />
                     )}
                     <div>
-                      <label style={{ padding: "6px 12px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "6px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "#334155" }}>
-                        Choose File
-                        <input type="file" accept="image/*" onChange={handleEditFileChange("banner")} style={{ display: "none" }} />
-                      </label>
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                        <label style={{ padding: "6px 12px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "6px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "#334155" }}>
+                          Choose File
+                          <input type="file" accept="image/*" onChange={handleEditFileChange("banner")} style={{ display: "none" }} />
+                        </label>
+                        {(editBannerPreview || editFormData.bannerName) && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditBannerFile(null);
+                              setEditBannerPreview("");
+                              setEditFormData((prev) => ({ ...prev, bannerName: "" }));
+                            }}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#fee2e2",
+                              color: "#991b1b",
+                              border: "1px solid #fca5a5",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "0.78rem",
+                              fontWeight: 600
+                            }}
+                          >
+                            Remove Banner
+                          </button>
+                        )}
+                      </div>
                       <span style={{ display: "block", fontSize: "0.75rem", color: "#64748b", marginTop: "4px" }}>
                         {editFormData.bannerName || "No file chosen"}
                       </span>

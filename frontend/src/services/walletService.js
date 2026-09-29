@@ -57,7 +57,7 @@ export const WalletApi = {
       query.append("type", type);
     }
 
-    // Only confirmed working endpoints for this backend (pick&book.in)
+    // Only confirmed working endpoints for this backend (picknbook.in)
     const res = await api.get(`/api/wallet/transactions?${query.toString()}`);
     return res.data;
   },

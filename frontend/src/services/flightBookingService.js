@@ -413,8 +413,6 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
   const cleanCandidate = cleanResultIndex(rawResultIndex);
   const exactResultIndex = cleanCandidate || rawResultIndex;
 
-  console.log("[DEBUG ResultIndex trace]", { rawResultIndex, cleanCandidate, exactResultIndex });
-
   const srdvType = pickFirst(record, ["srdvType", "SrdvType"], null) || "";
   const isLcc = supplierBoolean(pickFirst(primaryFare, ["IsLCC", "isLcc", "IsLcc"], null) ?? pickFirst(record, ["isLcc", "IsLcc"], null));
   const srdvIndex = pickFirst(primaryFare, ["SrdvIndex", "srdvIndex"], null) || pickFirst(record, ["srdvIndex", "SrdvIndex"], null) || "";
@@ -2099,9 +2097,20 @@ export function getFareRule(params) {
 // ============================================================================
 
 export async function getFlightSSR(params = {}) {
-  const { TraceId: activeTraceId, ResultIndex: activeResultIndex, SrdvType: activeSrdvType, SrdvIndex: activeSrdvIndex } = flightIdentity(params);
+  let activeTraceId, activeResultIndex, activeSrdvType, activeSrdvIndex;
+  try {
+    const identity = flightIdentity(params);
+    activeTraceId = identity.TraceId;
+    activeResultIndex = identity.ResultIndex;
+    activeSrdvType = identity.SrdvType;
+    activeSrdvIndex = identity.SrdvIndex;
+  } catch (identityErr) {
+    console.warn("[getFlightSSR] Identity validation failed:", identityErr.message);
+    return { success: false, code: "SSR_UNAVAILABLE", message: identityErr.message, data: null, baggage: [], meal: [], Baggage: [], MealDynamic: [] };
+  }
 
   const payload = {
+    JourneyType: String(params.journeyType ?? params.JourneyType ?? 1),
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     SrdvType: activeSrdvType,
@@ -2219,9 +2228,20 @@ export async function getFlightSeatMap(paramsOrTrace = {}, resultIdx = null, srd
     paramObj = { ...paramsOrTrace };
   }
 
-  const { TraceId: activeTraceId, ResultIndex: activeResultIndex, SrdvType: activeSrdvType, SrdvIndex: activeSrdvIndex } = flightIdentity(paramObj);
+  let activeTraceId, activeResultIndex, activeSrdvType, activeSrdvIndex;
+  try {
+    const identity = flightIdentity(paramObj);
+    activeTraceId = identity.TraceId;
+    activeResultIndex = identity.ResultIndex;
+    activeSrdvType = identity.SrdvType;
+    activeSrdvIndex = identity.SrdvIndex;
+  } catch (identityErr) {
+    console.warn("[getFlightSeatMap] Identity validation failed:", identityErr.message);
+    return { success: false, code: "SEATMAP_UNAVAILABLE", message: identityErr.message, data: null, seats: [] };
+  }
 
   const payload = {
+    JourneyType: String(paramObj.journeyType ?? paramObj.JourneyType ?? 1),
     TraceId: activeTraceId,
     ResultIndex: activeResultIndex,
     SrdvType: activeSrdvType,

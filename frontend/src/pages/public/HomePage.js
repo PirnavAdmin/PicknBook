@@ -94,10 +94,6 @@ import lufthansa from "../../assets/images/brands/lufthansa.png";
 import qatarAirways from "../../assets/images/brands/qatar-airways.png";
 import spiceJet from "../../assets/images/airlines/Spicejet.png";
 import { POPULAR_RTC_OPERATORS } from "../../data/popularBuses";
-import offerCardBusImg from "../../assets/images/illustrations/bus-coast-banner.jpg";
-import offerCardFlightImg from "../../assets/images/illustrations/flight-section-banner.png";
-import offerCardHotelImg from "../../assets/images/illustrations/hotel-reception-banner.jpg";
-const BUS_OFFER_IMAGES = [busCoastBanner, intercityBusBanner];
 import "../../STYLES/HomePage.css";
 import { toDisplayDate } from "../../utils/apiDateFormat";
 import CustomDatePicker from "../../components/CustomDatePicker";
@@ -389,268 +385,6 @@ const BUS_TRIP_TYPES = [
   { value: "oneway", label: "One Way" },
   { value: "twoway", label: "Two Way" },
 ];
-
-const DEFAULT_BUS_FEATURED_OFFERS = [
-  // ── BUS OFFERS ──
-  {
-    id: "bus-offer-julyfair",
-    title: "JULYfair",
-    couponCode: "JULYfair",
-    bookingType: "Bus",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "25%",
-    ribbonText2: "OFF",
-    cardTheme: "bus",
-    image: offerCardBusImg,
-    couponExpiresAtUtc: "2026-11-05T23:59:59Z",
-    endDateUtc: "2026-11-05T23:59:59Z",
-    description: "Get flat 25% off on all intercity Volvo, AC sleeper, and luxury bus bookings.",
-  },
-  {
-    id: "bus-offer-june10",
-    title: "June10",
-    couponCode: "June10",
-    bookingType: "Bus",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "10%",
-    ribbonText2: "OFF",
-    cardTheme: "bus",
-    image: offerCardBusImg,
-    couponExpiresAtUtc: "2026-08-09T23:59:59Z",
-    endDateUtc: "2026-08-09T23:59:59Z",
-    description: "Get flat 10% off on all intercity Volvo, AC sleeper, and luxury bus bookings.",
-  },
-  {
-    id: "bus-offer-superbus",
-    title: "SUPERBUS",
-    couponCode: "SUPERBUS",
-    bookingType: "Bus",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "SPECIAL",
-    ribbonText2: "OFFER",
-    cardTheme: "bus",
-    image: offerCardBusImg,
-    couponExpiresAtUtc: "2026-09-30T23:59:59Z",
-    endDateUtc: "2026-09-30T23:59:59Z",
-    description: "Extra ₹150 off on RTC and private luxury multi-axle buses.",
-  },
-
-  {
-    id: "bus-offer-bus50",
-    title: "BUS50",
-    couponCode: "BUS50",
-    bookingType: "Bus",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "50%",
-    ribbonText2: "OFF",
-    cardTheme: "bus",
-    image: offerCardBusImg,
-    couponExpiresAtUtc: "2026-10-09T23:59:59Z",
-    endDateUtc: "2026-10-09T23:59:59Z",
-    description: "Save up to 50% on selected state and luxury private bus bookings.",
-  },
-  {
-    id: "bus-offer-wheelsbus",
-    title: "wheelsbus",
-    couponCode: "wheelsbus",
-    bookingType: "Bus",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "SPECIAL",
-    ribbonText2: "OFFER",
-    cardTheme: "bus",
-    image: offerCardBusImg,
-    couponExpiresAtUtc: "2026-07-27T23:59:59Z",
-    endDateUtc: "2026-07-27T23:59:59Z",
-    description: "Enjoy special discounted rates on express and interstate Volvo luxury buses.",
-  },
-  {
-    id: "bus-offer-firstbus",
-    title: "FIRSTBUS",
-    couponCode: "FIRSTBUS",
-    bookingType: "Bus",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "₹100",
-    ribbonText2: "OFF",
-    cardTheme: "bus",
-    image: offerCardBusImg,
-    couponExpiresAtUtc: "2026-12-31T23:59:59Z",
-    endDateUtc: "2026-12-31T23:59:59Z",
-    description: "Get instant ₹100 discount on your first online bus ticket booking.",
-  },
-
-  // ── FLIGHT OFFERS ──
-  {
-    id: "flight-offer-flyaway",
-    title: "FLYAWAY",
-    couponCode: "FLYAWAY",
-    bookingType: "Flight",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "SPECIAL",
-    ribbonText2: "OFFER",
-    cardTheme: "flight",
-    image: offerCardFlightImg,
-    couponExpiresAtUtc: "2026-11-20T23:59:59Z",
-    endDateUtc: "2026-11-20T23:59:59Z",
-    description: "Special seasonal discounts on popular domestic airline routes across India.",
-  },
-  {
-    id: "flight-offer-airsave",
-    title: "AIRSAVE",
-    couponCode: "AIRSAVE",
-    bookingType: "Flight",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "30%",
-    ribbonText2: "OFF",
-    cardTheme: "flight",
-    image: offerCardFlightImg,
-    couponExpiresAtUtc: "2026-10-31T23:59:59Z",
-    endDateUtc: "2026-10-31T23:59:59Z",
-    description: "Flat 30% savings on domestic nonstop flights booked 14 days in advance.",
-  },
-  {
-    id: "flight-offer-skyhigh",
-    title: "SKYHIGH",
-    couponCode: "SKYHIGH",
-    bookingType: "Flight",
-    badgeLabel: "EXCLUSIVE",
-    ribbonText1: "25%",
-    ribbonText2: "OFF",
-    cardTheme: "flight",
-    image: offerCardFlightImg,
-    couponExpiresAtUtc: "2026-12-31T23:59:59Z",
-    endDateUtc: "2026-12-31T23:59:59Z",
-    description: "Get flat 25% discount on round-trip flight bookings across India.",
-  },
-  {
-    id: "flight-offer-indigo500",
-    title: "FLYINDIGO",
-    couponCode: "FLYINDIGO",
-    bookingType: "Flight",
-    badgeLabel: "POPULAR",
-    ribbonText1: "₹1500",
-    ribbonText2: "OFF",
-    cardTheme: "flight",
-    image: offerCardFlightImg,
-    couponExpiresAtUtc: "2026-11-30T23:59:59Z",
-    endDateUtc: "2026-11-30T23:59:59Z",
-    description: "Save up to ₹1,500 on all major domestic airline routes.",
-  },
-  {
-    id: "flight-offer-airindia",
-    title: "AIRINDIA",
-    couponCode: "AIRINDIA",
-    bookingType: "Flight",
-    badgeLabel: "SPECIAL",
-    ribbonText1: "20%",
-    ribbonText2: "OFF",
-    cardTheme: "flight",
-    image: offerCardFlightImg,
-    couponExpiresAtUtc: "2026-12-15T23:59:59Z",
-    endDateUtc: "2026-12-15T23:59:59Z",
-    description: "Flat 20% discount on business and economy cabin flight bookings.",
-  },
-  {
-    id: "flight-offer-wings20",
-    title: "WINGS20",
-    couponCode: "WINGS20",
-    bookingType: "Flight",
-    badgeLabel: "DEAL",
-    ribbonText1: "₹800",
-    ribbonText2: "OFF",
-    cardTheme: "flight",
-    image: offerCardFlightImg,
-    couponExpiresAtUtc: "2026-10-25T23:59:59Z",
-    endDateUtc: "2026-10-25T23:59:59Z",
-    description: "Instant ₹800 discount on your first domestic flight booking.",
-  },
-
-  // ── HOTEL OFFERS ──
-  {
-    id: "hotel-offer-luxestay",
-    title: "LUXESTAY",
-    couponCode: "LUXESTAY",
-    bookingType: "Hotel",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "40%",
-    ribbonText2: "OFF",
-    cardTheme: "hotel",
-    image: offerCardHotelImg,
-    couponExpiresAtUtc: "2026-12-10T23:59:59Z",
-    endDateUtc: "2026-12-10T23:59:59Z",
-    description: "Up to 40% off on premium luxury suites, villas, and boutique heritage stays.",
-  },
-  {
-    id: "hotel-offer-resortdeal",
-    title: "RESORTDEAL",
-    couponCode: "RESORTDEAL",
-    bookingType: "Hotel",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "50%",
-    ribbonText2: "OFF",
-    cardTheme: "hotel",
-    image: offerCardHotelImg,
-    couponExpiresAtUtc: "2026-11-15T23:59:59Z",
-    endDateUtc: "2026-11-15T23:59:59Z",
-    description: "Flat 50% discount on 3-night resort stays with free cancellation.",
-  },
-  {
-    id: "hotel-offer-staymore",
-    title: "STAYMORE",
-    couponCode: "STAYMORE",
-    bookingType: "Hotel",
-    badgeLabel: "EXCLUSIVE",
-    ribbonText1: "35%",
-    ribbonText2: "OFF",
-    cardTheme: "hotel",
-    image: offerCardHotelImg,
-    couponExpiresAtUtc: "2026-11-28T23:59:59Z",
-    endDateUtc: "2026-11-28T23:59:59Z",
-    description: "Save up to 35% on stays of 3 or more nights at partner hotels.",
-  },
-  {
-    id: "hotel-offer-cityhotel",
-    title: "CITYHOTEL",
-    couponCode: "CITYHOTEL",
-    bookingType: "Hotel",
-    badgeLabel: "BEST DEAL",
-    ribbonText1: "₹1000",
-    ribbonText2: "OFF",
-    cardTheme: "hotel",
-    image: offerCardHotelImg,
-    couponExpiresAtUtc: "2026-12-05T23:59:59Z",
-    endDateUtc: "2026-12-05T23:59:59Z",
-    description: "Flat ₹1,000 instant off on business hotel bookings in metro cities.",
-  },
-  {
-    id: "hotel-offer-weekendget",
-    title: "WEEKENDGET",
-    couponCode: "WEEKENDGET",
-    bookingType: "Hotel",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "30%",
-    ribbonText2: "OFF",
-    cardTheme: "hotel",
-    image: offerCardHotelImg,
-    couponExpiresAtUtc: "2026-11-30T23:59:59Z",
-    endDateUtc: "2026-11-30T23:59:59Z",
-    description: "Special 30% discount on weekend getaway resorts, hill retreats & beachfront villas.",
-  },
-  {
-    id: "hotel-offer-grandhotel",
-    title: "GRANDHOTEL",
-    couponCode: "GRANDHOTEL",
-    bookingType: "Hotel",
-    badgeLabel: "LIMITED TIME",
-    ribbonText1: "₹1200",
-    ribbonText2: "OFF",
-    cardTheme: "hotel",
-    image: offerCardHotelImg,
-    couponExpiresAtUtc: "2026-12-25T23:59:59Z",
-    endDateUtc: "2026-12-25T23:59:59Z",
-    description: "Instant ₹1,200 off on 5-star premium luxury hotel suites across top metro cities.",
-  },
-];
-
 
 /* â”€â”€â”€ City photo lookup â€” full names + IATA codes + aliases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const POPULAR_FLIGHTS = [
@@ -2028,36 +1762,26 @@ function resolveFeaturedOfferImageSrc(imageUrl) {
   return resolved;
 }
 
-function formatExpiryDate(dateStr) {
-  if (!dateStr) return "Limited time offer";
-  try {
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return "Limited time offer";
-    const options = { day: "numeric", month: "short", year: "numeric" };
-    return `Valid till ${date.toLocaleDateString("en-US", options)}`;
-  } catch (e) {
-    return "Limited time offer";
-  }
-}
-
 function normalizeFeaturedOffer(offer, index) {
   const id =
     pickOfferValue(offer, ["id", "Id", "offerId", "OfferId", "offerCode", "OfferCode"]) ||
     `offer-${index}`;
-  const rawBookingType = pickOfferValue(offer, ["bookingType", "BookingType", "type", "Type", "category", "Category"]);
-  let bookingType = "Bus";
+  const rawBookingType = pickOfferValue(offer, ["bookingType", "BookingType", "serviceType", "ServiceType", "type", "Type", "category", "Category"]);
+  let bookingType = "";
   if (typeof rawBookingType === "number") {
     if (rawBookingType === 1) bookingType = "Flight";
     else if (rawBookingType === 2) bookingType = "Hotel";
-    else bookingType = "Bus";
+    else if (rawBookingType === 3) bookingType = "Bus";
   } else if (rawBookingType) {
     const lower = String(rawBookingType).toLowerCase();
     if (lower.includes("flight") || lower.includes("air") || lower.includes("plane")) {
       bookingType = "Flight";
     } else if (lower.includes("hotel") || lower.includes("stay") || lower.includes("room")) {
       bookingType = "Hotel";
-    } else {
+    } else if (lower.includes("bus")) {
       bookingType = "Bus";
+    } else {
+      bookingType = String(rawBookingType);
     }
   }
   const isActive =
@@ -2099,8 +1823,8 @@ function normalizeFeaturedOffer(offer, index) {
   const promotionCode = offer?.promotionCode ?? offer?.PromotionCode ?? promo?.code ?? promo?.Code ?? null;
   const promotionTitle = offer?.promotionTitle ?? offer?.PromotionTitle ?? promo?.title ?? promo?.Title ?? null;
   const promotionType = offer?.promotionType ?? offer?.PromotionType ?? promo?.promotionType ?? promo?.PromotionType ?? null;
-  const discountType = offer?.discountType ?? offer?.DiscountType ?? promo?.discountType ?? promo?.DiscountType ?? null;
-  const discountValue = offer?.discountValue ?? offer?.DiscountValue ?? promo?.discountValue ?? promo?.DiscountValue ?? null;
+  const discountType = offer?.discountType ?? offer?.DiscountType ?? offer?.couponType ?? offer?.CouponType ?? promo?.discountType ?? promo?.DiscountType ?? null;
+  const discountValue = offer?.discountValue ?? offer?.DiscountValue ?? offer?.value ?? offer?.Value ?? promo?.discountValue ?? promo?.DiscountValue ?? null;
   const maxDiscountAmount = offer?.maxDiscountAmount ?? offer?.MaxDiscountAmount ?? promo?.maxDiscountAmount ?? promo?.MaxDiscountAmount ?? null;
   const minBookingAmount = offer?.minBookingAmount ?? offer?.MinBookingAmount ?? promo?.minBookingAmount ?? promo?.MinBookingAmount ?? null;
   const previewFinalPrice = offer?.previewFinalPrice ?? offer?.PreviewFinalPrice ?? null;
@@ -2145,14 +1869,14 @@ function normalizeFeaturedOffer(offer, index) {
   return {
     id,
     offerCode: pickOfferValue(offer, ["offerCode", "OfferCode", "offerId", "OfferId"]),
-    title: pickOfferValue(offer, ["title", "Title", "name", "Name"], "Travel Offer"),
+    title: pickOfferValue(offer, ["title", "Title", "name", "Name"]),
     subtitle: pickOfferValue(offer, ["subtitle", "Subtitle"]),
     description: pickOfferValue(offer, ["description", "Description", "subtitle", "Subtitle"]),
     couponCode: pickOfferValue(offer, ["couponCode", "CouponCode", "code", "Code"]) || promotionCode,
     imageUrl: resolveFeaturedOfferImageSrc(imageUrl),
     bookingType,
     isActive: normalizeOfferActiveFlag(isActive),
-    couponExpiresAtUtc: pickOfferValue(offer, ["couponExpiresAtUtc", "CouponExpiresAtUtc"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
+    couponExpiresAtUtc: pickOfferValue(offer, ["couponExpiresAtUtc", "CouponExpiresAtUtc", "expiryDate", "ExpiryDate"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
     startDateUtc: pickOfferValue(offer, ["startDateUtc", "StartDateUtc"]) || promo?.startDateUtc || promo?.StartDateUtc || null,
     endDateUtc: pickOfferValue(offer, ["endDateUtc", "EndDateUtc"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
     promotionId,
@@ -2163,6 +1887,8 @@ function normalizeFeaturedOffer(offer, index) {
     discountValue,
     maxDiscountAmount,
     minBookingAmount,
+    badgeLabel: pickOfferValue(offer, ["badgeLabel", "BadgeLabel"]),
+    isAutoApply: offer?.isAutoApply ?? offer?.IsAutoApply ?? false,
     previewFinalPrice,
     conditions
   };
@@ -2494,15 +2220,16 @@ function getBlogImageUrl(blog) {
   const cat = (blog?.category || "").toLowerCase();
   const slug = (blog?.slug || "").toLowerCase();
 
-  if (cat.includes("hotel") || slug.includes("hotel")) return "/blog-assets/hotel.jpg";
-  if (cat.includes("flight") || slug.includes("flight")) return "/blog-assets/flight.jpg";
-  if (cat.includes("bus") || slug.includes("bus")) return "/blog-assets/bus.jpg";
-
   const rawUrl = blog?.imageUrl || blog?.ImageUrl || blog?.image || blog?.Image ||
     blog?.imagePath || blog?.ImagePath || blog?.filePath || blog?.photoUrl ||
     blog?.picture || blog?.url || "";
 
-  return rawUrl ? toApiAssetUrl(rawUrl) : "";
+  if (rawUrl) return toApiAssetUrl(rawUrl);
+  if (cat.includes("hotel") || slug.includes("hotel")) return "/blog-assets/hotel.jpg";
+  if (cat.includes("flight") || slug.includes("flight")) return "/blog-assets/flight.jpg";
+  if (cat.includes("bus") || slug.includes("bus")) return "/blog-assets/bus.jpg";
+
+  return "";
 }
 
 function formatBlogDate(dateValue) {
@@ -2757,8 +2484,8 @@ export default function HomePage() {
     }
 
     // Discount details
-    if (offer.discountValue > 0) {
-      if (offer.discountType === "Percentage" || String(offer.discountType).toLowerCase() === "percentage") {
+    if (Number(offer.discountValue) > 0) {
+      if (String(offer.discountType).toLowerCase().includes("percent")) {
         list.push(
           <li key="discount-val">
             Get a <strong>{offer.discountValue}%</strong> discount on your booking.
@@ -2767,7 +2494,7 @@ export default function HomePage() {
       } else {
         list.push(
           <li key="discount-val">
-            Get a flat <strong>â‚¹{offer.discountValue}</strong> discount on your booking.
+            Get a flat <strong>₹{offer.discountValue}</strong> discount on your booking.
           </li>
         );
       }
@@ -2777,7 +2504,7 @@ export default function HomePage() {
     if (offer.minBookingAmount > 0) {
       list.push(
         <li key="min-booking">
-          Minimum booking amount of <strong>â‚¹{offer.minBookingAmount}</strong> required.
+          Minimum booking amount of <strong>₹{offer.minBookingAmount}</strong> required.
         </li>
       );
     }
@@ -2786,7 +2513,7 @@ export default function HomePage() {
     if (offer.maxDiscountAmount > 0) {
       list.push(
         <li key="max-discount">
-          Maximum discount limit is <strong>â‚¹{offer.maxDiscountAmount}</strong>.
+          Maximum discount limit is <strong>₹{offer.maxDiscountAmount}</strong>.
         </li>
       );
     }
@@ -2854,10 +2581,6 @@ export default function HomePage() {
           }
         }
       });
-    }
-
-    if (list.length === 0) {
-      list.push(<li key="default">Valid on all bookings of this category.</li>);
     }
 
     return list;
@@ -3004,35 +2727,12 @@ export default function HomePage() {
             </header>
             <div className="deals-dialog-grid">
               {featuredOffers.map((offer, index) => {
-                const rawCode = offer.couponCode || offer.code || offer.title || "OFFER";
-                let code = rawCode;
-                if (!rawCode || /^coupon[_-]?code/i.test(rawCode)) {
-                  const sampleCodes = ["June10", "BUS50", "wheelsbus", "JULYfair"];
-                  code = sampleCodes[index % sampleCodes.length];
-                }
-
-                const typeLower = (offer.bookingType || "bus").toLowerCase();
+                const typeLower = (offer.bookingType || "").toLowerCase();
                 const isFlight = typeLower.includes("flight");
                 const isHotel = typeLower.includes("hotel");
                 const cardTheme = isFlight ? "flight" : isHotel ? "hotel" : "bus";
-                const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : "BUS OFFER";
-                const OfferIcon = isFlight ? Plane : isHotel ? Building2 : Bus;
-                const cardImage =
-                  offer.image ||
-                  (isFlight ? offerCardFlightImg : isHotel ? offerCardHotelImg : offerCardBusImg);
-
-                let ribbon1 = offer.ribbonText1;
-                let ribbon2 = offer.ribbonText2;
-                if (!ribbon1 || !ribbon2) {
-                  if (offer.badgeLabel && offer.badgeLabel.includes("OFF")) {
-                    const parts = offer.badgeLabel.trim().split(/\s+/);
-                    ribbon1 = parts[0] || "50%";
-                    ribbon2 = parts[1] || "OFF";
-                  } else {
-                    ribbon1 = "SPECIAL";
-                    ribbon2 = "OFFER";
-                  }
-                }
+                const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : typeLower.includes("bus") ? "BUS OFFER" : "";
+                const OfferIcon = isFlight ? Plane : isHotel ? Building2 : typeLower.includes("bus") ? Bus : null;
 
                 return (
                   <article
@@ -3046,20 +2746,25 @@ export default function HomePage() {
                     tabIndex={0}
                   >
                     <div className="wavy-offer-left">
-                      <div className="wavy-offer-cat-row">
-                        <div className={`wavy-offer-icon-circle icon-${cardTheme}`}>
-                          <OfferIcon size={12} strokeWidth={2.6} />
+                      {OfferIcon && (
+                        <div className="wavy-offer-cat-row">
+                          <div className={`wavy-offer-icon-circle icon-${cardTheme}`}>
+                            <OfferIcon size={12} strokeWidth={2.6} />
+                          </div>
+                          <span className={`wavy-offer-cat-text text-${cardTheme}`}>
+                            {categoryLabel}
+                          </span>
                         </div>
-                        <span className={`wavy-offer-cat-text text-${cardTheme}`}>
-                          {categoryLabel}
-                        </span>
-                      </div>
+                      )}
 
                       <div className="wavy-offer-code-group">
-                        <h3 className="wavy-offer-title">{code}</h3>
-                        <p className="wavy-offer-validity">
-                          {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                        </p>
+                        {offer.title && <h3 className="wavy-offer-title">{offer.title}</h3>}
+                        {offer.couponCode && <p className="wavy-offer-validity">{offer.couponCode}</p>}
+                        {offer.couponExpiresAtUtc && (
+                          <p className="wavy-offer-validity">
+                            {new Date(offer.couponExpiresAtUtc).toLocaleDateString()}
+                          </p>
+                        )}
                       </div>
 
                       <div className="wavy-offer-action-row">
@@ -3092,15 +2797,19 @@ export default function HomePage() {
                     </div>
 
                     <div className="wavy-offer-right">
-                      <span className={`wavy-offer-badge badge-${cardTheme}`}>
-                        LIMITED TIME
-                      </span>
-                      <img
-                        src={cardImage}
-                        alt={categoryLabel}
-                        className="wavy-offer-photo"
-                        loading="lazy"
-                      />
+                      {offer.badgeLabel && (
+                        <span className={`wavy-offer-badge badge-${cardTheme}`}>
+                          {offer.badgeLabel}
+                        </span>
+                      )}
+                      {offer.imageUrl && (
+                        <img
+                          src={offer.imageUrl}
+                          alt={offer.title || ""}
+                          className="wavy-offer-photo"
+                          loading="lazy"
+                        />
+                      )}
                     </div>
                   </article>
                 );
@@ -3124,15 +2833,23 @@ export default function HomePage() {
             className="offer-detail-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="offer-detail-title"
+            aria-labelledby={offerForDetailPopup.title ? "offer-detail-title" : undefined}
+            aria-label={offerForDetailPopup.title ? undefined : "Offer details"}
             onClick={(event) => event.stopPropagation()}
           >
+            {offerForDetailPopup.imageUrl && (
+              <div className="offer-detail-image">
+                <img src={offerForDetailPopup.imageUrl} alt="" />
+              </div>
+            )}
             <header className="offer-detail-header">
               <div>
-                <span className="offer-detail-kicker">
-                  {offerForDetailPopup.bookingType ? `${offerForDetailPopup.bookingType.toUpperCase()} DEAL` : "OFFER DETAIL"}
-                </span>
-                <h2 id="offer-detail-title">{offerForDetailPopup.title}</h2>
+                {offerForDetailPopup.bookingType && (
+                  <span className="offer-detail-kicker">{offerForDetailPopup.bookingType}</span>
+                )}
+                {offerForDetailPopup.title && (
+                  <h2 id="offer-detail-title">{offerForDetailPopup.title}</h2>
+                )}
               </div>
               <button
                 type="button"
@@ -3145,9 +2862,11 @@ export default function HomePage() {
             </header>
 
             <div className="offer-detail-body">
-              <p className="offer-detail-desc">
-                {offerForDetailPopup.description || offerForDetailPopup.subtitle}
-              </p>
+              {(offerForDetailPopup.description || offerForDetailPopup.subtitle) && (
+                <p className="offer-detail-desc">
+                  {offerForDetailPopup.description || offerForDetailPopup.subtitle}
+                </p>
+              )}
 
               {offerForDetailPopup.couponCode ? (
                 <div className="offer-coupon-section">
@@ -3165,39 +2884,9 @@ export default function HomePage() {
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="offer-coupon-section">
-                  <div className="offer-coupon-card promo-auto">
-                    <span>Automatic promo discount applied at checkout. No code required!</span>
-                  </div>
-                </div>
-              )}
+              ) : null}
 
-              <div className="offer-terms-section">
-                <span className="section-subtitle">Terms & Conditions</span>
-                <ul className="terms-list">
-                  {renderOfferConditions(offerForDetailPopup)}
-                  <li>This offer cannot be clubbed with any other ongoing promotions.</li>
-                  <li>Standard booking terms and cancellation policies apply.</li>
-                  {offerForDetailPopup.couponExpiresAtUtc && (
-                    <li>Valid for bookings made before {new Date(offerForDetailPopup.couponExpiresAtUtc).toLocaleDateString()}.</li>
-                  )}
-                </ul>
-              </div>
 
-              <div className="offer-detail-actions">
-                <button
-                  type="button"
-                  className="offer-proceed-btn"
-                  onClick={() => {
-                    const offer = offerForDetailPopup;
-                    setOfferForDetailPopup(null);
-                    handleOfferBooking(offer);
-                  }}
-                >
-                  Proceed to Booking
-                </button>
-              </div>
             </div>
           </section>
         </div>,
@@ -3245,28 +2934,11 @@ export default function HomePage() {
 
       try {
         const serviceType = activeTab === "flights" ? "flight" : activeTab === "hotels" ? "hotel" : "bus";
-        let offers = await fetchCouponsAndOffers({ serviceType, category: "Offer" }).catch(() => []);
-
-        // Ensure offers array
-        offers = Array.isArray(offers) ? offers : [];
-
-        // Map backend API schema to the expected frontend schema
-        let activeOffers = offers.map(offer => ({
-          id: offer.id,
-          title: offer.title,
-          description: offer.description,
-          couponCode: offer.couponCode,
-          bookingType: offer.serviceType === "flight" ? "Flight" : offer.serviceType === "hotel" ? "Hotel" : "Bus",
-          isActive: true,
-          discountType: offer.couponType === "Percentage" ? "Percent" : "Flat",
-          discountValue: offer.value,
-          maxDiscountAmount: offer.maxDiscountAmount,
-          minBookingAmount: offer.minBookingAmount,
-          couponExpiresAtUtc: offer.expiryDate,
-          imageUrl: offer.imageUrl,
-          isAutoApply: offer.isAutoApply,
-          isExclusive: offer.isExclusive
-        }));
+        const response = await fetchCouponsAndOffers({ serviceType, category: "Offer" });
+        const offers = getFeaturedOffersPayload(response);
+        const activeOffers = offers
+          .map((offer, index) => normalizeFeaturedOffer(offer, index))
+          .filter((offer) => offer.isActive);
 
 
         if (isMounted) {
@@ -5661,17 +5333,23 @@ export default function HomePage() {
 
         /* Carousel Wrapper with Side Floating Arrows */
         .bus-offers-carousel-wrapper {
-           position: relative !important;
+            position: relative !important;
            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 5px !important;
         }
 
         .bus-offers-side-arrow {
-           position: absolute !important;
-           top: 50% !important;
-           transform: translateY(-50%) !important;
-           width: 34px !important;
-           height: 34px !important;
-           min-width: 34px !important;
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            transform: none !important;
+           width: 25px !important;
+           height: 25px !important;
+           min-width: 25px !important;
+           flex: 0 0 25px !important;
            border-radius: 50% !important;
            background: rgba(255, 255, 255, 0.95) !important;
            border: 1.5px solid #e2e8f0 !important;
@@ -5688,18 +5366,18 @@ export default function HomePage() {
         }
 
         .bus-offers-side-arrow-left {
-           left: -4px !important;
+            left: auto !important;
         }
 
         .bus-offers-side-arrow-right {
-           right: -4px !important;
+            right: auto !important;
         }
 
         .bus-offers-side-arrow:hover {
            background: #ff0000 !important;
            border-color: #ff0000 !important;
            color: #ffffff !important;
-           transform: translateY(-50%) scale(1.12) !important;
+            transform: scale(1.12) !important;
            box-shadow: 0 6px 16px rgba(255, 0, 0, 0.38) !important;
         }
 
@@ -5713,7 +5391,9 @@ export default function HomePage() {
            padding: 2px 2px 4px !important;
            display: flex !important;
            align-items: stretch !important;
-           width: 100% !important;
+           width: auto !important;
+           min-width: 0 !important;
+           flex: 1 1 0 !important;
            overflow: hidden !important;
         }
 
@@ -5722,8 +5402,8 @@ export default function HomePage() {
         }
 
         .offer-img-marquee.offer-marquee .marquee-slide {
-           width: 202px !important;
-           flex: 0 0 202px !important;
+            width: 208px !important;
+            flex: 0 0 208px !important;
            padding: 0 4px !important;
            box-sizing: border-box !important;
            display: flex !important;
@@ -5734,9 +5414,9 @@ export default function HomePage() {
 
         .img-offer-card {
            position: relative !important;
-           width: 194px !important;
-           height: 72px !important;
-           min-height: 72px !important;
+            width: 200px !important;
+            height: 100px !important;
+            min-height: 100px !important;
            border-radius: 12px !important;
            overflow: hidden !important;
            cursor: pointer !important;
@@ -5760,9 +5440,8 @@ export default function HomePage() {
 
         .img-offer-photo-side {
            position: absolute !important;
-           top: 0 !important;
-           right: 0 !important;
-           width: 60% !important;
+            inset: 0 !important;
+            width: 100% !important;
            height: 100% !important;
            overflow: hidden !important;
            z-index: 1 !important;
@@ -5803,12 +5482,7 @@ export default function HomePage() {
         .img-offer-corner-badge.badge-hotel { background: #dc1e26 !important; }
 
         .img-offer-divider-svg {
-           position: absolute !important;
-           inset: 0 !important;
-           width: 100% !important;
-           height: 100% !important;
-           z-index: 2 !important;
-           pointer-events: none !important;
+            display: none !important;
         }
 
         .img-offer-info-side {
@@ -8507,33 +8181,13 @@ export default function HomePage() {
                 duration={32}
                 pauseOnHover={true}
                 renderItem={(offer, idx) => {
-                  let code = String(
-                    offer.couponCode ||
-                    offer.offerCode ||
-                    offer.promotionCode ||
-                    offer.title ||
-                    "OFFER"
-                  ).trim();
-
-                  if (!code || code === "0") {
-                    code = String(offer.title || "OFFER").trim();
-                  }
-                  if (!code || code === "0") {
-                    code = "OFFER";
-                  }
-
                   const typeLower = (offer.bookingType || "bus").toLowerCase();
                   const isFlight = typeLower.includes("flight");
                   const isHotel = typeLower.includes("hotel");
                   const cardTheme = isFlight ? "flight" : isHotel ? "hotel" : "bus";
                   const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : "BUS OFFER";
-                  const OfferIcon = isFlight ? Plane : isHotel ? Building2 : Bus;
 
-                  const cardImage = isFlight
-                    ? (offer.imageUrl || offer.image || offerCardFlightImg)
-                    : isHotel
-                      ? (offer.imageUrl || offer.image || offerCardHotelImg)
-                      : (offer.imageUrl || offer.image || BUS_OFFER_IMAGES[idx % BUS_OFFER_IMAGES.length]);
+                  const cardImage = offer.imageUrl;
 
                   return (
                     <button
@@ -8542,53 +8196,16 @@ export default function HomePage() {
                       onClick={() => setOfferForDetailPopup(offer)}
                       style={{ textAlign: 'left', outline: 'none', appearance: 'none' }}
                     >
-                      {/* Right Photo Area */}
                       <div className="img-offer-photo-side">
                         <img
                           src={cardImage}
-                          alt={categoryLabel}
+                          alt={offer.title || categoryLabel}
                           className="img-offer-photo"
                           loading="lazy"
                           onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = isFlight
-                              ? offerCardFlightImg
-                              : isHotel
-                                ? offerCardHotelImg
-                                : busCoastBanner;
+                            e.currentTarget.hidden = true;
                           }}
                         />
-                      </div>
-
-                      {/* S-Curve Divider SVG */}
-                      <svg className="img-offer-divider-svg" viewBox="0 0 270 114" preserveAspectRatio="none">
-                        <path
-                          d="M0,0 L150,0 C172,32 135,76 117,114 L0,114 Z"
-                          fill="#fecaca"
-                          opacity="0.9"
-                        />
-                        <path
-                          d="M0,0 L145,0 C167,32 130,76 112,114 L0,114 Z"
-                          fill="#ffffff"
-                        />
-                      </svg>
-
-                      {/* Left Info Area */}
-                      <div className="img-offer-info-side">
-                        <div className="img-offer-cat-row">
-                          <span className={`img-offer-cat-circle circle-${cardTheme}`}>
-                            <OfferIcon size={11} strokeWidth={2.4} />
-                          </span>
-                          <span className={`img-offer-cat-text text-${cardTheme}`}>
-                            {categoryLabel}
-                          </span>
-                        </div>
-
-                        <h3 className="img-offer-title" title={code}>{code}</h3>
-
-                        <p className="img-offer-validity">
-                          {formatExpiryDate(offer.couponExpiresAtUtc || offer.endDateUtc)}
-                        </p>
                       </div>
                     </button>
                   );

@@ -193,6 +193,29 @@ export async function deleteDiscount(id) {
   return handleResponse(response);
 }
 
+export async function listAdminBusCoupons(params = {}) {
+  const sType = (typeof params === "string" ? params : params?.type || params?.serviceType || "bus").toLowerCase();
+  const cat = params?.category && params.category !== "all" ? params.category : null;
+  const query = new URLSearchParams();
+  if (sType && sType !== "all") query.set("type", sType);
+  if (cat) query.set("category", cat);
+  const qStr = query.toString();
+  const url = `/api/admin/bus/coupons${qStr ? `?${qStr}` : ""}`;
+
+  try {
+    const response = await fetch(toApiUrl(url), {
+      method: "GET",
+      headers: getAdminAuthHeaders(),
+    });
+    if (response.ok) {
+      return await handleResponse(response);
+    }
+  } catch (err) {
+    console.warn("listAdminBusCoupons error:", err);
+  }
+  return [];
+}
+
 // ---------------------------------------------------------
 // COUPON / DISCOUNT CONDITIONS CRUD
 // ---------------------------------------------------------
@@ -200,133 +223,104 @@ export async function deleteDiscount(id) {
 export async function createCondition(couponId, data, serviceType = "bus") {
   const sType = String(serviceType || "bus").toLowerCase();
 
-  const primaryPath = sType === "flight"
-    ? `/api/admin/flight/discounts/${couponId}/conditions`
-    : `/api/admin/${sType}/coupons/${couponId}/conditions?type=${sType}`;
+  const payload = {
+    conditionType: data.conditionType || data.ConditionType || "",
+    conditionOperator: data.conditionOperator || data.ConditionOperator || data.operator || "Equals",
+    operator: data.operator || data.conditionOperator || data.ConditionOperator || "Equals",
+    value1: data.value1 !== undefined && data.value1 !== null ? String(data.value1).trim() : (data.value !== undefined ? String(data.value).trim() : ""),
+    value2: data.value2 !== undefined && data.value2 !== null ? String(data.value2).trim() : null,
+    value: data.value !== undefined ? String(data.value).trim() : (data.value1 !== undefined && data.value1 !== null ? String(data.value1).trim() : ""),
+  };
 
-  const fallbackPath = sType === "flight"
-    ? `/api/admin/flight/coupons/${couponId}/conditions?type=${sType}`
-    : `/api/admin/${sType}/discounts/${couponId}/conditions`;
-
+  const primaryUrl = `/api/admin/bus/coupons/${couponId}/conditions?type=${sType}`;
+  
   try {
-    const response = await fetch(toApiUrl(primaryPath), {
+    const response = await fetch(toApiUrl(primaryUrl), {
       method: "POST",
       headers: getAdminAuthHeaders(true),
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
+    if (response.ok) {
+      return await handleResponse(response);
+    }
     if (response.status === 404) {
-      throw new Error("404_NOT_FOUND");
+      const fallbackUrl = `/api/admin/flight-promotions/${couponId}/conditions`;
+      const fallbackResp = await fetch(toApiUrl(fallbackUrl), {
+        method: "POST",
+        headers: getAdminAuthHeaders(true),
+        body: JSON.stringify(payload),
+      });
+      if (fallbackResp.ok) {
+        return await handleResponse(fallbackResp);
+      }
     }
     return await handleResponse(response);
   } catch (err) {
-    if (err.message === "404_NOT_FOUND" || err.message?.includes("404")) {
-      const fbResponse = await fetch(toApiUrl(fallbackPath), {
-        method: "POST",
-        headers: getAdminAuthHeaders(true),
-        body: JSON.stringify(data),
-      });
-      return await handleResponse(fbResponse);
-    }
     throw err;
   }
 }
 
 export async function getConditions(couponId, serviceType = "bus") {
   const sType = String(serviceType || "bus").toLowerCase();
-
-  const primaryPath = sType === "flight"
-    ? `/api/admin/flight/discounts/${couponId}/conditions`
-    : `/api/admin/${sType}/coupons/${couponId}/conditions?type=${sType}`;
-
-  const fallbackPath = sType === "flight"
-    ? `/api/admin/flight/coupons/${couponId}/conditions?type=${sType}`
-    : `/api/admin/${sType}/discounts/${couponId}/conditions`;
+  const primaryUrl = `/api/admin/bus/coupons/${couponId}/conditions?type=${sType}`;
 
   try {
-    const response = await fetch(toApiUrl(primaryPath), {
+    const response = await fetch(toApiUrl(primaryUrl), {
       method: "GET",
       headers: getAdminAuthHeaders(),
     });
-    if (response.status === 404) {
-      throw new Error("404_NOT_FOUND");
+    if (response.ok) {
+      const data = await handleResponse(response);
+      return Array.isArray(data) ? data : [];
     }
-    return await handleResponse(response);
-  } catch (err) {
-    if (err.message === "404_NOT_FOUND" || err.message?.includes("404")) {
-      const fbResponse = await fetch(toApiUrl(fallbackPath), {
+    if (response.status === 404) {
+      const fallbackUrl = `/api/admin/flight-promotions/${couponId}/conditions`;
+      const fallbackResp = await fetch(toApiUrl(fallbackUrl), {
         method: "GET",
         headers: getAdminAuthHeaders(),
       });
-      return await handleResponse(fbResponse);
+      if (fallbackResp.ok) {
+        const fallbackData = await handleResponse(fallbackResp);
+        return Array.isArray(fallbackData) ? fallbackData : [];
+      }
     }
-    throw err;
+    return await handleResponse(response);
+  } catch (err) {
+    console.warn("Error fetching conditions:", err);
+    return [];
   }
 }
 
 export async function updateCondition(conditionId, data, serviceType = "bus") {
   const sType = String(serviceType || "bus").toLowerCase();
+  const payload = {
+    conditionType: data.conditionType || data.ConditionType || "",
+    conditionOperator: data.conditionOperator || data.ConditionOperator || data.operator || "Equals",
+    operator: data.operator || data.conditionOperator || data.ConditionOperator || "Equals",
+    value1: data.value1 !== undefined && data.value1 !== null ? String(data.value1).trim() : (data.value !== undefined ? String(data.value).trim() : ""),
+    value2: data.value2 !== undefined && data.value2 !== null ? String(data.value2).trim() : null,
+    value: data.value !== undefined ? String(data.value).trim() : (data.value1 !== undefined && data.value1 !== null ? String(data.value1).trim() : ""),
+  };
 
-  const primaryPath = sType === "flight"
-    ? `/api/admin/flight/discounts/conditions/${conditionId}`
-    : `/api/admin/${sType}/coupons/conditions/${conditionId}?type=${sType}`;
+  const primaryUrl = `/api/admin/bus/coupons/conditions/${conditionId}?type=${sType}`;
 
-  const fallbackPath = sType === "flight"
-    ? `/api/admin/flight/coupons/conditions/${conditionId}?type=${sType}`
-    : `/api/admin/${sType}/discounts/conditions/${conditionId}`;
-
-  try {
-    const response = await fetch(toApiUrl(primaryPath), {
-      method: "PUT",
-      headers: getAdminAuthHeaders(true),
-      body: JSON.stringify(data),
-    });
-    if (response.status === 404) {
-      throw new Error("404_NOT_FOUND");
-    }
-    return await handleResponse(response);
-  } catch (err) {
-    if (err.message === "404_NOT_FOUND" || err.message?.includes("404")) {
-      const fbResponse = await fetch(toApiUrl(fallbackPath), {
-        method: "PUT",
-        headers: getAdminAuthHeaders(true),
-        body: JSON.stringify(data),
-      });
-      return await handleResponse(fbResponse);
-    }
-    throw err;
-  }
+  const response = await fetch(toApiUrl(primaryUrl), {
+    method: "PUT",
+    headers: getAdminAuthHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
 }
 
 export async function deleteCondition(conditionId, serviceType = "bus") {
   const sType = String(serviceType || "bus").toLowerCase();
+  const primaryUrl = `/api/admin/bus/coupons/conditions/${conditionId}?type=${sType}`;
 
-  const primaryPath = sType === "flight"
-    ? `/api/admin/flight/discounts/conditions/${conditionId}`
-    : `/api/admin/${sType}/coupons/conditions/${conditionId}?type=${sType}`;
-
-  const fallbackPath = sType === "flight"
-    ? `/api/admin/flight/coupons/conditions/${conditionId}?type=${sType}`
-    : `/api/admin/${sType}/discounts/conditions/${conditionId}`;
-
-  try {
-    const response = await fetch(toApiUrl(primaryPath), {
-      method: "DELETE",
-      headers: getAdminAuthHeaders(),
-    });
-    if (response.status === 404) {
-      throw new Error("404_NOT_FOUND");
-    }
-    return await handleResponse(response);
-  } catch (err) {
-    if (err.message === "404_NOT_FOUND" || err.message?.includes("404")) {
-      const fbResponse = await fetch(toApiUrl(fallbackPath), {
-        method: "DELETE",
-        headers: getAdminAuthHeaders(),
-      });
-      return await handleResponse(fbResponse);
-    }
-    throw err;
-  }
+  const response = await fetch(toApiUrl(primaryUrl), {
+    method: "DELETE",
+    headers: getAdminAuthHeaders(),
+  });
+  return handleResponse(response);
 }
 
 // ---------------------------------------------------------

@@ -5,6 +5,7 @@ import { toApiUrl, withNgrokSkipWarningHeader } from "./apiClient";
 const customerApi = axios.create({
   headers: {
     Accept: "application/json",
+    "Content-Type": "application/json",
   },
 });
 
@@ -29,6 +30,7 @@ customerApi.interceptors.request.use((config) => {
     url: toApiUrl(originalUrl),
     headers: withNgrokSkipWarningHeader(originalUrl, {
       Accept: "application/json",
+      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(config.headers || {}),
     }),
@@ -66,7 +68,25 @@ export async function toggleWalletStatus(id) {
 }
 
 export async function addWalletBalance(id, payload) {
-  const response = await customerApi.post(`/api/customers/${id}/wallet/add`, payload);
+  // Format payload as JSON object with numerical amount as expected by backend [FromBody]
+  const body =
+    typeof payload === "object" && payload !== null
+      ? {
+          amount: Number(payload.amount ?? payload.Amount ?? 0),
+          ...(payload.referenceId ? { referenceId: payload.referenceId } : {}),
+          ...payload,
+        }
+      : { amount: Number(payload) };
+
+  const response = await customerApi.post(
+    `/api/customers/${id}/wallet/add`,
+    body,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
   return response.data;
 }
 

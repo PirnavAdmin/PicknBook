@@ -736,17 +736,16 @@ const toDateValue = (value) => {
 
 const formatSearchTime = (value) => {
   const parsed = parseUtcDate(value);
-  if (Number.isNaN(parsed.getTime())) {
+  if (!parsed || Number.isNaN(parsed.getTime())) {
     return "--";
   }
 
   return parsed.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     hour12: true,
     timeZone: "Asia/Kolkata",
-  });
+  }).toLowerCase();
 };
 
 const formatSearchDate = (value) => {
