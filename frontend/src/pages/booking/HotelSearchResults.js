@@ -19,6 +19,7 @@ import {
   Filter,
   Heart,
   X,
+  Search,
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
@@ -370,6 +371,7 @@ export default function HotelSearchResults() {
   const [selectedHotelId, setSelectedHotelId] = useState(null);
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [hotelSearchQuery, setHotelSearchQuery] = useState("");
 
   const handleTogglePropertyType = (typeId) => {
     setSelectedPropertyType((prev) => (prev === typeId ? "" : typeId));
@@ -726,6 +728,20 @@ export default function HotelSearchResults() {
           if (!matchAmenities) return false;
         }
 
+        if (hotelSearchQuery.trim()) {
+          const q = hotelSearchQuery.trim().toLowerCase();
+          const searchable = [
+            hotelRecord.name,
+            hotelRecord.area,
+            hotelRecord.address,
+            hotelRecord.city,
+            ...(Array.isArray(hotelRecord.amenities)
+              ? hotelRecord.amenities.map(a => typeof a === "object" ? String(a.name || a.Name || "") : String(a || ""))
+              : []),
+          ].join(" ").toLowerCase();
+          if (!searchable.includes(q)) return false;
+        }
+
         return true;
       })
       .sort((left, right) => {
@@ -739,7 +755,7 @@ export default function HotelSearchResults() {
 
         return right.rating * 100 - right.price / 100 - (left.rating * 100 - left.price / 100);
       });
-  }, [apiHotels, collectionKey, destination, sortKey, selectedPaymentPrefs, selectedLocalities, selectedRatings, selectedPriceRanges, selectedAmenities, savedStayIds, selectedPropertyType]);
+  }, [apiHotels, collectionKey, destination, sortKey, selectedPaymentPrefs, selectedLocalities, selectedRatings, selectedPriceRanges, selectedAmenities, savedStayIds, selectedPropertyType, hotelSearchQuery]);
  
   const toggleSavedStay = (hotelId) => {
     setSavedStayIds((current) =>
@@ -995,113 +1011,86 @@ export default function HotelSearchResults() {
                 </div>
               </aside>
             )}            <div className="hotel-split-left">
-              <header className="hotel-discover-resultshead" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", width: "100%", flexWrap: "wrap", gap: "16px", marginBottom: "24px" }}>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: "24px", flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span style={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.06em", color: "#ff0000", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Hotel results</span>
-                    <h2 style={{ fontSize: "1rem", fontWeight: 800, color: "#0f172a", margin: 0 }}>
+              <header className="hotel-discover-resultshead">
+                {/* LEFT: Title + count */}
+                <div className="hotel-resultshead-left">
+                  <div className="hotel-resultshead-title-block">
+                    <span className="hotel-resultshead-label">Hotel results</span>
+                    <h2 className="hotel-resultshead-title">
                       {loading ? "Finding the Best Hotels for You..." : "Best Hotels for You"}
                     </h2>
-                    <div style={{ width: "32px", height: "3px", backgroundColor: "#ff0000", marginTop: "6px", borderRadius: "2px" }} />
+                    <div className="hotel-resultshead-underline" />
                   </div>
-                  
                   {!loading && (
-                    <div className="hotel-results-count-group">
-                      <span className="hotel-results-count">
-                        Showing <strong>{hotels.length}</strong> of <strong>{apiHotels.length}</strong> hotels
-                      </span>
+                    <span className="hotel-results-count">
+                      Showing <strong>{hotels.length}</strong> of <strong>{apiHotels.length}</strong> hotels
+                    </span>
+                  )}
+                </div>
+
+                {/* CENTER: Search bar */}
+                {!loading && (
+                  <div className="hotel-resultshead-search">
+                    <Search size={15} className="hotel-resultshead-search-icon" />
+                    <input
+                      type="text"
+                      className="hotel-resultshead-search-input"
+                      placeholder="Hotel, area, brand, room or facility"
+                      value={hotelSearchQuery}
+                      onChange={e => setHotelSearchQuery(e.target.value)}
+                    />
+                    {hotelSearchQuery && (
+                      <button
+                        type="button"
+                        className="hotel-resultshead-search-clear"
+                        onClick={() => setHotelSearchQuery("")}
+                        aria-label="Clear search"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* RIGHT: Actions */}
+                {!loading && (
+                  <div className="hotel-resultshead-actions">
+                    <div className="hotel-resultshead-action-buttons">
                       <button
                         type="button"
                         className={`hotel-map-toggle-btn${showMap ? " is-active" : ""}`}
                         onClick={() => setShowMap(!showMap)}
                         title={showMap ? "Switch to list view" : "Switch to split map view"}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          background: "transparent",
-                          border: "1px solid rgba(0, 0, 0, 0.08)",
-                          borderRadius: "20px",
-                          padding: "6px 14px",
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
-                          color: "#0f172a",
-                          cursor: "pointer",
-                          marginBottom: "4px",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-                        }}
                       >
                         <Map size={14} color="#ff0000" />
-                        <span style={{ color: "#0f172a" }}>MAP</span>
+                        <span>MAP</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`hotel-map-toggle-btn${isFilterOpen ? " is-active" : ""}`}
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        title="Toggle Filters Sidebar"
+                      >
+                        <Filter size={14} color="#ff0000" />
+                        <span>FILTER</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`hotel-map-toggle-btn${collectionKey === "favourites" ? " is-active" : ""}`}
+                        onClick={() => setCollectionKey(collectionKey === "favourites" ? "all" : "favourites")}
+                        title="Toggle Saved Favourites"
+                      >
+                        <Heart size={14} fill={collectionKey === "favourites" ? "#ff0000" : "none"} color="#ff0000" />
+                        <span>FAVOURITES ({localFavouritesCount})</span>
                       </button>
                     </div>
-                  )}
-                </div>
-
-                {!loading && (
-                  <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "4px" }}>
-                    <button
-                      type="button"
-                      className={`hotel-map-toggle-btn${isFilterOpen ? " is-active" : ""}`}
-                      onClick={() => setIsFilterOpen(!isFilterOpen)}
-                      title="Toggle Filters Sidebar"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background: "transparent",
-                        border: "1px solid rgba(0, 0, 0, 0.08)",
-                        borderRadius: "20px",
-                        padding: "6px 14px",
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-                      }}
-                    >
-                      <Filter size={14} color="#ff0000" />
-                      <span style={{ color: "#0f172a" }}>FILTER</span>
-                    </button>
-                    
-                    <button
-                      type="button"
-                      className={`hotel-map-toggle-btn${collectionKey === "favourites" ? " is-active" : ""}`}
-                      onClick={() => setCollectionKey(collectionKey === "favourites" ? "all" : "favourites")}
-                      title="Toggle Saved Favourites"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background: "transparent",
-                        border: "1px solid rgba(0, 0, 0, 0.08)",
-                        borderRadius: "20px",
-                        padding: "6px 14px",
-                        fontSize: "0.75rem",
-                        fontWeight: 700,
-                        color: "#0f172a",
-                        cursor: "pointer",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-                      }}
-                    >
-                      <Heart size={14} fill={collectionKey === "favourites" ? "#ff0000" : "none"} color="#ff0000" />
-                      <span style={{ color: "#0f172a" }}>FAVOURITES ({localFavouritesCount})</span>
-                    </button>
 
                     <select
                       value={sortKey}
-                      onChange={(event) => setSortKey(event.target.value)}
-                      style={{
-                        padding: "6px 14px",
-                        borderRadius: "20px",
-                        border: "none",
-                        background: "transparent",
-                        fontSize: "0.82rem",
-                        fontWeight: 600,
-                        color: "#0f172a",
-                        cursor: "pointer",
-                        outline: "none"
-                      }}
+                      onChange={event => setSortKey(event.target.value)}
+                      className="hotel-resultshead-sort-select"
                     >
                       <option value="recommended">Sort: Recommended</option>
                       <option value="price">Sort: Lowest Price</option>

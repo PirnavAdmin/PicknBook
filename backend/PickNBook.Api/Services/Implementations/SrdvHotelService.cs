@@ -113,7 +113,7 @@ namespace PickNBook.Api.Services
             // Only cache in main search cache if finished and valid
             if (response != null && response.ResultStatus == "COMPLETED" && (response.Error == null || response.Error.ErrorCode == 0))
             {
-                _cache.Set(cacheKey, response, TimeSpan.FromMinutes(15));
+                _cache.Set(cacheKey, response, TimeSpan.FromMinutes(5));
             }
 
             return response ?? new PickNBookHotelSearchResponseDto();
@@ -355,7 +355,7 @@ namespace PickNBook.Api.Services
 
                 if (responseDto != null && responseDto.Error.ErrorCode == 0 && responseDto.Results != null && responseDto.Results.Count > 0)
                 {
-                    _cache.Set(cacheKey, responseDto, TimeSpan.FromMinutes(10));
+                    _cache.Set(cacheKey, responseDto, TimeSpan.FromMinutes(5));
                 }
 
                 return responseDto;
@@ -831,15 +831,33 @@ namespace PickNBook.Api.Services
                     {
                         if (target.TryGetProperty("VoucherStatus", out var vs)) resDto.VoucherStatus = vs.ValueKind == JsonValueKind.True;
                         if (target.TryGetProperty("ResponseStatus", out var rs) && rs.ValueKind == JsonValueKind.Number) resDto.ResponseStatus = rs.GetInt32();
-                        if (target.TryGetProperty("TraceId", out var ti)) resDto.TraceId = ti.ValueKind == JsonValueKind.Number ? ti.GetRawText() : (ti.GetString() ?? "");
-                        if (target.TryGetProperty("Status", out var st)) resDto.Status = st.GetString() ?? "Confirmed";
-                        if (target.TryGetProperty("HotelBookingStatus", out var hbs)) resDto.HotelBookingStatus = hbs.GetString() ?? "Confirmed";
+                        if (target.TryGetProperty("TraceId", out var ti))
+                        {
+                            if (ti.ValueKind == JsonValueKind.Number) resDto.TraceId = ti.GetInt64();
+                            else if (ti.ValueKind == JsonValueKind.String && long.TryParse(ti.GetString(), out var ptid)) resDto.TraceId = ptid;
+                        }
+                        int stVal = resDto.ResponseStatus == 3 ? 3 : (resDto.Error.ErrorCode == 0 ? 1 : 0);
+                        if (target.TryGetProperty("Status", out var st))
+                        {
+                            if (st.ValueKind == JsonValueKind.Number) stVal = st.GetInt32();
+                            else if (st.ValueKind == JsonValueKind.String)
+                            {
+                                var s = st.GetString();
+                                if (string.Equals(s, "Confirmed", StringComparison.OrdinalIgnoreCase)) stVal = 1;
+                                else if (string.Equals(s, "Pending", StringComparison.OrdinalIgnoreCase)) stVal = 3;
+                                else if (string.Equals(s, "BookFailed", StringComparison.OrdinalIgnoreCase)) stVal = 0;
+                                else if (int.TryParse(s, out var ps)) stVal = ps;
+                            }
+                        }
+                        resDto.Status = stVal;
+                        if (target.TryGetProperty("HotelBookingStatus", out var hbs)) resDto.HotelBookingStatus = hbs.GetString() ?? (stVal == 1 ? "Confirmed" : (stVal == 3 ? "Pending" : "BookFailed"));
                         if (target.TryGetProperty("InvoiceNumber", out var inv)) resDto.InvoiceNumber = inv.GetString() ?? "";
                         if (target.TryGetProperty("ConfirmationNo", out var cno)) resDto.ConfirmationNo = cno.GetString() ?? "";
                         if (target.TryGetProperty("BookingRefNo", out var brn)) resDto.BookingRefNo = brn.GetString() ?? "";
                         if (target.TryGetProperty("BookingId", out var bid) && bid.ValueKind == JsonValueKind.Number) resDto.BookingId = bid.GetInt32();
                         if (target.TryGetProperty("IsPriceChanged", out var ipc)) resDto.IsPriceChanged = ipc.ValueKind == JsonValueKind.True;
                         if (target.TryGetProperty("IsCancellationPolicyChanged", out var icpc)) resDto.IsCancellationPolicyChanged = icpc.ValueKind == JsonValueKind.True;
+                        if (target.TryGetProperty("SupplierBookingStatus", out var sbs)) resDto.SupplierBookingStatus = sbs.GetString() ?? "";
                         bookRes = responseDto;
                     }
                 }
@@ -860,13 +878,17 @@ namespace PickNBook.Api.Services
             {
                 finalStatus = "VerifyPrice";
             }
-            else if (!string.IsNullOrEmpty(res.Status))
-            {
-                finalStatus = res.Status;
-            }
             else if (!string.IsNullOrEmpty(res.HotelBookingStatus))
             {
                 finalStatus = res.HotelBookingStatus;
+            }
+            else if (res.Status == 3)
+            {
+                finalStatus = "Pending";
+            }
+            else if (res.Status == 0)
+            {
+                finalStatus = "Failed";
             }
 
             return new HotelBookingResponseDto
@@ -1241,6 +1263,17 @@ namespace PickNBook.Api.Services
                         hd.StaySummary = ss;
                     }
 
+                    if (detailsProp.TryGetProperty("PricingSummary", out var psProp) && psProp.ValueKind == JsonValueKind.Object)
+                    {
+                        hd.PricingSummary = ParsePricingSummary(psProp);
+                        resDto.PricingSummary = hd.PricingSummary;
+                    }
+                    else if (target.TryGetProperty("PricingSummary", out var tpsProp) && tpsProp.ValueKind == JsonValueKind.Object)
+                    {
+                        hd.PricingSummary = ParsePricingSummary(tpsProp);
+                        resDto.PricingSummary = hd.PricingSummary;
+                    }
+
                     // Upsert to DB
                     if (!string.IsNullOrWhiteSpace(hd.HotelCode) && hd.HotelCode != "None")
                     {
@@ -1378,6 +1411,10 @@ namespace PickNBook.Api.Services
                     }
                     if (target.TryGetProperty("IsPolicyPerStay", out var ipProp) && (ipProp.ValueKind == JsonValueKind.True || ipProp.ValueKind == JsonValueKind.False)) resDto.IsPolicyPerStay = ipProp.GetBoolean();
                     if (target.TryGetProperty("IsUnderCancellationAllowed", out var icProp) && (icProp.ValueKind == JsonValueKind.True || icProp.ValueKind == JsonValueKind.False)) resDto.IsUnderCancellationAllowed = icProp.GetBoolean();
+                    if (target.TryGetProperty("PricingSummary", out var ghrPsProp) && ghrPsProp.ValueKind == JsonValueKind.Object)
+                    {
+                        resDto.PricingSummary = ParsePricingSummary(ghrPsProp);
+                    }
                 }
 
                 JsonElement roomsDetailsSource = target;
@@ -1399,6 +1436,14 @@ namespace PickNBook.Api.Services
                     if (rmElem.ValueKind != JsonValueKind.Object) return rmDto;
 
                     rmDto.OptionId = SafeGetString(rmElem, "OptionId", "");
+                    rmDto.OptionType = SafeGetString(rmElem, "OptionType", "");
+                    rmDto.MealBasis = SafeGetString(rmElem, "MealBasis", "");
+                    rmDto.BookingNotes = SafeGetString(rmElem, "BookingNotes", "");
+                    if (rmElem.TryGetProperty("AdultCount", out var acProp) && acProp.ValueKind == JsonValueKind.Number) rmDto.AdultCount = acProp.GetInt32();
+                    if (rmElem.TryGetProperty("OptionTotalPrice", out var otpProp) && otpProp.ValueKind == JsonValueKind.Number) rmDto.OptionTotalPrice = otpProp.GetDecimal();
+                    if (rmElem.TryGetProperty("SupplierPricing", out var spProp) && spProp.ValueKind == JsonValueKind.Object) rmDto.SupplierPricing = ParseSupplierPricing(spProp);
+                    if (rmElem.TryGetProperty("Commercial", out var commProp) && commProp.ValueKind == JsonValueKind.Object) rmDto.Commercial = ParseCommercial(commProp);
+                    if (rmElem.TryGetProperty("Cancellation", out var cancProp) && cancProp.ValueKind == JsonValueKind.Object) rmDto.Cancellation = ParseCancellation(cancProp);
                     if (rmElem.TryGetProperty("ChildCount", out var ccProp) && ccProp.ValueKind == JsonValueKind.Number) rmDto.ChildCount = ccProp.GetInt32();
                     if (rmElem.TryGetProperty("RequireAllPaxDetails", out var rapProp) && (rapProp.ValueKind == JsonValueKind.True || rapProp.ValueKind == JsonValueKind.False)) rmDto.RequireAllPaxDetails = rapProp.GetBoolean();
                     rmDto.RoomId = SafeGetString(rmElem, "RoomId", "");
@@ -1855,6 +1900,14 @@ namespace PickNBook.Api.Services
                     resDto.PriceSummary = ps;
                 }
 
+                if (target.TryGetProperty("PricingSummary", out var brPsProp) && brPsProp.ValueKind == JsonValueKind.Object)
+                {
+                    resDto.PricingSummary = ParsePricingSummary(brPsProp);
+                }
+                if (target.TryGetProperty("SupplierHotelCode", out var supHotelCodeProp)) resDto.SupplierHotelCode = supHotelCodeProp.GetString() ?? "";
+                if (target.TryGetProperty("CanonicalHotelCode", out var chcProp)) resDto.CanonicalHotelCode = chcProp.ValueKind == JsonValueKind.String ? (chcProp.GetString() ?? "") : chcProp.GetRawText();
+                if (target.TryGetProperty("CanProceedToBook", out var cptbProp) && (cptbProp.ValueKind == JsonValueKind.True || cptbProp.ValueKind == JsonValueKind.False)) resDto.CanProceedToBook = cptbProp.GetBoolean();
+
                 if (target.TryGetProperty("IsCancellationPolicyChanged", out var cpcProp) && (cpcProp.ValueKind == JsonValueKind.True || cpcProp.ValueKind == JsonValueKind.False)) resDto.IsCancellationPolicyChanged = cpcProp.GetBoolean();
                 if (target.TryGetProperty("IsHotelPolicyChanged", out var hpcProp) && (hpcProp.ValueKind == JsonValueKind.True || hpcProp.ValueKind == JsonValueKind.False)) resDto.IsHotelPolicyChanged = hpcProp.GetBoolean();
 
@@ -1879,6 +1932,14 @@ namespace PickNBook.Api.Services
                     {
                         var rmDto = new BlockRoomDetailItemDto();
                         rmDto.OptionId = SafeGetString(rmElem, "OptionId", "");
+                        rmDto.OptionType = SafeGetString(rmElem, "OptionType", "");
+                        rmDto.MealBasis = SafeGetString(rmElem, "MealBasis", "");
+                        rmDto.BookingNotes = SafeGetString(rmElem, "BookingNotes", "");
+                        if (rmElem.TryGetProperty("AdultCount", out var acProp) && acProp.ValueKind == JsonValueKind.Number) rmDto.AdultCount = acProp.GetInt32();
+                        if (rmElem.TryGetProperty("OptionTotalPrice", out var otpProp) && otpProp.ValueKind == JsonValueKind.Number) rmDto.OptionTotalPrice = otpProp.GetDecimal();
+                        if (rmElem.TryGetProperty("SupplierPricing", out var spProp) && spProp.ValueKind == JsonValueKind.Object) rmDto.SupplierPricing = ParseSupplierPricing(spProp);
+                        if (rmElem.TryGetProperty("Commercial", out var commProp) && commProp.ValueKind == JsonValueKind.Object) rmDto.Commercial = ParseCommercial(commProp);
+                        if (rmElem.TryGetProperty("Cancellation", out var cancProp) && cancProp.ValueKind == JsonValueKind.Object) rmDto.Cancellation = ParseCancellation(cancProp);
                         if (rmElem.TryGetProperty("ChildCount", out var ccProp) && ccProp.ValueKind == JsonValueKind.Number) rmDto.ChildCount = ccProp.GetInt32();
                         if (rmElem.TryGetProperty("RequireAllPaxDetails", out var rapProp) && (rapProp.ValueKind == JsonValueKind.True || rapProp.ValueKind == JsonValueKind.False)) rmDto.RequireAllPaxDetails = rapProp.GetBoolean();
                         rmDto.RoomId = SafeGetString(rmElem, "RoomId", "");
@@ -2158,13 +2219,22 @@ namespace PickNBook.Api.Services
 
                 // Extract TraceId
                 if (target.TryGetProperty("TraceId", out var tidProp))
-                    resDto.TraceId = tidProp.ValueKind == JsonValueKind.Number ? tidProp.GetRawText() : (tidProp.GetString() ?? "");
+                {
+                    if (tidProp.ValueKind == JsonValueKind.Number) resDto.TraceId = tidProp.GetInt64();
+                    else if (tidProp.ValueKind == JsonValueKind.String && long.TryParse(tidProp.GetString(), out var ptid)) resDto.TraceId = ptid;
+                }
+                if (!resDto.TraceId.HasValue || resDto.TraceId.Value <= 0)
+                {
+                    resDto.TraceId = request.TraceId;
+                }
 
-                // Extract BookingId & BookingRefNo (published even beside Error block on failure with created booking row)
+                // Extract BookingId & BookingRefNo (published beside Error block on failure with created booking row)
                 if (target.TryGetProperty("BookingId", out var bidProp) && bidProp.ValueKind == JsonValueKind.Number)
                     resDto.BookingId = bidProp.GetInt32();
-                if (target.TryGetProperty("BookingRefNo", out var brnProp))
-                    resDto.BookingRefNo = brnProp.GetString() ?? (resDto.BookingId > 0 ? resDto.BookingId.ToString() : "");
+                if (target.TryGetProperty("BookingRefNo", out var brnProp) && !string.IsNullOrWhiteSpace(brnProp.GetString()))
+                    resDto.BookingRefNo = brnProp.GetString()!;
+                else
+                    resDto.BookingRefNo = resDto.BookingId?.ToString() ?? string.Empty;
 
                 // Check Error
                 if (target.TryGetProperty("Error", out var errProp) && errProp.ValueKind == JsonValueKind.Object)
@@ -2180,23 +2250,62 @@ namespace PickNBook.Api.Services
                 // Status & HotelBookingStatus: 1 / Confirmed, 3 / Pending, 0 / BookFailed
                 if (target.TryGetProperty("ResponseStatus", out var rsProp) && rsProp.ValueKind == JsonValueKind.Number)
                     resDto.ResponseStatus = rsProp.GetInt32();
-                if (target.TryGetProperty("Status", out var stProp))
-                    resDto.Status = stProp.GetString() ?? "";
-                if (target.TryGetProperty("HotelBookingStatus", out var hbsProp))
-                    resDto.HotelBookingStatus = hbsProp.GetString() ?? resDto.Status;
 
-                if (string.IsNullOrWhiteSpace(resDto.Status))
+                int parsedStatus = -1;
+                if (target.TryGetProperty("Status", out var stProp))
                 {
-                    resDto.Status = resDto.ResponseStatus switch
+                    if (stProp.ValueKind == JsonValueKind.Number) parsedStatus = stProp.GetInt32();
+                    else if (stProp.ValueKind == JsonValueKind.String)
+                    {
+                        var stStr = stProp.GetString();
+                        if (string.Equals(stStr, "Confirmed", StringComparison.OrdinalIgnoreCase)) parsedStatus = 1;
+                        else if (string.Equals(stStr, "Pending", StringComparison.OrdinalIgnoreCase)) parsedStatus = 3;
+                        else if (string.Equals(stStr, "BookFailed", StringComparison.OrdinalIgnoreCase)) parsedStatus = 0;
+                        else if (int.TryParse(stStr, out var numSt)) parsedStatus = numSt;
+                    }
+                }
+
+                if (parsedStatus < 0)
+                {
+                    parsedStatus = resDto.ResponseStatus switch
+                    {
+                        1 => 1,
+                        3 => 3,
+                        0 => 0,
+                        _ => resDto.Error.ErrorCode == 0 ? 1 : 0
+                    };
+                }
+                resDto.Status = parsedStatus;
+
+                if (target.TryGetProperty("HotelBookingStatus", out var hbsProp) && !string.IsNullOrWhiteSpace(hbsProp.GetString()))
+                {
+                    resDto.HotelBookingStatus = hbsProp.GetString()!;
+                }
+                else
+                {
+                    resDto.HotelBookingStatus = resDto.Status switch
                     {
                         1 => "Confirmed",
                         3 => "Pending",
-                        0 => "BookFailed",
-                        _ => resDto.Error.ErrorCode == 0 ? "Confirmed" : "BookFailed"
+                        _ => "BookFailed"
                     };
                 }
-                if (string.IsNullOrWhiteSpace(resDto.HotelBookingStatus))
-                    resDto.HotelBookingStatus = resDto.Status;
+
+                // SupplierBookingStatus
+                if (target.TryGetProperty("SupplierBookingStatus", out var sbsProp) && !string.IsNullOrWhiteSpace(sbsProp.GetString()))
+                {
+                    resDto.SupplierBookingStatus = sbsProp.GetString()!;
+                }
+                else
+                {
+                    resDto.SupplierBookingStatus = resDto.Status == 1 ? "Success" : (resDto.Status == 3 ? "Pending" : "Failed");
+                }
+
+                // Policy & Price flags
+                if (target.TryGetProperty("IsPriceChanged", out var ipc) && (ipc.ValueKind == JsonValueKind.True || ipc.ValueKind == JsonValueKind.False))
+                    resDto.IsPriceChanged = ipc.GetBoolean();
+                if (target.TryGetProperty("IsCancellationPolicyChanged", out var icpc) && (icpc.ValueKind == JsonValueKind.True || icpc.ValueKind == JsonValueKind.False))
+                    resDto.IsCancellationPolicyChanged = icpc.GetBoolean();
 
                 if (target.TryGetProperty("VoucherStatus", out var vsProp) && (vsProp.ValueKind == JsonValueKind.True || vsProp.ValueKind == JsonValueKind.False))
                     resDto.VoucherStatus = vsProp.GetBoolean();
@@ -2209,11 +2318,51 @@ namespace PickNBook.Api.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Exception during BookRoomAsync for TraceId {TraceId}, ResultIndex {ResultIndex}.", request.TraceId, request.ResultIndex);
-                var errDto = new PickNBookBookRoomResponseDto();
-                errDto.BookResult.Error.ErrorCode = 1;
-                errDto.BookResult.Error.ErrorMessage = $"Failed to book room on SRDV. Exception: {ex.Message}";
-                return errDto;
+                _logger?.LogWarning(ex, "Exception during BookRoomAsync for TraceId {TraceId}, ResultIndex {ResultIndex}. Attempting recovery via BookingDetails.", request.TraceId, request.ResultIndex);
+
+                // Rule 2: A booking is reported failed only when it is certain it failed; anything unresolved stays Pending.
+                try
+                {
+                    var details = await GetBookingDetailsAsync(request.TraceId);
+                    if (details != null && (details.Success || details.Result != null || !string.IsNullOrEmpty(details.BookingStatus)))
+                    {
+                        var bStatus = details.Result?.BookingStatus ?? details.BookingStatus ?? string.Empty;
+                        var recoveryDto = new PickNBookBookRoomResponseDto();
+                        var rResult = recoveryDto.BookResult;
+                        rResult.TraceId = request.TraceId;
+                        rResult.BookingRefNo = details.Result?.BookingReference ?? string.Empty;
+                        rResult.ConfirmationNo = details.Result?.ConfirmationNo ?? string.Empty;
+                        rResult.InvoiceNumber = string.Empty;
+                        rResult.VoucherStatus = true;
+
+                        bool isConfirmed = string.Equals(bStatus, "SUCCESS", StringComparison.OrdinalIgnoreCase) ||
+                                           string.Equals(bStatus, "CONFIRMED", StringComparison.OrdinalIgnoreCase);
+                        bool isPending = string.Equals(bStatus, "PENDING", StringComparison.OrdinalIgnoreCase);
+
+                        rResult.ResponseStatus = isConfirmed ? 1 : (isPending ? 3 : 0);
+                        rResult.Status = isConfirmed ? 1 : (isPending ? 3 : 0);
+                        rResult.HotelBookingStatus = isConfirmed ? "Confirmed" : (isPending ? "Pending" : "BookFailed");
+                        rResult.SupplierBookingStatus = isConfirmed ? "Success" : (isPending ? "Pending" : "Failed");
+                        rResult.Error.ErrorCode = isConfirmed || isPending ? 0 : (details.Error?.ErrorCode ?? 1);
+                        rResult.Error.ErrorMessage = isConfirmed || isPending ? string.Empty : (details.Error?.ErrorMessage ?? "Booking unresolved with supplier");
+                        return recoveryDto;
+                    }
+                }
+                catch (Exception recoveryEx)
+                {
+                    _logger?.LogWarning(recoveryEx, "BookingDetails recovery query failed for TraceId {TraceId}.", request.TraceId);
+                }
+
+                // If unresolved, answer Pending (Status = 3) per spec: "treat Pending as money committed, not as an error"
+                var pendingDto = new PickNBookBookRoomResponseDto();
+                pendingDto.BookResult.TraceId = request.TraceId;
+                pendingDto.BookResult.ResponseStatus = 3;
+                pendingDto.BookResult.Status = 3;
+                pendingDto.BookResult.HotelBookingStatus = "Pending";
+                pendingDto.BookResult.SupplierBookingStatus = "Pending";
+                pendingDto.BookResult.Error.ErrorCode = 0;
+                pendingDto.BookResult.Error.ErrorMessage = "Booking placed with supplier but confirmation is pending. Authoritative state will be settled via BookingDetails.";
+                return pendingDto;
             }
             finally
             {
@@ -2946,7 +3095,35 @@ namespace PickNBook.Api.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "HTTP Request Exception during Cancel for TraceId {TraceId}", traceId);
+                _logger?.LogWarning(ex, "HTTP Request Exception during Cancel for TraceId {TraceId}. Attempting recovery via BookingDetails.", traceId);
+
+                // Authoritative in-progress rule: never report cancellation as failed while in progress
+                try
+                {
+                    var details = await GetBookingDetailsAsync(traceId);
+                    if (details != null && (details.Success || details.Result != null || !string.IsNullOrEmpty(details.BookingStatus)))
+                    {
+                        var bStatus = details.Result?.BookingStatus ?? details.BookingStatus ?? string.Empty;
+                        var cStatus = details.Result?.CancellationStatus ?? details.CancellationStatus ?? string.Empty;
+                        if (string.Equals(bStatus, "Cancelled", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(bStatus, "CancellationPending", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(bStatus, "Pending", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(cStatus, "FULLY_CANCELLED", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(cStatus, "PARTIALLY_CANCELLED", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(cStatus, "PENDING", StringComparison.OrdinalIgnoreCase))
+                        {
+                            resDto.ResponseStatus = 1;
+                            resDto.Error = new HotelCancelErrorDto { ErrorCode = 0, ErrorMessage = "" };
+                            resDto.ChangeRequestStatus = 1;
+                            return resDto;
+                        }
+                    }
+                }
+                catch (Exception recEx)
+                {
+                    _logger?.LogWarning(recEx, "BookingDetails check failed during Cancel recovery for TraceId {TraceId}", traceId);
+                }
+
                 resDto.ResponseStatus = 0;
                 resDto.Error = new HotelCancelErrorDto
                 {
@@ -3090,6 +3267,146 @@ namespace PickNBook.Api.Services
                 if (p.ValueKind == JsonValueKind.False) return "false";
             }
             return defaultVal;
+        }
+
+        private static decimal SafeGetDecimal(JsonElement elem, string propName, decimal defaultVal = 0m)
+        {
+            if (elem.TryGetProperty(propName, out var p))
+            {
+                if (p.ValueKind == JsonValueKind.Number) return p.GetDecimal();
+                if (p.ValueKind == JsonValueKind.String && decimal.TryParse(p.GetString(), out var v)) return v;
+            }
+            return defaultVal;
+        }
+
+        private static int SafeGetInt(JsonElement elem, string propName, int defaultVal = 0)
+        {
+            if (elem.TryGetProperty(propName, out var p))
+            {
+                if (p.ValueKind == JsonValueKind.Number) return p.GetInt32();
+                if (p.ValueKind == JsonValueKind.String && int.TryParse(p.GetString(), out var v)) return v;
+            }
+            return defaultVal;
+        }
+
+        private static bool SafeGetBool(JsonElement elem, string propName, bool defaultVal = false)
+        {
+            if (elem.TryGetProperty(propName, out var p))
+            {
+                if (p.ValueKind == JsonValueKind.True) return true;
+                if (p.ValueKind == JsonValueKind.False) return false;
+                if (p.ValueKind == JsonValueKind.String && bool.TryParse(p.GetString(), out var v)) return v;
+            }
+            return defaultVal;
+        }
+
+        private static SupplierPricingDto? ParseSupplierPricing(JsonElement sp)
+        {
+            if (sp.ValueKind != JsonValueKind.Object) return null;
+            var dto = new SupplierPricingDto();
+            dto.TotalPrice = SafeGetDecimal(sp, "TotalPrice");
+            dto.BasePrice = SafeGetDecimal(sp, "BasePrice");
+            dto.Discount = SafeGetDecimal(sp, "Discount");
+            dto.Taxes = SafeGetDecimal(sp, "Taxes");
+            dto.ManagementFee = SafeGetDecimal(sp, "ManagementFee");
+            dto.ManagementFeeTax = SafeGetDecimal(sp, "ManagementFeeTax");
+            dto.GSTClaimableAmount = SafeGetDecimal(sp, "GSTClaimableAmount");
+            dto.Currency = SafeGetString(sp, "Currency", "INR");
+            dto.Strikethrough = SafeGetDecimal(sp, "Strikethrough", SafeGetDecimal(sp, "StrikeThrough"));
+            return dto;
+        }
+
+        private static CommercialDto? ParseCommercial(JsonElement comm)
+        {
+            if (comm.ValueKind != JsonValueKind.Object) return null;
+            var dto = new CommercialDto();
+            dto.Type = SafeGetString(comm, "Type", "NET");
+            dto.Commission = SafeGetDecimal(comm, "Commission");
+            return dto;
+        }
+
+        private static HotelCancellationDetailsDto? ParseCancellation(JsonElement canc)
+        {
+            if (canc.ValueKind != JsonValueKind.Object) return null;
+            var dto = new HotelCancellationDetailsDto();
+            dto.IsRefundable = SafeGetBool(canc, "IsRefundable");
+            dto.IsRefundabilityKnown = SafeGetBool(canc, "IsRefundabilityKnown");
+            dto.FreeCancellationUntil = SafeGetString(canc, "FreeCancellationUntil");
+            if (canc.TryGetProperty("Penalties", out var penProp) && penProp.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in penProp.EnumerateArray())
+                {
+                    if (item.ValueKind == JsonValueKind.Object)
+                    {
+                        dto.Penalties.Add(new HotelCancellationPenaltyDto
+                        {
+                            From = SafeGetString(item, "From"),
+                            To = SafeGetString(item, "To"),
+                            Amount = SafeGetDecimal(item, "Amount")
+                        });
+                    }
+                }
+            }
+            return dto;
+        }
+
+        private static HotelPricingSummaryDto? ParsePricingSummary(JsonElement ps)
+        {
+            if (ps.ValueKind != JsonValueKind.Object) return null;
+            var dto = new HotelPricingSummaryDto();
+            dto.IsAvailable = SafeGetBool(ps, "IsAvailable", true);
+            dto.AvailableOptionsCount = SafeGetInt(ps, "AvailableOptionsCount");
+            dto.MinimumPrice = SafeGetDecimal(ps, "MinimumPrice");
+            dto.MaximumPrice = SafeGetDecimal(ps, "MaximumPrice");
+            dto.MinimumBasePrice = SafeGetDecimal(ps, "MinimumBasePrice");
+            dto.MaximumBasePrice = SafeGetDecimal(ps, "MaximumBasePrice");
+            dto.MinimumTax = SafeGetDecimal(ps, "MinimumTax");
+            dto.MaximumTax = SafeGetDecimal(ps, "MaximumTax");
+            dto.MinimumDiscount = SafeGetDecimal(ps, "MinimumDiscount");
+            dto.MaximumDiscount = SafeGetDecimal(ps, "MaximumDiscount");
+            dto.MinimumManagementFee = SafeGetDecimal(ps, "MinimumManagementFee");
+            dto.MaximumManagementFee = SafeGetDecimal(ps, "MaximumManagementFee");
+            dto.MinimumManagementFeeTax = SafeGetDecimal(ps, "MinimumManagementFeeTax");
+            dto.MaximumManagementFeeTax = SafeGetDecimal(ps, "MaximumManagementFeeTax");
+            dto.MinimumStrikeThroughPrice = SafeGetDecimal(ps, "MinimumStrikeThroughPrice");
+            dto.MaximumStrikeThroughPrice = SafeGetDecimal(ps, "MaximumStrikeThroughPrice");
+            dto.MinimumGSTClaimableAmount = SafeGetDecimal(ps, "MinimumGSTClaimableAmount");
+            dto.MaximumGSTClaimableAmount = SafeGetDecimal(ps, "MaximumGSTClaimableAmount");
+            dto.RefundableOptionsCount = SafeGetInt(ps, "RefundableOptionsCount");
+            dto.NonRefundableOptionsCount = SafeGetInt(ps, "NonRefundableOptionsCount");
+            dto.RefundabilityUnknownOptionsCount = SafeGetInt(ps, "RefundabilityUnknownOptionsCount");
+            dto.PANRequiredOptionsCount = SafeGetInt(ps, "PANRequiredOptionsCount");
+            dto.PassportRequiredOptionsCount = SafeGetInt(ps, "PassportRequiredOptionsCount");
+            dto.Currency = SafeGetString(ps, "Currency", "INR");
+
+            if (ps.TryGetProperty("MealBasisOptions", out var mbProp) && mbProp.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var mb in mbProp.EnumerateArray())
+                {
+                    var s = mb.GetString();
+                    if (!string.IsNullOrWhiteSpace(s)) dto.MealBasisOptions.Add(s);
+                }
+            }
+
+            if (ps.TryGetProperty("OptionTypes", out var otProp) && otProp.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var ot in otProp.EnumerateArray())
+                {
+                    var s = ot.GetString();
+                    if (!string.IsNullOrWhiteSpace(s)) dto.OptionTypes.Add(s);
+                }
+            }
+
+            if (ps.TryGetProperty("GSTTypes", out var gstProp) && gstProp.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var gst in gstProp.EnumerateArray())
+                {
+                    var s = gst.GetString();
+                    if (!string.IsNullOrWhiteSpace(s)) dto.GSTTypes.Add(s);
+                }
+            }
+
+            return dto;
         }
     }
 }

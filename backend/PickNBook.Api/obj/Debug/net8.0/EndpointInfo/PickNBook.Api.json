@@ -6751,6 +6751,9 @@
                   "Image": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveImage": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -6774,6 +6777,9 @@
                   "style": "form"
                 },
                 "Image": {
+                  "style": "form"
+                },
+                "RemoveImage": {
                   "style": "form"
                 }
               }
@@ -6830,6 +6836,9 @@
                   "Image": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveImage": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -6853,6 +6862,9 @@
                   "style": "form"
                 },
                 "Image": {
+                  "style": "form"
+                },
+                "RemoveImage": {
                   "style": "form"
                 }
               }
@@ -7069,9 +7081,15 @@
                     "type": "string",
                     "format": "binary"
                   },
+                  "RemoveImage": {
+                    "type": "boolean"
+                  },
                   "OgImage": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveOgImage": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -7115,7 +7133,13 @@
                 "Image": {
                   "style": "form"
                 },
+                "RemoveImage": {
+                  "style": "form"
+                },
                 "OgImage": {
+                  "style": "form"
+                },
+                "RemoveOgImage": {
                   "style": "form"
                 }
               }
@@ -7191,9 +7215,15 @@
                     "type": "string",
                     "format": "binary"
                   },
+                  "RemoveImage": {
+                    "type": "boolean"
+                  },
                   "OgImage": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveOgImage": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -7237,7 +7267,13 @@
                 "Image": {
                   "style": "form"
                 },
+                "RemoveImage": {
+                  "style": "form"
+                },
                 "OgImage": {
+                  "style": "form"
+                },
+                "RemoveOgImage": {
                   "style": "form"
                 }
               }
@@ -7319,6 +7355,9 @@
                   "Image": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveImage": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -7345,6 +7384,9 @@
                   "style": "form"
                 },
                 "Image": {
+                  "style": "form"
+                },
+                "RemoveImage": {
                   "style": "form"
                 }
               }
@@ -7404,6 +7446,9 @@
                   "Image": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveImage": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -7430,6 +7475,9 @@
                   "style": "form"
                 },
                 "Image": {
+                  "style": "form"
+                },
+                "RemoveImage": {
                   "style": "form"
                 }
               }
@@ -8109,6 +8157,37 @@
         }
       }
     },
+    "/v9/Cancel": {
+      "post": {
+        "tags": [
+          "BusBookings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BusCancelV9RequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BusBookings/cancel": {
       "post": {
         "tags": [
@@ -8361,9 +8440,15 @@
                     "type": "string",
                     "format": "binary"
                   },
+                  "RemoveImage": {
+                    "type": "boolean"
+                  },
                   "Banner": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveBanner": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -8395,7 +8480,13 @@
                 "Image": {
                   "style": "form"
                 },
+                "RemoveImage": {
+                  "style": "form"
+                },
                 "Banner": {
+                  "style": "form"
+                },
+                "RemoveBanner": {
                   "style": "form"
                 }
               }
@@ -8459,9 +8550,15 @@
                     "type": "string",
                     "format": "binary"
                   },
+                  "RemoveImage": {
+                    "type": "boolean"
+                  },
                   "Banner": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "RemoveBanner": {
+                    "type": "boolean"
                   }
                 }
               },
@@ -8493,7 +8590,13 @@
                 "Image": {
                   "style": "form"
                 },
+                "RemoveImage": {
+                  "style": "form"
+                },
                 "Banner": {
+                  "style": "form"
+                },
+                "RemoveBanner": {
                   "style": "form"
                 }
               }
@@ -10129,6 +10232,37 @@
         }
       }
     },
+    "/v8/Book": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelBookRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/Hotels/BookRoom": {
       "post": {
         "tags": [
@@ -10410,6 +10544,37 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v8/Cancel": {
+      "post": {
+        "tags": [
+          "Hotels"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/HotelCancelBookingRequestDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success"
@@ -12927,7 +13092,7 @@
         }
       }
     },
-    "/api/flight/srdv/TicketLCC": {
+    "/v8/TicketLCC": {
       "post": {
         "tags": [
           "SrdvFlightApi"
@@ -12958,7 +13123,7 @@
         }
       }
     },
-    "/v8/TicketLCC": {
+    "/api/flight/srdv/TicketLCC": {
       "post": {
         "tags": [
           "SrdvFlightApi"
@@ -13362,6 +13527,68 @@
       }
     },
     "/api/flight/srdv/GetCancellationCharges": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/v8/GetCancellationCharges": {
+      "post": {
+        "tags": [
+          "SrdvFlightApi"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlightGetCancellationChargesProxyRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/flight/v8/GetCancellationCharges": {
       "post": {
         "tags": [
           "SrdvFlightApi"

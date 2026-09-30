@@ -4486,6 +4486,11 @@
         "Name": "Image",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
         "IsRequired": false
+      },
+      {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4536,6 +4541,11 @@
       {
         "Name": "Image",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
         "IsRequired": false
       }
     ],
@@ -4694,8 +4704,18 @@
         "IsRequired": false
       },
       {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
         "Name": "OgImage",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "RemoveOgImage",
+        "Type": "System.Boolean",
         "IsRequired": false
       }
     ],
@@ -4780,8 +4800,18 @@
         "IsRequired": false
       },
       {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
         "Name": "OgImage",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "RemoveOgImage",
+        "Type": "System.Boolean",
         "IsRequired": false
       }
     ],
@@ -4886,6 +4916,11 @@
         "Name": "Image",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
         "IsRequired": false
+      },
+      {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -4941,6 +4976,11 @@
       {
         "Name": "Image",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
         "IsRequired": false
       }
     ],
@@ -5471,8 +5511,18 @@
         "IsRequired": false
       },
       {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
         "Name": "Banner",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "RemoveBanner",
+        "Type": "System.Boolean",
         "IsRequired": false
       }
     ],
@@ -5537,8 +5587,18 @@
         "IsRequired": false
       },
       {
+        "Name": "RemoveImage",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
         "Name": "Banner",
         "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "RemoveBanner",
+        "Type": "System.Boolean",
         "IsRequired": false
       }
     ],
@@ -6094,6 +6154,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancellationCharges",
+    "RelativePath": "api/flight/srdv/GetCancellationCharges",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightGetCancellationChargesProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
     "Method": "GetCancelStatus",
     "RelativePath": "api/flight/srdv/GetCancelStatus",
     "HttpMethod": "POST",
@@ -6289,6 +6365,22 @@
       {
         "Name": "proxyRequest",
         "Type": "PickNBook.Api.Models.DTOs.FlightBookingDetailsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancellationCharges",
+    "RelativePath": "api/flight/v8/GetCancellationCharges",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightGetCancellationChargesProxyRequestDto",
         "IsRequired": true
       }
     ],
@@ -8653,6 +8745,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBookRoom",
+    "RelativePath": "v8/Book",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
     "Method": "BookingDetails",
     "RelativePath": "v8/BookingDetails",
@@ -8663,6 +8771,38 @@
       {
         "Name": "proxyRequest",
         "Type": "PickNBook.Api.Models.DTOs.FlightBookingDetailsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostCancel",
+    "RelativePath": "v8/Cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelCancelBookingRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "GetCancellationCharges",
+    "RelativePath": "v8/GetCancellationCharges",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "proxyRequest",
+        "Type": "PickNBook.Api.Models.DTOs.FlightGetCancellationChargesProxyRequestDto",
         "IsRequired": true
       }
     ],
@@ -8759,6 +8899,22 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.BusBookV9RequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "CancelBusTicketV9",
+    "RelativePath": "v9/Cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusCancelV9RequestDto",
         "IsRequired": true
       }
     ],

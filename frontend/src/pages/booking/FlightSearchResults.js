@@ -2311,6 +2311,12 @@ export default function FlightSearchResults() {
                         <Activity size={14} /> Airline
                       </button>
                     </div>
+                    <div className="flights-found-badge">
+                      <Plane size={13} />
+                      <span>
+                        <strong>{flightsFoundCount}</strong> flight{flightsFoundCount !== 1 ? "s" : ""} found
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

@@ -36,24 +36,24 @@ function getAuthHeaders() {
 /**
  * 1. GET Method — Fetch & Display Coupons / Offers
  * Fetch unified coupons and offers across the entire website and mobile app.
- * Supports type query filtering: 'bus', 'flight', 'hotel', 'all'
+ * Supports serviceType query filtering: 'bus', 'flight', 'hotel', 'all'
  * 
  * @param {Object} params 
  * @param {string} [params.serviceType='all'] - 'bus', 'hotel', 'flight', 'all'
- * @param {string} [params.type] - 'bus', 'hotel', 'flight', 'all'
+ * @param {string} [params.type] - Legacy alias for serviceType
  * @param {string} [params.category] - 'Coupon' (user discount codes) or 'Offer' (marketing cards/banners)
  */
 export async function fetchCouponsAndOffers({ serviceType = 'all', type, bookingType, category } = {}) {
   const targetType = type || (serviceType !== 'all' ? serviceType : bookingType);
   const query = {};
   if (targetType && targetType !== 'all') {
-    query.type = String(targetType).toLowerCase();
+    query.serviceType = String(targetType).toLowerCase();
   }
   if (category && category !== 'all') {
     query.category = category;
   }
 
-  const url = buildUrl("/api/coupons", query);
+  const url = buildUrl("/api/Coupons", query);
 
   const response = await fetch(url, {
     method: "GET",

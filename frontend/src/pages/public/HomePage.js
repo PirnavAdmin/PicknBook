@@ -2837,55 +2837,73 @@ export default function HomePage() {
             aria-label={offerForDetailPopup.title ? undefined : "Offer details"}
             onClick={(event) => event.stopPropagation()}
           >
-            {offerForDetailPopup.imageUrl && (
-              <div className="offer-detail-image">
-                <img src={offerForDetailPopup.imageUrl} alt="" />
-              </div>
-            )}
-            <header className="offer-detail-header">
-              <div>
-                {offerForDetailPopup.bookingType && (
-                  <span className="offer-detail-kicker">{offerForDetailPopup.bookingType}</span>
-                )}
-                {offerForDetailPopup.title && (
-                  <h2 id="offer-detail-title">{offerForDetailPopup.title}</h2>
-                )}
-              </div>
-              <button
-                type="button"
-                className="offer-detail-close"
-                onClick={() => setOfferForDetailPopup(null)}
-                aria-label="Close details"
-              >
-                <X size={18} />
-              </button>
-            </header>
+            <button
+              type="button"
+              className="offer-detail-close"
+              onClick={() => setOfferForDetailPopup(null)}
+              aria-label="Close details"
+            >
+              <X size={20} />
+            </button>
 
-            <div className="offer-detail-body">
-              {(offerForDetailPopup.description || offerForDetailPopup.subtitle) && (
-                <p className="offer-detail-desc">
-                  {offerForDetailPopup.description || offerForDetailPopup.subtitle}
-                </p>
-              )}
-
-              {offerForDetailPopup.couponCode ? (
-                <div className="offer-coupon-section">
-                  <span className="section-subtitle">Coupon Code</span>
-                  <div
-                    className="offer-coupon-card"
-                    onClick={() => handleCopyCode(offerForDetailPopup.couponCode)}
-                    title="Click to copy code"
-                  >
-                    <div className="coupon-code-val">
-                      <code>{offerForDetailPopup.couponCode}</code>
-                    </div>
-                    <button type="button" className="coupon-copy-btn">
-                      {copied ? "Copied!" : "Copy Code"}
-                    </button>
+            <div className={`offer-detail-layout ${(offerForDetailPopup.imageUrl || offerForDetailPopup.image || offerForDetailPopup.OfferImage) ? 'has-image' : 'no-image'}`}>
+              
+              {(offerForDetailPopup.imageUrl || offerForDetailPopup.image || offerForDetailPopup.OfferImage) && (
+                <div className="offer-detail-image-pane">
+                  <img
+                    src={offerForDetailPopup.imageUrl || offerForDetailPopup.image || offerForDetailPopup.OfferImage}
+                    alt={offerForDetailPopup.title || "Offer preview"}
+                  />
+                  <div className="offer-detail-image-overlay">
+                     <span className="offer-detail-badge">Limited Time Offer</span>
                   </div>
                 </div>
-              ) : null}
+              )}
 
+              <div className="offer-detail-content-pane">
+                <header className="offer-detail-header">
+                  {offerForDetailPopup.bookingType && (
+                    <span className="offer-detail-kicker">{offerForDetailPopup.bookingType}</span>
+                  )}
+                  {offerForDetailPopup.title && (
+                    <h2 id="offer-detail-title">{offerForDetailPopup.title}</h2>
+                  )}
+                </header>
+
+                <div className="offer-detail-body">
+                  {(offerForDetailPopup.description || offerForDetailPopup.subtitle) && (
+                    <div className="offer-detail-desc">
+                      <ul className="offer-detail-list">
+                        {(offerForDetailPopup.description || offerForDetailPopup.subtitle)
+                          .split('•')
+                          .map((item) => item.trim())
+                          .filter(Boolean)
+                          .map((item, index) => (
+                            <li key={index}>{item}</li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {offerForDetailPopup.couponCode ? (
+                    <div className="offer-coupon-section">
+                      <span className="section-subtitle">Coupon Code</span>
+                      <div
+                        className="offer-coupon-card"
+                        onClick={() => handleCopyCode(offerForDetailPopup.couponCode)}
+                        title="Click to copy code"
+                      >
+                        <div className="coupon-code-val">
+                          <code>{offerForDetailPopup.couponCode}</code>
+                        </div>
+                        <button type="button" className="coupon-copy-btn">
+                          {copied ? "Copied!" : "Copy Code"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
 
             </div>
           </section>

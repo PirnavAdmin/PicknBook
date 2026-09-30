@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Check, Copy, Mail, Phone, User, X, ShieldCheck } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, Mail, Phone, User, X, ShieldCheck } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
 
@@ -721,6 +721,11 @@ export default function BusPassengerDetailsPage() {
   const [copiedCode, setCopiedCode] = useState(null);
   const featuredOffersScrollerRef = useRef(null);
   const couponScrollerRef = useRef(null);
+  const scrollPromotionCards = (scrollerRef, direction) => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    scroller.scrollBy({ left: direction * scroller.clientWidth * 0.85, behavior: "smooth" });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -754,7 +759,7 @@ export default function BusPassengerDetailsPage() {
       setIsLoadingCoupons(true);
 
       try {
-        const coupons = await listAvailableBusCoupons();
+        const coupons = await listAvailableBusCoupons({ category: "Coupon" });
         if (isMounted) {
           setAvailableCoupons(
             coupons
@@ -2510,10 +2515,16 @@ export default function BusPassengerDetailsPage() {
                   {featuredOffers.length > 0 && (
                     <div className="coupon-featured-block">
                       <p className="coupon-section-label">Featured Offers:</p>
-                      <div
-                        className="coupon-featured-list"
-                        aria-label="Featured offers carousel"
-                      >
+                      <div className="coupon-carousel-frame">
+                        <div className="coupon-carousel-controls">
+                          <button type="button" onClick={() => scrollPromotionCards(featuredOffersScrollerRef, -1)} aria-label="Scroll featured offers left" title="Previous offers"><ChevronLeft size={18} /></button>
+                          <button type="button" onClick={() => scrollPromotionCards(featuredOffersScrollerRef, 1)} aria-label="Scroll featured offers right" title="Next offers"><ChevronRight size={18} /></button>
+                        </div>
+                        <div
+                          className="coupon-featured-list"
+                          ref={featuredOffersScrollerRef}
+                          aria-label="Featured offers carousel"
+                        >
                         {featuredOffers.map((offer) => {
                           const isThisSelected = isSameFeaturedOffer(selectedFeaturedOffer, offer);
                           const anotherOfferSelected = Boolean(selectedFeaturedOffer) && !isThisSelected;
@@ -2574,7 +2585,8 @@ export default function BusPassengerDetailsPage() {
                               </div>
                             </div>
                           );
-                        })}
+                          })}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -2583,10 +2595,16 @@ export default function BusPassengerDetailsPage() {
                   {availableCoupons.length > 0 && (
                     <div className="coupon-chip-block">
                       <p className="coupon-section-label">Available Coupons:</p>
-                      <div
-                        className="coupon-chip-list"
-                        aria-label="Available coupons carousel"
-                      >
+                      <div className="coupon-carousel-frame">
+                        <div className="coupon-carousel-controls">
+                          <button type="button" onClick={() => scrollPromotionCards(couponScrollerRef, -1)} aria-label="Scroll available coupons left" title="Previous coupons"><ChevronLeft size={18} /></button>
+                          <button type="button" onClick={() => scrollPromotionCards(couponScrollerRef, 1)} aria-label="Scroll available coupons right" title="Next coupons"><ChevronRight size={18} /></button>
+                        </div>
+                        <div
+                          className="coupon-chip-list"
+                          ref={couponScrollerRef}
+                          aria-label="Available coupons carousel"
+                        >
                         {availableCoupons.map((coupon, idx) => {
                           const code = coupon.couponCode || `Promo #${coupon.id}`;
                           const discountLabel = getCouponDescription(coupon).split(" on")[0];
@@ -2642,7 +2660,8 @@ export default function BusPassengerDetailsPage() {
                               </div>
                             </div>
                           );
-                        })}
+                          })}
+                        </div>
                       </div>
                     </div>
                   )}

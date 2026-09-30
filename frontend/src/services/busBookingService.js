@@ -2666,10 +2666,7 @@ function normalizeFeaturedOffer(record) {
 
 export async function getFeaturedBusOffers() {
   try {
-    const data = await requestJson("/api/FeaturedOffers?bookingType=Bus", {
-      method: "GET",
-      skipAuth: true,
-    });
+    const data = await fetchCouponsAndOffers({ serviceType: "bus", category: "Offer" });
     const rawOffers = Array.isArray(data)
       ? data
       : Array.isArray(data?.offers)

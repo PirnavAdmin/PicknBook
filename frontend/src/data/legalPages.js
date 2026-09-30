@@ -96,284 +96,384 @@ const LEGACY_TERMS_CONDITIONS_TEXT = `
 </div>
 `;
 
-export const TERMS_CONDITIONS_TEXT = `TERMS & CONDITIONS
+export const TERMS_CONDITIONS_TEXT = `
+<div class="legal-doc-container">
+  <section class="legal-section">
+    <h2>1. Introduction</h2>
+    <p>These Terms & Conditions ("Terms") govern your access to and use of the Pick&book website, mobile application, platform, and related services (collectively, the "Platform").</p>
+    <p>Pick&book is operated by Pirnav Software Solutions, located at Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India.</p>
+    <p>By accessing, browsing, registering, or using the Platform, you acknowledge that you have read, understood, and agreed to be legally bound by these Terms.</p>
+  </section>
 
-Effective Date: 24-09-2026  |  Last Updated: 24-09-2026
+  <section class="legal-section">
+    <h2>2. Definitions</h2>
+    <p>For the purpose of these Terms:</p>
+    <ul>
+      <li><strong>"User"</strong> means any person accessing or using the Platform.</li>
+      <li><strong>"Platform"</strong> includes the Pick&book website, mobile application, software, digital interface, and related services.</li>
+      <li><strong>"Service Provider"</strong> includes airlines, bus operators, hotels, accommodation providers, payment providers, and other third parties whose services are facilitated through Pick&book.</li>
+      <li><strong>"Booking"</strong> means a reservation or purchase made through the Platform.</li>
+      <li><strong>"Booking Amount"</strong> means the total payable amount for a Booking, including taxes, fees, and other charges.</li>
+    </ul>
+  </section>
 
-These Terms & Conditions ("Terms", "Terms and Conditions") govern your access to and use of the Pick&book website, mobile application, platform and related services (collectively, the "Platform").
+  <section class="legal-section">
+    <h2>3. Eligibility and User Representation</h2>
+    <h3>3.1 Legal Capacity</h3>
+    <p>You must have the legal capacity to enter into a binding contract under applicable law to use the Platform.</p>
 
-Pick&book is operated by PIRNAV SOFTWARE SOLUTIONS, Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India. (Hereinafter referred to as "Pick&book", "Company", "we", "us" or "our".)
+    <h3>3.2 Authority to Act</h3>
+    <p>If you are using the Platform on behalf of another person, you represent that you have the authority to accept these Terms on that person's behalf.</p>
 
-By accessing, browsing, registering, or using the Platform, or by making any booking through the Platform, you acknowledge that you have read, understood and agreed to be legally bound by these Terms.
+    <h3>3.3 Minors</h3>
+    <p>Users below the applicable legal age should use the Platform only with the involvement and supervision of a parent or legal guardian.</p>
+  </section>
 
-If you do not agree with any part of these Terms, you should not use the Platform or its services.
+  <section class="legal-section">
+    <h2>4. Acceptance of Terms</h2>
+    <h3>4.1 Agreement</h3>
+    <p>By using Pick&book, you agree to comply with these Terms, the Privacy Policy, cancellation and refund policies, and any additional terms applicable to a particular Booking or Service Provider.</p>
 
-1. DEFINITIONS
-For the purposes of these Terms:
-"User", "you" or "your" means any person accessing or using the Platform.
-"Platform" means the Pick&book website, mobile application, software, digital interface and related services.
-"Service Provider" means any airline, bus operator, hotel, accommodation provider, travel operator, payment service provider or other third party whose services are made available through Pick&book.
-"Booking" means a reservation or purchase made through the Platform for a bus, flight, hotel or other travel-related service.
-"Booking Amount" means the total amount payable for a Booking, including applicable taxes, fees, charges and other disclosed amounts.
+    <h3>4.2 Additional Provider Terms</h3>
+    <p>Certain bookings may be subject to additional terms imposed by the relevant airline, bus operator, hotel, or service provider.</p>
 
-2. ELIGIBILITY
-2.1 You must have the legal capacity to enter into a binding contract under applicable law to use the Platform.
-2.2 If you are using the Platform on behalf of another person, you represent that you have the authority to accept these Terms on that person's behalf.
-2.3 Users below the applicable legal age should use the Platform only with the involvement and supervision of a parent or legal guardian.
+    <h3>4.3 Conflict of Terms</h3>
+    <p>In the event of a conflict between these Terms and the specific terms of a Service Provider, the specific terms applicable to that Booking may govern that particular service to the extent permitted by law.</p>
+  </section>
 
-3. ACCEPTANCE OF TERMS
-3.1 By using Pick&book, you agree to comply with these Terms, the Privacy Policy, cancellation/refund policies and any additional terms applicable to a particular booking or Service Provider.
-3.2 Certain bookings may be subject to additional terms imposed by the relevant airline, bus operator, hotel or other Service Provider.
-3.3 In case of a conflict between these Terms and specific Service Provider terms, the specific terms applicable to that Booking may govern that particular service to the extent permitted by applicable law.
+  <section class="legal-section">
+    <h2>5. Platform Services</h2>
+    <h3>5.1 Service Description</h3>
+    <p>Pick&book provides an online platform that enables users to search, compare, and book travel-related services, including buses, flights, and hotels.</p>
 
-4. NATURE OF PICK&BOOK SERVICES
-4.1 Pick&book provides an online platform that enables Users to search, compare and book travel-related services, including buses, flights and hotels.
-4.2 Pick&book may act as an intermediary, booking facilitator, technology platform or agent, as applicable to the relevant transaction.
-4.3 The actual transportation, accommodation or other travel services are provided by the respective Service Provider.
-4.4 Pick&book does not own, operate or control every bus, airline, hotel or other third-party service displayed on the Platform.
+    <h3>5.2 Role of Pick&book</h3>
+    <p>Pick&book may act as an intermediary, booking facilitator, technology platform, or agent, as applicable to the relevant transaction.</p>
 
-5. USER REGISTRATION AND ACCOUNT
-5.1 Certain services may require the User to create an account.
-5.2 You agree to provide accurate, complete and current information.
-5.3 You are responsible for maintaining the confidentiality of your account credentials.
-5.4 You are responsible for activities carried out through your account unless such activity results from circumstances beyond your reasonable control.
-5.5 You must immediately notify Pick&book if you suspect unauthorized access to your account.
-5.6 Pick&book reserves the right to suspend or terminate an account where there is reasonable evidence of fraud, misuse, unlawful activity or violation of these Terms.
+    <h3>5.3 Service Provider Responsibility</h3>
+    <p>The actual transportation, accommodation, and other travel services are provided by the respective Service Provider identified during the booking process.</p>
+  </section>
 
-6. BOOKING TERMS
-6.1 All bookings are subject to availability.
-6.2 A booking request is not necessarily a confirmed booking until Pick&book or the relevant Service Provider issues a booking confirmation, ticket, voucher or confirmation number.
-6.3 Users must carefully verify all booking information before confirming a booking.
-6.4 Incorrect information supplied by the User may result in cancellation, denial of boarding/check-in, additional charges or loss of the Booking Amount, subject to the applicable Service Provider rules and applicable law.
+  <section class="legal-section">
+    <h2>6. User Registration and Account Security</h2>
+    <h3>6.1 Account Creation</h3>
+    <p>Certain services may require the User to create an account.</p>
 
-7. FLIGHT BOOKINGS
-7.1 Flight bookings are subject to the rules, fare conditions, baggage policies and cancellation/change conditions of the relevant airline.
-7.2 Flight schedules, routes, aircraft, baggage allowances and other operational details may be changed by the airline.
-7.3 Pick&book will communicate material changes received from the airline where reasonably practicable.
-7.4 Users are responsible for carrying valid identification, passport, visa, permits and other documents required for their journey.
-7.5 International travelers are solely responsible for complying with applicable immigration, visa, passport, customs and entry requirements.
-7.6 Pick&book does not guarantee admission into any country or territory.
+    <h3>6.2 Accurate Information</h3>
+    <p>You agree to provide accurate, complete, and current information and to update it when necessary.</p>
 
-8. BUS BOOKINGS
-8.1 Bus bookings are subject to the terms and operating policies of the relevant bus operator.
-8.2 Boarding points, departure times, routes, vehicle types and seat availability may be changed by the bus operator.
-8.3 Users must arrive at the designated boarding location sufficiently in advance of the scheduled departure.
-8.4 Failure to board the bus within the applicable reporting time may be treated as a no-show, subject to the bus operator's policy.
+    <h3>6.3 Confidentiality</h3>
+    <p>You are responsible for maintaining the confidentiality of your account credentials and any activity carried out through your account.</p>
 
-9. HOTEL BOOKINGS
-9.1 Hotel reservations are subject to availability and the terms imposed by the relevant hotel or accommodation provider.
-9.2 Hotel policies may vary with respect to cancellation, check-in, check-out, payment and other conditions.
-9.3 Pick&book does not guarantee the availability of any hotel facility unless specifically confirmed as part of the Booking.
-9.4 The User must comply with the hotel's rules and policies during the stay.
+    <h3>6.4 Security Notice</h3>
+    <p>You must notify Pick&book immediately if you suspect unauthorized access to your account.</p>
+  </section>
 
-10. PRICING AND PAYMENT
-10.1 Prices displayed on the Platform may include or exclude applicable taxes, convenience fees, service charges or other charges, as specifically disclosed during the booking process.
-10.2 The final payable amount will be displayed before confirmation of the Booking, subject to applicable technical or third-party changes.
-10.3 Payments may be processed through third-party payment gateways.
-10.4 Pick&book does not ordinarily store complete payment-card credentials where payment processing is handled by an authorized third-party payment processor.
-10.5 The User agrees not to use fraudulent, stolen or unauthorized payment instruments.
-10.6 If a payment is successful but the Booking is not confirmed, Pick&book will process the applicable refund in accordance with the relevant payment and booking policies.
+  <section class="legal-section">
+    <h2>7. Booking Terms</h2>
+    <h3>7.1 Availability</h3>
+    <p>All bookings are subject to availability at the time of confirmation.</p>
 
-11. CANCELLATION AND REFUND
-11.1 Cancellation and refund conditions vary according to the relevant airline, bus operator, hotel and fare/booking conditions.
-11.2 The applicable cancellation policy will be displayed or made available during the booking process wherever reasonably practicable.
-11.3 Refund amounts may be affected by provider rules, cancellation charges, service fees and payment processing charges.
-11.4 Where a Service Provider cancels or materially changes a service, the User's rights will be determined by the applicable Service Provider policy and applicable law.
-11.5 Refunds will generally be processed to the original payment method, unless otherwise permitted or required.
-11.6 Processing times may vary depending on the payment provider, bank and Service Provider.
-11.7 Pick&book will not impose cancellation or refund conditions that are inconsistent with applicable law.
+    <h3>7.2 Confirmation</h3>
+    <p>A booking request is not treated as a confirmed booking until Pick&book or the relevant Service Provider issues a confirmation, ticket, voucher, or booking reference number.</p>
 
-12. SERVICE PROVIDERS AND THIRD PARTIES
-12.1 Pick&book may provide information relating to third-party Service Providers.
-12.2 Service Providers are responsible for delivering their respective services.
-12.3 Pick&book is not responsible for matters exclusively within the control of a Service Provider, except to the extent liability is imposed on Pick&book by applicable law.
-12.4 Users agree to comply with the terms and conditions of the relevant Service Provider.
+    <h3>7.3 Verification</h3>
+    <p>Users must carefully verify all booking information before confirming a Booking.</p>
 
-13. USER RESPONSIBILITIES
-The User agrees:
-a. To provide accurate information.
-b. Not to use the Platform for unlawful purposes.
-c. Not to create fraudulent or duplicate bookings.
-d. Not to misuse promotional offers.
-e. Not to interfere with the operation or security of the Platform.
-f. Not to attempt unauthorized access to systems or accounts.
-g. Not to upload malicious code or harmful material.
-h. Not to use another person's personal or payment information without lawful authority.
-i. To comply with all applicable laws and regulations.
+    <h3>7.4 Incorrect Information</h3>
+    <p>Incorrect information supplied by the User may result in cancellation, denial of check-in or boarding, additional charges, or forfeiture of the Booking Amount, as applicable under the Terms of the Service Provider.</p>
+  </section>
 
-14. PROHIBITED ACTIVITIES
-Users shall not use the Platform for fraud, unlawful activity, unauthorized access, interference with security, or any activity prohibited by applicable law.
-Pick&book may suspend or restrict access where prohibited activity is reasonably suspected.
+  <section class="legal-section">
+    <h2>8. Flight Bookings</h2>
+    <h3>8.1 Airline Rules</h3>
+    <p>Flight bookings are subject to the rules, fare conditions, baggage policies, and cancellation or change policies of the relevant airline.</p>
 
-15. PROMOTIONAL OFFERS
-15.1 Pick&book may offer promotional codes, discounts, cashback or other promotional benefits.
-15.2 Promotions may be subject to additional eligibility requirements and validity periods.
-15.3 Unless expressly stated otherwise, promotional offers cannot be combined.
-15.4 Pick&book reserves the right to withdraw or modify a promotional offer where permitted by applicable law and the stated promotional terms.
+    <h3>8.2 Operational Changes</h3>
+    <p>Flight schedules, routes, aircraft, baggage allowances, and operational details may change due to airline requirements or external conditions.</p>
 
-16. INTELLECTUAL PROPERTY
-16.1 The Platform, including its software, design, text, graphics, logos, trademarks, photographs, content and other materials, is owned by or licensed to Pick&book or its respective licensors.
-16.2 No User receives ownership rights in the Platform merely by using it.
-16.3 Users shall not reproduce, modify, distribute, sell, commercially exploit or reverse engineer the Platform except where expressly permitted by law or by Pick&book.
+    <h3>8.3 Travel Documents</h3>
+    <p>Users are responsible for carrying valid identification, travel documents, passport, visa, and other required documents for their journey.</p>
+  </section>
 
-17. USER CONTENT
-17.1 Where the Platform permits reviews, comments, photographs or other content to be submitted by Users, the User remains responsible for such content.
-17.2 Users must not submit content that is unlawful, defamatory, fraudulent, abusive, obscene, infringing or otherwise prohibited by applicable law.
-17.3 By submitting content, the User grants Pick&book a non-exclusive, royalty-free licence to host, display and use that content for operating and improving the Platform, subject to applicable law and the Privacy Policy.
+  <section class="legal-section">
+    <h2>9. Bus Bookings</h2>
+    <h3>9.1 Operator Policies</h3>
+    <p>Bus bookings are subject to the terms and operating policies of the relevant bus operator.</p>
 
-18. PRIVACY AND PERSONAL DATA
-18.1 Pick&book may collect and process personal information necessary for providing its services.
-18.2 Such information may include booking details, contact information, identification information, payment-related information, and other information required for the relevant transaction.
-18.3 Personal data will be handled in accordance with applicable data protection laws and Pick&book's Privacy Policy.
-18.4 Users should review the Pick&book Privacy Policy before using the Platform.
-18.5 Where personal information of another person is provided by the User, the User represents that the information has been provided lawfully and with the necessary authority or permission.
+    <h3>9.2 Boarding and Arrival</h3>
+    <p>Users must arrive at the designated boarding point in advance of the scheduled departure. Failure to do so may be treated as a no-show under the bus operator's policy.</p>
+  </section>
 
-19. THIRD-PARTY LINKS
-The Platform may contain links or integrations with third-party websites and services. Pick&book is not responsible for the content, privacy practices, security, or availability of third-party websites.
-Users should review the applicable third-party terms and privacy policies before using those services.
+  <section class="legal-section">
+    <h2>10. Hotel Bookings</h2>
+    <h3>10.1 Hotel Conditions</h3>
+    <p>Hotel reservations are subject to the availability and terms set by the relevant hotel or accommodation provider.</p>
 
-20. DISCLAIMERS
-20.1 Pick&book endeavors to provide accurate and updated information but does not guarantee that every description, image, price, schedule or other information will always be complete, current or error-free.
-20.2 Travel services are subject to operational circumstances, availability and Service Provider policies.
-20.3 Nothing in these Terms excludes or limits any consumer rights or statutory protection that cannot lawfully be excluded or limited.
+    <h3>10.2 Guest Responsibility</h3>
+    <p>The User must comply with the hotel's rules, policies, check-in, and check-out conditions during the stay.</p>
+  </section>
 
-21. LIMITATION OF LIABILITY
-21.1 To the maximum extent permitted by applicable law, Pick&book shall not be liable for indirect, incidental, special or consequential losses arising from circumstances outside its reasonable control.
-21.2 Nothing in these Terms shall exclude liability that cannot legally be excluded or limited under applicable law.
-21.3 Where Pick&book is legally responsible for a service failure, its liability shall be determined in accordance with applicable law and the specific circumstances of the Booking.
+  <section class="legal-section">
+    <h2>11. Pricing and Payment</h2>
+    <h3>11.1 Price Disclosure</h3>
+    <p>Prices displayed on the Platform may include or exclude taxes and service charges, as explicitly disclosed during the booking process.</p>
 
-22. FORCE MAJEURE
-Pick&book shall not be responsible for delays, interruptions or inability to provide Platform services caused by circumstances beyond its reasonable control, including natural disasters, severe weather, war, terrorism, governmental restrictions, strikes, epidemics, pandemics, technical failures, telecommunications failures, cyber incidents, transportation disruptions or failures of third-party service providers.
-This clause does not affect rights or remedies that cannot legally be excluded.
+    <h3>11.2 Final Amount</h3>
+    <p>The final payable amount will be displayed before confirmation of the Booking.</p>
 
-23. FRAUD AND SECURITY
-Pick&book may investigate suspected fraudulent transactions, unauthorized activities, or misuse of the Platform.
-Where permitted by law, Pick&book may cancel or suspend transactions reasonably believed to involve fraud or unlawful activity and may cooperate with banks, payment providers, law-enforcement authorities or other competent authorities.
+    <h3>11.3 Payment Processing</h3>
+    <p>Payments may be processed through authorized third-party payment gateways and are subject to the applicable gateway terms and conditions.</p>
 
-24. GRIEVANCE REDRESSAL
-Users may raise complaints or service-related concerns through the designated Pick&book customer-support or grievance-redressal channel.
-Grievance Officer: [Name]
-Designation: Grievance Officer
-Email: [Official Email ID]
-Phone: [Official Contact Number]
-Address: Pirnav Software Solutions, Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India.
-Complaints should include the User's name, Booking/reference number, contact details and a clear description of the issue.
-Pick&book will process grievances in accordance with applicable law.
+    <h3>11.4 Fraud Prevention</h3>
+    <p>The User agrees not to use fraudulent, stolen, or unauthorized payment instruments.</p>
+  </section>
 
-25. SUSPENSION OR TERMINATION
-Pick&book may suspend or terminate access to the Platform where reasonably necessary because of fraud, misuse, unlawful activity or violation of these Terms.
-Termination shall not affect rights or obligations that accrued before termination.
+  <section class="legal-section">
+    <h2>12. Cancellation and Refunds</h2>
+    <h3>12.1 Policy Variation</h3>
+    <p>Cancellation and refund conditions vary according to the relevant airline, bus operator, hotel, and fare conditions.</p>
 
-26. CHANGES TO THESE TERMS
-Pick&book may update these Terms from time to time to reflect changes in its services, technology, business practices or applicable law.
-The updated Terms will be published on the Platform with the revised effective date.
-Continued use of the Platform after the effective date of updated Terms may constitute acceptance of revised Terms, to the extent permitted by applicable law.
+    <h3>12.2 Service Provider Terms</h3>
+    <p>The applicable cancellation policy will be displayed or made available during the booking process wherever reasonably practicable.</p>
 
-27. GOVERNING LAW
-These Terms shall be governed by and construed in accordance with the laws of India.
-Subject to applicable consumer-protection laws and the jurisdiction of competent statutory authorities, disputes arising from these Terms shall be subject to the jurisdiction of the competent courts at Hyderabad, Telangana, unless applicable law requires otherwise.
+    <h3>12.3 Refund Processing</h3>
+    <p>Refunds may be subject to provider rules, service charges, cancellation fees, and payment processing charges. Refunds will generally be processed to the original payment method unless otherwise permitted by law or policy.</p>
+  </section>
 
-28. SEVERABILITY
-If any provision of these Terms is held to be invalid, unlawful or unenforceable, that provision shall be modified or severed to the minimum extent necessary, and the remaining provisions shall continue in full force and effect.
+  <section class="legal-section">
+    <h2>13. User Responsibilities</h2>
+    <p>The User agrees to:</p>
+    <ul>
+      <li>Provide accurate and truthful information.</li>
+      <li>Use the Platform only for lawful purposes.</li>
+      <li>Not create fraudulent or duplicate bookings.</li>
+      <li>Not misuse promotional offers.</li>
+      <li>Not interfere with the operation or security of the Platform.</li>
+      <li>Not attempt unauthorized access to systems or accounts.</li>
+      <li>Not upload malicious code or harmful content.</li>
+      <li>Not use another person's personal or payment information without lawful authority.</li>
+      <li>Comply with all applicable laws and regulations.</li>
+    </ul>
+  </section>
 
-29. WAIVER
-Failure by Pick&book to enforce any provision of these Terms shall not constitute a waiver of its right to enforce that provision subsequently.
+  <section class="legal-section">
+    <h2>14. Prohibited Activities</h2>
+    <p>Users shall not use the Platform for fraud, unlawful activity, unauthorized access, interference with security, or any activity prohibited by applicable law.</p>
+    <p>Pick&book may suspend or restrict access where prohibited activity is reasonably suspected.</p>
+  </section>
 
-30. ENTIRE AGREEMENT
-These Terms, together with the Privacy Policy and any booking-specific terms applicable to the User's transaction, constitute the agreement governing the User's use of the Platform, subject to applicable law.
+  <section class="legal-section">
+    <h2>15. Promotional Offers</h2>
+    <h3>15.1 Eligibility</h3>
+    <p>Pick&book may offer promotional codes, discounts, cashback, or other promotional benefits.</p>
 
-31. CONTACT INFORMATION
-For general queries, booking assistance or support:
-Pick&book, operated by PIRNAV SOFTWARE SOLUTIONS
-Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India.
-Email: contact@picknbook.in
-Phone: +91 999-999-9999
-Website: https://picknbook.in`;
+    <h3>15.2 Conditions</h3>
+    <p>Promotions may be subject to additional eligibility requirements and validity periods.</p>
+
+    <h3>15.3 Modification Rights</h3>
+    <p>Pick&book reserves the right to withdraw or modify promotional offers in accordance with their stated terms and applicable law.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>16. Intellectual Property</h2>
+    <p>The Platform and all associated software, content, design, text, graphics, logos, and trademarks are owned by or licensed to Pick&book and its licensors.</p>
+    <p>No User receives ownership rights in the Platform by using it.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>17. User Content</h2>
+    <h3>17.1 Responsibility</h3>
+    <p>Where the Platform permits reviews, comments, photographs, or other content to be submitted by Users, the User remains responsible for such content.</p>
+
+    <h3>17.2 Prohibited Content</h3>
+    <p>Users must not submit content that is unlawful, defamatory, fraudulent, abusive, obscene, infringing, or otherwise prohibited by applicable law.</p>
+
+    <h3>17.3 License</h3>
+    <p>By submitting content, the User grants Pick&book a non-exclusive, royalty-free license to host, display, and use that content for operating and improving the Platform.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>18. Privacy and Personal Data</h2>
+    <h3>18.1 Data Collection</h3>
+    <p>Pick&book may collect and process personal information necessary for providing its services.</p>
+
+    <h3>18.2 Data Handling</h3>
+    <p>Such information may include booking details, contact details, identification details, payment-related information, and other information necessary for the relevant transaction.</p>
+
+    <h3>18.3 Applicable Law</h3>
+    <p>Personal data will be handled in accordance with applicable data protection laws and the Pick&book Privacy Policy.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>19. Third-Party Links</h2>
+    <p>The Platform may contain links or integrations with third-party websites and services. Pick&book is not responsible for the content, privacy practices, security, or availability of such third-party websites and services.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>20. Disclaimers</h2>
+    <p>Pick&book endeavors to provide accurate and updated information, but does not guarantee that every description, image, price, schedule, or other information will always be complete, current, or error-free.</p>
+    <p>Travel services are subject to operational circumstances, availability, and Service Provider rules.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>21. Limitation of Liability</h2>
+    <p>To the maximum extent permitted by applicable law, Pick&book shall not be liable for indirect, incidental, special, or consequential losses arising from circumstances outside its reasonable control.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>22. Force Majeure</h2>
+    <p>Pick&book shall not be responsible for delays, interruptions, or inability to provide Platform services caused by circumstances beyond its reasonable control, including natural disasters, government restrictions, strikes, technical failures, cyber incidents, or transportation disruptions.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>23. Fraud and Security</h2>
+    <p>Pick&book may investigate suspected fraudulent transactions, unauthorized activities, or misuse of the Platform and, where permitted by law, may cancel or suspend such transactions.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>24. Grievance Redressal</h2>
+    <p>Users may raise complaints or service-related concerns through the designated Pick&book customer support or grievance redressal channel.</p>
+    <ul>
+      <li><strong>Grievance Officer:</strong> [Name]</li>
+      <li><strong>Email:</strong> [Official Email ID]</li>
+      <li><strong>Phone:</strong> [Official Contact Number]</li>
+      <li><strong>Address:</strong> Pirnav Software Solutions, Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India.</li>
+    </ul>
+  </section>
+
+  <section class="legal-section">
+    <h2>25. Suspension or Termination</h2>
+    <p>Pick&book may suspend or terminate access to the Platform where reasonably necessary due to fraud, misuse, unlawful activity, or violation of these Terms.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>26. Changes to These Terms</h2>
+    <p>Pick&book may update these Terms from time to time to reflect changes in services, technology, business practices, or applicable law. Updated Terms will be published on the Platform with the revised effective date.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>27. Governing Law</h2>
+    <p>These Terms shall be governed by and construed in accordance with the laws of India. Disputes shall be subject to the jurisdiction of the competent courts in Hyderabad, Telangana, unless otherwise required by law.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>28. Severability and Waiver</h2>
+    <p>If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions shall remain in full force. Failure by Pick&book to enforce any provision shall not constitute a waiver of that right.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>29. Entire Agreement</h2>
+    <p>These Terms, together with the Privacy Policy and any booking-specific terms applicable to the User's transaction, constitute the complete agreement governing use of the Platform.</p>
+  </section>
+
+  <section class="legal-section">
+    <h2>30. Contact Information</h2>
+    <p>For general queries, booking assistance, or support, contact:</p>
+    <ul>
+      <li><strong>Pick&book</strong>, operated by Pirnav Software Solutions</li>
+      <li>Capital Park Road, 4th Floor, 409, Hyderabad, Telangana, India</li>
+      <li>Email: contact@picknbook.in</li>
+      <li>Phone: +91 999-999-9999</li>
+    </ul>
+  </section>
+</div>
+`;
 
 export const PRIVACY_POLICY_TEXT = `
 <div class="legal-doc-container">
-  <p>At Pick&book, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you visit our website, use our services, or make a booking for flights and bus services. By using our website, you agree to the terms and conditions outlined in this Privacy Policy.</p>
+  <section class="legal-section">
+    <h2>1. Introduction</h2>
+    <p>At Pick&book, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you visit our website, use our services, or make a booking for flights, buses, hotels, and related travel services.</p>
+    <p>By using our website or platform, you agree to the terms and conditions outlined in this Privacy Policy.</p>
+  </section>
 
   <section class="legal-section">
-    <h2>1. Information We Collect</h2>
-    <p>We collect various types of information to provide and improve our services to you, including:</p>
-    
-    <h3>Personal Information:</h3>
-    <p>When you book flights or bus services or interact with our website, we may collect personal information such as:</p>
+    <h2>2. Information We Collect</h2>
+    <p>We collect information to provide and improve our travel services. This may include:</p>
+
+    <h3>2.1 Personal Information</h3>
+    <p>When you book travel services or interact with our website, we may collect information such as:</p>
     <ul>
       <li>Full name</li>
       <li>Email address</li>
       <li>Phone number</li>
-      <li>Payment details (credit/debit card information, billing address)</li>
-      <li>Passport details (for international travel bookings)</li>
-      <li>Travel preferences and special requests</li>
+      <li>Payment details and billing information</li>
+      <li>Passport and travel document details, where required</li>
+      <li>Travel preferences, special requests, and booking history</li>
     </ul>
 
-    <h3>Usage Data:</h3>
-    <p>We may collect information about how you access and use our website, including:</p>
+    <h3>2.2 Usage Data</h3>
+    <p>We may also collect device and usage data, including:</p>
     <ul>
       <li>IP address</li>
       <li>Browser type and version</li>
-      <li>Pages visited</li>
-      <li>Time spent on our website</li>
-      <li>Referring URLs</li>
+      <li>Pages visited and time spent on the platform</li>
+      <li>Referring URLs and traffic sources</li>
+      <li>App or website interaction data</li>
     </ul>
 
-    <h3>Cookies:</h3>
-    <p>Our website uses cookies to enhance your browsing experience. Cookies are small text files placed on your device to store information such as your preferences or login status. You can control cookies through your browser settings.</p>
+    <h3>2.3 Cookies and Tracking Technologies</h3>
+    <p>Our website uses cookies and similar technologies to remember your preferences, improve user experience, and analyze platform performance. You may control cookie settings through your browser preferences.</p>
   </section>
 
   <section class="legal-section">
-    <h2>2. How We Use Your Information</h2>
-    <p>We use the collected information for the following purposes:</p>
+    <h2>3. How We Use Your Information</h2>
+    <p>We use your information for the following purposes:</p>
     <ul>
-      <li>To process and confirm your bookings (flight and bus services)</li>
-      <li>To communicate with you regarding your bookings, account, or promotional offers</li>
-      <li>To improve our website and services based on your usage data</li>
-      <li>To prevent fraud and ensure the security of your transactions</li>
-      <li>To comply with legal obligations and resolve disputes</li>
+      <li>To process and confirm your bookings</li>
+      <li>To communicate with you about bookings, support requests, and account updates</li>
+      <li>To improve the quality, security, and reliability of our platform</li>
+      <li>To detect and prevent fraud, misuse, and security threats</li>
+      <li>To comply with legal, regulatory, and contractual obligations</li>
     </ul>
   </section>
 
   <section class="legal-section">
-    <h2>3. Sharing Your Information</h2>
-    <p>We may share your personal information in the following circumstances:</p>
-    <ul>
-      <li>Third-party service providers: We may share your information with trusted third-party companies that provide services such as payment processing, customer support, and data analytics. These third parties are obligated to keep your information confidential.</li>
-      <li>Legal requirements: We may disclose your information if required to do so by law or in response to a valid legal request by public authorities, such as a court order or government investigation.</li>
-      <li>Business transfers: In the event of a merger, acquisition, or sale of our business, your personal information may be transferred as part of that transaction.</li>
-    </ul>
+    <h2>4. Sharing Your Information</h2>
+    <p>We may share your personal information in limited circumstances, including:</p>
+
+    <h3>4.1 Service Providers</h3>
+    <p>We may share information with trusted third-party providers for payment processing, customer support, analytics, and platform operations. These providers are required to keep information confidential and use it only for authorized services.</p>
+
+    <h3>4.2 Legal Requirements</h3>
+    <p>We may disclose personal information if required by law, court order, government request, or to protect the rights, safety, and security of our users.</p>
+
+    <h3>4.3 Business Transfers</h3>
+    <p>In the event of a merger, acquisition, restructuring, or sale of business assets, customer information may be transferred as part of the transaction.</p>
   </section>
 
   <section class="legal-section">
-    <h2>4. Data Security</h2>
-    <p>We take reasonable steps to protect your personal information. However, no method of electronic transmission or storage is 100% secure, so we cannot guarantee absolute security. We use industry-standard encryption techniques (such as SSL) to safeguard sensitive data during transmission.</p>
+    <h2>5. Data Security</h2>
+    <p>We implement reasonable technical and organizational measures to protect personal information from unauthorized access, misuse, and loss. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security.</p>
   </section>
 
   <section class="legal-section">
-    <h2>5. Retention of Information</h2>
-    <p>We will retain your personal information for as long as necessary to fulfill the purposes outlined in this Privacy Policy, unless a longer retention period is required or permitted by law.</p>
+    <h2>6. Retention of Information</h2>
+    <p>We retain personal information only for as long as required to fulfill the purposes for which it was collected, or as otherwise required or permitted by applicable law.</p>
   </section>
 
   <section class="legal-section">
-    <h2>6. Your Rights and Choices</h2>
-    <p>You have the following rights regarding your personal information:</p>
-    <ul>
-      <li>Access: You can request a copy of the personal information we hold about you.</li>
-      <li>Correction: You can update or correct your personal information.</li>
-      <li>Deletion: You can request the deletion of your personal information, subject to certain exceptions.</li>
-      <li>Opt-out: You can opt-out of receiving marketing emails by clicking the "unsubscribe" link in our emails or contacting us directly.</li>
-    </ul>
+    <h2>7. Your Rights and Choices</h2>
+    <p>You may have rights to access, update, correct, or request deletion of your personal information, depending on applicable law and jurisdiction.</p>
+
+    <h3>7.1 Access and Correction</h3>
+    <p>You may request a copy of the personal data we hold about you and ask us to correct inaccurate information.</p>
+
+    <h3>7.2 Deletion</h3>
+    <p>You may request deletion of your personal information, subject to exceptions where we are required to retain it for legal, regulatory, or operational reasons.</p>
+
+    <h3>7.3 Marketing Preferences</h3>
+    <p>You may opt out of promotional communications by clicking the unsubscribe link in our emails or contacting us directly.</p>
   </section>
 
   <section class="legal-section">
-    <h2>7. Third-Party Links</h2>
-    <p>Our website may contain links to third-party websites or services that are not operated by us. We are not responsible for the privacy practices or content of those websites. We recommend reviewing the privacy policies of any third-party services you use.</p>
+    <h2>8. Third-Party Links</h2>
+    <p>Our platform may contain links to third-party websites or services. We are not responsible for the privacy practices or content of those external websites. We recommend reviewing any third-party policy before sharing information.</p>
   </section>
 
   <section class="legal-section">
-    <h2>8. Changes to This Privacy Policy</h2>
-    <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Effective Date" at the top. We encourage you to review this Privacy Policy periodically to stay informed about how we are protecting your information.</p>
+    <h2>9. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated effective date. We encourage you to review this page periodically.</p>
   </section>
 </div>
 `;

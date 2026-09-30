@@ -137,6 +137,8 @@ export default function Topbar() {
 
   const dropdownRef = useRef(null);
   const notificationRef = useRef(null);
+  // Track previous auth state to avoid unnecessary re-renders on every route change
+  const prevAuthKeyRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -153,7 +155,13 @@ export default function Topbar() {
   const isHome = location.pathname === "/";
 
   const syncAuthState = () => {
-    setAuthProfile(getAuthProfile());
+    const next = getAuthProfile();
+    // Only update state if login status or identity actually changed
+    const nextKey = `${next.isLoggedIn}|${next.email}`;
+    if (nextKey !== prevAuthKeyRef.current) {
+      prevAuthKeyRef.current = nextKey;
+      setAuthProfile(next);
+    }
   };
 
   useEffect(() => {
@@ -181,7 +189,9 @@ export default function Topbar() {
     };
 
     refreshUnreadCount();
-    const intervalId = window.setInterval(refreshUnreadCount, 30000);
+    // Poll every 5 minutes — unread count doesn't need to be realtime.
+    // The "notificationsUpdated" event handles immediate updates after actions.
+    const intervalId = window.setInterval(refreshUnreadCount, 5 * 60 * 1000);
     window.addEventListener("notificationsUpdated", refreshUnreadCount);
     return () => {
       cancelled = true;

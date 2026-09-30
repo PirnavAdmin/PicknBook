@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import {
-  ArrowLeft, CalendarDays, CheckCircle2, Clock3, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble
+  ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate } from "../../utils/apiDateFormat";
@@ -9,6 +9,7 @@ import BookingConfirmationModal from "../../components/booking/BookingConfirmati
 import { navigateWithAuth, isUserAuthenticated } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
 import { blockRoom, getHotelInfo, getHotelRoom, bookHotelRoom } from "../../services/hotelBookingService";
+import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
 import { listTravelers } from "../../services/travelerService";
 import { buildGuestSummary, buildStayFacts, buildStayHighlights, formatNightLabel, getHotelVisuals } from "./hotelPresentation";
 
@@ -17,6 +18,13 @@ import "../../STYLES/HotelCheckoutExperience.css";
 import { readHotelBookingFlowState, writeHotelBookingFlowState } from "./hotelBookingFlowStore";
 
 const formatCurrency = (amount) => `INR ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.round(Number(amount) || 0))}`;
+const getHotelPromoDiscountLabel = (promo) => {
+  const value = Number(promo?.value || 0);
+  if (!value) return "HOTEL DEAL";
+  return String(promo?.couponType || "").toLowerCase().includes("percent")
+    ? `${value}% OFF`
+    : `${formatCurrency(value)} OFF`;
+};
 const calculateNights = (inDate, outDate) => (!inDate || !outDate ? 1 : Math.ceil(Math.abs(new Date(outDate) - new Date(inDate)) / 86400000) || 1);
 const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(String(email || "").trim());
 const isValidMobile = (mobile) => String(mobile || "").replace(/\D/g, "").length >= 10 && String(mobile || "").replace(/\D/g, "").length <= 13;
@@ -333,7 +341,6 @@ export default function HotelPassengerDetailsPage() {
       idProofNumber: "",
       email: incomingState.guestEmail || "",
       mobile: incomingState.guestPhone || "",
-      pan: incomingState.guestPAN || "",
     });
     for (let i = 1; i < initAdults; i++) {
       list.push({
@@ -348,7 +355,6 @@ export default function HotelPassengerDetailsPage() {
         idProofNumber: "",
         email: "",
         mobile: "",
-        pan: "",
       });
     }
     for (let i = 0; i < initChildren; i++) {
@@ -364,7 +370,6 @@ export default function HotelPassengerDetailsPage() {
         idProofNumber: "",
         email: "",
         mobile: "",
-        pan: "",
       });
     }
     return list;
@@ -444,9 +449,17 @@ export default function HotelPassengerDetailsPage() {
   const [couponSuccess, setCouponSuccess] = useState(incomingState.couponSuccess || "");
   const [couponError, setCouponError] = useState(incomingState.couponError || "");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
+  const [featuredOffers, setFeaturedOffers] = useState([]);
+  const hotelOffersCarouselRef = useRef(null);
+  const hotelCouponsCarouselRef = useRef(null);
+  const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
+  const [isLoadingOffers, setIsLoadingOffers] = useState(false);
+  const [copiedPromoCode, setCopiedPromoCode] = useState("");
 
   const [showChildAgeAlert, setShowChildAgeAlert] = useState(false);
   const [alertChildIndex, setAlertChildIndex] = useState(null);
+  const [isOtherGuestsOpen, setIsOtherGuestsOpen] = useState(false);
 
   const [rulePets, setRulePets] = useState(false);
   const [ruleFood, setRuleFood] = useState(false);
@@ -486,7 +499,6 @@ export default function HotelPassengerDetailsPage() {
   const guestName = guests[0]?.fullName || "";
   const guestTitle = guests[0]?.title || "";
   const guestAge = guests[0]?.age || "";
-  const guestPAN = guests[0]?.pan || "";
   const guestPassportNo = "";
   const guestEmail = guests[0]?.email || "";
   const guestPhone = guests[0]?.mobile || "";
@@ -690,7 +702,7 @@ export default function HotelPassengerDetailsPage() {
       .then((apiList) => { if (isMounted) { setSavedTravelers(Array.isArray(apiList) ? apiList : []); setTravelerLoadError(""); } })
       .catch(() => { if (isMounted) { setSavedTravelers([]); setTravelerLoadError("Unable to load saved travelers from the backend."); } });
     return () => { isMounted = false; };
-  }, []);
+  }, [currentStep]);
 
   // Restore pending hotel offer after login — but do NOT auto-trigger blockRoom.
   // Instead, restore the selection state and let the user click "Choose room" or "Continue" manually.
@@ -724,7 +736,6 @@ export default function HotelPassengerDetailsPage() {
         guestName,
         guestTitle,
         guestAge,
-        guestPAN,
         guestPassportNo,
         guestEmail,
         guestPhone,
@@ -736,7 +747,7 @@ export default function HotelPassengerDetailsPage() {
         selectedMultiRooms,
       });
     }
-  }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPAN, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse, currentStep, selectedMultiRooms]);
+  }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse, currentStep, selectedMultiRooms]);
 
   const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
     // If user is re-selecting (replacing an already chosen room), drop the previous
@@ -864,26 +875,53 @@ export default function HotelPassengerDetailsPage() {
   if (blockedRooms.length > 0) {
       blockedRooms.forEach(room => {
           const price = room.Price || room.price || {};
-            let roomBase = Number(
-              room.B2CBasePrice || room.b2CBasePrice ||
-              price.B2CBasePrice || price.b2cBasePrice ||
-              price.RoomPrice || price.roomPrice || price.PublishedPrice || price.publishedPrice || 0
-            );
-        const gst = price.GST || price.gst || {};
-        const gstBreakupTotal = [
-          gst.CGSTAmount, gst.cgstAmount,
-          gst.SGSTAmount, gst.sgstAmount,
-          gst.IGSTAmount, gst.igstAmount,
-          gst.CessAmount, gst.cessAmount
-        ].reduce((sum, value) => sum + (Number(value) || 0), 0);
-        const totalGstAmount = Number(price.TotalGSTAmount ?? price.totalGSTAmount ?? 0);
-        const declaredTax = Number(price.Tax ?? price.tax ?? 0);
-        let roomTax = totalGstAmount || declaredTax || gstBreakupTotal;
-          let roomMarkup = Number(price.AgentMarkUp ?? price.agentMarkUp ?? price.agentMarkup ?? 0);
+          const rawTotal = Number(
+            room.B2CTotalPrice || room.b2cTotalPrice ||
+            price.B2CTotalPrice || price.b2cTotalPrice || price.b2cFinalFare || price.B2CFinalFare ||
+            price.b2cDisplayFare || price.B2CDisplayFare || price.OfferedPrice || price.offeredPrice ||
+            price.PublishedPrice || price.publishedPrice || 0
+          );
           
-          if (!isAgent) {
-              roomBase = Number(price.b2CBasePrice ?? price.b2cBasePrice ?? (roomBase + roomMarkup));
-              roomMarkup = 0;
+          let roomMarkup = Number(price.AgentMarkUp ?? price.agentMarkUp ?? price.agentMarkup ?? 0);
+          let roomBase = 0;
+          let roomTax = 0;
+
+          const supplierPricing = room.SupplierPricing || room.supplierPricing;
+          const supplierTotal = Number(supplierPricing?.TotalPrice ?? supplierPricing?.totalPrice ?? 0);
+          
+          if (supplierPricing && supplierTotal > 0) {
+              const supplierBase = Number(supplierPricing.BasePrice ?? supplierPricing.basePrice ?? 0);
+              
+              if (!isAgent) {
+                  const hiddenMarkup = rawTotal - supplierTotal;
+                  roomBase = supplierBase + hiddenMarkup;
+                  roomMarkup = 0;
+              } else {
+                  roomBase = supplierBase;
+              }
+              
+              roomTax = rawTotal - roomBase - roomMarkup;
+          } else {
+              // Legacy fallback
+              roomBase = Number(
+                room.B2CBasePrice || room.b2CBasePrice ||
+                price.B2CBasePrice || price.b2cBasePrice ||
+                price.RoomPrice || price.roomPrice || price.PublishedPrice || price.publishedPrice || 0
+              );
+              const gst = price.GST || price.gst || {};
+              const gstBreakupTotal = [
+                gst.CGSTAmount, gst.cgstAmount, gst.SGSTAmount, gst.sgstAmount,
+                gst.IGSTAmount, gst.igstAmount, gst.CessAmount, gst.cessAmount
+              ].reduce((sum, value) => sum + (Number(value) || 0), 0);
+              
+              const totalGstAmount = Number(price.TotalGSTAmount ?? price.totalGSTAmount ?? 0);
+              const declaredTax = Number(price.Tax ?? price.tax ?? 0);
+              roomTax = totalGstAmount || declaredTax || gstBreakupTotal;
+              
+              if (!isAgent) {
+                  roomBase = Number(price.b2CBasePrice ?? price.b2cBasePrice ?? (roomBase + roomMarkup));
+                  roomMarkup = 0;
+              }
           }
           
           basePrice += roomBase;
@@ -891,31 +929,46 @@ export default function HotelPassengerDetailsPage() {
           markupValue += roomMarkup;
           couponDiscount += Number(price.CouponDiscount ?? price.couponDiscount ?? 0);
           convenienceFee += Number(price.ConvenienceFee ?? price.convenienceFee ?? 0);
-          
-                const rawTotal = room.B2CTotalPrice || room.b2cTotalPrice ||
-                  price.B2CTotalPrice || price.b2cTotalPrice || price.b2cFinalFare || price.B2CFinalFare ||
-                  price.b2cDisplayFare || price.B2CDisplayFare || price.OfferedPrice || price.offeredPrice ||
-                  price.PublishedPrice || price.publishedPrice || 0;
           finalPayable += Number(rawTotal);
       });
   } else if (offer) {
       // Use the selected offer's price until blockRoom confirms the final rate
-      const offerPrice = Number(offer.price ?? 0);
+      const rawTotal = Number(offer.price ?? 0);
       if (offer.originalPrice) {
           const op = offer.originalPrice;
-          tax = Number(op.Tax ?? op.tax ?? op.TotalGSTAmount ?? op.totalGSTAmount ?? 0);
-          basePrice = Number(op.RoomPrice ?? op.roomPrice ?? op.PublishedPrice ?? op.publishedPrice ?? 0);
-          
           let markup = Number(op.AgentMarkUp ?? op.agentMarkUp ?? op.agentMarkup ?? 0);
-          if (!isAgent) {
-              basePrice = Number(op.b2CBasePrice ?? op.b2cBasePrice ?? (basePrice + markup));
-              markup = 0;
+          
+          const supplierPricing = offer.SupplierPricing || offer.supplierPricing;
+          const supplierTotal = Number(supplierPricing?.TotalPrice ?? supplierPricing?.totalPrice ?? 0);
+          
+          if (supplierPricing && supplierTotal > 0) {
+              const supplierBase = Number(supplierPricing.BasePrice ?? supplierPricing.basePrice ?? 0);
+              
+              if (!isAgent) {
+                  const hiddenMarkup = rawTotal - supplierTotal;
+                  basePrice = supplierBase + hiddenMarkup;
+                  markup = 0;
+              } else {
+                  basePrice = supplierBase;
+              }
+              
+              tax = rawTotal - basePrice - markup;
+          } else {
+              // Legacy fallback
+              tax = Number(op.Tax ?? op.tax ?? op.TotalGSTAmount ?? op.totalGSTAmount ?? 0);
+              basePrice = Number(op.RoomPrice ?? op.roomPrice ?? op.PublishedPrice ?? op.publishedPrice ?? 0);
+              
+              if (!isAgent) {
+                  basePrice = Number(op.b2CBasePrice ?? op.b2cBasePrice ?? (basePrice + markup));
+                  markup = 0;
+              }
           }
+
           markupValue = markup;
           couponDiscount = Number(op.CouponDiscount ?? op.couponDiscount ?? 0);
           convenienceFee = Number(op.ConvenienceFee ?? op.convenienceFee ?? 0);
           
-          finalPayable = offerPrice;
+          finalPayable = rawTotal;
       } else {
           basePrice = offerPrice > 0 ? offerPrice : 0;
           finalPayable = basePrice;
@@ -949,9 +1002,8 @@ export default function HotelPassengerDetailsPage() {
     const genderOk = !!primary.gender;
     const emailOk = !!primary.email?.trim() && isValidEmail(primary.email);
     const phoneOk = !!primary.mobile?.trim() && isValidMobile(primary.mobile);
-    const panOk = !isPANMandatory || (!!primary.pan?.trim() && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(primary.pan.toUpperCase()));
-    return fullNameOk && ageOk && genderOk && emailOk && phoneOk && panOk;
-  }, [guests, isPANMandatory]);
+    return fullNameOk && ageOk && genderOk && emailOk && phoneOk;
+  }, [guests]);
 
   const selectExistingTraveler = (travelerId) => {
     setSelectedTravelerId(travelerId);
@@ -991,14 +1043,6 @@ export default function HotelPassengerDetailsPage() {
       nextErrors.guest_0_mobile = "Please enter phone number.";
     } else if (!isValidMobile(primary.mobile)) {
       nextErrors.guest_0_mobile = "Enter a valid mobile.";
-    }
-
-    if (isPANMandatory) {
-      if (!primary.pan?.trim()) {
-        nextErrors.guest_0_pan = "PAN Card is mandatory for this booking.";
-      } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(primary.pan.toUpperCase())) {
-        nextErrors.guest_0_pan = "Enter a valid PAN Card (e.g. ABCDE1234F).";
-      }
     }
 
     // Co-Travelers validation (mandatory for children, optional for additional adults)
@@ -1045,6 +1089,73 @@ export default function HotelPassengerDetailsPage() {
     return Object.keys(nextErrors).length === 0;
   };
 
+  useEffect(() => {
+    let isMounted = true;
+
+    if (currentStep !== 2) return undefined;
+
+    const normalizeHotelPromoRecord = (record) => {
+      const code = String(record?.couponCode || record?.CouponCode || record?.code || record?.Code || record?.promoCode || record?.PromoCode || "").trim();
+      const serviceType = String(record?.bookingType || record?.BookingType || record?.serviceType || record?.ServiceType || "").toLowerCase();
+      const category = String(record?.category || record?.Category || record?.promotionCategory || record?.PromotionCategory || "").toLowerCase();
+      const title = record?.title || record?.Title || record?.remark || record?.Remark || record?.description || record?.Description || code || "Hotel offer";
+      const value = Number(record?.value ?? record?.Value ?? record?.discountValue ?? record?.DiscountValue ?? record?.couponValue ?? record?.CouponValue ?? record?.amount ?? record?.Amount ?? 0);
+      const statusValue = String(record?.status ?? record?.Status ?? "active").toLowerCase();
+      const isActive = record?.isActive ?? record?.IsActive ?? record?.isCouponActive ?? record?.IsCouponActive ?? (statusValue !== "inactive");
+      const expiryDate = record?.expiryDate || record?.ExpiryDate || record?.endDateUtc || record?.EndDateUtc || record?.couponExpiresAtUtc || record?.CouponExpiresAtUtc;
+
+      return {
+        id: record?.id ?? record?.Id ?? record?.offerId ?? record?.OfferId ?? (code || `${title}-${expiryDate || "hotel"}`),
+        couponCode: code,
+        title,
+        description: record?.description || record?.Description || record?.remark || record?.Remark || "",
+        value,
+        couponType: record?.couponType || record?.CouponType || record?.discountType || record?.DiscountType || "Fixed",
+        expiryDate,
+        category,
+        bookingType: serviceType,
+        isActive: Boolean(isActive),
+      };
+    };
+
+    const loadHotelPromos = async () => {
+      setIsLoadingCoupons(true);
+      setIsLoadingOffers(true);
+
+      try {
+        const [couponRecords, offerRecords] = await Promise.all([
+          fetchCouponsAndOffers({ serviceType: "hotel", category: "Coupon" }),
+          fetchCouponsAndOffers({ serviceType: "hotel", category: "Offer" }),
+        ]);
+        const coupons = (Array.isArray(couponRecords) ? couponRecords : [])
+          .map(normalizeHotelPromoRecord)
+          .filter((item) => item.couponCode && item.isActive);
+        const offers = (Array.isArray(offerRecords) ? offerRecords : [])
+          .map(normalizeHotelPromoRecord)
+          .filter((item) => item.isActive);
+
+        if (isMounted) {
+          setAvailableCoupons(coupons.slice(0, 8));
+          setFeaturedOffers(offers.slice(0, 8));
+        }
+      } catch (error) {
+        console.error("Failed to load hotel coupons and offers", error);
+        if (isMounted) {
+          setAvailableCoupons([]);
+          setFeaturedOffers([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingCoupons(false);
+          setIsLoadingOffers(false);
+        }
+      }
+    };
+
+    loadHotelPromos();
+    return () => { isMounted = false; };
+  }, [currentStep]);
+
   const handleContinue = () => {
     if (!validateForm()) { 
       setFormError("Please correct the highlighted guest details."); 
@@ -1070,7 +1181,6 @@ export default function HotelPassengerDetailsPage() {
       guestEmail: guests[0]?.email?.trim() || "", 
       guestPhone: guests[0]?.mobile?.trim() || "", 
       guestAge: guests[0]?.age || 26,
-      guestPAN: guests[0]?.pan || "",
       guests, 
       agreedToTerms, 
       blockRoomResponse,
@@ -1111,18 +1221,19 @@ export default function HotelPassengerDetailsPage() {
     setCheckoutPayload(payloadState);
     setIsModalOpen(true);
   };
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) return;
+  const handleApplyCoupon = async (overrideCode = couponCode) => {
+    const nextCode = String(overrideCode || couponCode || "").trim();
+    if (!nextCode) return;
     setIsApplyingCoupon(true);
     setCouponError("");
     setCouponSuccess("");
     try {
-      const uppercaseCode = couponCode.trim().toUpperCase();
+      const uppercaseCode = nextCode.toUpperCase();
+      setCouponCode(uppercaseCode);
       // Wait for re-selection with the new coupon code to re-trigger blockRoom
       await handleSelectOffer(offer, uppercaseCode);
       
       // Look at the new block room response to verify coupon success
-      setCouponCode(uppercaseCode);
       // We rely on the React state update loop to populate couponDiscount, 
       // but if the API returns blockRoomResponse with couponDiscount > 0 on the next render, it's successful.
       // We can also just set a generic success message.
@@ -1132,6 +1243,23 @@ export default function HotelPassengerDetailsPage() {
     } finally {
       setIsApplyingCoupon(false);
     }
+  };
+
+  const handleCopyPromoCode = async (code) => {
+    if (!code || !navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedPromoCode(code);
+      window.setTimeout(() => setCopiedPromoCode(""), 1800);
+    } catch (error) {
+      console.error("Unable to copy hotel promo code", error);
+    }
+  };
+
+  const scrollHotelPromoCarousel = (carouselRef, direction) => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+    carousel.scrollBy({ left: direction * carousel.clientWidth, behavior: "smooth" });
   };
 
   const handleRemoveCoupon = async () => {
@@ -1433,115 +1561,141 @@ export default function HotelPassengerDetailsPage() {
                     {errors.guest_0_mobile && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_mobile}</span>}
                   </div>
 
-                  {/* PAN Card */}
-                  <div className="floating-field" style={{ gridColumn: "span 2" }}>
-                    <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>PAN Number {isPANMandatory ? <span style={{ color: "red" }}>*</span> : null}</label>
-                    <input
-                      type="text"
-                      placeholder="PAN Card Number (e.g. ABCDE1234F)"
-                      value={guests[0]?.pan || ""}
-                      onChange={(e) => updateGuest(0, "pan", e.target.value.toUpperCase())}
-                      className={errors.guest_0_pan ? "is-error" : ""}
-                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", textTransform: "uppercase" }}
-                    />
-                    {errors.guest_0_pan && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_pan}</span>}
-                  </div>
                 </div>
               </section>
 
-              {/* Optional Co-Traveler Details Accordions */}
+              {/* Optional Co-Traveler Details Dropdown */}
               {guests.length > 1 && (
-                <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)" }}>
-                  <h3 style={{ margin: "0 0 16px 0", fontSize: "1.15rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Other Guest Details</h3>
-                  {guests.slice(1).map((guest, index) => {
-                    const actualIdx = index + 1;
-                    return (
-                      <div key={guest.index} style={{ border: "1px solid #f1f5f9", borderRadius: "12px", padding: "16px", marginBottom: "12px", background: "#fcfdfe" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                          <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--hotel-ink)" }}>
-                            Traveler #{actualIdx + 1} ({guest.type === "adult" ? "Adult" : "Child"})
-                          </span>
-                          <span style={{ fontSize: "0.7rem", color: guest.type === "child" ? "var(--hotel-rose)" : "#64748b", background: guest.type === "child" ? "rgba(220,30,38,0.05)" : "#f1f5f9", padding: "2px 8px", borderRadius: "6px", fontWeight: 600 }}>
-                            {guest.type === "child" ? "Mandatory" : "Optional"}
-                          </span>
-                        </div>
-                        <div style={{ display: "grid", gridTemplateColumns: guest.type === "child" ? "100px 1.5fr 1fr" : "100px 1.5fr 1fr 1fr", gap: "12px" }}>
-                          <div>
-                            <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                              Title {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
-                            </label>
-                            <select
-                              value={guest.title || ""}
-                              onChange={(e) => updateGuest(actualIdx, "title", e.target.value)}
-                              style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_title`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
-                            >
-                              <option value="">Select</option>
-                              {guest.type === "child" ? (
-                                <>
-                                  <option value="Mstr">Mstr</option>
-                                  <option value="Miss">Miss</option>
-                                </>
-                              ) : (
-                                <>
-                                  <option value="Mr">Mr.</option>
-                                  <option value="Mrs">Mrs.</option>
-                                  <option value="Ms">Ms.</option>
-                                </>
-                              )}
-                            </select>
-                            {errors[`guest_${actualIdx}_title`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_title`]}</span>}
-                            {errors[`guest_${actualIdx}_titleGender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_titleGender`]}</span>}
-                          </div>
-                          <div>
-                            <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                              Full Name {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="Name"
-                              value={guest.fullName || ""}
-                              onChange={(e) => updateGuest(actualIdx, "fullName", e.target.value)}
-                              style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_fullName`] ? "1.5px solid red" : "1px solid #cbd5e1", textTransform: "capitalize" }}
-                            />
-                          </div>
-                          <div>
-                            <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
-                              Age {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder="Age"
-                              value={guest.age || ""}
-                              onChange={(e) => {
-                                if (guest.type === "child") {
-                                  handleChildAgeChange(actualIdx, e.target.value);
-                                } else {
-                                  updateGuest(actualIdx, "age", e.target.value);
-                                }
-                              }}
-                              style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_age`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
-                            />
-                          </div>
-                          {guest.type === "adult" && (
-                            <div>
-                              <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>Gender</label>
-                              <select
-                                value={guest.gender || "Male"}
-                                onChange={(e) => updateGuest(actualIdx, "gender", e.target.value)}
-                                style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
-                              >
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                              </select>
-                              {errors[`guest_${actualIdx}_gender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_gender`]}</span>}
-                              {errors[`guest_${actualIdx}_titleGender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_titleGender`]}</span>}
+                <section className="hotel-panel" style={{ padding: "0", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)" }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsOtherGuestsOpen((current) => !current)}
+                    style={{
+                      width: "100%",
+                      background: "transparent",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "20px 24px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <span style={{ fontSize: "1.15rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Other Guest Details</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span
+                        style={{
+                          fontSize: "0.78rem",
+                          fontWeight: 700,
+                          color: "#475569",
+                          background: "#f1f5f9",
+                          borderRadius: "999px",
+                          padding: "6px 12px",
+                          lineHeight: 1,
+                        }}
+                      >
+                        Optional
+                      </span>
+                      <span style={{ fontSize: "1.1rem", color: "#64748b", transform: isOtherGuestsOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}>
+                        ▾
+                      </span>
+                    </span>
+                  </button>
+
+                  {isOtherGuestsOpen && (
+                    <div style={{ padding: "0 24px 24px" }}>
+                      {guests.slice(1).map((guest, index) => {
+                        const actualIdx = index + 1;
+                        return (
+                          <div key={guest.index} style={{ border: "1px solid #f1f5f9", borderRadius: "12px", padding: "16px", marginBottom: "12px", background: "#fcfdfe" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                              <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--hotel-ink)" }}>
+                                Traveler #{actualIdx + 1} ({guest.type === "adult" ? "Adult" : "Child"})
+                              </span>
+                              <span style={{ fontSize: "0.7rem", color: guest.type === "child" ? "var(--hotel-rose)" : "#64748b", background: guest.type === "child" ? "rgba(220,30,38,0.05)" : "#f1f5f9", padding: "2px 8px", borderRadius: "6px", fontWeight: 600 }}>
+                                {guest.type === "child" ? "Mandatory" : "Optional"}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      </div>
-      );
-                  })}
+                            <div style={{ display: "grid", gridTemplateColumns: guest.type === "child" ? "100px 1.5fr 1fr" : "100px 1.5fr 1fr 1fr", gap: "12px" }}>
+                              <div>
+                                <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
+                                  Title {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
+                                </label>
+                                <select
+                                  value={guest.title || ""}
+                                  onChange={(e) => updateGuest(actualIdx, "title", e.target.value)}
+                                  style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_title`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
+                                >
+                                  <option value="">Select</option>
+                                  {guest.type === "child" ? (
+                                    <>
+                                      <option value="Mstr">Mstr</option>
+                                      <option value="Miss">Miss</option>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <option value="Mr">Mr.</option>
+                                      <option value="Mrs">Mrs.</option>
+                                      <option value="Ms">Ms.</option>
+                                    </>
+                                  )}
+                                </select>
+                                {errors[`guest_${actualIdx}_title`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_title`]}</span>}
+                                {errors[`guest_${actualIdx}_titleGender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_titleGender`]}</span>}
+                              </div>
+                              <div>
+                                <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
+                                  Full Name {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="Name"
+                                  value={guest.fullName || ""}
+                                  onChange={(e) => updateGuest(actualIdx, "fullName", e.target.value)}
+                                  style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_fullName`] ? "1.5px solid red" : "1px solid #cbd5e1", textTransform: "capitalize" }}
+                                />
+                              </div>
+                              <div>
+                                <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
+                                  Age {guest.type === "child" && <span style={{ color: "red" }}>*</span>}
+                                </label>
+                                <input
+                                  type="number"
+                                  placeholder="Age"
+                                  value={guest.age || ""}
+                                  onChange={(e) => {
+                                    if (guest.type === "child") {
+                                      handleChildAgeChange(actualIdx, e.target.value);
+                                    } else {
+                                      updateGuest(actualIdx, "age", e.target.value);
+                                    }
+                                  }}
+                                  style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_age`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
+                                />
+                              </div>
+                              {guest.type === "adult" && (
+                                <div>
+                                  <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>Gender</label>
+                                  <select
+                                    value={guest.gender || "Male"}
+                                    onChange={(e) => updateGuest(actualIdx, "gender", e.target.value)}
+                                    style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                                  >
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                  </select>
+                                  {errors[`guest_${actualIdx}_gender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_gender`]}</span>}
+                                  {errors[`guest_${actualIdx}_titleGender`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_titleGender`]}</span>}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </section>
               )}
 
@@ -1584,6 +1738,120 @@ export default function HotelPassengerDetailsPage() {
                     <span>💰 <strong>Total Amount:</strong></span>
                     <strong style={{ color: "#10b981", fontSize: "1rem" }}>{formatCurrency(finalPayable)}</strong>
                   </div>
+                </div>
+
+                <div className="hotel-promotions-panel">
+                  <div className="hotel-promotions-heading">
+                    <h4>Offers & Coupons</h4>
+                    <span>Hotel Deals</span>
+                  </div>
+
+                  <div className="hotel-promo-entry">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="Enter coupon code"
+                      aria-label="Enter hotel coupon code"
+                    />
+                    <button type="button" onClick={handleApplyCoupon} disabled={isApplyingCoupon || !couponCode.trim()}>
+                      {isApplyingCoupon ? "Applying..." : "Apply"}
+                    </button>
+                  </div>
+
+                  {(couponError || couponSuccess) && (
+                    <div className={`hotel-promo-message${couponError ? " is-error" : " is-success"}`} role="status">
+                      {couponError || couponSuccess}
+                    </div>
+                  )}
+
+                  {couponCode && (
+                    <button type="button" className="hotel-promo-remove" onClick={handleRemoveCoupon} disabled={isApplyingCoupon}>
+                      Remove applied coupon
+                    </button>
+                  )}
+
+                  {(isLoadingOffers || isLoadingCoupons) && (
+                    <div className="hotel-promo-loading"><Loader2 size={15} className="spin" /> Loading hotel promotions...</div>
+                  )}
+
+                  {featuredOffers.length > 0 && (
+                    <section className="hotel-promo-group" aria-label="Featured hotel offers">
+                      <div className="hotel-promo-group-heading">
+                        <h5>Featured Offers</h5>
+                        <div className="hotel-promo-carousel-controls">
+                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelOffersCarouselRef, -1)} disabled={featuredOffers.length < 2} aria-label="Scroll featured offers left" title="Previous offers"><ChevronLeft size={17} /></button>
+                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelOffersCarouselRef, 1)} disabled={featuredOffers.length < 2} aria-label="Scroll featured offers right" title="Next offers"><ChevronRight size={17} /></button>
+                        </div>
+                      </div>
+                      <div className="hotel-promo-card-list" ref={hotelOffersCarouselRef}>
+                        {featuredOffers.map((promo) => {
+                          const code = promo.couponCode || "";
+                          const isSelected = Boolean(code) && couponCode.toUpperCase() === code.toUpperCase();
+                          return (
+                            <article className={`hotel-promo-card${isSelected ? " is-selected" : ""}`} key={promo.id || code || promo.title}>
+                              <div className="hotel-promo-card-header">
+                                <span className="hotel-promo-discount">{getHotelPromoDiscountLabel(promo)}</span>
+                                <div className="hotel-promo-code-wrap">
+                                  <span className="hotel-promo-code">{code || "HOTEL OFFER"}</span>
+                                  {code && (
+                                    <button type="button" className="hotel-promo-copy" onClick={() => handleCopyPromoCode(code)} aria-label={`Copy ${code}`} title="Copy code">
+                                      {copiedPromoCode === code ? <Check size={14} /> : <Copy size={14} />}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="hotel-promo-card-body">
+                                <strong>{promo.title || code || "Hotel offer"}</strong>
+                                <p>{promo.description || "Use this offer on your hotel booking."}</p>
+                                <button type="button" onClick={() => handleApplyCoupon(code)} disabled={!code || isApplyingCoupon}>
+                                  {isSelected ? "Applied" : "Apply offer"}
+                                </button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
+
+                  {availableCoupons.length > 0 && (
+                    <section className="hotel-promo-group" aria-label="Available hotel coupons">
+                      <div className="hotel-promo-group-heading">
+                        <h5>Available Coupons</h5>
+                        <div className="hotel-promo-carousel-controls">
+                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelCouponsCarouselRef, -1)} disabled={availableCoupons.length < 2} aria-label="Scroll available coupons left" title="Previous coupons"><ChevronLeft size={17} /></button>
+                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelCouponsCarouselRef, 1)} disabled={availableCoupons.length < 2} aria-label="Scroll available coupons right" title="Next coupons"><ChevronRight size={17} /></button>
+                        </div>
+                      </div>
+                      <div className="hotel-promo-card-list" ref={hotelCouponsCarouselRef}>
+                        {availableCoupons.map((promo) => {
+                          const code = promo.couponCode;
+                          const isSelected = couponCode.toUpperCase() === code.toUpperCase();
+                          return (
+                            <article className={`hotel-promo-card${isSelected ? " is-selected" : ""}`} key={promo.id || code}>
+                              <div className="hotel-promo-card-header">
+                                <span className="hotel-promo-discount">{getHotelPromoDiscountLabel(promo)}</span>
+                                <div className="hotel-promo-code-wrap">
+                                  <span className="hotel-promo-code">{code}</span>
+                                  <button type="button" className="hotel-promo-copy" onClick={() => handleCopyPromoCode(code)} aria-label={`Copy ${code}`} title="Copy code">
+                                    {copiedPromoCode === code ? <Check size={14} /> : <Copy size={14} />}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="hotel-promo-card-body">
+                                <strong>{promo.title || code}</strong>
+                                <p>{promo.description || "Save on your hotel booking with this coupon."}</p>
+                                <button type="button" onClick={() => handleApplyCoupon(code)} disabled={isApplyingCoupon}>
+                                  {isSelected ? "Applied" : "Apply coupon"}
+                                </button>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
                 </div>
 
                 {specialRequests.length > 0 && (

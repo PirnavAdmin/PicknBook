@@ -10,7 +10,7 @@ import {
 import { navigateWithAuth } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
 import { getFlightPricingPreview, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
-import { getPublicPromotions } from "../../services/adminFeaturedOffersService";
+import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import BookingTimer from "./BookingTimer";
 
@@ -419,15 +419,25 @@ export default function FlightPassengerDetailsPage() {
 
         let quoteRes;
         
-        // If we have mixed independent itineraries (e.g., MixAPI multi-city), quote them individually
-        if (uniqueItineraries.length > 1) {
+        // Determine if this is a standard JourneyType-3 multicity (all legs share the same TraceId)
+        // vs. true MixAPI independent itineraries (each leg has its own TraceId).
+        const uniqueTraceIds = new Set(
+          uniqueItineraries.map(leg => leg.traceId || leg.TraceId || flowState.traceId || flowState.TraceId || "")
+        );
+        const isSharedTraceIdMultiCity = isMultiCityNormalized && uniqueTraceIds.size <= 1;
+
+        // If we have mixed independent itineraries with DIFFERENT TraceIds (e.g., true MixAPI multi-city),
+        // quote them individually as OneWay legs.
+        // Standard JourneyType-3 multicity (shared TraceId) must NOT take this path — it needs a single
+        // FareQuote call with JourneyType=3.
+        if (uniqueItineraries.length > 1 && !isSharedTraceIdMultiCity) {
           const promises = uniqueItineraries.map(leg => getFareQuote({
             flight: leg,
             traceId: leg.traceId || leg.TraceId || flowState.traceId || flowState.TraceId,
             resultIndex: leg.resultIndex || leg.ResultIndex,
             srdvType: leg.srdvType,
             srdvIndex: leg.srdvIndex,
-            journeyType: 1, // Quote as independent OneWay
+            journeyType: 1, // Quote as independent OneWay (true MixAPI legs only)
             adults: travellers.adults, children: travellers.children, infants: travellers.infants,
             isMultiCity: false
           }));
@@ -475,7 +485,9 @@ export default function FlightPassengerDetailsPage() {
             legs: selectedLegs,
             selectedLegs: selectedLegs,
             traceId: flight.traceId || flowState.traceId || flowState.TraceId,
-            resultIndex: uniqueItineraries[0].resultIndex || uniqueItineraries[0].ResultIndex,
+            resultIndex: isMultiCityNormalized 
+              ? uniqueItineraries.map(leg => leg.resultIndex || leg.ResultIndex).join(',') 
+              : (uniqueItineraries[0].resultIndex || uniqueItineraries[0].ResultIndex),
             srdvType: flight.srdvType,
             srdvIndex: flight.srdvIndex,
             journeyType: isMultiCityNormalized ? 3 : (isTwoWayNormalized ? 2 : 1),
@@ -642,25 +654,35 @@ export default function FlightPassengerDetailsPage() {
 
     async function loadPromoData() {
       try {
-        const records = await getPublicPromotions("Flight");
-        const flightRecords = (Array.isArray(records) ? records : []).filter(
-          (record) => String(record?.bookingType || record?.BookingType || "").toLowerCase() === "flight",
-        );
-        const mergedCoupons = flightRecords
+        const [couponRecords, offerRecords] = await Promise.all([
+          fetchCouponsAndOffers({ serviceType: "flight", category: "Coupon" }),
+          fetchCouponsAndOffers({ serviceType: "flight", category: "Offer" }),
+        ]);
+        const flightCoupons = (Array.isArray(couponRecords) ? couponRecords : []).filter((record) => {
+          const bookingType = String(record?.bookingType || record?.BookingType || record?.serviceType || record?.ServiceType || "").toLowerCase();
+          return !bookingType || bookingType === "flight" || bookingType === "all";
+        });
+        const flightOffers = (Array.isArray(offerRecords) ? offerRecords : []).filter((record) => {
+          const bookingType = String(record?.bookingType || record?.BookingType || record?.serviceType || record?.ServiceType || "").toLowerCase();
+          return !bookingType || bookingType === "flight" || bookingType === "all";
+        });
+
+        const mergedCoupons = flightCoupons
           .map(normalizeCoupon)
           .filter((coupon) => coupon.couponCode && coupon.isActive);
         setAvailableCoupons(mergedCoupons);
 
         setFeaturedOffers(
-          flightRecords
-            .filter((offer) => offer?.isActive ?? offer?.IsActive ?? false)
+          flightOffers
             .map((offer) => ({
               ...offer,
-              id: offer.id ?? offer.Id ?? offer.offerId ?? offer.OfferId,
-              title: offer.title ?? offer.Title ?? offer.couponCode ?? offer.CouponCode ?? "",
-              subtitle: offer.subtitle ?? offer.Subtitle ?? offer.description ?? offer.Description ?? "",
+              id: offer.id ?? offer.Id ?? offer.offerId ?? offer.OfferId ?? offer.couponCode ?? offer.CouponCode,
+              title: offer.title ?? offer.Title ?? offer.couponCode ?? offer.CouponCode ?? offer.description ?? offer.Description ?? "Offer",
+              subtitle: offer.subtitle ?? offer.Subtitle ?? offer.description ?? offer.Description ?? offer.remark ?? offer.Remark ?? "",
+              isActive: offer?.isActive ?? offer?.IsActive ?? true,
             }))
-            .filter((offer) => offer.id && (offer.title || offer.couponCode || offer.CouponCode)),
+            .filter((offer) => offer.id && (offer.title || offer.couponCode || offer.CouponCode || offer.subtitle))
+            .filter((offer) => offer.isActive),
         );
       } catch (err) {
         console.error("Failed to load flight coupons and offers", err);

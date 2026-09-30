@@ -1827,9 +1827,8 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
     resolvedJourneyType = 1;
   }
 
-  if (normTrip === "oneway" || normTrip === "1" || Number(journeyType) === 1) {
-    resolvedJourneyType = 1;
-  }
+  // NOTE: The if/else chain above is the single source of truth for resolvedJourneyType.
+  // Do NOT add a blanket override here — it will clobber correctly-resolved multicity (3) or round-trip (2) types.
 
   const cabinClassCode = toCabinClassCode(travelClass);
   if (!cabinClassCode) throw new Error("Select a valid cabin class from the flight search options.");

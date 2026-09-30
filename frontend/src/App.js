@@ -381,7 +381,9 @@ function AppContent() {
     };
 
     checkSession();
-    const intervalId = setInterval(checkSession, 5000);
+    // 60 s is sufficient — this only reads localStorage to detect token expiry.
+    // Frequent polling was contributing to excessive re-renders and API spam.
+    const intervalId = setInterval(checkSession, 60000);
     return () => clearInterval(intervalId);
   }, [location, navigate]);
 

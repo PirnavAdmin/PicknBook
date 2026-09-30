@@ -3511,6 +3511,42 @@
   margin-bottom: 20px;
 }
 
+.bus-flow-page .coupon-carousel-frame {
+  position: relative;
+  margin: 0 17px;
+}
+
+.bus-flow-page .coupon-carousel-controls {
+  display: flex;
+  position: absolute;
+  z-index: 5;
+  top: 50%;
+  right: -17px;
+  left: -17px;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.bus-flow-page .coupon-carousel-controls button {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #d5dbe5 !important;
+  border-radius: 50% !important;
+  background: #fff;
+  color: #17202f;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  pointer-events: auto;
+}
+
+.bus-flow-page .coupon-carousel-controls button:hover {
+  border-color: #ff0000;
+  color: #ff0000;
+}
+
 .bus-flow-page .coupon-section-label {
   margin: 0 0 10px;
   color: #6f7788;
@@ -5316,8 +5352,8 @@
 /* Base voucher card style */
 .bus-flow-page .coupon-featured-offer,
 .bus-flow-page .coupon-voucher-card {
-  flex: 0 0 240px !important; /* Fixed compact width */
-  width: 240px !important;
+  flex: 0 0 min(350px, calc(100% - 12px)) !important;
+  width: min(350px, calc(100% - 12px)) !important;
   scroll-snap-align: start;
   display: flex !important;
   flex-direction: column !important;
@@ -5330,7 +5366,7 @@
   overflow: visible !important; /* Needed for notches */
   transition: all 0.2s ease !important;
   padding: 0 !important; /* Reset default padding */
-  min-height: 100px !important;
+  min-height: 150px !important;
   justify-content: flex-start !important;
   gap: 0 !important; /* Reset default gap to ensure no extra height difference between offer and coupon cards */
   box-sizing: border-box !important;
@@ -5428,13 +5464,13 @@
   gap: 2px !important;
   flex-grow: 1 !important;
   justify-content: flex-start !important;
-  min-height: 60px !important;
+  min-height: 110px !important;
   box-sizing: border-box !important;
   width: 100% !important;
 }
 
 .bus-flow-page .voucher-title {
-  font-size: 0.8rem !important;
+  font-size: 0.85rem !important;
   font-weight: 700 !important;
   color: #0f172a !important;
   line-height: 1.2 !important;
@@ -5446,12 +5482,12 @@
 }
 
 .bus-flow-page .voucher-description {
-  font-size: 0.7rem !important;
+  font-size: 0.72rem !important;
   color: #64748b !important;
-  line-height: 1.25 !important;
-  margin: 0 !important;
+  line-height: 1.35 !important;
+  margin: 0 0 8px 0 !important;
   display: -webkit-box !important;
-  -webkit-line-clamp: 2 !important;
+  -webkit-line-clamp: 3 !important;
   -webkit-box-orient: vertical !important;
   overflow: hidden !important;
 }
