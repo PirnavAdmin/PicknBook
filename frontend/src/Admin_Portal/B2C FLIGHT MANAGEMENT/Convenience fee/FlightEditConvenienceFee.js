@@ -5,7 +5,7 @@ import {
   createConvenienceFee,
   getConvenienceFee,
   updateConvenienceFeeById,
-} from "../../../services/flightBookingService";
+} from "../../../services/adminFlightService";
 import "./FlightEditConvenienceFee.css";
 
 const normalizeText = (value, fallback = "") => {

@@ -1,15 +1,77 @@
 .admin-payments-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 12px;
   width: 100%;
+}
+
+/* Header & Action Buttons */
+.admin-payments-container .admin-markup-coupon-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0px;
+}
+
+.admin-payments-container .admin-markup-coupon-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-payments-container .admin-markup-coupon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.admin-payments-container .admin-markup-coupon-btn.filter {
+  background: #A41B48;
+  color: #ffffff;
+  border: 1px solid #A41B48;
+}
+
+.admin-payments-container .admin-markup-coupon-btn.filter:hover {
+  background: #89143a;
+  border-color: #89143a;
+}
+
+.admin-payments-container .admin-markup-coupon-btn.refresh {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+}
+
+.admin-payments-container .admin-markup-coupon-btn.refresh:hover {
+  border-color: #A51C49;
+  color: #A51C49;
+  background: #f8fafc;
+}
+
+.admin-payments-container .admin-markup-coupon-btn.export {
+  background: #10b981;
+  color: #ffffff;
+  border: 1px solid #10b981;
+}
+
+.admin-payments-container .admin-markup-coupon-btn.export:hover {
+  background: #059669;
+  border-color: #059669;
 }
 
 /* Metric summary cards grid */
 .admin-payments-metrics-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 14px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -28,24 +90,24 @@
 .payment-metric-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px;
+  gap: 8px;
+  padding: 6px 10px;
   background: #ffffff;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .payment-metric-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .payment-metric-card .metric-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,21 +147,21 @@
 .payment-metric-card .metric-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   overflow: hidden;
 }
 
 .payment-metric-card .metric-label {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
 .payment-metric-card .metric-value {
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #1e293b;
   white-space: nowrap;
@@ -216,13 +278,13 @@
   z-index: 10 !important;
   background: #A51C49 !important;
   color: #ffffff !important;
-  padding: 8px 8px !important;
+  padding: 5px 6px !important;
   font-size: 11px !important;
   font-weight: 500 !important;
   text-align: center !important;
   white-space: nowrap !important;
   line-height: 1.2 !important;
-  height: 38px !important;
+  height: 32px !important;
 }
 
 .admin-payments-table thead tr th.action-col {
@@ -232,8 +294,17 @@
   text-align: center !important;
   box-shadow: none !important;
   border-right: none !important;
-  min-width: 100px !important;
-  width: 100px !important;
+  min-width: 90px !important;
+  width: 90px !important;
+}
+
+.admin-payments-table tbody tr td {
+  padding: 4px 6px !important;
+  font-size: 11.5px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  height: 34px !important;
 }
 
 .admin-payments-table tbody tr td.action-col {
@@ -242,17 +313,28 @@
   background: inherit !important;
   text-align: center !important;
   vertical-align: middle !important;
-  padding: 6px 8px !important;
-  height: 36px !important;
+  padding: 4px 6px !important;
+  height: 34px !important;
   box-shadow: none !important;
   border-right: none !important;
   border-bottom: 1px solid #f1f5f9 !important;
-  min-width: 100px !important;
-  width: 100px !important;
+  min-width: 90px !important;
+  width: 90px !important;
 }
 
-.admin-payments-table tbody tr:hover td.action-col {
-  background: inherit !important;
+.admin-payments-container .admin-payments-table tbody tr:hover td,
+.admin-payments-container .admin-markup-coupon-table tbody tr:hover td,
+.admin-payments-container .admin-payments-table tbody tr.active-dropdown-row td,
+.admin-payments-container .admin-markup-coupon-table tbody tr.active-dropdown-row td {
+  background: #fdf2f8 !important;
+  border-color: #fce7f3 !important;
+}
+
+.admin-payments-container .admin-payments-table tbody tr:hover td.action-col,
+.admin-payments-container .admin-markup-coupon-table tbody tr:hover td.action-col,
+.admin-payments-container .admin-payments-table tbody tr.active-dropdown-row td.action-col,
+.admin-payments-container .admin-markup-coupon-table tbody tr.active-dropdown-row td.action-col {
+  background: #fdf2f8 !important;
 }
 
 .admin-payments-table .actions-dropdown-container {
@@ -283,6 +365,66 @@
   box-sizing: border-box !important;
   margin: 0 auto !important;
   white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-payments-table .actions-trigger-btn:hover,
+.admin-payments-table .actions-trigger-btn.active {
+  border-color: #A51C49 !important;
+  color: #A51C49 !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+.admin-payments-table .actions-dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  margin-top: 4px !important;
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+  z-index: 99999 !important;
+  min-width: 140px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.admin-payments-table .dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  padding: 8px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #334155 !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.admin-payments-table .dropdown-item:hover {
+  background: #f8fafc !important;
+  color: #A51C49 !important;
+}
+
+.admin-payments-table .dropdown-item.view:hover {
+  background: #eff6ff !important;
+  color: #2563eb !important;
+}
+
+.admin-payments-table .dropdown-item.edit:hover {
+  background: #fff7ed !important;
+  color: #ea580c !important;
+}
+
+.admin-payments-table .item-icon {
+  flex-shrink: 0;
 }
 
 .admin-payments-container .admin-markup-coupon-table td span[title] {
@@ -339,3 +481,7 @@
 
 
 
+
+.passenger-roster-table tr:hover td {
+  background: #f8fafc;
+}

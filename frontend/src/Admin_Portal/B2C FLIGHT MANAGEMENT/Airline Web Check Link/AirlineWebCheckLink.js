@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import "./AirlineWebCheckLink.css";
 import AdminPagination from "../../../components/AdminPagination";
 import { getNextNumericId, useAdminList } from "../../../utils/adminPortalStorage";
-import { listAirlineWebCheckins, createAirlineWebCheckin, deleteAirlineWebCheckin } from "../../../services/flightBookingService";
+import { listAirlineWebCheckins, createAirlineWebCheckin, deleteAirlineWebCheckin } from "../../../services/adminFlightService";
 
 const normalizeCheckin = (checkin) => {
   if (!checkin) return { id: "", name: "Unknown", code: "NA", url: "" };

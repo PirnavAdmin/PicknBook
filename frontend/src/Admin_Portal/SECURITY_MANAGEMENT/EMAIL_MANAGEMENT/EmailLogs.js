@@ -6,20 +6,22 @@ import '../SecurityManagement.css';
 
 const normalizeLog = (l) => {
   if (!l) return null;
+  const isSent = (l.deliveryStatus === 'SENT' || l.status === 'Sent' || l.status === 'SENT');
   return {
     id: l.id,
-    recipient: l.recipientEmail || 'N/A',
+    recipient: l.recipientEmail || l.recipient || 'N/A',
     subject: l.subject || 'No Subject',
-    status: l.status === 'SENT' ? 'Sent' : 'Failed',
-    deliveryStatus: l.status === 'SENT' ? 'Delivered' : 'Failed',
-    dateTime: l.sentAt ? new Date(l.sentAt).toLocaleString() : 'Recent',
-    failureReason: l.errorMessage || '',
-    scope: l.scope || 'System',
-    event: l.event || 'Notification',
-    template: l.template || 'Manual Send',
-    ipAddress: l.ipAddress || '0.0.0.0',
-    sentBy: l.sentBy || 'System',
-    body: l.body || 'No Body Content'
+    status: isSent ? 'Sent' : 'Failed',
+    deliveryStatus: l.deliveryStatus || (isSent ? 'SENT' : 'FAILED'),
+    dateTime: l.sentAt ? new Date(l.sentAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent',
+    failureReason: l.errorMessage || l.failureReason || '',
+    scope: l.scope || 'USER',
+    event: l.securityEvent || l.event || l.emailType || 'Security Alert',
+    template: l.templateId ? `Template #${l.templateId}` : (l.template || 'Manual Send'),
+    retryCount: l.retryCount ?? 0,
+    ipAddress: l.ipAddress || '127.0.0.1',
+    sentBy: l.createdBy || l.sentBy || 'System',
+    body: l.body || l.message || 'No Body Content'
   };
 };
 

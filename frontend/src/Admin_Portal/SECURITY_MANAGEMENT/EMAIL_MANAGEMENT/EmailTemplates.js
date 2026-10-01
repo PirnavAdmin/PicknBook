@@ -173,7 +173,7 @@ export default function EmailTemplates() {
         // Filter out null/undefined elements
         const validData = data.filter(Boolean);
         
-        // Map backend objects to our structure safely
+        // Map backend objects to our structure safely according to API spec
         const mapped = validData.map((t, idx) => {
           let updatedOnStr = 'Recent';
           if (t.updatedAt || t.createdAt) {
@@ -190,28 +190,26 @@ export default function EmailTemplates() {
           return {
             id: t.id || t._id || `tmpl-api-${idx}`,
             name: t.templateName || t.name || 'Untitled Template',
-            category: t.category || 'Others',
-            type: t.type || 'System',
+            templateKey: t.templateKey || t.code || 'CUSTOM_KEY',
+            scope: t.scope || 'USER',
+            securityEvent: t.securityEvent || t.event || 'GENERAL',
+            category: t.scope || t.category || 'User Management',
+            type: t.securityEvent || t.type || 'Security',
             subject: t.subject || 'Notification Subject',
             body: t.body || '',
+            bodyFormat: t.bodyFormat || 'Html',
+            includeLoginLink: t.includeLoginLink ?? true,
+            loginButtonText: t.loginButtonText || 'Click Here',
+            actionLinkUrl: t.actionLinkUrl || '',
             status: t.isActive === false || t.status === 'Inactive' ? 'Inactive' : 'Active',
+            version: t.version || 1,
+            createdBy: t.createdBy || 'Admin',
             updatedOn: updatedOnStr
           };
         });
 
-        // Merge API templates with mock templates, removing duplicates by name safely
-        const merged = [...mapped];
-        MOCK_TEMPLATES.forEach(mock => {
-          const exists = merged.find(m => {
-            const mName = (m.name || '').toLowerCase();
-            const mockName = (mock.name || '').toLowerCase();
-            return mName === mockName;
-          });
-          if (!exists) {
-            merged.push(mock);
-          }
-        });
-        setTemplates(merged);
+        // Set state directly with API response data (only response related data displayed)
+        setTemplates(mapped);
       }
     } catch (err) {
       console.warn('Could not load email templates from api', err);

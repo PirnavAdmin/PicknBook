@@ -1,7 +1,7 @@
 import {
   createBusCoupon,
   deleteBusCoupon,
-  listBusCoupons as rawListBusCoupons,
+  listBusCoupons,
   updateBusCoupon,
 } from "./busBookingService";
 
@@ -10,59 +10,12 @@ import {
   createCondition,
   updateCondition,
   deleteCondition,
-  listAdminBusCoupons,
 } from "./adminBusService";
 
 const getBusCouponConditions = getConditions;
 const createBusCouponCondition = createCondition;
 const updateBusCouponCondition = updateCondition;
 const deleteBusCouponCondition = deleteCondition;
-
-const listBusCoupons = async (params = {}) => {
-  const sType = (typeof params === "string" ? params : params?.type || params?.serviceType || "bus").toLowerCase();
-
-  const baseList = await rawListBusCoupons(params);
-
-  let rawData = [];
-  try {
-    rawData = await listAdminBusCoupons(params);
-  } catch (e) {
-    console.warn("Failed to fetch raw admin coupons:", e);
-  }
-
-  const rawMap = new Map();
-  const rawArray = Array.isArray(rawData) ? rawData : (rawData?.value || rawData?.items || []);
-  rawArray.forEach((item) => {
-    if (item && typeof item === "object") {
-      if (item.id !== undefined && item.id !== null) {
-        rawMap.set(String(item.id), item);
-      }
-      const code = item.couponCode || item.CouponCode || item.code || item.Code;
-      if (code) {
-        rawMap.set(String(code).trim().toUpperCase(), item);
-      }
-    }
-  });
-
-  return (Array.isArray(baseList) ? baseList : []).map((item) => {
-    const cleanCode = String(item.couponCode || item.code || "").trim().toUpperCase();
-    const rawMatch = rawMap.get(String(item.id)) || (cleanCode ? rawMap.get(cleanCode) : null);
-    const localMeta = getStoredCouponMetadataLocally(cleanCode, item.id, sType);
-
-    const conds =
-      (rawMatch && Array.isArray(rawMatch.conditions) && rawMatch.conditions.length > 0 ? rawMatch.conditions : null) ||
-      (rawMatch && Array.isArray(rawMatch.Conditions) && rawMatch.Conditions.length > 0 ? rawMatch.Conditions : null) ||
-      (rawMatch && Array.isArray(rawMatch.conditionList) && rawMatch.conditionList.length > 0 ? rawMatch.conditionList : null) ||
-      (localMeta && Array.isArray(localMeta.conditions) && localMeta.conditions.length > 0 ? localMeta.conditions : null) ||
-      (Array.isArray(item.conditions) ? item.conditions : []);
-
-    return {
-      ...item,
-      conditions: conds,
-      Conditions: conds,
-    };
-  });
-};
 
 export const APPROVED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
 
@@ -82,14 +35,14 @@ export const saveCouponImageLocally = (couponCode, id, imageUrl, serviceType = "
   try {
     const images = JSON.parse(localStorage.getItem("admin_coupon_images") || "{}");
     const sType = serviceType ? String(serviceType).toLowerCase() : "";
-    if (id) {
-      if (sType) images[`${sType}_${id}`] = imageUrl;
-      images[id] = imageUrl;
-    }
-    if (couponCode) {
-      if (sType) images[`${sType}_${couponCode}`] = imageUrl;
-      images[couponCode] = imageUrl;
-    }
+    const cleanCode = couponCode ? String(couponCode).trim().toUpperCase() : "";
+    const cleanId = id !== null && id !== undefined ? String(id).trim() : "";
+
+    if (cleanId && sType) images[`${sType}_${cleanId}`] = imageUrl;
+    if (cleanCode && sType) images[`${sType}_${cleanCode}`] = imageUrl;
+    if (cleanCode) images[cleanCode] = imageUrl;
+    if (cleanId && !sType) images[cleanId] = imageUrl;
+
     localStorage.setItem("admin_coupon_images", JSON.stringify(images));
   } catch (e) {
     console.warn("Could not save coupon image locally", e);
@@ -100,14 +53,14 @@ export const saveCouponCategoryLocally = (couponCode, id, category, serviceType 
   try {
     const cats = JSON.parse(localStorage.getItem("admin_coupon_categories") || "{}");
     const sType = serviceType ? String(serviceType).toLowerCase() : "";
-    if (id) {
-      if (sType) cats[`${sType}_${id}`] = category;
-      cats[id] = category;
-    }
-    if (couponCode) {
-      if (sType) cats[`${sType}_${couponCode}`] = category;
-      cats[couponCode] = category;
-    }
+    const cleanCode = couponCode ? String(couponCode).trim().toUpperCase() : "";
+    const cleanId = id !== null && id !== undefined ? String(id).trim() : "";
+
+    if (cleanId && sType) cats[`${sType}_${cleanId}`] = category;
+    if (cleanCode && sType) cats[`${sType}_${cleanCode}`] = category;
+    if (cleanCode) cats[cleanCode] = category;
+    if (cleanId && !sType) cats[cleanId] = category;
+
     localStorage.setItem("admin_coupon_categories", JSON.stringify(cats));
   } catch (e) {
     console.warn("Could not save coupon category locally", e);
@@ -117,8 +70,15 @@ export const saveCouponCategoryLocally = (couponCode, id, category, serviceType 
 export const saveCouponServiceLocally = (couponCode, id, serviceType) => {
   try {
     const svcs = JSON.parse(localStorage.getItem("admin_coupon_services") || "{}");
-    if (id) svcs[id] = serviceType;
-    if (couponCode) svcs[couponCode] = serviceType;
+    const sType = serviceType ? String(serviceType).toLowerCase() : "";
+    const cleanCode = couponCode ? String(couponCode).trim().toUpperCase() : "";
+    const cleanId = id !== null && id !== undefined ? String(id).trim() : "";
+
+    if (cleanId && sType) svcs[`${sType}_${cleanId}`] = sType;
+    if (cleanCode && sType) svcs[`${sType}_${cleanCode}`] = sType;
+    if (cleanCode) svcs[cleanCode] = sType;
+    if (cleanId && !sType) svcs[cleanId] = sType;
+
     localStorage.setItem("admin_coupon_services", JSON.stringify(svcs));
   } catch (e) {
     console.warn("Could not save coupon service locally", e);
@@ -132,22 +92,75 @@ export const saveCouponMetadataLocally = (couponCode, id, metadata, serviceType 
     const cleanId = id !== null && id !== undefined ? String(id).trim() : "";
     const sType = serviceType ? String(serviceType).toLowerCase() : "";
 
-    const existingIdMeta = cleanId ? meta[cleanId] || {} : {};
+    const existingServiceIdMeta = cleanId && sType ? meta[`${sType}_${cleanId}`] || {} : {};
+    const existingServiceCodeMeta = cleanCode && sType ? meta[`${sType}_${cleanCode}`] || {} : {};
     const existingCodeMeta = cleanCode ? meta[cleanCode] || {} : {};
-    const merged = { ...existingCodeMeta, ...existingIdMeta, ...metadata };
+    const merged = { ...existingCodeMeta, ...existingServiceCodeMeta, ...existingServiceIdMeta, ...metadata };
 
-    if (cleanId) {
-      if (sType) meta[`${sType}_${cleanId}`] = merged;
-      meta[cleanId] = merged;
-    }
-    if (cleanCode) {
-      if (sType) meta[`${sType}_${cleanCode}`] = merged;
-      meta[cleanCode] = merged;
-    }
+    if (cleanId && sType) meta[`${sType}_${cleanId}`] = merged;
+    if (cleanCode && sType) meta[`${sType}_${cleanCode}`] = merged;
+    if (cleanCode) meta[cleanCode] = merged;
+    if (cleanId && !sType) meta[cleanId] = merged;
 
     localStorage.setItem("admin_coupon_metadata", JSON.stringify(meta));
   } catch (e) {
     console.warn("Could not save coupon metadata locally", e);
+  }
+};
+
+export const purgeCouponFromLocalStorage = (couponId, serviceType = "", couponCode = "") => {
+  try {
+    const sType = serviceType ? String(serviceType).toLowerCase() : "";
+    const cleanId = couponId !== null && couponId !== undefined ? String(couponId).trim() : "";
+    const cleanCode = couponCode ? String(couponCode).trim().toUpperCase() : "";
+
+    const keysToPurge = [
+      "admin_coupon_metadata",
+      "admin_coupon_images",
+      "admin_coupon_categories",
+      "admin_coupon_services"
+    ];
+
+    keysToPurge.forEach((storageKey) => {
+      try {
+        const itemStr = localStorage.getItem(storageKey);
+        if (!itemStr) return;
+        const data = JSON.parse(itemStr);
+        if (typeof data !== "object" || !data) return;
+
+        let modified = false;
+        const removeKeys = new Set();
+        if (cleanId) {
+          removeKeys.add(cleanId);
+          if (sType) removeKeys.add(`${sType}_${cleanId}`);
+          removeKeys.add(`bus_${cleanId}`);
+          removeKeys.add(`flight_${cleanId}`);
+          removeKeys.add(`hotel_${cleanId}`);
+        }
+        if (cleanCode) {
+          removeKeys.add(cleanCode);
+          if (sType) removeKeys.add(`${sType}_${cleanCode}`);
+          removeKeys.add(`bus_${cleanCode}`);
+          removeKeys.add(`flight_${cleanCode}`);
+          removeKeys.add(`hotel_${cleanCode}`);
+        }
+
+        for (const k of removeKeys) {
+          if (k in data) {
+            delete data[k];
+            modified = true;
+          }
+        }
+
+        if (modified) {
+          localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+  } catch (e) {
+    console.warn("Could not purge coupon from localStorage:", e);
   }
 };
 

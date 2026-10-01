@@ -129,45 +129,101 @@ textarea:focus {
 }
 
 textarea {
-  height: 70px;
+  min-height: 70px;
+  height: auto;
+  resize: none !important;
+  overflow-y: hidden;
 }
 
 .editor {
-  height: 96px;
+  min-height: 100px;
+  height: auto;
   line-height: 1.5;
-  resize: vertical;
+  resize: none !important;
+  overflow-y: hidden;
 }
 
 /* ── Submit Area (spaced footer with border-top) ── */
 .submit-area {
   display: flex !important;
   justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 10px !important;
   margin-top: 14px !important;
-  padding-top: 10px !important;
+  padding-top: 12px !important;
   border-top: 1px solid #e2e8f0 !important;
 }
 
-/* High-specificity Submit Button color override */
+/* High-specificity Submit Button color: Blue */
 body .add-container .submit-area .submit-btn,
 body .submit-btn,
 button.submit-btn {
-  background: #A51C49 !important;
-  color: white !important;
-  border: 1.5px solid #A51C49 !important;
-  padding: 10px 30px !important;
-  border-radius: 8px !important;
-  font-weight: 700 !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: 1px solid #2563eb !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 22px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  font-size: 0.84rem !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
 }
 
 body .add-container .submit-area .submit-btn:hover,
 body .submit-btn:hover,
 button.submit-btn:hover {
-  background: #851237 !important;
-  border-color: #851237 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(194, 24, 91, 0.2) !important;
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.28) !important;
+}
+
+/* High-specificity Reset Button color: Gray */
+body .add-container .submit-area .reset-btn,
+body .reset-btn,
+button.reset-btn {
+  background: #64748b !important;
+  color: #ffffff !important;
+  border: 1px solid #64748b !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 22px !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  font-size: 0.84rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 5px rgba(100, 116, 139, 0.2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+}
+
+body .add-container .submit-area .reset-btn:hover,
+body .reset-btn:hover,
+button.reset-btn:hover {
+  background: #475569 !important;
+  border-color: #475569 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(100, 116, 139, 0.28) !important;
 }
 
 .form-group {

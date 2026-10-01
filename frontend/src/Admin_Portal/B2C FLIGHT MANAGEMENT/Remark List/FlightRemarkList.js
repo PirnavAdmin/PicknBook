@@ -3,7 +3,7 @@ import { Download, PencilLine, PlusCircle, Trash2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./FlightRemarkList.css";
 import AdminPagination from "../../../components/AdminPagination";
-import { getFlightRemarks, deleteFlightRemark } from "../../../services/flightBookingService";
+import { getFlightRemarks, deleteFlightRemark } from "../../../services/adminFlightService";
 
 const safeValue = (value, fallback = "--") => {
   const text = String(value ?? "").trim();

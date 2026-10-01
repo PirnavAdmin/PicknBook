@@ -12,11 +12,25 @@ const formatDate = (dateString) => {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return dateString;
-        return date.toLocaleDateString('en-GB', {
-            day: 'numeric',
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
             month: 'short',
             year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
         });
+        const parts = formatter.formatToParts(date);
+        const day = parts.find((p) => p.type === 'day')?.value || '';
+        let month = parts.find((p) => p.type === 'month')?.value || '';
+        if (month.toLowerCase() === 'sep') month = 'Sept';
+        const year = parts.find((p) => p.type === 'year')?.value || '';
+        const hour = parts.find((p) => p.type === 'hour')?.value || '';
+        const minute = parts.find((p) => p.type === 'minute')?.value || '';
+        const dayPeriod = (parts.find((p) => p.type === 'dayPeriod')?.value || '').toLowerCase();
+
+        return `${day} ${month} ${year} ${hour}:${minute} ${dayPeriod}`;
     } catch {
         return dateString;
     }
@@ -235,6 +249,15 @@ function BlogCategoryList() {
             formData.append("MetaDescription", editFormData.metaDescription || '');
             if (editFormData.image) {
                 formData.append("Image", editFormData.image);
+            } else if (editFormData.imageName || editingCategory?.imageUrl) {
+                formData.append("ImageUrl", editFormData.imageName || editingCategory.imageUrl || "");
+            } else {
+                formData.append("ImageUrl", "null");
+                formData.append("imageUrl", "null");
+                formData.append("Image", "");
+                formData.append("RemoveImage", "true");
+                formData.append("ClearImage", "true");
+                formData.append("DeleteImage", "true");
             }
 
             // Debug: log what we're sending
@@ -308,7 +331,7 @@ function BlogCategoryList() {
         titleSub: {
             fontSize: '1.6rem',
             fontWeight: 600,
-            color: '#A51C49',
+            color: '#000000',
             margin: 0,
         },
         actions: {
@@ -677,8 +700,8 @@ function BlogCategoryList() {
                 )}
                 <div style={styles.header}>
                     <div style={styles.titleWrapper}>
-                        <h1 style={styles.titleMain}>Blog Category</h1>
-                        <h2 style={styles.titleSub}>List</h2>
+                        <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={styles.titleMain}>Blog</h1>
+                        <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={styles.titleSub}>Category List</h2>
                     </div>
                     <div style={styles.actions}>
                         <select
@@ -722,6 +745,31 @@ function BlogCategoryList() {
                             onClick={() => navigate('/admin/blog-management/blog-sub-category-list')}
                         >
                             <Tag size={14} /> <span>Subcategory</span>
+                        </button>
+                        <button
+                            type="button"
+                            style={{
+                                ...styles.button,
+                                background: 'var(--panel)',
+                                color: '#A51C49',
+                                border: '1.5px solid #A51C49',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(165, 28, 73, 0.1)',
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#fff0f3';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'var(--panel)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            onClick={() => navigate('/admin/blog-management/blog-list')}
+                        >
+                            <FileText size={14} /> <span>Blog List</span>
                         </button>
                         <button
                             type="button"

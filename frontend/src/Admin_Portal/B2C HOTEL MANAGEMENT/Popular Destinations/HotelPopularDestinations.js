@@ -56,6 +56,29 @@ export default function HotelPopularDestinations() {
         });
       }
 
+      if (top5Hotels.length < 3) {
+        INITIAL_HOTEL_POPULAR_DESTINATIONS.forEach((r, idx) => {
+          if (top5Hotels.length >= 3) return;
+          const exists = top5Hotels.some(
+            (th) => (th.city || "").toLowerCase() === (r.hotelName || "").toLowerCase()
+          );
+          if (!exists) {
+            const bookingCount = r.bookingCount;
+            const searchCount = Math.round(bookingCount * 8.5);
+            const score = 118;
+            top5Hotels.push({
+              id: `initial-hotel-${idx + 1}`,
+              city: r.hotelName,
+              hotelName: r.hotelName,
+              searches: searchCount,
+              searchCount,
+              bookingCount,
+              score,
+            });
+          }
+        });
+      }
+
       setDestinations(top5Hotels);
     } catch (err) {
       console.error("[HotelPopularDestinations] fetch error:", err);
@@ -140,9 +163,8 @@ export default function HotelPopularDestinations() {
     <section className="admin-markup-popular-shell">
       <header className="admin-markup-popular-header">
         <div className="admin-markup-popular-title-wrap">
-          <h1>
-            <span style={{ color: "#A51C49", fontWeight: 700 }}>B2C Hotel</span> Popular Destinations
-          </h1>
+          <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>B2C Hotel</h1>
+          <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#000000', margin: 0 }}>Popular Destinations</h2>
         </div>
 
         <div className="admin-markup-popular-actions">
@@ -164,7 +186,7 @@ export default function HotelPopularDestinations() {
             title="Export destinations to CSV"
           >
             <Download size={15} />
-            <span>Export CSV</span>
+            <span>Export</span>
           </button>
         </div>
       </header>
@@ -179,10 +201,10 @@ export default function HotelPopularDestinations() {
               <article key={`${dest.city}-${index}`} className={`showcase-card rank-${index + 1}`}>
                 <div className="card-badge">#{index + 1}</div>
                 <div className="card-cities">
-                  <span className="city-name" style={{ fontSize: "1rem" }}>{dest.city}</span>
+                  <span className="city-name">{dest.city}</span>
                 </div>
                 
-                <div className="card-metrics-grid" style={{ marginTop: "14px" }}>
+                <div className="card-metrics-grid">
                   <div className="metric-box">
                     <span className="metric-label">Searches</span>
                     <strong className="metric-val">{dest.searchCount}</strong>
@@ -203,9 +225,9 @@ export default function HotelPopularDestinations() {
       )}
 
       {/* Search and Filters */}
-      <div className="admin-popular-filter-bar" style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap" }}>
-        <div className="search-input-wrapper" style={{ flex: "1", minWidth: "260px" }}>
-          <Search size={16} className="search-icon" />
+      <div className="admin-popular-filter-bar">
+        <div className="search-input-wrapper">
+          <Search size={14} className="search-icon" />
           <input
             type="text"
             placeholder="Search destinations by city or hotel name..."
@@ -214,22 +236,22 @@ export default function HotelPopularDestinations() {
           />
         </div>
 
-        <div className="date-filter-wrapper" style={{ display: "flex", gap: "16px", alignItems: "flex-end", flexWrap: "wrap" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>Date Interval</span>
+        <div className="date-filter-wrapper" style={{ display: "flex", gap: "10px", alignItems: "center", marginLeft: "auto", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "0.82rem", color: "#000000", fontWeight: "700", whiteSpace: "nowrap" }}>Date Interval</span>
             <select
               value={dateFilterOption}
               onChange={(e) => setDateFilterOption(e.target.value)}
               style={{
-                padding: "10px 14px",
-                borderRadius: "12px",
-                border: "1.5px solid var(--border)",
+                padding: "6px 12px",
+                borderRadius: "8px",
+                border: "1px solid #cbd5e1",
                 backgroundColor: "var(--panel)",
                 color: "var(--text-primary)",
-                fontSize: "0.9rem",
+                fontSize: "0.85rem",
                 outline: "none",
                 cursor: "pointer",
-                height: "42px"
+                height: "34px"
               }}
             >
               <option value="all">All Time</option>
@@ -238,47 +260,42 @@ export default function HotelPopularDestinations() {
               <option value="month">This Month</option>
               <option value="custom">Custom Range</option>
             </select>
-          </label>
+          </div>
 
           {dateFilterOption === "custom" && (
-            <>
-              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>Start Date</span>
-                <input
-                  type="date"
-                  value={customStartDate}
-                  onChange={(e) => setCustomStartDate(e.target.value)}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: "12px",
-                    border: "1.5px solid var(--border)",
-                    backgroundColor: "var(--panel)",
-                    color: "var(--text-primary)",
-                    fontSize: "0.9rem",
-                    outline: "none",
-                    height: "42px"
-                  }}
-                />
-              </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <span style={{ fontSize: "0.8rem", color: "#000000", fontWeight: "700" }}>End Date</span>
-                <input
-                  type="date"
-                  value={customEndDate}
-                  onChange={(e) => setCustomEndDate(e.target.value)}
-                  style={{
-                    padding: "10px 14px",
-                    borderRadius: "12px",
-                    border: "1.5px solid var(--border)",
-                    backgroundColor: "var(--panel)",
-                    color: "var(--text-primary)",
-                    fontSize: "0.9rem",
-                    outline: "none",
-                    height: "42px"
-                  }}
-                />
-              </label>
-            </>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "var(--panel)",
+                  color: "var(--text-primary)",
+                  fontSize: "0.82rem",
+                  outline: "none",
+                  height: "34px"
+                }}
+              />
+              <span style={{ fontSize: "0.8rem", color: "#64748b" }}>to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  backgroundColor: "var(--panel)",
+                  color: "var(--text-primary)",
+                  fontSize: "0.82rem",
+                  outline: "none",
+                  height: "34px"
+                }}
+              />
+            </div>
           )}
         </div>
       </div>

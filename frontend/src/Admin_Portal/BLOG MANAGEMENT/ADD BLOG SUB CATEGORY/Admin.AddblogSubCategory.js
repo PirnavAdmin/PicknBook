@@ -51,6 +51,13 @@ function AddBlogSubCategory() {
 
     const handleFileChange = (e) => {
         const file = e.target.files?.[0] || null;
+        if (file) {
+            if (file.size > 4 * 1024 * 1024) {
+                showToast("Image size must be less than or equal to 4MB.", "error");
+                e.target.value = "";
+                return;
+            }
+        }
         setFormData(prev => ({
             ...prev,
             subCategoryImage: file
@@ -99,7 +106,9 @@ function AddBlogSubCategory() {
             }, 1000);
         } catch (error) {
             console.error("Failed to save sub category", error);
-            showToast("Failed to save sub category.", "error");
+            const errData = error.response?.data;
+            const rawMsg = errData?.message || errData?.title || (typeof errData === 'string' ? errData : '') || error.message || "";
+            showToast(rawMsg || "Failed to save sub category.", "error");
         }
     };
 
@@ -140,13 +149,13 @@ function AddBlogSubCategory() {
         titleMain: {
             fontSize: '1.6rem',
             fontWeight: 600,
-            color: '#be185d',
+            color: '#A51C49',
             margin: 0,
         },
         titleSub: {
             fontSize: '1.6rem',
             fontWeight: 600,
-            color: '#be185d',
+            color: '#000000',
             margin: 0,
         },
         backBtn: {
@@ -279,9 +288,9 @@ function AddBlogSubCategory() {
         },
         submitBtn: {
             padding: '12px 40px',
-            background: '#be185d',
+            background: '#2563eb',
             color: '#ffffff',
-            border: '1px solid #be185d',
+            border: '1px solid #2563eb',
             borderRadius: '8px',
             fontWeight: 700,
             fontSize: '1rem',
@@ -291,9 +300,9 @@ function AddBlogSubCategory() {
         },
         cancelBtn: {
             padding: '12px 40px',
-            background: 'var(--panel)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
+            background: '#64748b',
+            color: '#ffffff',
+            border: '1px solid #64748b',
             borderRadius: '8px',
             fontWeight: 600,
             fontSize: '0.95rem',
@@ -348,8 +357,11 @@ function AddBlogSubCategory() {
                 <div style={styles.formContainer}>
                     <div style={{ ...styles.header, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
                         <div style={styles.titleWrapper}>
-                            <h1 style={styles.titleMain}>Add Blog Sub</h1>
-                            <h2 style={styles.titleSub}>Category</h2>
+                            <h1 style={styles.titleMain}>
+                                <span ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={{ color: '#000000' }}>Add </span>
+                                <span ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={{ color: '#A51C49' }}>Blog</span>
+                            </h1>
+                            <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={styles.titleSub}>Sub Category</h2>
                         </div>
                         <button
                             type="button"
@@ -603,12 +615,12 @@ function AddBlogSubCategory() {
                                 type="button"
                                 style={styles.cancelBtn}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--surface-soft)';
-                                    e.target.style.borderColor = 'var(--primary)';
+                                    e.target.style.background = '#475569';
+                                    e.target.style.borderColor = '#475569';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--panel)';
-                                    e.target.style.borderColor = 'var(--border)';
+                                    e.target.style.background = '#64748b';
+                                    e.target.style.borderColor = '#64748b';
                                 }}
                                 onClick={handleReset}
                             >
@@ -618,14 +630,14 @@ function AddBlogSubCategory() {
                                 type="submit"
                                 style={styles.submitBtn}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = '#b91c1c';
-                                    e.target.style.borderColor = '#b91c1c';
+                                    e.target.style.background = '#1d4ed8';
+                                    e.target.style.borderColor = '#1d4ed8';
                                     e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 4px 12px rgba(220, 30, 38, 0.2)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.25)';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = '#be185d';
-                                    e.target.style.borderColor = '#be185d';
+                                    e.target.style.background = '#2563eb';
+                                    e.target.style.borderColor = '#2563eb';
                                     e.target.style.transform = 'translateY(0)';
                                     e.target.style.boxShadow = 'none';
                                 }}

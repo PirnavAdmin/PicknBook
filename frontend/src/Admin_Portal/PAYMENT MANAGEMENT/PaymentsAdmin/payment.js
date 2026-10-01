@@ -20,15 +20,15 @@ import {
   PlusCircle,
   Info,
 } from "lucide-react";
-import "./AdminPaymentsList.css";
-import { csvCell, formatCouponDate, formatCouponDateTime } from "../../utils/adminPortalUtils";
-import AdminPagination from "../../components/AdminPagination";
+import "./payment.css";
+import { csvCell, formatCouponDate, formatCouponDateTime } from "../../../utils/adminPortalUtils";
+import AdminPagination from "../../../components/AdminPagination";
 import {
   getAdminPaymentMetrics,
   getAdminPayments,
   getAdminPaymentById,
   initiateAdminPaymentRefund,
-} from "../../services/adminPaymentService";
+} from "../../../services/adminPaymentService";
 
 function formatCurrency(val) {
   const num = Number(val);
@@ -441,11 +441,9 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
     <section className="admin-b2c-page admin-payments-container">
       {/* Page Header */}
       <header className="admin-markup-coupon-header">
-        <div className="admin-markup-coupon-title-wrap">
-          <h1>
-            <span style={{ color: "#A51C49" }}>Admin </span>
-            <span style={{ color: "#000000" }}>Payments & Transactions</span>
-          </h1>
+        <div className="admin-markup-coupon-title-wrap" style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+          <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>Admin</h1>
+          <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#000000', margin: 0 }}>Payments & Transactions</h2>
         </div>
 
         <div className="admin-markup-coupon-actions">
@@ -454,26 +452,17 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
             className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
             onClick={() => setIsFilterPanelOpen((prev) => !prev)}
           >
-            <SlidersHorizontal size={15} />
+            <SlidersHorizontal size={14} />
             <span>Filter</span>
           </button>
 
           <button
             type="button"
-            className="admin-markup-coupon-btn clear"
-            onClick={handleClearFilters}
-            disabled={!hasActiveFilters}
-          >
-            <X size={15} />
-            <span>Clear Filter</span>
-          </button>
-
-          <button
-            type="button"
-            className="admin-markup-coupon-btn generate"
+            className="admin-markup-coupon-btn refresh"
             onClick={() => setRefreshTrigger((prev) => prev + 1)}
+            title="Refresh Transactions"
           >
-            <RefreshCw size={15} />
+            <RefreshCw size={14} className={isLoadingPayments ? "animate-spin" : ""} />
             <span>Refresh</span>
           </button>
 
@@ -482,9 +471,10 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
             className="admin-markup-coupon-btn export"
             onClick={handleExportCSV}
             disabled={payments.length === 0}
+            title="Export to CSV"
           >
-            <Download size={15} />
-            <span>Export CSV</span>
+            <Download size={14} />
+            <span>Export</span>
           </button>
         </div>
       </header>
@@ -493,7 +483,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
       <div className="admin-payments-metrics-grid">
         <div className="payment-metric-card revenue">
           <div className="metric-icon">
-            <DollarSign size={20} />
+            <DollarSign size={16} />
           </div>
           <div className="metric-info">
             <span className="metric-label">Total Revenue</span>
@@ -503,7 +493,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
         <div className="payment-metric-card total">
           <div className="metric-icon">
-            <CreditCard size={20} />
+            <CreditCard size={16} />
           </div>
           <div className="metric-info">
             <span className="metric-label">Total Payments</span>
@@ -513,7 +503,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
         <div className="payment-metric-card success">
           <div className="metric-icon">
-            <CheckCircle2 size={20} />
+            <CheckCircle2 size={16} />
           </div>
           <div className="metric-info">
             <span className="metric-label">Successful</span>
@@ -523,7 +513,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
         <div className="payment-metric-card failed">
           <div className="metric-icon">
-            <XCircle size={20} />
+            <XCircle size={16} />
           </div>
           <div className="metric-info">
             <span className="metric-label">Failed Payments</span>
@@ -533,7 +523,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
         <div className="payment-metric-card pending">
           <div className="metric-icon">
-            <Clock size={20} />
+            <Clock size={16} />
           </div>
           <div className="metric-info">
             <span className="metric-label">Pending</span>
@@ -543,7 +533,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
         <div className="payment-metric-card refunds">
           <div className="metric-icon">
-            <RotateCcw size={20} />
+            <RotateCcw size={16} />
           </div>
           <div className="metric-info">
             <span className="metric-label">Pending Refunds</span>
@@ -680,24 +670,20 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                   return (
                     <tr key={rowKey} className={activeDropdownId === rowKey ? "active-dropdown-row" : ""}>
                       <td>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxWidth: "150px", margin: "0 auto" }}>
-                          <span style={{ fontWeight: "600", color: "#A51C49", fontSize: "12px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxWidth: "160px", margin: "0 auto" }}>
+                          <span style={{ fontWeight: "700", color: "#A51C49", fontSize: "11.5px" }}>
                             #{p.id}
                           </span>
                           <span
                             title={orderIdText}
                             style={{
-                              fontFamily: "monospace",
-                              fontSize: "11px",
-                              color: "#334155",
-                              background: "#f1f5f9",
-                              padding: "2px 6px",
-                              borderRadius: "4px",
+                              fontSize: "10.5px",
+                              color: "#475569",
                               display: "inline-block",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
-                              marginTop: "2px",
+                              marginTop: "1px",
                             }}
                           >
                             {orderIdText}
@@ -711,9 +697,9 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                               <span
                                 title={validName}
                                 style={{
-                                  fontWeight: "500",
+                                  fontWeight: "600",
                                   color: "#1e293b",
-                                  fontSize: "12px",
+                                  fontSize: "11.5px",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
@@ -726,8 +712,8 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                               <span
                                 title={validPhone}
                                 style={{
-                                  fontSize: "11px",
-                                  color: "#475569",
+                                  fontSize: "10.5px",
+                                  color: "#64748b",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
@@ -740,7 +726,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                               <span
                                 title={validEmail}
                                 style={{
-                                  fontSize: "11px",
+                                  fontSize: "10.5px",
                                   color: "#64748b",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
@@ -756,8 +742,8 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                         )}
                       </td>
                       <td>
-                        <span style={{ fontWeight: "500", color: "#1e293b", fontSize: "11px" }}>
-                          {p.bookingId ? `${p.bookingType || "Bus"} #${p.bookingId}` : (p.bookingType || "Bus")}
+                        <span style={{ fontWeight: "500", color: "#1e293b", fontSize: "11.5px" }}>
+                          {p.bookingType || "Flight"}
                         </span>
                       </td>
                       <td style={{ fontSize: "12px" }}>{formatCurrency(p.originalAmount)}</td>

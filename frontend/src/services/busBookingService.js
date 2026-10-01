@@ -850,100 +850,104 @@ function normalizeBusCouponRecord(record) {
     pickFirst(record, ["couponCode", "CouponCode", "code", "Code"], "") || ""
   ).toUpperCase();
 
-  let localMeta = {};
-  try {
-    const meta = JSON.parse(localStorage.getItem("admin_coupon_metadata") || "{}");
-    const cleanId = rawId !== null && rawId !== undefined ? String(rawId).trim() : "";
-    const cleanCode = rawCode ? String(rawCode).trim().toUpperCase() : "";
-    localMeta = (cleanId && meta[cleanId]) || (cleanCode && meta[cleanCode]) || {};
-  } catch (e) { }
+  const serviceType = String(
+    pickFirst(record, ["type", "Type", "serviceType", "ServiceType", "bookingType", "BookingType"], "") || "bus"
+  ).trim();
 
-  let localImage = "";
-  try {
-    const images = JSON.parse(localStorage.getItem("admin_coupon_images") || "{}");
-    localImage = images[rawId] || images[rawCode] || "";
-  } catch (e) { }
-
-  let localCategory = "";
-  try {
-    const cats = JSON.parse(localStorage.getItem("admin_coupon_categories") || "{}");
-    localCategory = cats[rawId] || cats[rawCode] || "";
-  } catch (e) { }
-
-  let localService = "";
-  try {
-    const svcs = JSON.parse(localStorage.getItem("admin_coupon_services") || "{}");
-    localService = svcs[rawId] || svcs[rawCode] || "";
-  } catch (e) { }
+  const sType = serviceType.toLowerCase();
 
   const couponType = normalizeCouponTypeForApi(
     pickFirst(record, ["couponType", "CouponType", "cpnType", "CpnType"], "")
   );
+
   const rawStatus = String(
     pickFirst(record, ["status", "Status"], "") ||
-    localMeta.status ||
     (record.isActive === false || record.IsActive === false ? "inactive" : "active")
   ).trim();
 
   const title = String(
-    pickFirst(record, ["title", "Title"], "") || localMeta.title || ""
+    pickFirst(record, ["title", "Title"], "") || ""
   ).trim();
 
   const description = String(
-    pickFirst(record, ["description", "Description", "terms", "Terms"], "") || localMeta.description || ""
+    pickFirst(record, ["description", "Description", "terms", "Terms"], "") || ""
   ).trim();
 
   const remark = String(
-    pickFirst(record, ["remark", "Remark"], "") || localMeta.remark || ""
+    pickFirst(record, ["remark", "Remark"], "") || ""
   ).trim();
 
-  const imageUrl = String(
-    pickFirst(record, ["imageUrl", "ImageUrl", "imageURL", "ImageURL"], "") || localMeta.imageUrl || localImage || ""
-  ).trim();
+  // Strictly resolve image URL from API response payload (no local storage fallback)
+  const imageKeys = ["imageUrl", "ImageUrl", "imageURL", "ImageURL", "image", "Image", "bannerUrl", "BannerUrl", "imgUrl", "ImgUrl"];
+  let resolvedImageUrl = null;
+  for (const key of imageKeys) {
+    if (record && record[key] !== undefined && record[key] !== null) {
+      const val = String(record[key]).trim();
+      if (val) {
+        resolvedImageUrl = val;
+        break;
+      }
+    }
+  }
 
   const promotionCategory = String(
-    pickFirst(record, ["promotionCategory", "PromotionCategory", "category", "Category"], "") || localMeta.promotionCategory || localCategory || "Coupon"
+    pickFirst(record, ["promotionCategory", "PromotionCategory", "category", "Category"], "") || "Coupon"
   ).trim();
 
-  const serviceType = String(
-    pickFirst(record, ["type", "Type", "serviceType", "ServiceType", "bookingType", "BookingType"], "") || localMeta.serviceType || localService || "bus"
-  ).trim();
+  const maxDiscountAmount = pickFirst(record, ["maxDiscountAmount", "MaxDiscountAmount"], null);
+  const isFirstTimeUserOnly = String(pickFirst(record, ["isFirstTimeUserOnly", "IsFirstTimeUserOnly"], false)).toLowerCase() === "true";
+
+  const rawValue = pickFirst(record, ["value", "Value"], 0);
+  const parsedValue = Number(rawValue);
+  const finalValue = Number.isFinite(parsedValue) ? parsedValue : 0;
+
+  const rawMinBooking = pickFirst(record, ["minBookingAmount", "MinBookingAmount"], 0);
+  const parsedMinBooking = Number(rawMinBooking);
 
   return {
     id: rawId,
     sourceId: pickFirst(record, ["sourceId", "SourceId"], null),
     busPromotionId: pickFirst(record, ["busPromotionId", "BusPromotionId", "promotionId", "PromotionId"], null),
-    value: Number(pickFirst(record, ["value", "Value"], 0)) || 0,
+    title,
+    description,
+    terms: description,
+    imageUrl: resolvedImageUrl,
+    value: finalValue,
     couponType,
     cpnType: couponType,
     couponCode: rawCode,
     code: rawCode,
-    title,
-    description,
-    terms: description,
-    remark,
-    imageUrl,
-    type: serviceType,
-    serviceType,
-    bookingType: serviceType,
     startDate: String(pickFirst(record, ["startDate", "StartDate"], "") || ""),
     expiryDate: String(pickFirst(record, ["expiryDate", "ExpiryDate"], "") || ""),
+    entryDateUtc: pickFirst(
+      record,
+      ["entryDateUtc", "EntryDateUtc", "entryDate", "EntryDate", "createdAt", "CreatedAt"],
+      null
+    ),
     useLimit: Number(pickFirst(record, ["useLimit", "UseLimit"], 0)) || 0,
     usedCount: Number(pickFirst(record, ["usedCount", "UsedCount"], 0)) || 0,
     status: rawStatus.toLowerCase() === "inactive" || rawStatus.toLowerCase() === "disabled" ? "inactive" : "active",
     maxUsagePerUser:
-      Number(pickFirst(record, ["maxUsagePerUser", "MaxUsagePerUser"], 0)) || 0,
+      Number(pickFirst(record, ["maxUsagePerUser", "MaxUsagePerUser"], 1)) || 1,
     minBookingAmount:
-      Number(pickFirst(record, ["minBookingAmount", "MinBookingAmount"], 0)) || 0,
+      Number.isFinite(parsedMinBooking) ? parsedMinBooking : 0,
+    maxDiscountAmount:
+      maxDiscountAmount !== null && maxDiscountAmount !== undefined ? Number(maxDiscountAmount) : null,
     isAutoApply:
       String(pickFirst(record, ["isAutoApply", "IsAutoApply"], false)).toLowerCase() === "true",
     isExclusive:
       String(pickFirst(record, ["isExclusive", "IsExclusive"], false)).toLowerCase() === "true",
+    isFirstTimeUserOnly,
     priority: Number(pickFirst(record, ["priority", "Priority"], 0)) || 0,
     triggerType: String(
       pickFirst(record, ["triggerType", "TriggerType"], "ManualCode") || "ManualCode"
     ),
     promotionCategory: promotionCategory || "Coupon",
+    type: sType,
+    serviceType: sType,
+    bookingType: sType,
+    remark,
+    conditions: Array.isArray(record.conditions) ? record.conditions : (Array.isArray(record.Conditions) ? record.Conditions : []),
     entryDate: pickFirst(
       record,
       ["entryDate", "EntryDate", "entryDateUtc", "EntryDateUtc", "createdAt", "CreatedAt"],
@@ -978,10 +982,11 @@ function normalizeBusCouponPayload(coupon) {
   const normalizedStatus = String(coupon?.status || "Active").trim().toLowerCase();
   const apiStatus = normalizedStatus === "inactive" ? "Inactive" : "Active";
   const code = String(coupon?.couponCode || coupon?.code || "").trim().toUpperCase();
-  const title = String(coupon?.title || "").trim();
-  const description = String(coupon?.description || coupon?.terms || "").trim();
-  const remark = String(coupon?.remark || "").trim();
-  const imageUrl = coupon?.imageUrl || null;
+  const title = coupon?.title ? String(coupon.title).trim() : null;
+  const description = coupon?.description ? String(coupon.description).trim() : (coupon?.terms ? String(coupon.terms).trim() : null);
+  const rawImage = coupon?.imageUrl !== undefined ? coupon.imageUrl : (coupon?.ImageUrl !== undefined ? coupon.ImageUrl : null);
+  const imageUrl = rawImage && typeof rawImage === "string" && rawImage.trim() ? rawImage.trim() : null;
+  const payloadImage = imageUrl !== null ? imageUrl : "";
 
   return {
     value: Number(coupon?.value) || 0,
@@ -991,20 +996,31 @@ function normalizeBusCouponPayload(coupon) {
     title,
     description,
     terms: description,
+    imageUrl: payloadImage,
+    ImageUrl: payloadImage,
+    imageURL: payloadImage,
+    ImageURL: payloadImage,
+    image: payloadImage,
+    Image: payloadImage,
     startDate: coupon?.startDate || "",
     expiryDate: coupon?.expiryDate || "",
     useLimit: useLimit,
     usedCount: Number(coupon?.usedCount) || 0,
     status: apiStatus,
-    remark,
-    imageUrl,
+    remark: String(coupon?.remark || "").trim(),
     maxUsagePerUser: maxUsagePerUser,
     minBookingAmount: minBookingAmount,
+    maxDiscountAmount: coupon?.maxDiscountAmount !== "" && coupon?.maxDiscountAmount !== null && coupon?.maxDiscountAmount !== undefined ? Number(coupon.maxDiscountAmount) : null,
     isAutoApply: Boolean(coupon?.isAutoApply),
     isExclusive: Boolean(coupon?.isExclusive),
+    isFirstTimeUserOnly: Boolean(coupon?.isFirstTimeUserOnly),
     priority: Number(coupon?.priority) || 0,
     triggerType: String(coupon?.triggerType || "ManualCode").trim() || "ManualCode",
-    promotionCategory: String(coupon?.promotionCategory || "Coupon").trim() || "Coupon",
+    promotionCategory: String(coupon?.promotionCategory || coupon?.category || "Coupon").trim() || "Coupon",
+    category: String(coupon?.promotionCategory || coupon?.category || "Coupon").trim() || "Coupon",
+    type: String(coupon?.type || coupon?.serviceType || coupon?.bookingType || "bus").trim().toLowerCase(),
+    serviceType: String(coupon?.type || coupon?.serviceType || coupon?.bookingType || "bus").trim().toLowerCase(),
+    bookingType: String(coupon?.type || coupon?.serviceType || coupon?.bookingType || "bus").trim().toLowerCase(),
   };
 }
 
@@ -2441,51 +2457,110 @@ export async function validateBusCoupon({ couponCode, totalFare }) {
 
 export async function createBusCoupon(coupon) {
   const payload = normalizeBusCouponPayload(coupon);
+  const targetType = String(coupon?.type || coupon?.serviceType || coupon?.bookingType || "bus").toLowerCase();
   let data = null;
-  try {
-    data = await requestJson(`${ADMIN_BUS_ROOT}/coupons`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  } catch (err) {
-    console.warn("[busBookingService] Remote createBusCoupon failed, persisting locally:", err);
+  let lastError = null;
+
+  const candidateUrls = [];
+  if (targetType === "flight" || targetType.includes("flight")) {
+    candidateUrls.push(
+      "/api/admin/flight/coupons",
+      "/api/admin/flight-promotions",
+      "/api/admin/flight-coupons"
+    );
+  } else if (targetType === "hotel" || targetType.includes("hotel")) {
+    candidateUrls.push(
+      "/api/admin/hotel/coupons",
+      "/api/admin/hotel-promotions",
+      "/api/admin/hotel-coupons"
+    );
+  } else {
+    candidateUrls.push(
+      `${ADMIN_BUS_ROOT}/coupons`,
+      "/api/admin/bus-promotions",
+      "/api/admin/bus/promotions"
+    );
+  }
+  candidateUrls.push(
+    `${ADMIN_BUS_ROOT}/coupons`,
+    "/api/admin/flight/coupons",
+    "/api/admin/flight-promotions",
+    "/api/admin/hotel/coupons",
+    "/api/admin/hotel-promotions",
+    "/api/coupons",
+    "/api/promotions"
+  );
+
+  const uniqueUrls = Array.from(new Set(candidateUrls));
+  for (const url of uniqueUrls) {
+    try {
+      data = await requestJson(url, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      if (data) break;
+    } catch (err) {
+      lastError = err;
+    }
   }
 
+  const isImageExplicitlyCleared = coupon?.imageUrl === null || coupon?.imageUrl === "";
   const merged = { ...coupon, ...(data && typeof data === "object" ? data : {}) };
-  const rawCode = String(merged.couponCode || merged.code || coupon?.couponCode || "").trim().toUpperCase();
-  const rawId = merged.id || merged.couponId || coupon?.id || `local_${Date.now()}`;
-  const finalStatus = String(coupon?.status || merged.status || "Active").toLowerCase() === "inactive" ? "inactive" : "active";
-
-  saveCouponMetadataLocally(rawCode, rawId, {
-    title: merged.title || coupon.title,
-    description: merged.description || coupon.description,
-    remark: merged.remark || coupon.remark,
-    imageUrl: merged.imageUrl || coupon.imageUrl,
-    status: finalStatus,
-    promotionCategory: merged.promotionCategory || coupon.promotionCategory,
-    serviceType: merged.serviceType || coupon.serviceType || coupon.type,
-  });
-  saveCouponCategoryLocally(rawCode, rawId, merged.promotionCategory || coupon.promotionCategory);
-  saveCouponServiceLocally(rawCode, rawId, merged.serviceType || coupon.serviceType || coupon.type);
-  if (merged.imageUrl || coupon.imageUrl) {
-    saveCouponImageLocally(rawCode, rawId, merged.imageUrl || coupon.imageUrl);
+  if (isImageExplicitlyCleared) {
+    merged.imageUrl = null;
+    merged.ImageUrl = null;
+    merged.imageURL = null;
+    merged.ImageURL = null;
+    merged.image = null;
+    merged.Image = null;
   }
+  const rawId = merged.id || merged.couponId || coupon?.id || Date.now();
+  const finalStatus = String(coupon?.status || merged.status || "Active").toLowerCase() === "inactive" ? "inactive" : "active";
 
   return normalizeBusCouponRecord({ ...merged, id: rawId, status: finalStatus });
 }
 
 export async function updateBusCoupon(couponId, coupon) {
   const payload = normalizeBusCouponPayload({ ...coupon, id: couponId });
+  const targetType = String(coupon?.type || coupon?.serviceType || coupon?.bookingType || "bus").toLowerCase();
   let data = null;
+  let lastError = null;
 
-  const candidateUrls = [
+  const candidateUrls = [];
+  if (targetType === "flight" || targetType.includes("flight")) {
+    candidateUrls.push(
+      `/api/admin/flight/coupons/${couponId}`,
+      `/api/admin/flight-promotions/${couponId}`,
+      `/api/admin/flight-coupons/${couponId}`
+    );
+  } else if (targetType === "hotel" || targetType.includes("hotel")) {
+    candidateUrls.push(
+      `/api/admin/hotel/coupons/${couponId}`,
+      `/api/admin/hotel-promotions/${couponId}`,
+      `/api/admin/hotel-coupons/${couponId}`
+    );
+  } else {
+    candidateUrls.push(
+      `${ADMIN_BUS_ROOT}/coupons/${couponId}`,
+      `/api/admin/bus-promotions/${couponId}`,
+      `/api/admin/bus/promotions/${couponId}`
+    );
+  }
+
+  candidateUrls.push(
     `${ADMIN_BUS_ROOT}/coupons/${couponId}`,
-    `/api/admin/flight-coupons/${couponId}`,
-    `/api/admin/hotel-coupons/${couponId}`,
-    `/api/coupons/${couponId}`
-  ];
+    `/api/admin/flight/coupons/${couponId}`,
+    `/api/admin/flight-promotions/${couponId}`,
+    `/api/admin/hotel/coupons/${couponId}`,
+    `/api/admin/hotel-promotions/${couponId}`,
+    `/api/admin/bus-promotions/${couponId}`,
+    `/api/coupons/${couponId}`,
+    `/api/promotions/${couponId}`
+  );
 
-  for (const url of candidateUrls) {
+  const uniqueUrls = Array.from(new Set(candidateUrls));
+
+  for (const url of uniqueUrls) {
     try {
       data = await requestJson(url, {
         method: "PUT",
@@ -2493,38 +2568,130 @@ export async function updateBusCoupon(couponId, coupon) {
       });
       if (data) break;
     } catch (err) {
-      // Continue to next candidate URL
+      lastError = err;
     }
   }
 
+  const isImageExplicitlyCleared = coupon?.imageUrl === null || coupon?.imageUrl === "";
   const merged = { ...coupon, ...(data && typeof data === "object" ? data : {}), id: couponId };
-  const rawCode = String(merged.couponCode || merged.code || coupon?.couponCode || "").trim().toUpperCase();
-  const finalStatus = String(coupon?.status || merged.status || "Active").toLowerCase() === "inactive" ? "inactive" : "active";
-
-  saveCouponMetadataLocally(rawCode, couponId, {
-    title: merged.title || coupon.title,
-    description: merged.description || coupon.description,
-    remark: merged.remark || coupon.remark,
-    imageUrl: merged.imageUrl || coupon.imageUrl,
-    status: finalStatus,
-    promotionCategory: merged.promotionCategory || coupon.promotionCategory,
-    serviceType: merged.serviceType || coupon.serviceType || coupon.type,
-  });
-  saveCouponCategoryLocally(rawCode, couponId, merged.promotionCategory || coupon.promotionCategory);
-  saveCouponServiceLocally(rawCode, couponId, merged.serviceType || coupon.serviceType || coupon.type);
-  if (merged.imageUrl || coupon.imageUrl) {
-    saveCouponImageLocally(rawCode, couponId, merged.imageUrl || coupon.imageUrl);
+  if (isImageExplicitlyCleared) {
+    merged.imageUrl = null;
+    merged.ImageUrl = null;
+    merged.imageURL = null;
+    merged.ImageURL = null;
+    merged.image = null;
+    merged.Image = null;
   }
+  const finalStatus = String(coupon?.status || merged.status || "Active").toLowerCase() === "inactive" ? "inactive" : "active";
 
   return normalizeBusCouponRecord({ ...merged, id: couponId, status: finalStatus });
 }
 
-export async function deleteBusCoupon(couponId) {
-  try {
-    await requestJson(`${ADMIN_BUS_ROOT}/coupons/${couponId}`, { method: "DELETE" });
-  } catch (err) {
-    console.warn("[busBookingService] Remote deleteBusCoupon failed, removing locally:", err);
+export async function deleteBusCoupon(couponId, serviceType = "", couponCode = "") {
+  const sType = String(serviceType || "").trim().toLowerCase();
+  const code = String(couponCode || "").trim().toUpperCase();
+
+  const candidateUrls = [];
+  if (sType === "flight" || sType.includes("flight")) {
+    candidateUrls.push(
+      `/api/admin/flight-promotions/${couponId}`,
+      `/api/admin/flight/coupons/${couponId}`,
+      `/api/admin/flight-coupons/${couponId}`,
+      `/api/admin/flight/discounts/${couponId}`
+    );
+  } else if (sType === "hotel" || sType.includes("hotel")) {
+    candidateUrls.push(
+      `/api/admin/hotel-coupons/${couponId}`,
+      `/api/admin/hotel-promotions/${couponId}`,
+      `/api/admin/hotel/coupons/${couponId}`
+    );
+  } else if (sType === "bus" || sType.includes("bus")) {
+    candidateUrls.push(
+      `${ADMIN_BUS_ROOT}/coupons/${couponId}`,
+      `/api/admin/bus-promotions/${couponId}`,
+      `/api/admin/bus/promotions/${couponId}`
+    );
   }
+
+  candidateUrls.push(
+    `/api/admin/hotel-coupons/${couponId}`,
+    `/api/admin/flight-promotions/${couponId}`,
+    `/api/admin/flight/coupons/${couponId}`,
+    `/api/admin/flight-coupons/${couponId}`,
+    `${ADMIN_BUS_ROOT}/coupons/${couponId}`,
+    `/api/admin/hotel-promotions/${couponId}`,
+    `/api/admin/bus-promotions/${couponId}`,
+    `/api/coupons/${couponId}`,
+    `/api/promotions/${couponId}`
+  );
+
+  const uniqueUrls = Array.from(new Set(candidateUrls));
+  let deletedRemotely = false;
+
+  for (const url of uniqueUrls) {
+    try {
+      await requestJson(url, { method: "DELETE" });
+      deletedRemotely = true;
+      break;
+    } catch (err) {
+      // try next candidate
+    }
+  }
+
+  if (!deletedRemotely) {
+    console.warn(`[deleteBusCoupon] Remote delete call for ID ${couponId} (${sType}) attempted across candidate endpoints.`);
+  }
+
+  try {
+    const keysToPurge = [
+      "admin_coupon_metadata",
+      "admin_coupon_images",
+      "admin_coupon_categories",
+      "admin_coupon_services"
+    ];
+    const cleanId = couponId !== null && couponId !== undefined ? String(couponId).trim() : "";
+    keysToPurge.forEach((storageKey) => {
+      try {
+        const itemStr = localStorage.getItem(storageKey);
+        if (!itemStr) return;
+        const data = JSON.parse(itemStr);
+        if (typeof data !== "object" || !data) return;
+
+        let modified = false;
+        const removeKeys = new Set();
+        if (cleanId) {
+          removeKeys.add(cleanId);
+          if (sType) removeKeys.add(`${sType}_${cleanId}`);
+          removeKeys.add(`bus_${cleanId}`);
+          removeKeys.add(`flight_${cleanId}`);
+          removeKeys.add(`hotel_${cleanId}`);
+        }
+        if (code) {
+          removeKeys.add(code);
+          if (sType) removeKeys.add(`${sType}_${code}`);
+          removeKeys.add(`bus_${code}`);
+          removeKeys.add(`flight_${code}`);
+          removeKeys.add(`hotel_${code}`);
+        }
+
+        for (const k of removeKeys) {
+          if (k in data) {
+            delete data[k];
+            modified = true;
+          }
+        }
+
+        if (modified) {
+          localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+  } catch (e) {
+    console.warn("Could not purge coupon from localStorage:", e);
+  }
+
   return true;
 }
 
@@ -2666,7 +2833,10 @@ function normalizeFeaturedOffer(record) {
 
 export async function getFeaturedBusOffers() {
   try {
-    const data = await fetchCouponsAndOffers({ serviceType: "bus", category: "Offer" });
+    const data = await requestJson("/api/FeaturedOffers?bookingType=Bus", {
+      method: "GET",
+      skipAuth: true,
+    });
     const rawOffers = Array.isArray(data)
       ? data
       : Array.isArray(data?.offers)

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./AddPage.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createAdminPage, updateAdminPage, resolveCmsImageUrl } from "../../../services/cmsPageService";
@@ -30,57 +30,22 @@ const AddPage = () => {
   const pageListPath = "/admin/page-management/all-pages";
 
   const editingPage = useMemo(() => location.state?.page || null, [location.state]);
+  const descriptionRef = useRef(null);
 
-  const isImageRemovedInOverrides = (page) => {
-    if (!page) return false;
-    try {
-      const overrides = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
-      const keys = [
-        page.slug,
-        page.slug ? buildSlug(page.slug) : "",
-        page.title,
-        page.title ? buildSlug(page.title) : "",
-        page.id,
-        page.id ? String(page.id) : ""
-      ].filter(Boolean);
-      return keys.some(k => overrides[k] === "__REMOVED__" || overrides[k] === "");
-    } catch {
-      return false;
-    }
-  };
-
-  const isBannerRemovedInOverrides = (page) => {
-    if (!page) return false;
-    try {
-      const overrides = JSON.parse(localStorage.getItem("cms_page_banner_overrides") || "{}");
-      const keys = [
-        page.slug,
-        page.slug ? buildSlug(page.slug) : "",
-        page.title,
-        page.title ? buildSlug(page.title) : "",
-        page.id,
-        page.id ? String(page.id) : ""
-      ].filter(Boolean);
-      return keys.some(k => overrides[k] === "__REMOVED__" || overrides[k] === "" || overrides[k] === null);
-    } catch {
-      return false;
-    }
+  const autoResizeTextarea = (element, minHeight = 70) => {
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${Math.max(element.scrollHeight, minHeight)}px`;
   };
 
   const [formData, setFormData] = useState(() => {
-    const isRemoved = isImageRemovedInOverrides(editingPage);
-    const initialImgPath = isRemoved ? "" : (editingPage?.imagePath || editingPage?.image || "");
-    const initialImgName = isRemoved
-      ? ""
-      : initialImgPath
+    const initialImgPath = editingPage?.imagePath || editingPage?.image || "";
+    const initialImgName = initialImgPath
       ? initialImgPath.split(/[/\\]/).pop()
       : (editingPage?.imageName || "");
 
-    const isBnrRemoved = isBannerRemovedInOverrides(editingPage);
-    const initialBnrPath = isBnrRemoved ? "" : (editingPage?.bannerPath || editingPage?.banner || "");
-    const initialBnrName = isBnrRemoved
-      ? ""
-      : initialBnrPath
+    const initialBnrPath = editingPage?.bannerPath || editingPage?.banner || "";
+    const initialBnrName = initialBnrPath
       ? initialBnrPath.split(/[/\\]/).pop()
       : (editingPage?.bannerName || "");
 
@@ -100,7 +65,6 @@ const AddPage = () => {
   });
 
   const [imagePreview, setImagePreview] = useState(() => {
-    if (isImageRemovedInOverrides(editingPage)) return "";
     const existingImg = editingPage?.imagePath || editingPage?.image || editingPage?.imageUrl || "";
     if (existingImg) {
       return resolveCmsImageUrl(existingImg, "image") || existingImg;
@@ -108,21 +72,29 @@ const AddPage = () => {
     return "";
   });
 
+  const [imageFile, setImageFile] = useState(null);
+  const [bannerFile, setBannerFile] = useState(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+  const [isBannerRemoved, setIsBannerRemoved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (descriptionRef.current) {
+      autoResizeTextarea(descriptionRef.current, 100);
+    }
+  }, [formData.description]);
+
   useEffect(() => {
     if (editingPage) {
-      const isRemoved = isImageRemovedInOverrides(editingPage);
-      const initialImgPath = isRemoved ? "" : (editingPage.imagePath || editingPage.image || "");
-      const initialImgName = isRemoved
-        ? ""
-        : initialImgPath
+      const initialImgPath = editingPage.imagePath || editingPage.image || "";
+      const initialImgName = initialImgPath
         ? initialImgPath.split(/[/\\]/).pop()
         : (editingPage.imageName || "");
 
-      const isBnrRemoved = isBannerRemovedInOverrides(editingPage);
-      const initialBnrPath = isBnrRemoved ? "" : (editingPage.bannerPath || editingPage.banner || "");
-      const initialBnrName = isBnrRemoved
-        ? ""
-        : initialBnrPath
+      const initialBnrPath = editingPage.bannerPath || editingPage.banner || "";
+      const initialBnrName = initialBnrPath
         ? initialBnrPath.split(/[/\\]/).pop()
         : (editingPage.bannerName || "");
 
@@ -139,24 +111,19 @@ const AddPage = () => {
         bannerName: initialBnrName,
       });
 
-      if (isRemoved) {
-        setImagePreview("");
+      setIsImageRemoved(false);
+      setIsBannerRemoved(false);
+      setImageFile(null);
+      setBannerFile(null);
+
+      const existingImg = editingPage.imagePath || editingPage.image || editingPage.imageUrl || "";
+      if (existingImg) {
+        setImagePreview(resolveCmsImageUrl(existingImg, "image") || existingImg);
       } else {
-        const existingImg = editingPage.imagePath || editingPage.image || editingPage.imageUrl || "";
-        if (existingImg) {
-          setImagePreview(resolveCmsImageUrl(existingImg, "image") || existingImg);
-        } else {
-          setImagePreview("");
-        }
+        setImagePreview("");
       }
     }
   }, [editingPage]);
-
-  const [imageFile, setImageFile] = useState(null);
-  const [bannerFile, setBannerFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [saved, setSaved] = useState(false);
 
   const handleChange = (field) => (event) => {
     setFormData((previous) => ({ ...previous, [field]: event.target.value }));
@@ -164,8 +131,8 @@ const AddPage = () => {
 
   const handleFileChange = (field) => (event) => {
     const file = event.target.files?.[0];
-    if (file && file.size > 1024 * 1024) {
-      setFormError("File size must be within 1MB limit.");
+    if (file && file.size > 4 * 1024 * 1024) {
+      setFormError("File size must be within 4MB limit.");
       event.target.value = ""; // Clear file input
       if (field === "image") {
         setImageFile(null);
@@ -180,6 +147,7 @@ const AddPage = () => {
     setFormError("");
     if (field === "image") {
       setImageFile(file || null);
+      setIsImageRemoved(false);
       setFormData((previous) => ({ ...previous, imageName: file ? file.name : "" }));
       if (file) {
         const reader = new FileReader();
@@ -190,6 +158,7 @@ const AddPage = () => {
       }
     } else if (field === "banner") {
       setBannerFile(file || null);
+      setIsBannerRemoved(false);
       setFormData((previous) => ({ ...previous, bannerName: file ? file.name : "" }));
     }
   };
@@ -197,76 +166,70 @@ const AddPage = () => {
   const handleRemoveFile = (field) => {
     if (field === "image") {
       setImageFile(null);
+      setIsImageRemoved(true);
       setImagePreview("");
       setFormData((previous) => ({ ...previous, imageName: "" }));
       const fileInput = document.getElementById("image-input");
       if (fileInput) fileInput.value = "";
-      try {
-        const pageSlug = formData.slug?.trim() || formData.title?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        const pageTitle = formData.title?.trim();
-        const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
-        if (pageSlug) {
-          current[pageSlug] = "__REMOVED__";
-          const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (norm) current[norm] = "__REMOVED__";
-        }
-        if (pageTitle) {
-          current[pageTitle] = "__REMOVED__";
-          const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (normTitle) current[normTitle] = "__REMOVED__";
-        }
-        if (editingPage?.id) {
-          current[editingPage.id] = "__REMOVED__";
-          current[String(editingPage.id)] = "__REMOVED__";
-        }
-        if (editingPage?.slug) {
-          current[editingPage.slug] = "__REMOVED__";
-          const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (normEditSlug) current[normEditSlug] = "__REMOVED__";
-        }
-        if (editingPage?.title) {
-          current[editingPage.title] = "__REMOVED__";
-          const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (normEditTitle) current[normEditTitle] = "__REMOVED__";
-        }
-        localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
-      } catch (e) {}
     } else if (field === "banner") {
       setBannerFile(null);
+      setIsBannerRemoved(true);
       setFormData((previous) => ({ ...previous, bannerName: "" }));
       const fileInput = document.getElementById("banner-input");
       if (fileInput) fileInput.value = "";
-      try {
-        const pageSlug = formData.slug?.trim() || formData.title?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
-        const pageTitle = formData.title?.trim();
-        const current = JSON.parse(localStorage.getItem("cms_page_banner_overrides") || "{}");
-        if (pageSlug) {
-          current[pageSlug] = "__REMOVED__";
-          const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (norm) current[norm] = "__REMOVED__";
-        }
-        if (pageTitle) {
-          current[pageTitle] = "__REMOVED__";
-          const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (normTitle) current[normTitle] = "__REMOVED__";
-        }
-        if (editingPage?.id) {
-          current[editingPage.id] = "__REMOVED__";
-          current[String(editingPage.id)] = "__REMOVED__";
-        }
-        if (editingPage?.slug) {
-          current[editingPage.slug] = "__REMOVED__";
-          const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (normEditSlug) current[normEditSlug] = "__REMOVED__";
-        }
-        if (editingPage?.title) {
-          current[editingPage.title] = "__REMOVED__";
-          const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-          if (normEditTitle) current[normEditTitle] = "__REMOVED__";
-        }
-        localStorage.setItem("cms_page_banner_overrides", JSON.stringify(current));
-      } catch (e) {}
     }
+  };
+
+  const handleReset = () => {
+    if (editingPage) {
+      const initialImgPath = editingPage.imagePath || editingPage.image || "";
+      const initialImgName = initialImgPath
+        ? initialImgPath.split(/[/\\]/).pop()
+        : (editingPage.imageName || "");
+
+      const initialBnrPath = editingPage.bannerPath || editingPage.banner || "";
+      const initialBnrName = initialBnrPath
+        ? initialBnrPath.split(/[/\\]/).pop()
+        : (editingPage.bannerName || "");
+
+      setFormData({
+        title: editingPage.title || "",
+        slug: editingPage.slug || "",
+        status: editingPage.status || "Active",
+        module: editingPage.module || "All",
+        metaTitle: editingPage.metaTitle || "",
+        metaKeyword: editingPage.metaKeyword || "",
+        metaDescription: editingPage.metaDescription || "",
+        description: editingPage.description || "",
+        imageName: initialImgName,
+        bannerName: initialBnrName,
+      });
+
+      setIsImageRemoved(false);
+      setIsBannerRemoved(false);
+      setImageFile(null);
+      setBannerFile(null);
+
+      const existingImg = editingPage.imagePath || editingPage.image || editingPage.imageUrl || "";
+      if (existingImg) {
+        setImagePreview(resolveCmsImageUrl(existingImg, "image") || existingImg);
+      } else {
+        setImagePreview("");
+      }
+    } else {
+      setFormData(DEFAULT_FORM);
+      setImageFile(null);
+      setBannerFile(null);
+      setImagePreview("");
+      setIsImageRemoved(false);
+      setIsBannerRemoved(false);
+    }
+
+    setFormError("");
+    const imgInput = document.getElementById("image-input");
+    if (imgInput) imgInput.value = "";
+    const bnrInput = document.getElementById("banner-input");
+    if (bnrInput) bnrInput.value = "";
   };
 
   const handleSubmit = async (event) => {
@@ -293,171 +256,33 @@ const AddPage = () => {
     data.append("MetaKeyword", formData.metaKeyword || "");
     data.append("MetaDescription", formData.metaDescription || "");
     data.append("Description", formData.description || "");
-    data.append("ImageName", formData.imageName || "");
-    data.append("BannerName", formData.bannerName || "");
-    data.append("ImagePath", formData.imageName ? (editingPage?.imagePath || "") : "");
-    data.append("BannerPath", formData.bannerName ? (editingPage?.bannerPath || "") : "");
 
-    // Deletion flags for image
-    if (!formData.imageName) {
-      data.append("imagePath", "");
-      data.append("ImagePath", "");
-      data.append("Image", "");
-      data.append("image", "");
-      data.append("DeleteImage", "true");
-      data.append("RemoveImage", "true");
-      data.append("ClearImage", "true");
-      data.append("IsImageDeleted", "true");
-      data.append("imageDeleted", "true");
-      data.append("removeImage", "true");
-    }
-
-    // Deletion flags for banner
-    if (!formData.bannerName) {
-      data.append("bannerPath", "");
-      data.append("BannerPath", "");
-      data.append("Banner", "");
-      data.append("banner", "");
-      data.append("DeleteBanner", "true");
-      data.append("RemoveBanner", "true");
-      data.append("ClearBanner", "true");
-      data.append("IsBannerDeleted", "true");
-      data.append("bannerDeleted", "true");
-      data.append("removeBanner", "true");
-    }
-
+    // 1. Handle Main Image
     if (imageFile) {
       data.append("Image", imageFile);
-      data.append("image", imageFile);
-      data.append("PageImage", imageFile);
-      data.append("file", imageFile);
+      data.append("RemoveImage", "false");
+    } else if (isImageRemoved) {
+      data.append("RemoveImage", "true");
+    } else {
+      data.append("RemoveImage", "false");
     }
+
+    // 2. Handle Banner
     if (bannerFile) {
       data.append("Banner", bannerFile);
-      data.append("banner", bannerFile);
-      data.append("BannerImage", bannerFile);
+      data.append("RemoveBanner", "false");
+    } else if (isBannerRemoved) {
+      data.append("RemoveBanner", "true");
+    } else {
+      data.append("RemoveBanner", "false");
     }
 
     setLoading(true);
     try {
-      const pageSlug = formData.slug.trim() || formData.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const pageTitle = formData.title.trim();
-
-      const setOverrideValue = (val) => {
-        try {
-          const current = JSON.parse(localStorage.getItem("cms_page_image_overrides") || "{}");
-          if (pageSlug) {
-            current[pageSlug] = val;
-            const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (norm) current[norm] = val;
-          }
-          if (pageTitle) {
-            current[pageTitle] = val;
-            const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (normTitle) current[normTitle] = val;
-          }
-          if (editingPage?.id) {
-            current[editingPage.id] = val;
-            current[String(editingPage.id)] = val;
-          }
-          if (editingPage?.slug) {
-            current[editingPage.slug] = val;
-            const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (normEditSlug) current[normEditSlug] = val;
-          }
-          if (editingPage?.title) {
-            current[editingPage.title] = val;
-            const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (normEditTitle) current[normEditTitle] = val;
-          }
-          localStorage.setItem("cms_page_image_overrides", JSON.stringify(current));
-        } catch (e) {}
-      };
-
-      const setBannerOverrideValue = (val) => {
-        try {
-          const current = JSON.parse(localStorage.getItem("cms_page_banner_overrides") || "{}");
-          if (pageSlug) {
-            current[pageSlug] = val;
-            const norm = pageSlug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (norm) current[norm] = val;
-          }
-          if (pageTitle) {
-            current[pageTitle] = val;
-            const normTitle = pageTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (normTitle) current[normTitle] = val;
-          }
-          if (editingPage?.id) {
-            current[editingPage.id] = val;
-            current[String(editingPage.id)] = val;
-          }
-          if (editingPage?.slug) {
-            current[editingPage.slug] = val;
-            const normEditSlug = editingPage.slug.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (normEditSlug) current[normEditSlug] = val;
-          }
-          if (editingPage?.title) {
-            current[editingPage.title] = val;
-            const normEditTitle = editingPage.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
-            if (normEditTitle) current[normEditTitle] = val;
-          }
-          localStorage.setItem("cms_page_banner_overrides", JSON.stringify(current));
-        } catch (e) {}
-      };
-
-      if (imageFile) {
-        try {
-          const base64Url = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result || null);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(imageFile);
-          });
-          if (base64Url) {
-            setOverrideValue(base64Url);
-          }
-        } catch (e) {}
-      } else if (!formData.imageName) {
-        setOverrideValue("__REMOVED__");
-      }
-
-      if (bannerFile) {
-        try {
-          const base64BannerUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result || null);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(bannerFile);
-          });
-          if (base64BannerUrl) {
-            setBannerOverrideValue(base64BannerUrl);
-          }
-        } catch (e) {}
-      } else if (!formData.bannerName) {
-        setBannerOverrideValue("__REMOVED__");
-      }
-
-      let res = null;
       if (editingPage && editingPage.id && !String(editingPage.id).startsWith("default-")) {
-        res = await updateAdminPage(editingPage.id, data);
+        await updateAdminPage(editingPage.id, data);
       } else {
-        res = await createAdminPage(data);
-      }
-
-      if (res) {
-        const savedImg = res.imagePath || res.ImagePath || res.image || res.Image;
-        if (savedImg && formData.imageName) {
-          setOverrideValue(savedImg);
-        } else if (!formData.imageName) {
-          setOverrideValue("__REMOVED__");
-        }
-
-        const savedBnr = res.bannerPath || res.BannerPath || res.banner || res.Banner;
-        if (savedBnr && formData.bannerName) {
-          setBannerOverrideValue(savedBnr);
-        } else if (!formData.bannerName) {
-          setBannerOverrideValue("__REMOVED__");
-        }
+        await createAdminPage(data);
       }
 
       setSaved(true);
@@ -624,6 +449,7 @@ const AddPage = () => {
                 placeholder="Meta Title"
                 value={formData.metaTitle}
                 onChange={handleChange("metaTitle")}
+                onInput={(e) => autoResizeTextarea(e.target, 70)}
                 disabled={loading}
               />
             </div>
@@ -633,6 +459,7 @@ const AddPage = () => {
                 placeholder="Meta Keyword"
                 value={formData.metaKeyword}
                 onChange={handleChange("metaKeyword")}
+                onInput={(e) => autoResizeTextarea(e.target, 70)}
                 disabled={loading}
               />
             </div>
@@ -642,6 +469,7 @@ const AddPage = () => {
                 placeholder="Meta Description"
                 value={formData.metaDescription}
                 onChange={handleChange("metaDescription")}
+                onInput={(e) => autoResizeTextarea(e.target, 70)}
                 disabled={loading}
               />
             </div>
@@ -650,11 +478,13 @@ const AddPage = () => {
             <div className="form-group" style={{ gridColumn: 'span 3', marginTop: '2px' }}>
               <label>Description</label>
               <textarea
+                ref={descriptionRef}
                 className="editor"
                 rows={4}
                 placeholder="Write description..."
                 value={formData.description}
                 onChange={handleChange("description")}
+                onInput={(e) => autoResizeTextarea(e.target, 100)}
                 disabled={loading}
                 style={{ minHeight: '100px' }}
               />
@@ -664,8 +494,52 @@ const AddPage = () => {
           {formError && <p className="admin-markup-form-error" style={{ marginTop: '16px' }}>{formError}</p>}
           {saved && <p className="menu-form-success" style={{ marginTop: '16px' }}>Page saved successfully.</p>}
 
-          <div className="submit-area">
-            <button type="submit" className="submit-btn" disabled={loading}>
+          <div className="submit-area" style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: "10px", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #e2e8f0", flexWrap: "nowrap" }}>
+            <button
+              type="button"
+              className="reset-btn"
+              onClick={handleReset}
+              disabled={loading}
+              style={{
+                height: "36px",
+                minHeight: "36px",
+                maxHeight: "36px",
+                margin: 0,
+                padding: "0 22px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
+                fontSize: "0.84rem",
+                fontWeight: 500,
+                borderRadius: "6px",
+                verticalAlign: "middle",
+                boxSizing: "border-box"
+              }}
+            >
+              RESET
+            </button>
+            <button
+              type="submit"
+              className="submit-btn"
+              disabled={loading}
+              style={{
+                height: "36px",
+                minHeight: "36px",
+                maxHeight: "36px",
+                margin: 0,
+                padding: "0 22px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
+                fontSize: "0.84rem",
+                fontWeight: 500,
+                borderRadius: "6px",
+                verticalAlign: "middle",
+                boxSizing: "border-box"
+              }}
+            >
               {loading ? "SAVING..." : (editingPage ? "UPDATE" : "SUBMIT")}
             </button>
           </div>

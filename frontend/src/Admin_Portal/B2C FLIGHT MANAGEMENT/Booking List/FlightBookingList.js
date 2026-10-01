@@ -1296,10 +1296,15 @@ export default function AdminFlightBookingListPage() {
 
   return (
     <section className="admin-b2c-page admin-booking-page admin-flight-booking-page">
-      <header className="admin-b2c-header admin-flight-booking-header" style={{ margin: "6px 0" }}>
-        <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
-          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Flight</span> Booking List
-        </h1>
+      <header className="admin-b2c-header" style={{ margin: "5px 0 7px 0", padding: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+          <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>
+            B2C Flight
+          </h1>
+          <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#000000', margin: 0 }}>
+            Booking List
+          </h2>
+        </div>
       </header>
 
       <div className="admin-toolbar-row" style={{ marginBottom: "6px" }}>
@@ -1547,20 +1552,20 @@ export default function AdminFlightBookingListPage() {
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <strong style={{ fontSize: "0.80rem", whiteSpace: "nowrap" }}>
+                    <strong style={{ fontSize: "0.72rem", whiteSpace: "nowrap" }}>
                       {booking.journeyTime && booking.journeyTime !== "--:--" ? booking.journeyTime : "--:--"}
                     </strong>
                     {booking.segments && booking.segments.length > 1 ? (
-                      <small style={{ display: "block", color: "#A51C49", fontWeight: "700", fontSize: "0.68rem", marginTop: "2px" }}>
+                      <small style={{ display: "block", color: "#A51C49", fontWeight: "700", fontSize: "0.64rem", marginTop: "1px" }}>
                         Multi-Stop ({booking.segments.length} Legs)
                       </small>
                     ) : null}
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <strong style={{ fontSize: "0.82rem", marginBottom: "2px" }}>{safeValue(booking.pnr)}</strong>
+                    <strong style={{ fontSize: "0.72rem", marginBottom: "1px" }}>{safeValue(booking.pnr)}</strong>
                     {booking.ticketNo && booking.ticketNo !== "--" && booking.ticketNo !== booking.pnr && (
-                      <small style={{ display: "block", color: "#475569", fontWeight: "600", fontSize: "0.72rem", marginBottom: "3px" }}>
+                      <small style={{ display: "block", color: "#475569", fontWeight: "600", fontSize: "0.64rem", marginBottom: "1px" }}>
                         Tkt No: {safeValue(booking.ticketNo)}
                       </small>
                     )}
@@ -1582,18 +1587,18 @@ export default function AdminFlightBookingListPage() {
 
                   <div className="admin-table-cell admin-cell-centered" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <span style={{
-                      fontSize: "0.82rem",
+                      fontSize: "0.74rem",
                       fontWeight: "600",
                       color: profit < 0 ? "#dc2626" : "#16a34a",
-                      lineHeight: "1.2"
+                      lineHeight: "1.15"
                     }}>
                       {profit < 0 ? `-₹${Math.abs(profit).toFixed(2)}` : `₹${profit.toFixed(2)}`}
                     </span>
                     <span style={{
-                      fontSize: "0.68rem",
+                      fontSize: "0.62rem",
                       color: "#64748b",
                       fontWeight: "500",
-                      marginTop: "2px"
+                      marginTop: "1px"
                     }}>
                       {profit < 0 ? "Loss" : "Profit"}
                     </span>

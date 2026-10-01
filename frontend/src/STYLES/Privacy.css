@@ -1,0 +1,85 @@
+/* Privacy Policy Specific Styling */
+.legal-page-privacy .terms-bullet-list,
+.legal-page-privacy .legal-two-column-list,
+.legal-page-privacy ul,
+.legal-page-privacy ol,
+.legal-rendered-content ul,
+.legal-rendered-content ol {
+  column-count: 1 !important;
+  column-gap: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  margin: 12px 0 16px 0 !important;
+  padding-left: 28px !important;
+  list-style: disc !important;
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+}
+
+.legal-page-privacy .terms-bullet-list li,
+.legal-page-privacy .legal-two-column-item,
+.legal-page-privacy li,
+.legal-rendered-content li {
+  display: list-item !important;
+  list-style: disc !important;
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  break-inside: auto !important;
+  margin-bottom: 8px !important;
+  line-height: 1.75 !important;
+  text-align: left !important;
+  float: none !important;
+  color: #334155 !important;
+}
+
+.legal-page-privacy .terms-bullet-list li::marker,
+.legal-page-privacy li::marker,
+.legal-rendered-content li::marker {
+  color: #0f172a !important;
+  font-size: 1.1em !important;
+}
+
+.legal-page-privacy .terms-section-content {
+  margin-left: 0 !important;
+}
+
+.legal-page-privacy .terms-clause {
+  display: block !important;
+  margin-bottom: 12px !important;
+  width: 100% !important;
+}
+
+.legal-page-privacy .terms-clause-number {
+  display: inline-block;
+  margin-right: 8px;
+  font-weight: 600;
+}
+
+.legal-page-privacy .terms-clause-text {
+  display: inline;
+}
+
+.legal-page-privacy .terms-body-line,
+.legal-page-privacy .terms-opening-copy p,
+.legal-page-privacy p,
+.legal-rendered-content p {
+  margin-bottom: 12px !important;
+  line-height: 1.75 !important;
+  text-align: left !important;
+}
+
+.legal-page-privacy .terms-contact-line,
+.terms-contact-line {
+  list-style: none !important;
+  list-style-type: none !important;
+  margin: 4px 0 !important;
+  padding-left: 0 !important;
+  display: block !important;
+}
+
+.legal-page-privacy .terms-contact-line::marker,
+.terms-contact-line::marker {
+  content: "" !important;
+}

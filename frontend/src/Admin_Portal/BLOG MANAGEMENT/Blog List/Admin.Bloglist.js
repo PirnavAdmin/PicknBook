@@ -28,11 +28,25 @@ const formatDate = (dateString) => {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return dateString;
-        return date.toLocaleDateString('en-GB', {
-            day: 'numeric',
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
             month: 'short',
             year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
         });
+        const parts = formatter.formatToParts(date);
+        const day = parts.find((p) => p.type === 'day')?.value || '';
+        let month = parts.find((p) => p.type === 'month')?.value || '';
+        if (month.toLowerCase() === 'sep') month = 'Sept';
+        const year = parts.find((p) => p.type === 'year')?.value || '';
+        const hour = parts.find((p) => p.type === 'hour')?.value || '';
+        const minute = parts.find((p) => p.type === 'minute')?.value || '';
+        const dayPeriod = (parts.find((p) => p.type === 'dayPeriod')?.value || '').toLowerCase();
+
+        return `${day} ${month} ${year} ${hour}:${minute} ${dayPeriod}`;
     } catch {
         return dateString;
     }
@@ -474,27 +488,31 @@ function BlogList() {
 
             if (editFormData.image && typeof editFormData.image !== "string") {
                 dataToSend.append("Image", editFormData.image);
+            } else if (editImagePreview) {
+                dataToSend.append("ImageUrl", editFormData.imageName || editImagePreview || "");
             } else {
-                dataToSend.append("ImageUrl", editFormData.imageName || "");
-                dataToSend.append("Image", editFormData.imageName || "");
-                if (!editFormData.imageName && !editImagePreview) {
-                    dataToSend.append("RemoveImage", "true");
-                    dataToSend.append("ClearImage", "true");
-                }
+                dataToSend.append("ImageUrl", "null");
+                dataToSend.append("imageUrl", "null");
+                dataToSend.append("Image", "");
+                dataToSend.append("RemoveImage", "true");
+                dataToSend.append("ClearImage", "true");
+                dataToSend.append("DeleteImage", "true");
             }
 
             if (editFormData.ogImage && typeof editFormData.ogImage !== "string") {
                 dataToSend.append("OgImage", editFormData.ogImage);
+            } else if (editOgImagePreview) {
+                dataToSend.append("OgImageUrl", editFormData.ogImageName || editOgImagePreview || "");
             } else {
-                dataToSend.append("OgImageUrl", editFormData.ogImageName || "");
-                dataToSend.append("OgImage", editFormData.ogImageName || "");
-                if (!editFormData.ogImageName && !editOgImagePreview) {
-                    dataToSend.append("RemoveOgImage", "true");
-                    dataToSend.append("ClearOgImage", "true");
-                }
+                dataToSend.append("OgImageUrl", "null");
+                dataToSend.append("ogImageUrl", "null");
+                dataToSend.append("OgImage", "");
+                dataToSend.append("RemoveOgImage", "true");
+                dataToSend.append("ClearOgImage", "true");
+                dataToSend.append("DeleteOgImage", "true");
             }
 
-            if (!editImagePreview && !editFormData.imageName) {
+            if (!editImagePreview && !editFormData.image) {
                 removeBlogImageLocally(editingBlog.id);
                 if (editingBlog.title) removeBlogImageLocally(editingBlog.title);
                 if (editingBlog.slug) removeBlogImageLocally(editingBlog.slug);
@@ -578,7 +596,7 @@ function BlogList() {
         titleSub: {
             fontSize: '1.6rem',
             fontWeight: 600,
-            color: '#A51C49',
+            color: '#000000',
             margin: 0,
         },
         actions: {
@@ -1044,8 +1062,8 @@ function BlogList() {
 
                 <div style={styles.header}>
                     <div style={styles.titleWrapper}>
-                        <h1 style={styles.titleMain}>Blog</h1>
-                        <h2 style={styles.titleSub}>Management</h2>
+                        <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={styles.titleMain}>Blog</h1>
+                        <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={styles.titleSub}>Management</h2>
                     </div>
                     <div style={styles.actions}>
                         <select

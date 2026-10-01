@@ -682,11 +682,17 @@
   box-sizing: border-box !important;
 }
 
+.admin-booking-page .admin-table-head {
+  min-height: 28px !important;
+  padding: 4px 6px !important;
+  gap: 4px !important;
+}
+
 .admin-booking-page .admin-table-head > span {
-  font-size: 0.76rem !important;
+  font-size: 0.72rem !important;
   font-weight: 700 !important;
-  min-height: 24px !important;
-  padding: 6px 4px !important;
+  min-height: 20px !important;
+  padding: 2px 2px !important;
   margin: 0 !important;
 }
 
@@ -695,7 +701,7 @@
   display: flex !important;
   flex-direction: column !important;
   gap: 2px !important;
-  padding: 3px !important;
+  padding: 2px !important;
 }
 
 .admin-booking-page .admin-table-row {
@@ -703,9 +709,11 @@
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
   border: 1px solid rgba(255, 255, 255, 0.7) !important;
-  padding: 2px 5px !important;
+  padding: 2px 4px !important;
   gap: 3px !important;
+  align-items: center !important;
   border-radius: 5px !important;
+  margin-bottom: 2px !important;
   transition: all 0.2s ease-in-out !important;
 }
 
@@ -718,8 +726,8 @@
   background: rgba(255, 255, 255, 0.75) !important;
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
-  padding: 3px 6px !important;
-  font-size: 0.72rem !important;
+  padding: 2px 4px !important;
+  font-size: 0.70rem !important;
   gap: 1px !important;
   min-width: 0 !important;
 }
@@ -1108,9 +1116,37 @@
 }
 
 /* ── Bus Booking List Header & Name Cell Overrides ── */
+.admin-booking-page {
+  padding-top: 2px !important;
+  gap: 4px !important;
+}
+
 .admin-booking-page .admin-b2c-header {
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
+  margin-top: 5px !important;
+  margin-bottom: 7px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.admin-booking-page .admin-b2c-header h1 {
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #A51C49 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important;
+  line-height: 1.2 !important;
+}
+
+.admin-booking-page .admin-b2c-header h2 {
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.admin-booking-page .admin-table-head {
+  background: linear-gradient(135deg, #A51C49, #851237) !important;
 }
 
 .admin-booking-page .admin-name-text {

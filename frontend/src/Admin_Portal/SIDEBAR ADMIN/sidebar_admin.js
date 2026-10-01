@@ -98,7 +98,15 @@ const navGroups = [
         to: p('content-group'),
         icon: icons.page,
         submenu: [
-          { label: 'Blog', to: p('blog-management/blog-list') },
+          {
+            label: 'Blog',
+            to: p('blog-management/blog-category-list'),
+            submenu: [
+              { label: 'Category List', to: p('blog-management/blog-category-list') },
+              { label: 'Sub Category List', to: p('blog-management/blog-sub-category-list') },
+              { label: 'Blog List', to: p('blog-management/blog-list') },
+            ],
+          },
           { label: 'Page Management', to: p('page-management/all-pages') },
           {
             label: 'Popular Routes',

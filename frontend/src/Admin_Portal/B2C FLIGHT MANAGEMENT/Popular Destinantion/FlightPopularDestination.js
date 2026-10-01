@@ -8,7 +8,7 @@ import {
   createPopularDestination,
   updatePopularDestination,
   deletePopularDestination,
-} from "../../../services/flightBookingService";
+} from "../../../services/adminFlightService";
 
 function createDefaultFlightPopularDestinationForm() {
   return {

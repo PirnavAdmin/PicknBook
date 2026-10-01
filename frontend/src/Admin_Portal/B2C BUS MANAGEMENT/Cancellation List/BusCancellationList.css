@@ -28,13 +28,27 @@
 }
 
 .admin-cancel-header {
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
+  margin-top: 5px !important;
+  margin-bottom: 7px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 .admin-cancel-header h1 {
-  font-size: 1.25rem !important;
-  font-weight: 700 !important;
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #A51C49 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important;
+  line-height: 1.2 !important;
+}
+
+.admin-cancel-header h2 {
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
 }
 
 .admin-cancel-chip {

@@ -223,17 +223,17 @@ export default function HotelSearchHistory() {
   const startIndex = (currentPage - 1) * itemsPerPage;
 
   return (
-    <section className="admin-b2c-page admin-b2c-hotel-page admin-search-history-page" style={{ padding: "16px 24px", fontFamily: "'Inter', sans-serif" }}>
+    <section className="admin-b2c-page admin-b2c-hotel-page admin-search-history-page admin-hotel-search-history-page" style={{ padding: "16px 24px", fontFamily: "'Inter', sans-serif" }}>
       <style>{`
-        .admin-actions-row button {
+        .admin-hotel-search-history-page .admin-actions-row button {
           transition: all 0.2s ease !important;
         }
-        .admin-actions-row button:hover {
+        .admin-hotel-search-history-page .admin-actions-row button:hover {
           opacity: 0.9 !important;
           transform: translateY(-1px) !important;
         }
 
-        .admin-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-filter-btn {
+        .admin-hotel-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-filter-btn {
           background-color: #A51C49 !important;
           background: #A51C49 !important;
           border: 1.5px solid #A51C49 !important;
@@ -244,14 +244,14 @@ export default function HotelSearchHistory() {
           cursor: pointer !important;
           font-size: 13px !important;
         }
-        .admin-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-filter-btn:hover {
+        .admin-hotel-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-filter-btn:hover {
           background-color: #851237 !important;
           background: #851237 !important;
           border-color: #851237 !important;
           color: #ffffff !important;
         }
         
-        .admin-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-export-btn {
+        .admin-hotel-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-export-btn {
           background-color: #10b981 !important;
           background: #10b981 !important;
           border: 1.5px solid #10b981 !important;
@@ -262,37 +262,50 @@ export default function HotelSearchHistory() {
           cursor: pointer !important;
           font-size: 13px !important;
         }
-        .admin-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-export-btn:hover {
+        .admin-hotel-search-history-page .admin-search-history-toolbar .admin-actions-row button.search-history-export-btn:hover {
           background-color: #059669 !important;
           background: #059669 !important;
           border-color: #059669 !important;
           color: #ffffff !important;
         }
+
+        /* Heading - match flight search history exactly */
+        .admin-hotel-search-history-page .admin-search-history-header {
+          padding: 16px 0 2px 0 !important;
+          margin-bottom: 2px !important;
+        }
+        .admin-hotel-search-history-page .admin-search-history-header h1 {
+          font-size: 1.225rem !important;
+          margin: 0 !important;
+        }
         
-        /* Small page design overrides */
-        .admin-search-history-chip {
+        /* Chip */
+        .admin-hotel-search-history-page .admin-search-history-chip {
           padding: 4px 10px !important;
           font-size: 11px !important;
           border-radius: 6px !important;
         }
-        .admin-search-history-table-head,
-        .admin-search-history-row {
+
+        /* Grid columns */
+        .admin-hotel-search-history-page .admin-search-history-table-head,
+        .admin-hotel-search-history-page .admin-search-history-row {
           display: grid !important;
-          grid-template-columns: 0.35fr 0.85fr 1.2fr 1.4fr 0.9fr 0.65fr !important;
+          grid-template-columns: 0.38fr 0.82fr 1.2fr 1.3fr 0.9fr 0.65fr !important;
           gap: 8px !important;
         }
 
-        .admin-search-history-table-head {
+        /* Table header bar */
+        .admin-hotel-search-history-page .admin-search-history-table-head {
           padding: 6px 14px !important;
           min-height: 28px !important;
           background: #A51C49 !important;
           border-radius: 12px 12px 0 0 !important;
           align-items: center !important;
         }
-        .admin-search-history-table-head span {
+        .admin-hotel-search-history-page .admin-search-history-table-head span {
           color: #ffffff !important;
-          font-size: 0.73rem !important;
-          font-weight: 600 !important;
+          font-size: 11px !important;
+          font-weight: 500 !important;
           text-transform: none !important;
           letter-spacing: 0.02em !important;
           display: inline-flex !important;
@@ -300,18 +313,22 @@ export default function HotelSearchHistory() {
           justify-content: center !important;
           text-align: center !important;
         }
-        .admin-search-history-row {
-          padding: 12px 16px !important;
+
+        /* Row styling - match flight */
+        .admin-hotel-search-history-page .admin-search-history-row {
+          padding: 8px !important;
           font-size: 12px !important;
           font-family: 'Inter', sans-serif !important;
           color: #334155 !important;
           transition: background-color 0.2s ease !important;
           cursor: pointer !important;
         }
-        .admin-search-history-row:hover {
+        .admin-hotel-search-history-page .admin-search-history-row:hover {
           background-color: rgba(165, 28, 73, 0.03) !important;
         }
-        .admin-search-history-cell {
+
+        /* Cell styling - match flight exactly */
+        .admin-hotel-search-history-page .admin-search-history-cell {
           display: flex !important;
           flex-direction: column !important;
           align-items: center !important;
@@ -320,17 +337,29 @@ export default function HotelSearchHistory() {
           padding: 8px !important;
           box-sizing: border-box !important;
         }
-        .admin-search-history-cell strong {
-          font-weight: 700 !important;
-          font-size: 0.81rem !important;
+        .admin-hotel-search-history-page .admin-search-history-cell strong {
+          font-size: 11px !important;
+          font-weight: 500 !important;
+          color: #1e293b !important;
         }
-        .admin-search-history-empty {
+        .admin-hotel-search-history-page .admin-search-history-cell span {
+          font-size: 11px !important;
+          font-weight: 500 !important;
+        }
+        .admin-hotel-search-history-page .admin-search-history-cell small {
+          font-size: 0.72rem !important;
+          color: #64748b !important;
+          text-align: center !important;
+          font-weight: 400 !important;
+        }
+
+        .admin-hotel-search-history-page .admin-search-history-empty {
           padding: 24px !important;
           font-size: 13px !important;
           color: #64748b !important;
           text-align: center !important;
         }
-        .admin-search-history-view-btn {
+        .admin-hotel-search-history-page .admin-search-history-view-btn {
           background: #fff0f3 !important;
           color: #A51C49 !important;
           border: 1.5px solid #A51C49 !important;
@@ -341,17 +370,17 @@ export default function HotelSearchHistory() {
           cursor: pointer !important;
           transition: all 0.2s ease-in-out !important;
         }
-        .admin-search-history-view-btn:hover {
+        .admin-hotel-search-history-page .admin-search-history-view-btn:hover {
           background: #A51C49 !important;
           color: #ffffff !important;
           box-shadow: 0 3px 10px rgba(165, 28, 73, 0.25) !important;
         }
-        .city-id-badge {
+        .admin-hotel-search-history-page .city-id-badge {
           display: inline-flex;
           align-items: center;
           padding: 2px 6px;
           border-radius: 4px;
-          font-size: 0.72rem;
+          font-size: 0.68rem !important;
           font-weight: 500;
           background-color: #f1f5f9;
           color: #475569;
@@ -359,10 +388,10 @@ export default function HotelSearchHistory() {
           margin-top: 3px;
         }
       `}</style>
-      <header className="admin-b2c-header admin-search-history-header" style={{ margin: 0, paddingTop: '16px', paddingBottom: '16px' }}>
-        <h1 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#111827', margin: 0 }}>
-          <span style={{ color: '#A51C49' }}>B2C Hotel </span>
-          <span style={{ color: 'black' }}>Search List</span>
+      <header className="admin-b2c-header admin-search-history-header" style={{ padding: "16px 0 2px 0", margin: 0 }}>
+        <h1 style={{ fontWeight: 600, margin: 0, fontSize: "1.225rem" }}>
+          <span style={{ color: "#A51C49" }}>B2C Hotel </span>
+          <span style={{ color: "black" }}>Search List</span>
         </h1>
       </header>
 
@@ -452,7 +481,7 @@ export default function HotelSearchHistory() {
       <section className="admin-search-history-table-shell">
         <header className="admin-search-history-table-head">
           <span>S.No</span>
-          <span>Search Date</span>
+          <span>Search Date (IST)</span>
           <span>City Name & City ID</span>
           <span>Stay Dates & Guests</span>
           <span>Customer / User</span>
@@ -676,6 +705,35 @@ export const HotelSearchHistoryRow = ({ item, index, onView }) => {
 
   const stay = formatStayInfo(item);
 
+  const formatDateOnly = (value) => {
+    if (!value) return "--";
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    } catch {
+      return value;
+    }
+  };
+
+  const formatTimeOnly = (value) => {
+    if (!value) return "";
+    try {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "";
+      return date.toLocaleTimeString("en-GB", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <article
       id={`row-${item?.searchId || item?.id}`}
@@ -685,40 +743,57 @@ export const HotelSearchHistoryRow = ({ item, index, onView }) => {
     >
       {/* S.NO */}
       <div className="admin-search-history-cell admin-cell-centered">
-        <span style={{ fontWeight: 500, color: "#1e293b" }}>{index + 1}</span>
+        <strong style={{ fontWeight: 500, color: "#475569" }}>{index + 1}</strong>
       </div>
 
       {/* SEARCH DATE */}
       <div className="admin-search-history-cell">
-        <span style={{ fontWeight: 500, color: "#1e293b" }}>
-          {formatDate(item?.searchedAtUtc)}
-        </span>
+        <strong style={{ fontWeight: 500, color: "#1e293b" }}>
+          {formatDateOnly(item?.searchedAtUtc)}
+        </strong>
+        {item?.searchedAtUtc ? (
+          <small style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 400 }}>
+            {formatTimeOnly(item?.searchedAtUtc)}
+          </small>
+        ) : null}
       </div>
 
       {/* CITY NAME & CITY ID */}
       <div className="admin-search-history-cell">
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
-          <span className="font-medium text-gray-900 text-sm tracking-wide" style={{ fontWeight: 500, color: "#0f172a" }}>
-            {displayCity}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", justifyContent: "center" }}>
+          <span
+            style={{
+              padding: "1px 6px",
+              borderRadius: "4px",
+              fontSize: "0.68rem",
+              fontWeight: 500,
+              backgroundColor: "#f0fdf4",
+              color: "#166534",
+              border: "1px solid #bbf7d0",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "3px",
+            }}
+          >
+            Hotel
           </span>
-          {item?.cityId && (
-            <span className="city-id-badge">
-              ID: {item.cityId}
-            </span>
-          )}
+          <strong style={{ fontWeight: 500, color: "#0f172a" }}>{displayCity}</strong>
         </div>
+        {item?.cityId ? (
+          <small style={{ color: "#64748b", fontSize: "0.72rem", marginTop: "1px", fontWeight: 400 }}>
+            City ID: {item.cityId}
+          </small>
+        ) : null}
       </div>
 
       {/* STAY DATES & GUESTS */}
       <div className="admin-search-history-cell">
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "center" }}>
-          <span style={{ fontWeight: 500, color: "#0f172a" }}>
-            {safeValue(toDdMmYyyy(item?.checkInDate))} to {safeValue(toDdMmYyyy(item?.checkOutDate))}
-          </span>
-          <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 400 }}>
-            {stay.guests}
-          </span>
-        </div>
+        <strong style={{ fontWeight: 500, color: "#1e293b" }}>
+          {safeValue(toDdMmYyyy(item?.checkInDate))} to {safeValue(toDdMmYyyy(item?.checkOutDate))}
+        </strong>
+        <small style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 400 }}>
+          {stay.guests}
+        </small>
       </div>
 
       {/* CUSTOMER / USER */}
@@ -736,7 +811,7 @@ export const HotelSearchHistoryRow = ({ item, index, onView }) => {
           >
             {isGuest ? "Guest" : "User"}
           </span>
-          <span style={{ fontWeight: 500, color: "#334155" }}>{userLabel}</span>
+          <strong style={{ fontWeight: 500, color: "#334155" }}>{userLabel}</strong>
         </div>
       </div>
 

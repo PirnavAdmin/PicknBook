@@ -487,13 +487,18 @@ export default function HotelBookingList() {
           transform: translateY(-1px) !important;
         }
       `}</style>
-      <header className="admin-b2c-header" style={{ margin: "6px 0" }}>
-        <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "700" }}>
-          <span className="admin-heading-red" style={{ color: "#A51C49" }}>B2C Hotel</span> Booking List
-        </h1>
+      <header className="admin-b2c-header" style={{ margin: "5px 0 7px 0", padding: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
+          <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>
+            B2C Hotel
+          </h1>
+          <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#000000', margin: 0 }}>
+            Booking List
+          </h2>
+        </div>
       </header>
 
-      <div className="admin-toolbar-row" style={{ marginBottom: "14px" }}>
+      <div className="admin-toolbar-row" style={{ marginBottom: "6px" }}>
         <div className="admin-chip-row">
           <span className="admin-chip">Today Booked: {stats.active}</span>
           <span className="admin-chip">Today Pending: {stats.cancelled}</span>

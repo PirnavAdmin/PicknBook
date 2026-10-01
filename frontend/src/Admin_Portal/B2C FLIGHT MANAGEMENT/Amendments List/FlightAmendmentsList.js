@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import "./FlightAmendmentsList.css";
-import { listAdminAmendments } from "../../../services/flightBookingService";
+import { listAdminAmendments } from "../../../services/adminFlightService";
 import AdminPagination from "../../../components/AdminPagination";
 
 const FLIGHT_AMENDMENTS_STORAGE_KEY = "admin_flight_amendments_records";

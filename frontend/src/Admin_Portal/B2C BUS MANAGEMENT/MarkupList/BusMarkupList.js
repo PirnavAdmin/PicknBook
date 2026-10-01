@@ -6,9 +6,11 @@ import {
   ChevronDown,
   Download,
   Eye,
+  Filter,
   List,
   Pencil,
   Plus,
+  Search,
   Trash2,
   X,
   RefreshCw,
@@ -44,22 +46,82 @@ function getSortValue(row, sortBy) {
   return String(row[sortBy] ?? "").toLowerCase();
 }
 
+const getMarkupTypeBadgeClass = (markupType) => {
+  const t = String(markupType || "").toLowerCase();
+  if (t === "fixed" || t === "flat" || t === "0") return "markup-type-badge type-fixed";
+  return "markup-type-badge type-percentage";
+};
+
+const getSeatTypeBadgeClass = (seatType) => {
+  const s = String(seatType || "").toLowerCase().replace(/\s+/g, "");
+  if (s.includes("acsleeper")) return "col-seat-type-badge seat-acsleeper";
+  if (s.includes("acseater")) return "col-seat-type-badge seat-acseater";
+  if (s.includes("sleeper")) return "col-seat-type-badge seat-sleeper";
+  if (s.includes("seater")) return "col-seat-type-badge seat-seater";
+  return "col-seat-type-badge";
+};
+
 export default function AdminBusMarkupListPage() {
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState(DEFAULT_SORT_BY);
   const [sortOrder, setSortOrder] = useState(DEFAULT_SORT_ORDER);
   const [statusFilter, setStatusFilter] = useState("all");
   const [markupTypeFilter, setMarkupTypeFilter] = useState("all");
+  const [seatTypeFilter, setSeatTypeFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // Filter Modal state
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [tempSortBy, setTempSortBy] = useState(sortBy);
+  const [tempSortOrder, setTempSortOrder] = useState(sortOrder);
+  const [tempStatusFilter, setTempStatusFilter] = useState(statusFilter);
+  const [tempMarkupTypeFilter, setTempMarkupTypeFilter] = useState(markupTypeFilter);
+  const [tempSeatTypeFilter, setTempSeatTypeFilter] = useState(seatTypeFilter);
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, markupTypeFilter, sortBy, sortOrder]);
-  
+  }, [statusFilter, markupTypeFilter, seatTypeFilter, searchTerm, sortBy, sortOrder]);
+
+  const openFilterModal = () => {
+    setTempSortBy(sortBy);
+    setTempSortOrder(sortOrder);
+    setTempStatusFilter(statusFilter);
+    setTempMarkupTypeFilter(markupTypeFilter);
+    setTempSeatTypeFilter(seatTypeFilter);
+    setIsFilterModalOpen(true);
+  };
+
+  const handleApplyFilter = () => {
+    setSortBy(tempSortBy);
+    setSortOrder(tempSortOrder);
+    setStatusFilter(tempStatusFilter);
+    setMarkupTypeFilter(tempMarkupTypeFilter);
+    setSeatTypeFilter(tempSeatTypeFilter);
+    setCurrentPage(1);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleResetFilter = () => {
+    setTempSortBy(DEFAULT_SORT_BY);
+    setTempSortOrder(DEFAULT_SORT_ORDER);
+    setTempStatusFilter("all");
+    setTempMarkupTypeFilter("all");
+    setTempSeatTypeFilter("all");
+    setSortBy(DEFAULT_SORT_BY);
+    setSortOrder(DEFAULT_SORT_ORDER);
+    setStatusFilter("all");
+    setMarkupTypeFilter("all");
+    setSeatTypeFilter("all");
+    setSearchTerm("");
+    setCurrentPage(1);
+    setIsFilterModalOpen(false);
+  };
+
   const [viewRow, setViewRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
   const [deleteRow, setDeleteRow] = useState(null);
@@ -115,11 +177,25 @@ export default function AdminBusMarkupListPage() {
     const filteredRows = rows.filter((row) => {
       const rowStatus = String(row.status || "").toLowerCase();
       const rowMarkupType = String(row.markupType || "").toLowerCase();
+      const rowSeatType = String(row.seatType || "").toLowerCase();
 
       const matchesStatus = statusFilter === "all" || rowStatus === statusFilter.toLowerCase();
       const matchesMarkupType = markupTypeFilter === "all" || rowMarkupType === markupTypeFilter.toLowerCase();
+      const matchesSeatType = seatTypeFilter === "all" || rowSeatType === seatTypeFilter.toLowerCase();
 
-      return matchesStatus && matchesMarkupType;
+      const query = searchTerm.trim().toLowerCase();
+      const matchesSearch = !query || [
+        String(row.id || ""),
+        String(row.seatType || ""),
+        String(row.value || ""),
+        String(row.markupType || ""),
+        String(row.updatedBy || ""),
+        String(row.remark || ""),
+        String(row.status || ""),
+        formatDateTime(row.updateDateUtc),
+      ].some((field) => field.toLowerCase().includes(query));
+
+      return matchesStatus && matchesMarkupType && matchesSeatType && matchesSearch;
     });
 
     const sortedRows = [...filteredRows].sort((leftRow, rightRow) => {
@@ -141,14 +217,12 @@ export default function AdminBusMarkupListPage() {
     });
 
     return sortedRows;
-  }, [rows, markupTypeFilter, sortBy, sortOrder, statusFilter]);
+  }, [rows, markupTypeFilter, statusFilter, seatTypeFilter, searchTerm, sortBy, sortOrder]);
 
   const paginatedRows = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return visibleRows.slice(startIndex, startIndex + itemsPerPage);
   }, [visibleRows, currentPage, itemsPerPage]);
-
-  const totalPages = Math.max(1, Math.ceil(visibleRows.length / itemsPerPage));
 
   const handleExport = () => {
     if (visibleRows.length === 0) {
@@ -188,7 +262,7 @@ export default function AdminBusMarkupListPage() {
     const link = document.createElement("a");
 
     link.href = fileUrl;
-    link.download = `admin-markup-list-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `admin-bus-markup-list-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
 
     URL.revokeObjectURL(fileUrl);
@@ -214,9 +288,6 @@ export default function AdminBusMarkupListPage() {
   const openAddModal = () => {
     setEditError("");
     setEditRow({
-
-
-
       seatType: "",
       value: "",
       markupType: "Fixed",
@@ -309,14 +380,14 @@ export default function AdminBusMarkupListPage() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '80px 20px',
-          background: 'var(--panel)',
+          padding: '60px 20px',
+          background: '#ffffff',
           borderRadius: '12px',
-          border: '1px solid var(--border)',
-          marginTop: '24px',
+          border: '1px solid #e2e8f0',
+          marginTop: '16px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
-          <div style={{ color: '#ef4444', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ color: '#ef4444', fontSize: '1.1rem', fontWeight: '600', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertCircle size={20} />
             <span>Network Error</span>
           </div>
@@ -364,236 +435,295 @@ export default function AdminBusMarkupListPage() {
         </div>
         <div className="stat-card active">
           <div className="stat-label">Active</div>
-          <div className="stat-value">{rows.filter(r => r.status === 'Active').length}</div>
+          <div className="stat-value">{rows.filter(r => String(r.status).toLowerCase() === 'active').length}</div>
           <div className="stat-meta">Currently applied</div>
         </div>
         <div className="stat-card inactive">
           <div className="stat-label">Inactive</div>
-          <div className="stat-value">{rows.filter(r => r.status === 'Inactive').length}</div>
+          <div className="stat-value">{rows.filter(r => String(r.status).toLowerCase() === 'inactive').length}</div>
           <div className="stat-meta">Paused markups</div>
         </div>
       </section>
 
-      {/* ── TOOLBAR ── */}
+      {/* ── TOOLBAR (ALL IN ONE LINE) ── */}
       <section className="markup-toolbar">
-        <div className="markup-toolbar-group">
-          <label className="markup-field">
-            <span>Sort By</span>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="updateDateUtc">Updated On</option>
-                  <option value="id">ID</option>
-                  <option value="value">Value</option>
-                  <option value="markupType">Markup Type</option>
-                  <option value="seatType">Seat Type</option>
-                  <option value="updatedBy">Updated By</option>
-                  <option value="status">Status</option>
-                </select>
-              </label>
-              <label className="markup-field">
-                <span>Order</span>
-                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
-                  <option value="desc">Descending</option>
-                  <option value="asc">Ascending</option>
-                </select>
-              </label>
-              <label className="markup-field">
-                <span>Markup Type</span>
-                <select value={markupTypeFilter} onChange={(e) => setMarkupTypeFilter(e.target.value)}>
-                  <option value="all">All Types</option>
-                  {availableMarkupTypes.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="markup-toolbar-actions">
-              <label className="markup-field">
-                <span>Status</span>
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="all">All</option>
-                  {availableStatuses.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" className="markup-primary-btn" onClick={openAddModal}>
-                <Plus size={14} />
-                Add New
-              </button>
-              <button
-                type="button"
-                className="markup-export-btn"
-                onClick={handleExport}
-                disabled={visibleRows.length === 0}
-              >
-                <Download size={14} />
-                Export
-              </button>
-            </div>
-          </section>
+        <div className="markup-search-wrap">
+          <Search size={15} className="markup-search-icon" />
+          <input
+            type="text"
+            className="markup-search-input"
+            placeholder="Search markups..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+          {searchTerm && (
+            <button type="button" className="markup-search-clear" onClick={() => setSearchTerm("")}>
+              <X size={13} />
+            </button>
+          )}
+        </div>
 
-          <section className="admin-markup-table-wrap">
-            {isLoading ? (
-              <p className="admin-markup-empty">Loading settings...</p>
-            ) : error ? (
-              <p className="admin-markup-empty" style={{ color: "red" }}>{error}</p>
-            ) : (
-              <table className="admin-markup-table">
-                <colgroup>
-                  <col style={{ width: "7%" }} />
-                  <col style={{ width: "12%" }} />
-                  <col style={{ width: "9%" }} />
-                  <col style={{ width: "12%" }} />
-                  <col style={{ width: "15%" }} />
-                  <col style={{ width: "11%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "11%" }} />
-                  <col style={{ width: "13%" }} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Seat Type</th>
-                    <th>Value</th>
-                    <th>Markup Type</th>
-                    <th>Updated On</th>
-                    <th>Updated By</th>
-                    <th>Remark</th>
-                    <th>Status</th>
-                    <th className="action-col">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={9}>
-                        <p className="admin-markup-empty">No markup records found.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedRows.map((row) => (
-                      <tr key={row.id}>
-                        <td>
-                          <button
-                            type="button"
-                            className="markup-id-chip"
-                            onClick={() => setViewRow(row)}
-                            aria-label={`Open basic details for ${row.id}`}
-                          >
-                            <span>{row.id}</span>
-                          </button>
-                        </td>
-                        <td>{row.seatType}</td>
-                        <td>{row.markupType === "Fixed" ? formatCurrency(row.value) : `${row.value}%`}</td>
-                        <td>{row.markupType}</td>
-                        <td>{formatDateTime(row.updateDateUtc)}</td>
-                        <td>{row.updatedBy}</td>
-                        <td className="markup-remark-cell">
-                          <span className="markup-remark-text">{row.remark || "--"}</span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className={`markup-status-toggle ${String(row.status || "").toLowerCase()}`}
-                            onClick={() => handleStatusToggle(row.id)}
-                            aria-label={`Set ${row.id} status`}
-                          >
-                            <span>{row.status}</span>
-                          </button>
-                        </td>
-                        <td className="action-col">
-                          <div className="actions-dropdown-container">
+        <div className="markup-toolbar-actions">
+          <button type="button" className="markup-primary-btn" onClick={openAddModal}>
+            <Plus size={14} />
+            Add New
+          </button>
+          <button type="button" className="markup-filter-btn" onClick={openFilterModal}>
+            <Filter size={14} />
+            Filter
+          </button>
+          <button
+            type="button"
+            className="markup-export-btn"
+            onClick={handleExport}
+            disabled={visibleRows.length === 0}
+          >
+            <Download size={14} />
+            Export
+          </button>
+        </div>
+      </section>
+
+                  {/* ── FILTER FORM PANEL (INLINE ABOVE TABLE, ALL IN ONE LINE, NO DIVIDER LINES) ── */}
+      {isFilterModalOpen && (
+        <div className="admin-markup-filter-panel">
+          <div className="admin-markup-filter-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Filter size={15} style={{ color: '#A41B48' }} />
+              <h4 style={{ margin: 0, fontSize: '13.5px', fontWeight: '700', color: '#1e293b' }}>Filter Markups</h4>
+            </div>
+            <button type="button" className="close-x" onClick={() => setIsFilterModalOpen(false)}>
+              <X size={15} />
+            </button>
+          </div>
+
+          <div className="admin-markup-filter-row">
+            <label className="markup-filter-field">
+              <span>Markup Type</span>
+              <select value={tempMarkupTypeFilter} onChange={(e) => setTempMarkupTypeFilter(e.target.value)}>
+                <option value="all">All Types</option>
+                {availableMarkupTypes.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="markup-filter-field">
+              <span>Status</span>
+              <select value={tempStatusFilter} onChange={(e) => setTempStatusFilter(e.target.value)}>
+                <option value="all">All Statuses</option>
+                {availableStatuses.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="markup-filter-field">
+              <span>Seat Type</span>
+              <select value={tempSeatTypeFilter} onChange={(e) => setTempSeatTypeFilter(e.target.value)}>
+                <option value="all">All Seat Types</option>
+                <option value="SEATER">SEATER</option>
+                <option value="SLEEPER">SLEEPER</option>
+                <option value="Semi-Sleeper">Semi-Sleeper</option>
+                <option value="AC Sleeper">AC Sleeper</option>
+                <option value="AC Seater">AC Seater</option>
+                <option value="AC Semi-Sleeper">AC Semi-Sleeper</option>
+                <option value="Multi-Axle">Multi-Axle</option>
+                <option value="Volvo">Volvo</option>
+                <option value="ALL">ALL SEATS</option>
+              </select>
+            </label>
+
+            <label className="markup-filter-field">
+              <span>Sort By</span>
+              <select value={tempSortBy} onChange={(e) => setTempSortBy(e.target.value)}>
+                <option value="updateDateUtc">Updated On</option>
+                <option value="id">ID</option>
+                <option value="value">Value</option>
+                <option value="markupType">Markup Type</option>
+                <option value="seatType">Seat Type</option>
+                <option value="updatedBy">Updated By</option>
+                <option value="status">Status</option>
+              </select>
+            </label>
+
+            <label className="markup-filter-field">
+              <span>Order</span>
+              <select value={tempSortOrder} onChange={(e) => setTempSortOrder(e.target.value)}>
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+            </label>
+
+            <div className="markup-filter-actions-inline">
+              <button type="button" className="markup-btn-reset" onClick={handleResetFilter}>
+                Reset
+              </button>
+              <button type="button" className="markup-btn-apply" onClick={handleApplyFilter}>
+                Apply Filter
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TABLE WRAPPER ── */}
+      <section className="admin-markup-table-wrap">
+        {isLoading ? (
+          <p className="admin-markup-empty">Loading settings...</p>
+        ) : error ? (
+          <p className="admin-markup-empty" style={{ color: "red" }}>{error}</p>
+        ) : (
+          <table className="admin-markup-table">
+            <colgroup>
+              <col style={{ width: "7%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "10%" }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Seat Type</th>
+                <th>Value</th>
+                <th>Markup Type</th>
+                <th>Updated Date</th>
+                <th>Updated By</th>
+                <th>Remark</th>
+                <th>Status</th>
+                <th className="action-col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginatedRows.length === 0 ? (
+                <tr>
+                  <td colSpan={9}>
+                    <p className="admin-markup-empty">No markup records found.</p>
+                  </td>
+                </tr>
+              ) : (
+                paginatedRows.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <button
+                        type="button"
+                        className="markup-id-chip"
+                        onClick={() => setViewRow(row)}
+                        aria-label={`Open basic details for ${row.id}`}
+                      >
+                        <span>{row.id}</span>
+                      </button>
+                    </td>
+                    <td><span className={getSeatTypeBadgeClass(row.seatType)}>{row.seatType}</span></td>
+                    <td>
+                      {row.markupType === "Fixed" ? formatCurrency(row.value) : `${row.value}%`}
+                    </td>
+                    <td><span className={getMarkupTypeBadgeClass(row.markupType)}>{row.markupType}</span></td>
+                    <td className="markup-date-text">{formatDateTime(row.updateDateUtc)}</td>
+                    <td className="markup-updatedby-text">{row.updatedBy}</td>
+                    <td className="markup-remark-cell">
+                      <span className="markup-remark-text">{row.remark || "--"}</span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className={`markup-status-toggle ${String(row.status || "").toLowerCase()}`}
+                        onClick={() => handleStatusToggle(row.id)}
+                        aria-label={`Set ${row.id} status`}
+                      >
+                        <span>{row.status === "Active" || row.status === "ACTIVE" ? "Active" : "Inactive"}</span>
+                      </button>
+                    </td>
+                    <td className="action-col">
+                      <div className="actions-dropdown-container">
+                        <button
+                          type="button"
+                          className={`actions-trigger-btn ${activeDropdownId === row.id ? 'active' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDropdownId(activeDropdownId === row.id ? null : row.id);
+                          }}
+                        >
+                          <span>Actions</span>
+                          <ChevronDown size={12} className="chevron-icon" />
+                        </button>
+                        {activeDropdownId === row.id && (
+                          <div className="actions-dropdown-menu">
                             <button
                               type="button"
-                              className={`actions-trigger-btn ${activeDropdownId === row.id ? 'active' : ''}`}
+                              className="dropdown-item view"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setActiveDropdownId(activeDropdownId === row.id ? null : row.id);
+                                setViewRow(row);
+                                setActiveDropdownId(null);
                               }}
                             >
-                              <span>Actions</span>
-                              <ChevronDown size={12} className="chevron-icon" />
+                              <span>View Details</span>
+                              <Eye size={13} className="item-icon" />
                             </button>
-                            {activeDropdownId === row.id && (
-                              <div className="actions-dropdown-menu">
-                                <button
-                                  type="button"
-                                  className="dropdown-item view"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setViewRow(row);
-                                    setActiveDropdownId(null);
-                                  }}
-                                >
-                                  <span>View Details</span>
-                                  <Eye size={13} className="item-icon" />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="dropdown-item edit"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openEditModal(row);
-                                    setActiveDropdownId(null);
-                                  }}
-                                >
-                                  <span>Edit Markup</span>
-                                  <Pencil size={13} className="item-icon" />
-                                </button>
-                                <button
-                                  type="button"
-                                  className="dropdown-item delete"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setDeleteRow(row);
-                                    setActiveDropdownId(null);
-                                  }}
-                                >
-                                  <span>Delete Markup</span>
-                                  <Trash2 size={13} className="item-icon" />
-                                </button>
-                              </div>
-                            )}
+                            <button
+                              type="button"
+                              className="dropdown-item edit"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(row);
+                                setActiveDropdownId(null);
+                              }}
+                            >
+                              <span>Edit Markup</span>
+                              <Pencil size={13} className="item-icon" />
+                            </button>
+                            <button
+                              type="button"
+                              className="dropdown-item delete"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteRow(row);
+                                setActiveDropdownId(null);
+                              }}
+                            >
+                              <span>Delete Markup</span>
+                              <Trash2 size={13} className="item-icon" />
+                            </button>
                           </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            )}
-            {visibleRows.length > 0 && (
-              <div style={{ marginTop: "16px" }}>
-                <AdminPagination
-                  currentPage={currentPage}
-                  totalItems={visibleRows.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                  itemName="markup records"
-                />
-              </div>
-            )}
-          </section>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        )}
+        {visibleRows.length > 0 && (
+          <div style={{ marginTop: "12px" }}>
+            <AdminPagination
+              currentPage={currentPage}
+              totalItems={visibleRows.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={setItemsPerPage}
+              itemName="markup records"
+            />
+          </div>
+        )}
+      </section>
 
+      
+
+      {/* ── ADD / EDIT MODAL ── */}
       {editRow && createPortal(
         <div 
           className="admin-markup-coupon-backdrop" 
           onClick={() => setEditRow(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(15, 23, 42, 0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 100000,
-            padding: "16px"
-          }}
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
@@ -609,8 +739,11 @@ export default function AdminBusMarkupListPage() {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
               <h3 style={{ color: "#A51C49", fontSize: "1.3rem", margin: 0, fontWeight: "700" }}>
-                {isAdding ? "Add B2C Markup" : "Edit B2C Markup"}
+                {isAdding ? "Add B2C Bus Markup" : "Edit B2C Bus Markup"}
               </h3>
+              <button type="button" className="close-x" onClick={() => setEditRow(null)}>
+                <X size={18} />
+              </button>
             </div>
             
             <form onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}>
@@ -768,24 +901,11 @@ export default function AdminBusMarkupListPage() {
         document.body
       )}
 
+      {/* ── DETAIL VIEW MODAL ── */}
       {viewRow && createPortal(
         <div 
           className="admin-markup-coupon-backdrop" 
           onClick={() => setViewRow(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(15, 23, 42, 0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 100000,
-            padding: "16px"
-          }}
         >
           <div 
             onClick={(e) => e.stopPropagation()} 
@@ -809,10 +929,10 @@ export default function AdminBusMarkupListPage() {
                   background: '#A51C49',
                   color: '#ffffff',
                   borderRadius: '8px',
-                  padding: '8px 16px',
+                  padding: '6px 14px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  fontSize: '13px'
+                  fontSize: '12px'
                 }}
               >
                 Close
@@ -838,7 +958,7 @@ export default function AdminBusMarkupListPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>SEAT TYPE</span>
-                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewRow.seatType}</span>
+                <div><span className={getSeatTypeBadgeClass(viewRow.seatType)}>{viewRow.seatType}</span></div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>VALUE</span>
@@ -846,7 +966,7 @@ export default function AdminBusMarkupListPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>MARKUP TYPE</span>
-                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '600' }}>{viewRow.markupType}</span>
+                <div><span className={getMarkupTypeBadgeClass(viewRow.markupType)}>{viewRow.markupType}</span></div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS</span>
@@ -870,24 +990,11 @@ export default function AdminBusMarkupListPage() {
         document.body
       )}
 
+      {/* ── DELETE CONFIRM MODAL ── */}
       {deleteRow && createPortal(
         <div 
           className="admin-markup-coupon-backdrop" 
           onClick={() => setDeleteRow(null)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(15, 23, 42, 0.6)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 100000,
-            padding: "16px"
-          }}
         >
           <div 
             onClick={(event) => event.stopPropagation()} 
@@ -928,7 +1035,7 @@ export default function AdminBusMarkupListPage() {
               <button 
                 type="button" 
                 onClick={() => setDeleteRow(null)} 
-                style={{ backgroundColor: "#f97316", color: "#ffffff", padding: "8px 16px", borderRadius: "8px", border: "none", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}
+                style={{ backgroundColor: "#f97316", color: "#ffffff", padding: "6px 14px", borderRadius: "6px", border: "none", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}
               >
                 Cancel
               </button>
@@ -936,7 +1043,7 @@ export default function AdminBusMarkupListPage() {
                 type="button"
                 className="modal-btn delete-confirm-btn"
                 onClick={handleDeleteConfirm}
-                style={{ backgroundColor: '#ef4444', color: '#ffffff', padding: '8px 16px', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', fontSize: '13px', height: 'auto' }}
+                style={{ backgroundColor: '#ef4444', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', border: 'none', fontWeight: '600', cursor: 'pointer', fontSize: '13px', height: 'auto' }}
               >
                 Delete
               </button>

@@ -92,19 +92,14 @@ import HotelCancellationList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Cancellat
 import HotelSearchHistory from "./Admin_Portal/B2C HOTEL MANAGEMENT/Search History/HotelSearchHistory";
 import HotelMarkupList from "./Admin_Portal/B2C HOTEL MANAGEMENT/Markup List/HotelMarkupList";
 import HotelEditMarkup from "./Admin_Portal/B2C HOTEL MANAGEMENT/Markup List/HotelEditMarkup";
-import TaxManagement from "./Admin_Portal/PAYMENT MANAGEMENT/Tax Management/TaxManagement";
 import AllPages from "./Admin_Portal/PAGE MANAGEMENT/ALL PAGE LIST/AllPages";
 import AddPage from "./Admin_Portal/PAGE MANAGEMENT/ADD NEW PAGE/AddPage";
 import AdminMenuListPage from "./Admin_Portal/MENU MANAGEMENT/MENU LIST/MenuList";
 import AdminMenuAddPage from "./Admin_Portal/MENU MANAGEMENT/ADD MENU/addmenu";
 import AdminNotificationsPage from "./Admin_Portal/NOTIFICATIONS/AdminNotificationsPage";
-import Notifications from "./Admin_Portal/B2B_MANAGEMENT/Notifications/Notifications";
 
-import PaymentSettings from "./Admin_Portal/PAYMENT MANAGEMENT/Payment Settings/payment Settings";
 import WalletTransactionList from "./Admin_Portal/PAYMENT MANAGEMENT/WalletTransaction/WalletTransactionList";
-import Reconciliation from "./Admin_Portal/ACCOUNT_MANAGEMENT/Reconciliation/Reconciliation";
-import TransactionLog from "./Admin_Portal/ACCOUNT_MANAGEMENT/TransactionLog/TransactionLog";
-import AdminPaymentsList from "./Admin_Portal/PAYMENTS ADMIN/AdminPaymentsList";
+import AdminPaymentsList from "./Admin_Portal/PAYMENT MANAGEMENT/PaymentsAdmin/payment";
 
 import SecurityManagement from "./Admin_Portal/SECURITY_MANAGEMENT/SecurityManagement";
 import IpManagement from "./Admin_Portal/SECURITY_MANAGEMENT/IpManagement";
@@ -509,9 +504,7 @@ function AppContent() {
           />
           <Route path="dashbord" element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="b2b-management/notifications" element={<Notifications />} />
-          <Route path="b2b/notifications" element={<Notifications />} />
+          <Route path="notifications" element={<AdminNotificationsPage />} />
           <Route path="admin-notifications" element={<AdminNotificationsPage />} />
           <Route path="promotions" element={<BusPromotionsList />} />
           <Route path="offers" element={<BusPromotionsList />} />
@@ -608,15 +601,15 @@ function AppContent() {
           <Route path={ADMIN_MENU_ROUTES.add} element={<AdminMenuAddRoute />} />
           <Route path="AllPages" element={<Navigate to="page-management/pages" replace />} />
           <Route path="AddPage" element={<Navigate to="page-management/pages/new" replace />} />          {/* Payment & Account Management */}
-          <Route path="payment-management" element={<PaymentSettings />} />
-          <Route path="payment-management/payment-setting" element={<PaymentSettings />} />
-          <Route path="payment-management/payment-settings" element={<PaymentSettings />} />
+          <Route path="payment-management" element={<Navigate to="wallet-transactions" replace />} />
+          <Route path="payment-management/payment-setting" element={<Navigate to="wallet-transactions" replace />} />
+          <Route path="payment-management/payment-settings" element={<Navigate to="wallet-transactions" replace />} />
           <Route path="payment-management/wallet-transactions" element={<WalletTransactionList />} />
-          <Route path="payment-management/tax-management" element={<TaxManagement />} />
+          <Route path="payment-management/tax-management" element={adminPlaceholder("Tax Management")} />
           <Route path="payments" element={<AdminPaymentsList />} />
           {/* Account Management */}
-          <Route path="account-management/transaction-log" element={<TransactionLog />} />
-          <Route path="account-management/reconciliation" element={<Reconciliation />} />
+          <Route path="account-management/transaction-log" element={adminPlaceholder("Transaction Log")} />
+          <Route path="account-management/reconciliation" element={adminPlaceholder("Reconciliation")} />
           <Route path="account-management/bank-list" element={adminPlaceholder("Bank List")} />
           <Route path="account-management/qrcode-list" element={adminPlaceholder("QR Code List")} />
           <Route path="account-management/payment-upload" element={adminPlaceholder("Payment Upload")} />

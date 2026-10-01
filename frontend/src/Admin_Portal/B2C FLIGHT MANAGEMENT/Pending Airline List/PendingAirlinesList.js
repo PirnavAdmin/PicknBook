@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Download, PencilLine, PlusCircle, Trash2, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "./PendingAirlinesList.css";
-import { listFlightPendingAirlines, deleteFlightPendingAirline } from "../../../services/flightBookingService";
+import { listFlightPendingAirlines, deleteFlightPendingAirline } from "../../../services/adminFlightService";
 import AdminPagination from "../../../components/AdminPagination";
 
 const safeValue = (value, fallback = "--") => {

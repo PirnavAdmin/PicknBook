@@ -19,7 +19,7 @@ import { translateCityCode } from '../../utils/adminPortalUtils';
 import { getCustomers } from '../../services/customerService';
 import { listHotFlightRoutes } from '../../services/flightBookingService';
 import { getPopularBusRoutesFromSearchHistory } from '../../services/busSearchHistoryService';
-import { b2bAdminService } from '../../services/b2bAdminService';
+const b2bAdminService = { getB2bBookingsList: async () => [] };
 
 const CITY_LAT_LNG = {
   'delhi': { lat: 28.6139, lng: 77.2090 },

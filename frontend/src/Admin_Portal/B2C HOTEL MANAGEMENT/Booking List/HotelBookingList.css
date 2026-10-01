@@ -9,20 +9,37 @@
 }
 
 /* Header Title Spacing above and below */
+.admin-b2c-hotel-page,
+.hbl-page {
+  padding-top: 2px !important;
+  gap: 4px !important;
+}
+
 .admin-b2c-hotel-page .admin-b2c-header,
 .hbl-page .admin-b2c-header {
-  margin-top: 18px !important;
-  margin-bottom: 16px !important;
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
+  margin-top: 5px !important;
+  margin-bottom: 7px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 .admin-b2c-hotel-page .admin-b2c-header h1,
 .hbl-page .admin-b2c-header h1 {
-  margin-top: 6px !important;
-  margin-bottom: 10px !important;
-  font-size: 1.25rem !important;
-  font-weight: 700 !important;
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #A51C49 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important;
+  line-height: 1.2 !important;
+}
+
+.admin-b2c-hotel-page .admin-b2c-header h2,
+.hbl-page .admin-b2c-header h2 {
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
 }
 
 /* Header */
@@ -613,10 +630,10 @@
 /* Compact Table Header & Typography */
 .admin-b2c-hotel-page .admin-table-head {
   display: grid !important;
-  min-height: 44px !important;
+  min-height: 28px !important;
   height: auto !important;
-  padding: 10px 8px !important;
-  gap: 8px !important;
+  padding: 4px 6px !important;
+  gap: 4px !important;
   align-items: center !important;
   border-top-left-radius: 8px !important;
   border-top-right-radius: 8px !important;
@@ -625,23 +642,39 @@
   box-sizing: border-box !important;
 }
 
+.admin-b2c-hotel-page .admin-table-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  padding: 2px !important;
+}
+
 .admin-b2c-hotel-page .admin-table-row {
   display: grid !important;
-  padding: 8px !important;
-  gap: 8px !important;
+  padding: 2px 4px !important;
+  gap: 4px !important;
   box-sizing: border-box !important;
   align-items: center !important;
+  border-radius: 5px !important;
+  margin-bottom: 2px !important;
   grid-template-columns: 1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr !important;
 }
 
+.admin-b2c-hotel-page .admin-table-cell {
+  padding: 2px 4px !important;
+  font-size: 0.70rem !important;
+  gap: 1px !important;
+  box-sizing: border-box !important;
+}
+
 .admin-b2c-hotel-page .admin-table-head > span {
-  font-size: 0.76rem !important;
+  font-size: 0.72rem !important;
   font-weight: 700 !important;
-  min-height: 24px !important;
+  min-height: 20px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 6px 4px !important;
+  padding: 2px 2px !important;
   margin: 0 !important;
   text-align: center !important;
   color: #ffffff !important;
@@ -664,8 +697,29 @@
 
 .admin-b2c-hotel-page .admin-b2c-header,
 .admin-b2c-hotel-page .admin-markup-coupon-header {
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
+  margin-top: 5px !important;
+  margin-bottom: 7px !important;
+}
+
+.admin-b2c-hotel-page .admin-b2c-header h1 {
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #A51C49 !important;
+  margin: 0 !important;
+  letter-spacing: -0.5px !important;
+  line-height: 1.2 !important;
+}
+
+.admin-b2c-hotel-page .admin-b2c-header h2 {
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.admin-b2c-hotel-page .admin-table-head {
+  background: linear-gradient(135deg, #A51C49, #851237) !important;
 }
 
 .admin-b2c-hotel-page .admin-name-text {
@@ -678,6 +732,24 @@
   max-width: 100% !important;
   display: block !important;
   text-align: center !important;
+}
+
+.admin-b2c-hotel-page .admin-action-btn {
+  height: 22px !important;
+  padding: 0 10px !important;
+  font-size: 0.72rem !important;
+  border-radius: 6px !important;
+  border: 1px solid #A51C49 !important;
+  background: #ffffff !important;
+  color: #A51C49 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-b2c-hotel-page .admin-action-btn:hover {
+  background: #A51C49 !important;
+  color: #ffffff !important;
 }
 
 .admin-shell.dark-theme .admin-b2c-hotel-page .admin-name-text {

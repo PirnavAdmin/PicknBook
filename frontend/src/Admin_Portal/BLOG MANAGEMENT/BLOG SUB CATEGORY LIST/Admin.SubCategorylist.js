@@ -12,11 +12,25 @@ const formatDate = (dateString) => {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return dateString;
-        return date.toLocaleDateString('en-GB', {
-            day: 'numeric',
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
             month: 'short',
             year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
         });
+        const parts = formatter.formatToParts(date);
+        const day = parts.find((p) => p.type === 'day')?.value || '';
+        let month = parts.find((p) => p.type === 'month')?.value || '';
+        if (month.toLowerCase() === 'sep') month = 'Sept';
+        const year = parts.find((p) => p.type === 'year')?.value || '';
+        const hour = parts.find((p) => p.type === 'hour')?.value || '';
+        const minute = parts.find((p) => p.type === 'minute')?.value || '';
+        const dayPeriod = (parts.find((p) => p.type === 'dayPeriod')?.value || '').toLowerCase();
+
+        return `${day} ${month} ${year} ${hour}:${minute} ${dayPeriod}`;
     } catch {
         return dateString;
     }
@@ -219,16 +233,25 @@ function BlogSubCategoryList() {
     };
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0];
+        const file = e.target.files?.[0] || null;
         if (file) {
+            if (file.size > 4 * 1024 * 1024) {
+                showToast("Image size must be less than or equal to 4MB.", "error");
+                e.target.value = "";
+                return;
+            }
             setEditFormData(prev => ({ ...prev, image: file }));
             setImagePreview(URL.createObjectURL(file));
         }
     };
 
     const handleRemoveImage = () => {
-        setEditFormData(prev => ({ ...prev, image: null }));
+        setEditFormData(prev => ({ ...prev, image: null, imageName: '' }));
         setImagePreview(null);
+        if (editingSubCategory) {
+            editingSubCategory.imageUrl = '';
+            editingSubCategory.image = '';
+        }
     };
 
     const buildSlug = (name) =>
@@ -264,8 +287,18 @@ function BlogSubCategoryList() {
             formData.append("MetaTitle", editFormData.metaTitle || '');
             formData.append("MetaKeyword", editFormData.metaKeyword || '');
             formData.append("MetaDescription", editFormData.metaDescription || '');
+
             if (editFormData.image) {
                 formData.append("Image", editFormData.image);
+            } else if (editFormData.imageName || imagePreview || editingSubCategory?.imageUrl) {
+                formData.append("ImageUrl", editFormData.imageName || editingSubCategory?.imageUrl || "");
+            } else {
+                formData.append("ImageUrl", "null");
+                formData.append("imageUrl", "null");
+                formData.append("Image", "");
+                formData.append("RemoveImage", "true");
+                formData.append("ClearImage", "true");
+                formData.append("DeleteImage", "true");
             }
 
             // Debug: log what we're sending
@@ -338,7 +371,7 @@ function BlogSubCategoryList() {
         titleSub: {
             fontSize: '1.6rem',
             fontWeight: 600,
-            color: '#A51C49',
+            color: '#000000',
             margin: 0,
         },
         actions: {
@@ -709,8 +742,8 @@ function BlogSubCategoryList() {
                 )}
                 <div style={styles.header}>
                     <div style={styles.titleWrapper}>
-                        <h1 style={styles.titleMain}>Blog Sub Category</h1>
-                        <h2 style={styles.titleSub}>List</h2>
+                        <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={styles.titleMain}>Blog</h1>
+                        <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={styles.titleSub}>Sub Category List</h2>
                     </div>
                     <div style={styles.actions}>
                         <select

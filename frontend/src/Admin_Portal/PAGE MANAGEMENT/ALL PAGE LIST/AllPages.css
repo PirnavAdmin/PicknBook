@@ -2,7 +2,7 @@
   padding: 20px;
   background: #f5f6f8;
   min-height: 100vh;
-  font-family: "Segoe UI", sans-serif;
+  font-family: var(--app-font-family, "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif);
 }
 
 .header {
@@ -13,17 +13,17 @@
 }
 
 .header h1 {
-  font-size: 1.8rem;
-  font-weight: 500;
-  color: #A51C49;
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #A51C49 !important;
   margin: 0;
   letter-spacing: -0.5px;
 }
 
 .header h2 {
-  font-size: 1.8rem;
-  font-weight: 500;
-  color: #000000;
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
+  color: #000000 !important;
   margin: 0;
 }
 
@@ -130,38 +130,7 @@ body .admin-markup-table-wrap .page-table tbody tr:last-child td {
   min-width: 110px;
 }
 
-.actions-trigger-btn {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  padding: 6px 14px !important;
-  border-radius: 20px !important;
-  border: 1px solid transparent !important;
-  background: #ffffff !important;
-  color: #334155 !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  cursor: pointer !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-  transition: all 0.2s ease !important;
-  vertical-align: middle !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-}
-
-.actions-trigger-btn:hover {
-  border: 1px solid #0f172a !important;
-  color: #0f172a !important;
-  background: #ffffff !important;
-}
-
-.actions-trigger-btn.active,
-.actions-trigger-btn.active:hover {
-  border: 1px solid #A51C49 !important;
-  color: #A51C49 !important;
-  background: #fff5f8 !important;
-}
+/* Actions button is styled globally by adminlayout.css */
 
 .status.active {
   background: rgba(30, 142, 62, 0.12);

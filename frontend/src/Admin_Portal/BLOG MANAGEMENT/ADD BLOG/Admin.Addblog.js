@@ -233,30 +233,34 @@ const AddBlogForm = () => {
 
             if (formData.image && typeof formData.image !== "string") {
                 dataToSend.append("Image", formData.image);
+            } else if (imagePreview) {
+                dataToSend.append("ImageUrl", formData.imageName || imagePreview || "");
             } else {
-                dataToSend.append("ImageUrl", formData.imageName || "");
-                dataToSend.append("Image", formData.imageName || "");
-                if (!formData.imageName && !imagePreview) {
-                    dataToSend.append("RemoveImage", "true");
-                    dataToSend.append("ClearImage", "true");
-                }
+                dataToSend.append("ImageUrl", "null");
+                dataToSend.append("imageUrl", "null");
+                dataToSend.append("Image", "");
+                dataToSend.append("RemoveImage", "true");
+                dataToSend.append("ClearImage", "true");
+                dataToSend.append("DeleteImage", "true");
             }
 
             if (formData.ogImage && typeof formData.ogImage !== "string") {
                 dataToSend.append("OgImage", formData.ogImage);
+            } else if (ogImagePreview) {
+                dataToSend.append("OgImageUrl", formData.ogImageName || ogImagePreview || "");
             } else {
-                dataToSend.append("OgImageUrl", formData.ogImageName || "");
-                dataToSend.append("OgImage", formData.ogImageName || "");
-                if (!formData.ogImageName && !ogImagePreview) {
-                    dataToSend.append("RemoveOgImage", "true");
-                    dataToSend.append("ClearOgImage", "true");
-                }
+                dataToSend.append("OgImageUrl", "null");
+                dataToSend.append("ogImageUrl", "null");
+                dataToSend.append("OgImage", "");
+                dataToSend.append("RemoveOgImage", "true");
+                dataToSend.append("ClearOgImage", "true");
+                dataToSend.append("DeleteOgImage", "true");
             }
 
             const targetId = blogId || editingBlog?.id;
 
             if (isEditing && targetId) {
-                if (!imagePreview && !formData.imageName) {
+                if (!imagePreview && !formData.image) {
                     removeBlogImageLocally(targetId);
                     if (editingBlog?.title) removeBlogImageLocally(editingBlog.title);
                     if (editingBlog?.slug) removeBlogImageLocally(editingBlog.slug);
@@ -317,46 +321,50 @@ const AddBlogForm = () => {
         titleWrapper: {
             display: 'flex',
             alignItems: 'baseline',
-            gap: '4px',
+            gap: '6px',
             paddingBottom: '0px',
         },
         titleMain: {
             fontSize: '1.6rem',
             fontWeight: 600,
-            color: '#be185d',
+            color: '#A51C49',
             margin: 0,
+            letterSpacing: '-0.5px',
         },
         titleSub: {
             fontSize: '1.6rem',
             fontWeight: 600,
-            color: '#be185d',
+            color: '#000000',
             margin: 0,
         },
         listBtn: {
-            padding: '10px 16px',
-            background: '#be185d',
+            padding: '4px 14px',
+            height: '28px',
+            background: '#A51C49',
             color: '#ffffff',
-            border: '1px solid #be185d',
-            borderRadius: '8px',
+            border: 'none',
+            borderRadius: '7px',
             fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            fontSize: '0.9rem',
+            fontSize: '0.80rem',
+            boxShadow: '0 2px 6px rgba(165, 28, 73, 0.2)',
         },
         sectionHeader: {
-            background: '#be185d',
+            background: '#A51C49',
             color: '#ffffff',
-            padding: '8px 15px',
+            padding: '7px 14px',
             fontWeight: 700,
-            borderRadius: '8px',
-            marginTop: '24px',
-            marginBottom: '16px',
+            borderRadius: '6px',
+            marginTop: '20px',
+            marginBottom: '14px',
             display: 'block',
             width: '100%',
             boxSizing: 'border-box',
+            fontSize: '0.90rem',
         },
         formGrid: {
             display: 'grid',
@@ -463,8 +471,8 @@ const AddBlogForm = () => {
             display: 'flex',
             gap: '12px',
             justifyContent: 'flex-end',
-            marginTop: '32px',
-            paddingTop: '24px',
+            marginTop: '28px',
+            paddingTop: '20px',
             borderTop: '1px solid var(--border)',
         },
         tableForm: {
@@ -491,27 +499,37 @@ const AddBlogForm = () => {
             width: '21%',
         },
         submitBtn: {
-            padding: '12px 40px',
-            background: '#be185d',
+            padding: '6px 20px',
+            height: '32px',
+            background: '#2563eb',
             color: '#ffffff',
-            border: '1.5px solid #be185d',
-            borderRadius: '8px',
-            fontWeight: 700,
-            fontSize: '1rem',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: 600,
+            fontSize: '0.84rem',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            letterSpacing: '1px',
+            letterSpacing: '0.3px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(37, 99, 235, 0.2)',
         },
         cancelBtn: {
-            padding: '12px 40px',
-            background: 'var(--panel)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border)',
-            borderRadius: '8px',
+            padding: '6px 20px',
+            height: '32px',
+            background: '#64748b',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '6px',
             fontWeight: 600,
-            fontSize: '0.95rem',
+            fontSize: '0.84rem',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 6px rgba(100, 116, 139, 0.2)',
         },
         toast: {
             padding: '10px 14px',
@@ -569,27 +587,19 @@ const AddBlogForm = () => {
                     </div>
                 )}
                 <div style={styles.card}>
-                    <div style={{ ...styles.header, marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+                    <div style={{ ...styles.header, marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
                         <div style={styles.titleWrapper}>
-                            <h1 style={styles.titleMain}>{isEditing ? 'Edit' : 'Add'}</h1>
-                            <h2 style={styles.titleSub}>Blog</h2>
+                            <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={styles.titleMain}>{isEditing ? 'Edit' : 'Add'}</h1>
+                            <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={styles.titleSub}>Blog</h2>
                         </div>
                         <button
                             type="button"
                             style={styles.listBtn}
                             onMouseEnter={(e) => {
-                                e.target.style.background = '#9d124d';
-                                e.target.style.color = '#ffffff';
-                                e.target.style.borderColor = '#9d124d';
-                                e.target.style.transform = 'translateY(-2px)';
-                                e.target.style.boxShadow = '0 4px 12px rgba(190, 24, 93, 0.2)';
+                                e.target.style.background = '#851237';
                             }}
                             onMouseLeave={(e) => {
-                                e.target.style.background = '#be185d';
-                                e.target.style.color = '#ffffff';
-                                e.target.style.borderColor = '#be185d';
-                                e.target.style.transform = 'translateY(0)';
-                                e.target.style.boxShadow = 'none';
+                                e.target.style.background = '#A51C49';
                             }}
                             onClick={() => navigate('/admin/blog-management/blog-list')}
                         >
@@ -648,17 +658,21 @@ const AddBlogForm = () => {
                                                     style={{ ...styles.input, flex: 1 }}
                                                 />
                                                 <label style={{
-                                                    backgroundColor: '#800032',
+                                                    backgroundColor: '#A51C49',
                                                     color: '#ffffff',
                                                     borderRadius: '6px',
-                                                    padding: '8px 16px',
+                                                    padding: '5px 12px',
+                                                    height: '28px',
+                                                    boxSizing: 'border-box',
                                                     fontWeight: 600,
-                                                    fontSize: '13px',
+                                                    fontSize: '12px',
                                                     cursor: 'pointer',
                                                     whiteSpace: 'nowrap',
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center'
+                                                    justifyContent: 'center',
+                                                    border: 'none',
+                                                    boxShadow: '0 2px 6px rgba(165, 28, 73, 0.2)'
                                                 }}>
                                                     Choose File
                                                     <input
@@ -892,17 +906,21 @@ const AddBlogForm = () => {
                                                     style={{ ...styles.input, flex: 1 }}
                                                 />
                                                 <label style={{
-                                                    backgroundColor: '#800032',
+                                                    backgroundColor: '#A51C49',
                                                     color: '#ffffff',
                                                     borderRadius: '6px',
-                                                    padding: '8px 16px',
+                                                    padding: '5px 12px',
+                                                    height: '28px',
+                                                    boxSizing: 'border-box',
                                                     fontWeight: 600,
-                                                    fontSize: '13px',
+                                                    fontSize: '12px',
                                                     cursor: 'pointer',
                                                     whiteSpace: 'nowrap',
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center'
+                                                    justifyContent: 'center',
+                                                    border: 'none',
+                                                    boxShadow: '0 2px 6px rgba(165, 28, 73, 0.2)'
                                                 }}>
                                                     Choose File
                                                     <input
@@ -984,12 +1002,10 @@ const AddBlogForm = () => {
                                 type="button"
                                 style={styles.cancelBtn}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--surface-soft)';
-                                    e.target.style.borderColor = 'var(--primary)';
+                                    e.target.style.background = '#475569';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = 'var(--panel)';
-                                    e.target.style.borderColor = 'var(--border)';
+                                    e.target.style.background = '#64748b';
                                 }}
                                 onClick={handleReset}
                             >
@@ -1000,18 +1016,10 @@ const AddBlogForm = () => {
                                 style={styles.submitBtn}
                                 disabled={isSubmitting}
                                 onMouseEnter={(e) => {
-                                    e.target.style.background = '#9d124d';
-                                    e.target.style.color = '#ffffff';
-                                    e.target.style.borderColor = '#9d124d';
-                                    e.target.style.transform = 'translateY(-2px)';
-                                    e.target.style.boxShadow = '0 4px 12px rgba(190, 24, 93, 0.2)';
+                                    e.target.style.background = '#1d4ed8';
                                 }}
                                 onMouseLeave={(e) => {
-                                    e.target.style.background = '#be185d';
-                                    e.target.style.color = '#ffffff';
-                                    e.target.style.borderColor = '#be185d';
-                                    e.target.style.transform = 'translateY(0)';
-                                    e.target.style.boxShadow = 'none';
+                                    e.target.style.background = '#2563eb';
                                 }}
                             >
                                 {isSubmitting ? 'Submitting...' : isEditing ? 'Update' : 'Submit'}

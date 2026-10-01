@@ -27,8 +27,12 @@ import {
   getImagePreviewSrc,
   validateImageUrlForPayload,
   isValidImageUrl,
-  APPROVED_IMAGE_EXTENSIONS,
   saveCouponMetadataLocally,
+  saveCouponCategoryLocally,
+  saveCouponServiceLocally,
+  saveCouponImageLocally,
+  getStoredCouponMetadataLocally,
+  purgeCouponFromLocalStorage,
 } from "../../../services/busPromotionsService";
 
 const DEFAULT_COUPON_SORT_BY = "entryDate";
@@ -291,6 +295,7 @@ export default function AdminBusCouponListPage() {
   const [cpnTypeFilter, setCpnTypeFilter] = useState("all");
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [generateForm, setGenerateForm] = useState(() => createEmptyCouponForm("Offer"));
+  const [isCreating, setIsCreating] = useState(false);
   const [generateError, setGenerateError] = useState("");
   const [isCreateImageUploading, setIsCreateImageUploading] = useState(false);
   const [createImageUploadError, setCreateImageUploadError] = useState("");
@@ -385,8 +390,8 @@ export default function AdminBusCouponListPage() {
         const uniqueCoupons = list.filter((item) => {
           const resolved = getServiceLabel(item).toLowerCase();
           const code = String(item.couponCode || item.code || "").toUpperCase();
-          const cat = String(item.promotionCategory || item.category || "").toLowerCase();
-          const key = `${resolved}-${item.id || code}-${code}-${cat}`;
+          const itemId = item.id !== null && item.id !== undefined ? String(item.id) : "";
+          const key = itemId ? `${resolved}-${itemId}` : `${resolved}-${code}`;
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
@@ -524,6 +529,7 @@ export default function AdminBusCouponListPage() {
   };
 
   const handleGenerateCoupon = async () => {
+    if (isCreating) return;
     setGenerateError("");
 
     const amount = Number(generateForm.value);
@@ -621,21 +627,43 @@ export default function AdminBusCouponListPage() {
       }
     }
 
+    setIsCreating(true);
     try {
       const savedCoupon = await createBusCoupon(newCoupon);
+      const finalStatus = (newCoupon.status || "Active").toLowerCase() === "inactive" ? "inactive" : "active";
       const couponToStore = {
         ...(savedCoupon && typeof savedCoupon === "object" ? savedCoupon : {}),
         ...newCoupon,
         type: targetType,
         bookingType: targetType,
         serviceType: targetType,
+        _targetService: targetType,
         promotionCategory: category,
+        status: finalStatus,
       };
-      setCoupons((previous) => [couponToStore, ...previous]);
+      const newId = couponToStore.id !== null && couponToStore.id !== undefined ? String(couponToStore.id) : null;
+      setCoupons((previous) => {
+        if (newId) {
+          const alreadyExists = previous.some((c) => String(c.id) === newId && getServiceLabel(c).toLowerCase() === targetType);
+          if (alreadyExists) {
+            return previous.map((c) =>
+              String(c.id) === newId && getServiceLabel(c).toLowerCase() === targetType ? couponToStore : c
+            );
+          }
+        }
+        return [couponToStore, ...previous];
+      });
+
+      saveCouponCategoryLocally(newCoupon.couponCode, couponToStore.id, category, targetType);
+      saveCouponServiceLocally(newCoupon.couponCode, couponToStore.id, targetType);
+      saveCouponMetadataLocally(newCoupon.couponCode, couponToStore.id, newCoupon, targetType);
+
       setIsGenerateModalOpen(false);
       setGenerateError("");
     } catch (error) {
-      setGenerateError(error.message || "Unable to save coupon to backend.");
+      setGenerateError(error.message || "Unable to save coupon.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -657,14 +685,20 @@ export default function AdminBusCouponListPage() {
       : rawType.includes("hotel")
         ? "hotel"
         : "bus";
+    const origCode = String(coupon.couponCode || coupon.code || "").toUpperCase();
+    const origService = (coupon._targetService || coupon.type || coupon.serviceType || getServiceLabel(coupon) || "bus").toLowerCase();
+    const origId = coupon.id !== null && coupon.id !== undefined ? String(coupon.id) : "";
 
     setEditCoupon({
       ...coupon,
       id: coupon.id,
+      _originalService: origService,
+      _originalCouponCode: origCode,
+      _originalId: origId,
       type: normalizedType,
       bookingType: normalizedType,
       serviceType: normalizedType,
-      promotionCategory: coupon.promotionCategory || "Offer",
+      promotionCategory: coupon.promotionCategory || coupon.category || "Coupon",
       couponCode: coupon.couponCode || coupon.code || "",
       title: coupon.title || "",
       description: coupon.description || "",
@@ -791,16 +825,39 @@ export default function AdminBusCouponListPage() {
         type: targetType,
         bookingType: targetType,
         serviceType: targetType,
+        _targetService: targetType,
         promotionCategory: editCoupon.promotionCategory,
         status: finalStatus,
       };
+      const origService = (editCoupon._originalService || "bus").toLowerCase();
+      const origCode = String(editCoupon._originalCouponCode || editCoupon.couponCode || "").toUpperCase();
+      const origId = editCoupon._originalId || String(editCoupon.id);
+
+      if (origService !== targetType) {
+        purgeCouponFromLocalStorage(origId, origService, origCode);
+      }
+
+      saveCouponCategoryLocally(nextCoupon.couponCode, editCoupon.id, nextCoupon.promotionCategory, targetType);
+      saveCouponServiceLocally(nextCoupon.couponCode, editCoupon.id, targetType);
+      saveCouponMetadataLocally(nextCoupon.couponCode, editCoupon.id, nextCoupon, targetType);
+
       setCoupons((previous) =>
-        previous.map((coupon) => (coupon.id === editCoupon.id ? updatedCoupon : coupon))
+        previous.map((coupon) => {
+          const cCode = String(coupon.couponCode || coupon.code || "").toUpperCase();
+          const cService = (coupon._targetService || coupon.type || coupon.serviceType || getServiceLabel(coupon) || "bus").toLowerCase();
+          const cId = coupon.id !== null && coupon.id !== undefined ? String(coupon.id) : "";
+
+          const isTargetRecord =
+            (origId && cId === origId && cService === origService) ||
+            (origCode && cCode === origCode && cService === origService);
+
+          return isTargetRecord ? updatedCoupon : coupon;
+        })
       );
       setEditCoupon(null);
       setEditError("");
     } catch (error) {
-      setEditError(error.message || "Unable to update coupon in backend.");
+      setEditError(error.message || "Unable to update coupon.");
     }
   };
 
@@ -818,16 +875,17 @@ export default function AdminBusCouponListPage() {
         "bus"
       ).toLowerCase();
 
-      await deleteBusCoupon(deleteCoupon.id, sType);
+      const couponCode = deleteCoupon.couponCode || deleteCoupon.code || "";
+
+      await deleteBusCoupon(deleteCoupon.id, sType, couponCode);
 
       setCoupons((previous) =>
-        previous.filter(
-          (coupon) =>
-            !(
-              String(coupon.id) === String(deleteCoupon.id) &&
-              getServiceLabel(coupon).toLowerCase() === getServiceLabel(deleteCoupon).toLowerCase()
-            )
-        )
+        previous.filter((coupon) => {
+          const isSameId = String(coupon.id) === String(deleteCoupon.id);
+          const isSameCode = couponCode && String(coupon.couponCode || coupon.code || "").toUpperCase() === String(couponCode).toUpperCase();
+          const isSameService = getServiceLabel(coupon).toLowerCase() === getServiceLabel(deleteCoupon).toLowerCase();
+          return !((isSameId || isSameCode) && isSameService);
+        })
       );
       setDeleteCoupon(null);
     } catch (error) {
@@ -835,13 +893,20 @@ export default function AdminBusCouponListPage() {
     }
   };
 
-  const handleCouponStatusToggle = async (couponId) => {
-    const currentCoupon = coupons.find((coupon) => coupon.id === couponId);
+  const handleCouponStatusToggle = async (couponId, coupon) => {
+    const currentCoupon = coupon || coupons.find((c) => c.id === couponId);
     if (!currentCoupon) {
       return;
     }
 
     const nextStatus = currentCoupon.status === "active" ? "inactive" : "active";
+    const sType = (
+      currentCoupon._targetService ||
+      currentCoupon.type ||
+      currentCoupon.serviceType ||
+      getServiceLabel(currentCoupon) ||
+      "bus"
+    ).toLowerCase();
     const nextCoupon = {
       ...currentCoupon,
       status: nextStatus === "active" ? "Active" : "Inactive",
@@ -855,7 +920,7 @@ export default function AdminBusCouponListPage() {
         status: nextStatus,
       };
       setCoupons((previous) =>
-        previous.map((coupon) => (coupon.id === couponId ? updatedCoupon : coupon))
+        previous.map((c) => (String(c.id) === String(couponId) && getServiceLabel(c).toLowerCase() === sType ? updatedCoupon : c))
       );
     } catch (error) {
       setCouponLoadError(error.message || "Unable to update coupon status.");
@@ -1577,7 +1642,7 @@ export default function AdminBusCouponListPage() {
                         <button
                           type="button"
                           className={`admin-markup-coupon-status ${coupon.status}`}
-                          onClick={() => handleCouponStatusToggle(coupon.id)}
+                          onClick={() => handleCouponStatusToggle(coupon.id, coupon)}
                           aria-label={`Set coupon ${coupon.couponCode} to ${coupon.status === "active" ? "inactive" : "active"
                             }`}
                         >
@@ -1990,6 +2055,17 @@ export default function AdminBusCouponListPage() {
                     value={generateForm.description}
                     onChange={(e) => setGenerateForm({ ...generateForm, description: e.target.value })}
                     placeholder="e.g. Gurupournami offer"
+                    style={{ minHeight: "60px", overflow: "hidden", resize: "none" }}
+                    onInput={(e) => {
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
+                    ref={(el) => {
+                      if (el && generateForm.description) {
+                        el.style.height = "auto";
+                        el.style.height = el.scrollHeight + "px";
+                      }
+                    }}
                   />
                 </div>
 
@@ -2015,8 +2091,9 @@ export default function AdminBusCouponListPage() {
                 <button
                   type="submit"
                   className="modal-btn save-btn"
+                  disabled={isCreating}
                 >
-                  Create Promotion
+                  {isCreating ? "Creating..." : "Create Promotion"}
                 </button>
               </div>
             </form>
@@ -2806,6 +2883,17 @@ export default function AdminBusCouponListPage() {
                   <textarea
                     value={editCoupon.description || ""}
                     onChange={(e) => setEditCoupon({ ...editCoupon, description: e.target.value })}
+                    style={{ minHeight: "60px", overflow: "hidden", resize: "none" }}
+                    onInput={(e) => {
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
+                    ref={(el) => {
+                      if (el && editCoupon.description) {
+                        el.style.height = "auto";
+                        el.style.height = el.scrollHeight + "px";
+                      }
+                    }}
                   />
                 </div>
 

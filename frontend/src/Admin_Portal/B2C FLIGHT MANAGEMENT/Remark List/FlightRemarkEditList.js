@@ -6,7 +6,7 @@ import {
   createFlightRemark as apiCreateFlightRemark,
   getFlightRemarkById as apiGetFlightRemarkById,
   updateFlightRemark as apiUpdateFlightRemark
-} from "../../../services/flightBookingService";
+} from "../../../services/adminFlightService";
 
 const FLIGHT_REMARKS_STORAGE_KEY = "admin_flight_remarks_records";
 

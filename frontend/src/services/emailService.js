@@ -128,8 +128,8 @@ export const emailService = {
   async getTemplates() {
     try {
       const candidateUrls = [
+        "/api/v1/admin/email/templates",
         "/api/v1/EmailAdmin/templates",
-        "/api/EmailAdmin/templates",
         "/api/admin/email/templates"
       ];
       const data = await requestWithFallback(candidateUrls, "GET");
@@ -148,8 +148,8 @@ export const emailService = {
 
   async createTemplate(payload) {
     const candidateUrls = [
+      "/api/v1/admin/email/templates",
       "/api/v1/EmailAdmin/templates",
-      "/api/EmailAdmin/templates",
       "/api/admin/email/templates"
     ];
     let data = null;
@@ -172,8 +172,8 @@ export const emailService = {
 
   async updateTemplate(id, payload) {
     const candidateUrls = [
+      `/api/v1/admin/email/templates/${id}`,
       `/api/v1/EmailAdmin/templates/${id}`,
-      `/api/EmailAdmin/templates/${id}`,
       `/api/admin/email/templates/${id}`
     ];
     let data = null;
@@ -192,8 +192,8 @@ export const emailService = {
 
   async deleteTemplate(id) {
     const candidateUrls = [
+      `/api/v1/admin/email/templates/${id}`,
       `/api/v1/EmailAdmin/templates/${id}`,
-      `/api/EmailAdmin/templates/${id}`,
       `/api/admin/email/templates/${id}`
     ];
     let data = null;
@@ -212,12 +212,16 @@ export const emailService = {
 
   async sendTestTemplate(code, recipient) {
     const candidateUrls = [
+      "/api/v1/admin/email/test",
       "/api/v1/EmailAdmin/send-test",
-      "/api/EmailAdmin/send-test",
-      "/api/admin/email/send-test"
+      "/api/admin/email/test"
     ];
+    const payload = {
+      recipientEmail: recipient,
+      templateKey: code || "ACCOUNT_LOCKED"
+    };
     try {
-      const data = await requestWithFallback(candidateUrls, "POST", { code, recipient });
+      const data = await requestWithFallback(candidateUrls, "POST", payload);
       if (data) return data;
     } catch (e) {}
 
@@ -227,10 +231,10 @@ export const emailService = {
   async getHistoryLogs() {
     try {
       const candidateUrls = [
+        "/api/v1/admin/email/history",
         "/api/v1/EmailAdmin/logs",
-        "/api/EmailAdmin/logs",
-        "/api/admin/email/logs",
-        "/api/email/logs"
+        "/api/admin/email/history",
+        "/api/admin/email/logs"
       ];
       const data = await requestWithFallback(candidateUrls, "GET");
       if (data) {
@@ -253,13 +257,20 @@ export const emailService = {
 
   async sendManualEmail(payload) {
     const candidateUrls = [
+      "/api/v1/admin/email/send",
       "/api/v1/EmailAdmin/send-manual",
-      "/api/EmailAdmin/send-manual",
-      "/api/admin/email/send-manual"
+      "/api/admin/email/send"
     ];
+    const bodyPayload = {
+      recipientEmail: payload.toEmail || payload.recipientEmail || payload.recipient || "",
+      templateId: payload.templateId || 1,
+      subject: payload.subject || "",
+      message: payload.body || payload.message || "",
+      includeLoginLink: payload.includeLoginLink ?? true
+    };
     let res = null;
     try {
-      res = await requestWithFallback(candidateUrls, "POST", payload);
+      res = await requestWithFallback(candidateUrls, "POST", bodyPayload);
     } catch (e) {}
 
     const newLog = {
@@ -288,9 +299,9 @@ export const emailService = {
   async getReminders() {
     try {
       const candidateUrls = [
+        "/api/v1/admin/email/reminders",
         "/api/v1/EmailAdmin/reminders",
-        "/api/EmailAdmin/reminders",
-        "/api/admin/email/reminders"
+        "/api/EmailAdmin/reminders"
       ];
       const data = await requestWithFallback(candidateUrls, "GET");
       if (data) {
@@ -310,9 +321,9 @@ export const emailService = {
 
   async scheduleReminder(payload) {
     const candidateUrls = [
+      "/api/v1/admin/email/reminders",
       "/api/v1/EmailAdmin/reminders",
-      "/api/EmailAdmin/reminders",
-      "/api/admin/email/reminders"
+      "/api/EmailAdmin/reminders"
     ];
     let res = null;
     try {
@@ -330,9 +341,9 @@ export const emailService = {
 
   async updateReminder(id, payload) {
     const candidateUrls = [
+      `/api/v1/admin/email/reminders/${id}`,
       `/api/v1/EmailAdmin/reminders/${id}`,
-      `/api/EmailAdmin/reminders/${id}`,
-      `/api/admin/email/reminders/${id}`
+      `/api/EmailAdmin/reminders/${id}`
     ];
     let res = null;
     try {
@@ -350,6 +361,7 @@ export const emailService = {
 
   async cancelReminder(id) {
     const candidateUrls = [
+      `/api/v1/admin/email/reminders/${id}/cancel`,
       `/api/v1/EmailAdmin/reminders/${id}/cancel`,
       `/api/EmailAdmin/reminders/${id}/cancel`
     ];
@@ -369,6 +381,7 @@ export const emailService = {
 
   async deleteReminder(id) {
     const candidateUrls = [
+      `/api/v1/admin/email/reminders/${id}`,
       `/api/v1/EmailAdmin/reminders/${id}`,
       `/api/EmailAdmin/reminders/${id}`
     ];

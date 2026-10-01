@@ -6,7 +6,7 @@ import {
   deleteConvenienceFee,
   getConvenienceFee,
   updateConvenienceFeeById,
-} from "../../../services/flightBookingService";
+} from "../../../services/adminFlightService";
 import "./FlightConvenienceFee.css";
 import AdminPagination from "../../../components/AdminPagination";
 

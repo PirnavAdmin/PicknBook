@@ -25,77 +25,6 @@ import { WalletApi } from '../../../services/walletService';
 import { adminWalletService } from '../../../services/adminWalletService';
 import { toApiUrl } from '../../../services/apiClient';
 
-const FALLBACK_TRANSACTIONS = [
-  {
-    id: 'WLT-105',
-    rawUserId: 12,
-    dateTime: new Date(Date.now() - 1000 * 60 * 35).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    customer: 'Rajesh Sharma (Sharma Travels)',
-    customerEmail: 'rajesh@sharmatravels.com',
-    customerPhone: '+91 9876543210',
-    customerId: 'AGT-12',
-    type: 'Debit',
-    category: 'Booking',
-    description: 'Flight Booking GDS PNR ABC123',
-    referenceId: 'FL-BKG-88392',
-    amount: 4500,
-    balanceAfter: 45500,
-    status: 'Success',
-    method: 'Wallet Account'
-  },
-  {
-    id: 'WLT-104',
-    rawUserId: 12,
-    dateTime: new Date(Date.now() - 1000 * 60 * 180).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    customer: 'Rajesh Sharma (Sharma Travels)',
-    customerEmail: 'rajesh@sharmatravels.com',
-    customerPhone: '+91 9876543210',
-    customerId: 'AGT-12',
-    type: 'Credit',
-    category: 'Deposit',
-    description: 'Wallet top-up via Bank Transfer approved by Admin',
-    referenceId: 'DEP-7819',
-    amount: 50000,
-    balanceAfter: 50000,
-    status: 'Success',
-    method: 'Bank Transfer'
-  },
-  {
-    id: 'WLT-103',
-    rawUserId: 15,
-    dateTime: new Date(Date.now() - 1000 * 60 * 360).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    customer: 'Priya Verma',
-    customerEmail: 'priya.v@gmail.com',
-    customerPhone: '+91 9123456789',
-    customerId: 'CUST-15',
-    type: 'Credit',
-    category: 'Refund',
-    description: 'Hotel Cancellation Refund for PNB-HTL-44102',
-    referenceId: 'RFD-33019',
-    amount: 3500,
-    balanceAfter: 12500,
-    status: 'Success',
-    method: 'Instant Wallet Refund'
-  },
-  {
-    id: 'WLT-102',
-    rawUserId: 8,
-    dateTime: new Date(Date.now() - 1000 * 60 * 720).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    customer: 'Amit Patel (Patel Tours)',
-    customerEmail: 'amit@pateltours.in',
-    customerPhone: '+91 9988776655',
-    customerId: 'AGT-8',
-    type: 'Credit',
-    category: 'Adjustment',
-    description: 'Admin Manual Credit Balance Correction',
-    referenceId: 'ADJ-9921',
-    amount: 2000,
-    balanceAfter: 18000,
-    status: 'Success',
-    method: 'Admin Manual'
-  }
-];
-
 export default function WalletTransactionList() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -104,19 +33,9 @@ export default function WalletTransactionList() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedTxn, setSelectedTxn] = useState(null);
-  const [isAdjModalOpen, setIsAdjModalOpen] = useState(false);
   const [customerSummary, setCustomerSummary] = useState(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [customerSummaryLoading, setCustomerSummaryLoading] = useState(false);
-
-  // New Adjustment Form State
-  const [adjForm, setAdjForm] = useState({
-    customerId: '',
-    customerName: '',
-    type: 'Credit',
-    amount: '',
-    reason: '',
-  });
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -159,7 +78,7 @@ export default function WalletTransactionList() {
 
           const rawType = item.transactionType || item.type || item.txnType || (debitAmt > 0 ? 'Debit' : 'Credit');
           const typeStr = String(rawType).toLowerCase();
-          const type = (typeStr.includes('debit') || debitAmt > 0 || typeStr.includes('booking')) ? 'Debit' : 'Credit';
+          const type = (typeStr.includes('debit') || debitAmt > 0 || typeStr.includes('booking') || typeStr.includes('reset')) ? 'Debit' : 'Credit';
 
           const dateVal = item.createdAtUtc || item.createdAt || item.dateTime || item.createdOn || item.transactionDate || item.date || item.requestedAt;
           let formattedDate = 'N/A';
@@ -188,24 +107,24 @@ export default function WalletTransactionList() {
             customerPhone: item.phone || item.customerPhone || '',
             customerId: String(custId),
             type: type,
-            category: String(item.transactionType || item.referenceType || item.category || item.transactionCategory || item.type || (type === 'Credit' ? 'Deposit' : 'Booking Payment')),
-            description: String(item.description || item.remarks || item.reason || item.narration || item.depositMode || ''),
+            category: String(item.transactionType || item.referenceType || item.category || item.transactionCategory || item.type || (type === 'Credit' ? 'Credit' : 'Debit')),
+            description: String(item.description || item.remarks || item.reason || item.narration || item.depositMode || item.action || ''),
             referenceId: String(item.referenceId || item.refCode || item.refNo || item.txnRef || item.paymentId || item.transactionReference || 'N/A'),
             amount: Math.abs(amountNum),
             balanceAfter: Number(item.runningBalance || item.balanceAfter || item.walletBalance || item.closingBalance || item.updatedBalance || 0),
-            status: String(item.status || item.txnStatus || 'Success'),
-            method: String(item.referenceType || item.method || item.paymentMethod || item.paymentMode || item.depositMode || 'Wallet'),
+            status: String(item.status || item.txnStatus || 'Completed'),
+            method: String(item.referenceType || item.method || item.paymentMethod || item.paymentMode || item.depositMode || (type === 'Credit' ? 'AdminCredit' : 'AdminReset')),
           };
         });
 
         setTransactions(parsed);
       } else {
-        setTransactions(FALLBACK_TRANSACTIONS);
+        setTransactions([]);
       }
     } catch (err) {
-      console.warn("Handling error loading wallet transactions gracefully:", err);
+      console.warn("[WalletTransactionList] Error loading wallet ledger:", err);
       setError(null);
-      setTransactions(FALLBACK_TRANSACTIONS);
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -246,57 +165,72 @@ export default function WalletTransactionList() {
     }
   };
 
-  // Calculate Metrics dynamically
-  const metrics = useMemo(() => {
-    const totalCredit = transactions.filter(t => t.type === 'Credit').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    const totalDebit = transactions.filter(t => t.type === 'Debit').reduce((acc, curr) => acc + (curr.amount || 0), 0);
-    const totalBalance = totalCredit - totalDebit;
-    const totalCount = transactions.length;
-    return { totalBalance, totalCredit, totalDebit, totalCount };
-  }, [transactions]);
-
-  // Filtered Transactions
+  // Filtered Transactions based on search, category and status
   const filtered = useMemo(() => {
     return transactions.filter(t => {
-      const search = searchTerm.toLowerCase();
+      const search = searchTerm.toLowerCase().trim();
       const matchSearch =
+        !search ||
         (t.id || '').toLowerCase().includes(search) ||
         (t.customer || '').toLowerCase().includes(search) ||
         (t.customerId || '').toLowerCase().includes(search) ||
         (t.referenceId || '').toLowerCase().includes(search) ||
-        (t.description || '').toLowerCase().includes(search);
-      const matchType = typeFilter === 'ALL' || t.type === typeFilter || t.category === typeFilter;
-      const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
+        (t.description || '').toLowerCase().includes(search) ||
+        (t.category || '').toLowerCase().includes(search) ||
+        (t.method || '').toLowerCase().includes(search);
+
+      let matchType = true;
+      if (typeFilter !== 'ALL') {
+        const typeLower = typeFilter.toLowerCase();
+        const tTypeLower = (t.type || '').toLowerCase();
+        const tCatLower = (t.category || '').toLowerCase();
+        const tDescLower = (t.description || '').toLowerCase();
+        const tMethodLower = (t.method || '').toLowerCase();
+        const tRefLower = (t.referenceId || '').toLowerCase();
+
+        if (typeFilter === 'Credit') {
+          matchType = tTypeLower === 'credit';
+        } else if (typeFilter === 'Debit') {
+          matchType = tTypeLower === 'debit';
+        } else if (typeFilter === 'Refund') {
+          matchType = tCatLower.includes('refund') || tDescLower.includes('refund') || tMethodLower.includes('refund');
+        } else if (typeFilter === 'Deposit') {
+          matchType = tCatLower.includes('deposit') || tDescLower.includes('deposit') || tMethodLower.includes('deposit');
+        } else if (typeFilter === 'Adjustment') {
+          matchType = tCatLower.includes('admin') || tCatLower.includes('adjust') || tDescLower.includes('admin') || tRefLower.includes('admin') || tMethodLower.includes('admin');
+        } else {
+          matchType = tTypeLower === typeLower || tCatLower.includes(typeLower) || tMethodLower.includes(typeLower);
+        }
+      }
+
+      let matchStatus = true;
+      if (statusFilter !== 'ALL') {
+        const sFilterLower = statusFilter.toLowerCase();
+        const tStatusLower = (t.status || '').toLowerCase();
+
+        if (sFilterLower === 'success' || sFilterLower === 'completed') {
+          matchStatus = ['success', 'completed', 'active', 'approved'].includes(tStatusLower);
+        } else if (sFilterLower === 'pending') {
+          matchStatus = ['pending', 'processing', 'in progress', 'reserved'].includes(tStatusLower);
+        } else if (sFilterLower === 'failed') {
+          matchStatus = ['failed', 'cancelled', 'rejected', 'error'].includes(tStatusLower);
+        } else {
+          matchStatus = tStatusLower.includes(sFilterLower);
+        }
+      }
+
       return matchSearch && matchType && matchStatus;
     });
   }, [transactions, searchTerm, typeFilter, statusFilter]);
 
-  const handleAddAdjustment = (e) => {
-    e.preventDefault();
-    if (!adjForm.customerId || !adjForm.amount) return;
-
-    const rawUserId = String(adjForm.customerId).replace(/^(AGT-|CUST-)/i, '').trim();
-    const amountVal = parseFloat(adjForm.amount) || 0;
-
-    const newTxn = {
-      id: `WLT-${Math.floor(10000 + Math.random() * 90000)}`,
-      dateTime: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-      customer: adjForm.customerName || `Customer #${rawUserId || adjForm.customerId}`,
-      customerId: adjForm.customerId,
-      type: adjForm.type,
-      category: 'Adjustment',
-      description: `Admin Adjustment: ${adjForm.reason || 'Manual Balance Correction'}`,
-      referenceId: `ADJ-${Math.floor(1000 + Math.random() * 9000)}`,
-      amount: amountVal,
-      balanceAfter: (metrics.totalBalance || 0) + (adjForm.type === 'Credit' ? amountVal : -amountVal),
-      status: 'Success',
-      method: `Admin ${adjForm.type}`,
-    };
-
-    setTransactions(prev => [newTxn, ...prev]);
-    setIsAdjModalOpen(false);
-    setAdjForm({ customerId: '', customerName: '', type: 'Credit', amount: '', reason: '' });
-  };
+  // Calculate Metrics dynamically based on filtered transactions
+  const metrics = useMemo(() => {
+    const totalCredit = filtered.filter(t => t.type === 'Credit').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const totalDebit = filtered.filter(t => t.type === 'Debit').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const totalBalance = totalCredit - totalDebit;
+    const totalCount = filtered.length;
+    return { totalBalance, totalCredit, totalDebit, totalCount };
+  }, [filtered]);
 
   const exportCSV = () => {
     const headers = ['Txn ID', 'Date', 'Customer ID', 'Customer Name', 'Type', 'Category', 'Amount', 'Reference', 'Status'];
@@ -315,19 +249,16 @@ export default function WalletTransactionList() {
     <div className="wt-container">
       {/* Header */}
       <div className="wt-header-area">
-        <div>
-          <h1 className="wt-header-title">Wallet Transactions</h1>
-          <p className="wt-header-sub">Manage customer wallet credits, debits, refunds & manual adjustments.</p>
+        <div className="wt-header-title-wrap" style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>Wallet</h1>
+          <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#000000', margin: 0 }}>Transactions</h2>
         </div>
         <div className="wt-header-actions">
           <button className="wt-btn-outline" onClick={fetchTransactions} title="Refresh Transactions">
-            <RefreshCw size={16} /> Refresh
+            <RefreshCw size={15} /> Refresh
           </button>
-          <button className="wt-btn-outline" onClick={exportCSV}>
-            <Download size={16} /> Export CSV
-          </button>
-          <button className="wt-btn-primary" onClick={() => setIsAdjModalOpen(true)}>
-            <Plus size={16} /> Manual Adjustment
+          <button className="wt-btn-export" onClick={exportCSV} title="Export Transactions">
+            <Download size={15} /> Export
           </button>
         </div>
       </div>
@@ -400,7 +331,7 @@ export default function WalletTransactionList() {
 
           <select className="wt-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="ALL">All Statuses</option>
-            <option value="Success">Success</option>
+            <option value="Completed">Completed</option>
             <option value="Pending">Pending</option>
             <option value="Failed">Failed</option>
           </select>
@@ -487,7 +418,11 @@ export default function WalletTransactionList() {
                   <td style={{ textAlign: 'center' }}>
                     <span
                       className={`wt-badge ${
-                        t.status === 'Success' ? 'wt-badge-success' : t.status === 'Pending' ? 'wt-badge-pending' : 'wt-badge-failed'
+                        ['success', 'completed', 'active', 'approved'].includes((t.status || '').toLowerCase())
+                          ? 'wt-badge-success'
+                          : ['pending', 'processing', 'in progress', 'reserved'].includes((t.status || '').toLowerCase())
+                          ? 'wt-badge-pending'
+                          : 'wt-badge-failed'
                       }`}
                     >
                       {t.status}
@@ -563,92 +498,6 @@ export default function WalletTransactionList() {
                 Close
               </button>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Manual Adjustment Modal */}
-      {isAdjModalOpen && createPortal(
-        <div className="wt-modal-overlay" onClick={() => setIsAdjModalOpen(false)}>
-          <div className="wt-modal" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
-            <form onSubmit={handleAddAdjustment}>
-              <div className="wt-modal-header">
-                <h3 className="wt-modal-title">Manual Wallet Adjustment</h3>
-                <button className="wt-icon-btn" type="button" onClick={() => setIsAdjModalOpen(false)}>
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="wt-modal-body">
-                <div className="wt-field">
-                  <label className="wt-label">Customer ID *</label>
-                  <input
-                    type="text"
-                    className="wt-input"
-                    placeholder="e.g. CUST-5821"
-                    required
-                    value={adjForm.customerId}
-                    onChange={(e) => setAdjForm({ ...adjForm, customerId: e.target.value })}
-                  />
-                </div>
-
-                <div className="wt-field">
-                  <label className="wt-label">Customer Name</label>
-                  <input
-                    type="text"
-                    className="wt-input"
-                    placeholder="e.g. Ramesh Kumar"
-                    value={adjForm.customerName}
-                    onChange={(e) => setAdjForm({ ...adjForm, customerName: e.target.value })}
-                  />
-                </div>
-
-                <div className="wt-field">
-                  <label className="wt-label">Adjustment Type *</label>
-                  <select
-                    className="wt-select"
-                    style={{ width: '100%' }}
-                    value={adjForm.type}
-                    onChange={(e) => setAdjForm({ ...adjForm, type: e.target.value })}
-                  >
-                    <option value="Credit">Credit (Add Money to Wallet)</option>
-                    <option value="Debit">Debit (Deduct Money from Wallet)</option>
-                  </select>
-                </div>
-
-                <div className="wt-field">
-                  <label className="wt-label">Amount (₹) *</label>
-                  <input
-                    type="number"
-                    min="1"
-                    className="wt-input"
-                    placeholder="Enter amount"
-                    required
-                    value={adjForm.amount}
-                    onChange={(e) => setAdjForm({ ...adjForm, amount: e.target.value })}
-                  />
-                </div>
-
-                <div className="wt-field">
-                  <label className="wt-label">Reason / Remarks</label>
-                  <input
-                    type="text"
-                    className="wt-input"
-                    placeholder="e.g. Promotional Bonus, Booking Refund Correction"
-                    value={adjForm.reason}
-                    onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="wt-modal-footer">
-                <button className="wt-btn-outline" type="button" onClick={() => setIsAdjModalOpen(false)}>
-                  Cancel
-                </button>
-                <button className="wt-btn-primary" type="submit">
-                  Submit Adjustment
-                </button>
-              </div>
-            </form>
           </div>
         </div>,
         document.body

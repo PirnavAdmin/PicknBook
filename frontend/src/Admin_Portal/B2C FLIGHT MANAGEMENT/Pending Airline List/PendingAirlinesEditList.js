@@ -6,7 +6,7 @@ import {
   getFlightPendingAirlineById,
   createFlightPendingAirline,
   updateFlightPendingAirline
-} from "../../../services/flightBookingService";
+} from "../../../services/adminFlightService";
 
 const FLIGHT_PENDING_AIRLINE_STORAGE_KEY = "admin_flight_pending_airlines_records";
 
