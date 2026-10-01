@@ -10,6 +10,7 @@ import {
   writeBusBookingFlowState,
   saveBlockKey,
   isBlockStillActive,
+  clearBlockKey,
 } from "./busBookingFlowStore";
 
 import { isTokenExpired } from "../../services/authSession";
@@ -1806,7 +1807,23 @@ export default function BusPassengerDetailsPage() {
         const srdvErrorCode = blockResponse?.Error?.ErrorCode ?? blockResponse?.error?.errorCode ?? 0;
         const srdvErrorMsg = blockResponse?.Error?.ErrorMessage || blockResponse?.error?.errorMessage || "";
 
-        if (srdvErrorCode === 7023) {
+        if (srdvErrorCode === 7019) {
+          // 7019 = Payload mismatch on block retry (seats/boarding point changed on already-held traceId)
+          setIsCalculatingPrice(false);
+          clearBlockKey();
+          setFormError(
+            "Your seat or boarding selection has changed. Redirecting to refresh available seats..."
+          );
+          setTimeout(() => {
+            navigate("/search/buses", {
+              state: {
+                ...flowState.searchContext,
+                forceRefresh: true
+              }
+            });
+          }, 1800);
+          return;
+        } else if (srdvErrorCode === 7023) {
           // 7023 = these seats are already on hold.
           // If we still have a valid blockKey in session state for this bus, reuse it silently.
           const cachedKey = flowState.blockKey || null;

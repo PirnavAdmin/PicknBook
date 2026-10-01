@@ -37,11 +37,19 @@ export default function CashfreeReturnPage() {
         const data = await verifyCashfreePayment(orderId);
         
         if (data.status === "Success") {
+          const isFulfillmentPending = data.fulfillmentStatus === "Pending" || data.fulfillmentStatus === "InProgress";
+          
+          if (isFulfillmentPending && attemptsRef.current < 6) {
+            setMessage("Payment received! Confirming your seat with operator...");
+            timeoutId = setTimeout(verify, 2000);
+            return;
+          }
+
           setStatus("success");
           setPaymentData(data);
           sessionStorage.removeItem("pending_cashfree_booking");
           
-          setMessage("Redirecting to your ticket...");
+          setMessage("Booking confirmed! Redirecting to your ticket...");
           timeoutId = setTimeout(() => {
             navigate("/print-ticket", {
               replace: true,
@@ -53,7 +61,7 @@ export default function CashfreeReturnPage() {
                 forceFetch: true,
               },
             });
-          }, 3000);
+          }, 2000);
           return;
         }
         
