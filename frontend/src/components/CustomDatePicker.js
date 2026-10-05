@@ -46,7 +46,7 @@ export default function CustomDatePicker({
   const popupRef = useRef(null);
 
   const selectedDate = parseIso(value);
-  const minDateObj = parseIso(minDate);
+  const minDateObj = minDate ? parseIso(minDate) : parseIso(toIsoString(new Date()));
   const maxDateObj = parseIso(maxDate);
 
   const [viewDate, setViewDate] = useState(() => {

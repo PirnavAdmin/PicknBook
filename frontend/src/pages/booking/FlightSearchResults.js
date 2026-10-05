@@ -37,7 +37,6 @@ import {
   Armchair,
   ZapOff,
   Check,
-  ShieldAlert,
 } from "lucide-react";
 
 import { useLocation, useNavigate } from "react-router-dom";
@@ -86,39 +85,6 @@ const LOADING_STATUSES = [
   "Checking luggage allowances and policy...",
   "Applying student and corporate deals...",
   "Securing optimal route options..."
-];
-
-const FLIGHT_PROMO_ITEMS = [
-  {
-    id: "route-offers",
-    icon: IndianRupee,
-    title: "Route Offers",
-    text: "Check coupons before payment",
-  },
-  {
-    id: "seat-sync",
-    icon: Armchair,
-    title: "Live Seats",
-    text: "Fresh seat availability",
-  },
-  {
-    id: "trusted-travels",
-    icon: ShieldAlert,
-    title: "Trusted Travels",
-    text: "Compare verified operators",
-  },
-  {
-    id: "quick-ticket",
-    icon: Plane,
-    title: "Quick Ticket",
-    text: "Print ticket after booking",
-  },
-  {
-    id: "time-picks",
-    icon: Clock3,
-    title: "Smart Timings",
-    text: "Sort flights by departure",
-  },
 ];
 
 const MONTHS = [
@@ -2082,20 +2048,6 @@ export default function FlightSearchResults() {
             <span>{bookingSuccess}</span>
           </div>
         )}
-
-        <section className="flight-promo-scroller" aria-label="Travel booking highlights">
-          {FLIGHT_PROMO_ITEMS.map((item) => (
-            <article className="flight-promo-chip" key={item.id}>
-              <span className="flight-promo-icon" aria-hidden="true">
-                <item.icon size={16} />
-              </span>
-              <div>
-                <strong>{item.title}</strong>
-                <small>{item.text}</small>
-              </div>
-            </article>
-          ))}
-        </section>
 
         <div className="results-layout">
           <aside className="filters-rail">

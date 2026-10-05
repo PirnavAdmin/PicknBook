@@ -608,7 +608,7 @@ function formatTripDateLabel(dateValue) {
     .toUpperCase();
 }
 
-function Seat({ label }) {
+function Seat({ label, bookedGender }) {
   return (
     <svg
       className="seat-svg seat-svg--seater"
@@ -623,14 +623,27 @@ function Seat({ label }) {
       <rect className="seat-handle seat-handle--right" x="36" y="16" width="6" height="17" rx="2" />
       <rect className="seat-footrest" x="17" y="37" width="14" height="6" rx="2" />
       <rect className="seat-body" x="10" y="9" width="28" height="30" rx="4" />
-      <text className="seat-label" x="24" y="27" textAnchor="middle">
-        {label}
-      </text>
+      
+      {!bookedGender ? (
+        <text className="seat-label" x="24" y="27" textAnchor="middle">
+          {label}
+        </text>
+      ) : (
+        <svg x="16" y="14" width="16" height="20">
+          <g fill={bookedGender === 'Female' ? "#ec4899" : "#3b82f6"}>
+            {bookedGender === 'Female' ? (
+              <FaFemale width="100%" height="100%" color="#ec4899" opacity="0.8" />
+            ) : (
+              <FaMale width="100%" height="100%" color="#3b82f6" opacity="0.8" />
+            )}
+          </g>
+        </svg>
+      )}
     </svg>
   );
 }
 
-function SleeperSeat({ label }) {
+function SleeperSeat({ label, bookedGender }) {
   return (
     <svg
       className="seat-svg seat-svg--sleeper"
@@ -642,9 +655,22 @@ function SleeperSeat({ label }) {
     >
       <rect className="seat-body" x="4" y="5" width="84" height="30" rx="4" />
       <rect className="sleeper-pillow" x="73" y="9" width="11" height="22" rx="4" />
-      <text className="seat-label" x="41" y="24" textAnchor="middle">
-        {label}
-      </text>
+      
+      {!bookedGender ? (
+        <text className="seat-label" x="41" y="24" textAnchor="middle">
+          {label}
+        </text>
+      ) : (
+        <svg x="33" y="10" width="16" height="20">
+          <g fill={bookedGender === 'Female' ? "#ec4899" : "#3b82f6"}>
+            {bookedGender === 'Female' ? (
+              <FaFemale width="100%" height="100%" color="#ec4899" opacity="0.8" />
+            ) : (
+              <FaMale width="100%" height="100%" color="#3b82f6" opacity="0.8" />
+            )}
+          </g>
+        </svg>
+      )}
     </svg>
   );
 }
@@ -682,7 +708,7 @@ export default function BusSeatSelectionPage({
   const [isSeatLayoutLoading, setIsSeatLayoutLoading] = useState(true);
   const [isFetchingSeats, setIsFetchingSeats] = useState(false);
   const [seatFetchError, setSeatFetchError] = useState("");
-  const [backendSeatMap, setBackendSeatMap] = useState(null);
+  const [backendSeatMap, setBackendSeatMap] = useState(stateData.seatLayout || null);
   const [selectionError, setSelectionError] = useState("");
   const [activeCardPanel, setActiveCardPanel] = useState(null);
 
@@ -787,11 +813,17 @@ export default function BusSeatSelectionPage({
       return undefined;
     }
 
-    setIsSeatLayoutLoading(true);
-    setIsFetchingSeats(true);
+    setIsSeatLayoutLoading(!backendSeatMap);
+    setIsFetchingSeats(!backendSeatMap);
     setSeatFetchError("");
 
     const fetchSeatMap = async () => {
+      if (backendSeatMap) {
+        setIsFetchingSeats(false);
+        setIsSeatLayoutLoading(false);
+        return;
+      }
+
       try {
         const seatMap = await getBusSeatMap(bus);
         setBackendSeatMap(seatMap);
@@ -1436,9 +1468,9 @@ export default function BusSeatSelectionPage({
         )}`}
       >
         {seat.kind === "sleeper" ? (
-          <SleeperSeat label={seat.displayLabel || seat.label} />
+          <SleeperSeat label={seat.displayLabel || seat.label} bookedGender={seat.status === 'booked' ? seat.bookedGender : null} />
         ) : (
-          <Seat label={seat.displayLabel || seat.label} />
+          <Seat label={seat.displayLabel || seat.label} bookedGender={seat.status === 'booked' ? seat.bookedGender : null} />
         )}
       </button>
     );

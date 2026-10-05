@@ -93,7 +93,7 @@
   background: #ffffff;
   border-radius: 20px;
   padding: 12px 16px 14px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
   overflow: visible;
@@ -980,7 +980,7 @@
    ============================================================ */
 
 .results-layout {
-  margin-top: 10px;
+  margin-top: 0;
   display: grid;
   grid-template-columns: 306px 1fr;
   gap: 10px;
@@ -1227,8 +1227,8 @@
 .modern-metrics-sort-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 0;
 }
 
 .top-metrics-row {
@@ -1322,7 +1322,7 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 12px 20px;
+  padding: 8px 14px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
@@ -1395,9 +1395,9 @@
 }
 
 .flight-list {
-  margin-top: 8px;
+  margin-top: 6px;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 

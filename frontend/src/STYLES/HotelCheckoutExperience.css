@@ -303,6 +303,7 @@
   border-radius: 30px;
   background: var(--hotel-surface);
   box-shadow: var(--hotel-shadow);
+  min-width: 0;
 }
  
 .hotel-panel {
@@ -660,7 +661,7 @@
  
 .hotel-reserve-rail {
   position: sticky;
-  top: 24px;
+  top: 90px;
 }
  
 .hotel-reserve-card {

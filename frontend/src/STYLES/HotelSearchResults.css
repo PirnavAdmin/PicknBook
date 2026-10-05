@@ -509,6 +509,8 @@
 .hotel-stay-card {
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  min-height: 222px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 16px;
@@ -568,7 +570,8 @@
 .hotel-stay-media {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 120px;
+  flex: 0 0 120px;
   background: linear-gradient(135deg, #f4f4f5, #ececee);
   overflow: hidden;
 }
@@ -648,9 +651,11 @@
 .hotel-stay-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 18px;
-  flex: 1;
+  gap: 8px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  flex: 1 0 auto;
+  min-height: 100px;
 }
 
 .hotel-stay-title {
@@ -1673,7 +1678,7 @@
 
 /* Spacing and heights optimization to fit properly on screen */
 .hotel-discover-hero {
-  padding-bottom: 12px !important;
+  padding-bottom: 0 !important;
 }
 
 .hero-content-wrapper {
@@ -1715,13 +1720,13 @@
   position: relative;
   z-index: 10;
   min-height: 100vh;
-  margin-top: 35px;
+  margin-top: 0;
 }
 
 /* White card panel container with fully rounded corners and shadow */
 .hotel-discover-shell {
   margin: 0 auto !important;
-  padding: 24px 24px 60px !important;
+  padding: 16px 24px 60px !important;
   /* Space above hotel results */
   border-radius: 24px !important;
   background: #ffffff !important;
@@ -1730,7 +1735,7 @@
 }
 
 .hotel-discover-results-container {
-  margin-top: 2px !important;
+  margin-top: 0 !important;
 }
 
 .hotel-discover-resultshead {
@@ -2030,4 +2035,4 @@
   .hotel-discover-resultshead {
     flex-wrap: wrap;
   }
-}
+}

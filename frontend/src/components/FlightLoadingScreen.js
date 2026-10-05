@@ -208,7 +208,7 @@ export default function FlightLoadingScreen({
               <h1 className="fls-headline fls-slide-anim">
                 Welcome to
                 <br />
-                Pick <span className="fls-magenta">N</span> Book
+                Pick<span className="fls-magenta">&amp;</span>book
               </h1>
             )}
 

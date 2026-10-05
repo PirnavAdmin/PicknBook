@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="title desc">
+  <title id="title">Coach on a highland road</title>
+  <desc id="desc">Original vector illustration of an intercity coach passing green hills at sunset.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#f5a66a"/><stop offset=".62" stop-color="#f8d29a"/><stop offset="1" stop-color="#d9e7b0"/></linearGradient>
+    <linearGradient id="coach" x2="0" y2="1"><stop stop-color="#fffdf4"/><stop offset="1" stop-color="#dce5e8"/></linearGradient>
+    <linearGradient id="road" x2="0" y2="1"><stop stop-color="#66757b"/><stop offset="1" stop-color="#26343c"/></linearGradient>
+  </defs>
+  <rect width="900" height="500" fill="url(#sky)"/>
+  <circle cx="745" cy="104" r="48" fill="#fff2be" opacity=".9"/>
+  <path d="M0 246 120 145 194 205 326 112 421 213 538 132 665 222 777 154 900 216V355H0Z" fill="#788b78"/>
+  <path d="m0 276 135-93 91 78 128-105 101 112 116-96 120 103 112-92 97 66v130H0Z" fill="#536f62"/>
+  <path d="M0 295q143-57 274 1t268-4q164-67 358 4v204H0Z" fill="#607e50"/>
+  <path d="M0 334q120-61 244-5 109 49 225 5 129-50 251 9 92 44 180 7v150H0Z" fill="#42674a"/>
+  <g fill="#294d40">
+    <path d="m69 335 25-72 25 72h-15v33H84v-33Zm82 18 21-62 22 62h-13v25h-17v-25Zm584-13 27-79 27 79h-16v37h-22v-37Zm72 10 20-58 20 58h-12v26h-16v-26Z"/>
+    <path d="m244 353 18-53 19 53h-11v22h-15v-22Zm391-1 20-59 20 59h-12v28h-16v-28Z"/>
+  </g>
+  <path d="M0 500V411q119-73 267-58 132 13 228 53 179 74 405 3v91Z" fill="#739252"/>
+  <path d="M-40 500q181-133 355-105 123 20 221 74 175 96 404-8v78H-40Z" fill="url(#road)"/>
+  <path d="M-40 500q181-133 355-105 123 20 221 74 175 96 404-8" fill="none" stroke="#f4f0d5" stroke-width="7"/>
+  <path d="M40 500q173-118 308-92 117 22 203 68" fill="none" stroke="#f9d36c" stroke-width="4" stroke-dasharray="34 28"/>
+  <ellipse cx="488" cy="411" rx="224" ry="24" fill="#162b30" opacity=".35"/>
+  <g>
+    <path d="M266 274q13-36 51-43l293-8q38 0 55 34l24 112q4 19-17 25H293q-24-3-27-23Z" fill="url(#coach)" stroke="#52636a" stroke-width="5"/>
+    <path d="M320 244q12-19 34-20l242-6q23 0 35 24l12 45H311Z" fill="#173845"/>
+    <path d="m332 241 26-2v45h-48Zm42-3 57-3v49h-57Zm68-4 56-2v52h-56Zm67-3 51-2q16 0 25 15l11 40h-87Z" fill="#a9d3d8" opacity=".78"/>
+    <path d="M314 296h358l14 61H300Z" fill="#e5ece9"/>
+    <path d="M299 354h385" stroke="#c44a32" stroke-width="9"/>
+    <path d="M285 369h397" stroke="#71848a" stroke-width="4"/>
+    <path d="M660 291q18 10 22 31l7 30h-22Z" fill="#d5e3e4" stroke="#52636a" stroke-width="3"/>
+    <rect x="656" y="344" width="17" height="11" rx="4" fill="#fff3b0"/>
+    <rect x="296" y="344" width="14" height="11" rx="4" fill="#fb6b4d"/>
+    <path d="M453 300v53m55-53v53m55-53v53" stroke="#a6b4b4" stroke-width="2"/>
+    <circle cx="359" cy="383" r="28" fill="#202b31"/><circle cx="359" cy="383" r="13" fill="#bcc8c8"/><circle cx="359" cy="383" r="5" fill="#66757b"/>
+    <circle cx="611" cy="383" r="28" fill="#202b31"/><circle cx="611" cy="383" r="13" fill="#bcc8c8"/><circle cx="611" cy="383" r="5" fill="#66757b"/>
+  </g>
+</svg>

@@ -2712,7 +2712,6 @@ export default function HomePage() {
           >
             <header className="deals-dialog-header">
               <div>
-                <span className="section-kicker">This Week</span>
                 <h2 id="deals-dialog-title">All Featured Deals</h2>
               </div>
               <button
@@ -8525,7 +8524,6 @@ export default function HomePage() {
           <section className="popular-routes-section section-shell">
             <div className="section-header pop-bus-header-row">
               <div>
-                <span className="section-kicker pop-bus-kicker">POPULAR BUS ROUTES</span>
                 <h2 className="pop-bus-title">Most Booked Bus Routes</h2>
               </div>
               <button
@@ -8851,7 +8849,6 @@ export default function HomePage() {
           <section className="popular-section hotel-popular-section section-shell">
             <div className="section-header">
               <div>
-                <span className="section-kicker">Popular Stays</span>
                 <h2>Trending Hotel Picks</h2>
               </div>
             </div>
@@ -9186,7 +9183,6 @@ export default function HomePage() {
       <section className="home-blog-section section-shell" aria-labelledby="home-blog-heading">
         <div className="home-blog-header section-header">
           <div>
-            <span className="section-kicker">Travel Inspiration</span>
             <h2 id="home-blog-heading">Latest from our Travel Blog</h2>
           </div>
           <button type="button" className="home-blog-view-more" onClick={() => navigate("/blog")}>
@@ -9240,7 +9236,6 @@ export default function HomePage() {
         <div className="india-faq-block">
           <div className="section-header india-static-header">
             <div>
-              <span className="section-kicker">Help Center</span>
               <h2>{homeContent.faqHeading}</h2>
             </div>
             <button

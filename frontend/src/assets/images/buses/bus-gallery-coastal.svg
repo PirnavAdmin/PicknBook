@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-labelledby="title desc">
+  <title id="title">Coach beside a coastal road</title>
+  <desc id="desc">Original vector illustration of a modern intercity coach traveling beside the sea.</desc>
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#9bd5e8"/><stop offset=".68" stop-color="#e4f0dc"/><stop offset="1" stop-color="#ffd59e"/></linearGradient>
+    <linearGradient id="sea" x2="0" y2="1"><stop stop-color="#31a9bd"/><stop offset="1" stop-color="#17677f"/></linearGradient>
+    <linearGradient id="coach" x2="0" y2="1"><stop stop-color="#f8fbf7"/><stop offset="1" stop-color="#c9d8de"/></linearGradient>
+  </defs>
+  <rect width="900" height="500" fill="url(#sky)"/>
+  <circle cx="170" cy="108" r="43" fill="#fff2c2" opacity=".95"/>
+  <path d="M0 252q110-81 235-44 78 23 157 2 96-25 177 27v120H0Z" fill="#577e78"/>
+  <path d="M0 293q109-41 209-7 101 35 198-3 100-38 193 9 72 36 145-1 76-38 155-9v142H0Z" fill="url(#sea)"/>
+  <path d="M0 340q129-22 236 10 109 32 217 1 118-34 235 5 112 38 212 7" fill="none" stroke="#8ad6d8" stroke-width="5" opacity=".8"/>
+  <path d="M0 375q103-26 213 8 113 35 220 6 124-34 239 5 112 37 228 3" fill="none" stroke="#a5e1dc" stroke-width="3" opacity=".75"/>
+  <path d="M0 500V409q113-58 236-29 83 19 140 51 79 44 153 37 104-10 182-64 93-65 189-19v115Z" fill="#6c9662"/>
+  <path d="M900 500H373q71-83 131-155 57-68 119-75 60-7 113 51 59 64 164 54Z" fill="#52675e"/>
+  <path d="M900 500H454q80-70 149-137 55-54 91-39 62 27 82 69 44 90 124 107Z" fill="#71816d"/>
+  <path d="M-40 500q170-132 358-94 126 26 239 82 159 79 387-23v78H-40Z" fill="#38464c"/>
+  <path d="M-40 500q170-132 358-94 126 26 239 82 159 79 387-23" fill="none" stroke="#f4ead0" stroke-width="7"/>
+  <path d="M39 500q148-107 280-79 118 24 223 75" fill="none" stroke="#edc567" stroke-width="4" stroke-dasharray="32 28"/>
+  <g fill="#315c48">
+    <path d="m62 390 24-71 25 71h-15v32H77v-32Zm90-10 20-58 21 58h-12v26h-17v-26Zm664-4 22-65 23 65h-14v30h-17v-30Z"/>
+  </g>
+  <ellipse cx="472" cy="418" rx="222" ry="25" fill="#142e38" opacity=".36"/>
+  <g>
+    <path d="M248 275q10-35 48-44l295-14q39-2 57 31l30 111q6 20-16 27l-381 15q-25-1-29-22Z" fill="url(#coach)" stroke="#445d68" stroke-width="5"/>
+    <path d="M301 239q12-19 35-21l241-11q26-1 39 22l17 48-346 18Z" fill="#173e51"/>
+    <path d="m314 236 42-3v51l-58 3Zm57-4 57-3v53l-57 3Zm69-3 55-3v55l-55 3Zm67-3 68-3q20 0 31 21l12 34-111 5Z" fill="#a8d8e1" opacity=".82"/>
+    <path d="m290 295 375-18 17 63-377 20Z" fill="#e4ece9"/>
+    <path d="m297 351 389-18" stroke="#167f94" stroke-width="10"/>
+    <path d="m296 365 392-18" stroke="#748992" stroke-width="4"/>
+    <path d="m650 287q19 10 26 30l8 27-24 2Z" fill="#d7e7e7" stroke="#445d68" stroke-width="3"/>
+    <rect x="661" y="339" width="16" height="11" rx="4" fill="#fff0a9"/>
+    <rect x="297" y="354" width="15" height="11" rx="4" fill="#f46e56"/>
+    <path d="m444 288 3 57m55-60 2 58m55-61 2 59" stroke="#a1b4b8" stroke-width="2"/>
+    <circle cx="359" cy="385" r="29" fill="#202a30"/><circle cx="359" cy="385" r="14" fill="#c6d0d0"/><circle cx="359" cy="385" r="5" fill="#71828a"/>
+    <circle cx="617" cy="373" r="29" fill="#202a30"/><circle cx="617" cy="373" r="14" fill="#c6d0d0"/><circle cx="617" cy="373" r="5" fill="#71828a"/>
+  </g>
+</svg>

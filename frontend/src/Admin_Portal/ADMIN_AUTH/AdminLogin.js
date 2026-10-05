@@ -49,6 +49,22 @@ function maskEmailAddress(emailStr) {
   return `${local.slice(0, 2)}****@${domain}`;
 }
 
+function clearLegacyAdminUserSession() {
+  [window.localStorage, window.sessionStorage].forEach((storage) => {
+    let role = storage.getItem("role") || "";
+    try {
+      const user = JSON.parse(storage.getItem("user") || "{}");
+      role = user.role || user.Role || role;
+    } catch {
+      // Keep the stored role when the user profile is malformed.
+    }
+
+    if (String(role).trim().toLowerCase() === "admin") {
+      ["token", "role", "user"].forEach((key) => storage.removeItem(key));
+    }
+  });
+}
+
 export default function AdminLogin() {
   const navigate = useNavigate();
 
@@ -281,22 +297,18 @@ export default function AdminLogin() {
       const rawName  = data?.name  || data?.fullName || data?.email || data?.data?.name || "Admin";
 
       if (rawToken) {
+        clearLegacyAdminUserSession();
         const adminUserObj = { email: email.trim(), name: rawName, role: rawRole, userId: "admin-" + Date.now() };
         localStorage.setItem("adminToken", rawToken);
         localStorage.setItem("adminRole", rawRole);
         localStorage.setItem("adminName", rawName);
         localStorage.setItem("adminEmail", email.trim());
-        localStorage.setItem("role", rawRole);
-        localStorage.setItem("token", rawToken);
-        localStorage.setItem("user", JSON.stringify(adminUserObj));
 
         sessionStorage.setItem("adminToken", rawToken);
         sessionStorage.setItem("adminRole", rawRole);
         sessionStorage.setItem("adminName", rawName);
         sessionStorage.setItem("adminEmail", email.trim());
-        sessionStorage.setItem("role", rawRole);
-        sessionStorage.setItem("token", rawToken);
-        sessionStorage.setItem("user", JSON.stringify(adminUserObj));
+        sessionStorage.setItem("adminUser", JSON.stringify(adminUserObj));
 
         setSuccessMessage("Admin login successful. Redirecting...");
         setTimeout(() => {
@@ -377,16 +389,14 @@ export default function AdminLogin() {
         role: "admin",
       };
 
+      clearLegacyAdminUserSession();
       localStorage.setItem("adminToken", authToken);
       localStorage.setItem("adminRole", "admin");
       localStorage.setItem("adminEmail", email);
+      localStorage.setItem("adminUser", JSON.stringify(adminUserData));
       sessionStorage.setItem("adminToken", authToken);
       sessionStorage.setItem("adminRole", "admin");
       sessionStorage.setItem("adminUser", JSON.stringify(adminUserData));
-
-      localStorage.setItem("token", authToken);
-      localStorage.setItem("role", "admin");
-      localStorage.setItem("user", JSON.stringify(adminUserData));
 
       setSuccessMessage("Verification successful! Redirecting...");
       setTimeout(() => {

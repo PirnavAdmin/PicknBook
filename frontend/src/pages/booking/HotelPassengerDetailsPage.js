@@ -1930,7 +1930,7 @@ export default function HotelPassengerDetailsPage() {
             </div>
 
             {/* Right Column Booking Sidebar */}
-            <aside className="hotel-reserve-rail hotel-checkout-side" style={{ position: "sticky", top: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+            <aside className="hotel-reserve-rail hotel-checkout-side" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               {/* Booking Summary Card */}
               <div className="hotel-reserve-card hotel-your-stay-card" style={{ background: "var(--hotel-surface)", borderRadius: "24px", border: "1px solid var(--hotel-border)", padding: "24px", boxShadow: "var(--hotel-shadow)" }}>
                 <div className="hotel-your-stay-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "16px" }}>
@@ -2016,42 +2016,6 @@ export default function HotelPassengerDetailsPage() {
                     </div>
                   </>
                 )}
-              </div>
-
-              {/* Need Help Card */}
-              <div className="hotel-reserve-card need-help-card" style={{ padding: "20px", borderRadius: "20px", border: "1px solid var(--hotel-border)", background: "#fff", boxShadow: "var(--hotel-shadow)" }}>
-                <h3 style={{ margin: "0 0 10px 0", fontSize: "1.05rem", fontWeight: 800, color: "var(--hotel-ink)", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span>📞</span> Need Help?
-                </h3>
-                <p style={{ margin: "0 0 14px 0", fontSize: "0.82rem", color: "var(--hotel-muted)", lineHeight: 1.5 }}>
-                  Our customer experience specialists are available 24/7 to help you with your booking.
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)" }}>
-                    <span>📱</span> <strong>+91 98765 43210</strong>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem", color: "var(--hotel-ink)" }}>
-                    <span>✉️</span> <strong>contact@picknbook.in</strong>
-                  </div>
-                </div>
-                <button 
-                  type="button" 
-                  style={{
-                    width: "100%",
-                    background: "none",
-                    border: "1px solid var(--hotel-rose)",
-                    color: "var(--hotel-rose)",
-                    borderRadius: "10px",
-                    padding: "10px 0",
-                    fontSize: "0.85rem",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    transition: "all 0.2s"
-                  }}
-                  onClick={() => navigate("/contact")}
-                >
-                  Contact Us
-                </button>
               </div>
 
             </aside>

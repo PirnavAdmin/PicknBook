@@ -564,6 +564,59 @@
   color: #1f2a44;
 }
 
+.bus-policy-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.bus-policy-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.bus-policy-table th {
+  padding: 12px 14px;
+  background: #ff0000 !important;
+  background-color: #ff0000 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  text-align: left;
+}
+
+.bus-policy-table td {
+  padding: 12px 14px;
+  border-top: 1px solid #e2e8f0;
+  color: #1f2937;
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.bus-policy-table tbody tr:nth-child(even) {
+  background: #fff7f7;
+}
+
+.bus-policy-api-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 6px;
+  color: #475569;
+}
+
+.bus-policy-api-detail span {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.bus-policy-charge-cell {
+  color: #ff0000 !important;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .bus-details-grid-2col {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -3863,4 +3916,4 @@
   overflow: visible !important;
   z-index: 999999 !important;
   position: relative !important;
-}
+}

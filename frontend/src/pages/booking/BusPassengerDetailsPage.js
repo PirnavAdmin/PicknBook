@@ -1834,9 +1834,18 @@ export default function BusPassengerDetailsPage() {
           } else {
             // No cached key — seats are held by a prior session that we can't recover.
             setIsCalculatingPrice(false);
+            clearBlockKey();
             setFormError(
-              "These seats are temporarily on hold. Please go back and choose different seats, or try again in 10–15 minutes."
+              "Your booking session has expired or seats are already held. Redirecting to fetch fresh availability..."
             );
+            setTimeout(() => {
+              navigate("/search/buses", {
+                state: {
+                  ...flowState.searchContext,
+                  forceRefresh: true
+                }
+              });
+            }, 1800);
             return;
           }
         } else if (srdvErrorCode === 7040 || srdvErrorMsg.toLowerCase().includes("passenger gender is not allowed") || srdvErrorMsg.toLowerCase().includes("ladies seat") || srdvErrorMsg.toLowerCase().includes("gender")) {

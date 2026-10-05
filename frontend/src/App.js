@@ -40,6 +40,7 @@ import FlightPassengerDetailsPage from "./pages/booking/FlightPassengerDetailsPa
 import HotelBookings from "./pages/booking/HotelBookings";
 import TicketConfirmationPage from "./pages/public/TicketConfirmationPage";
 import MyAccount from "./pages/account/MyAccount";
+import DeleteAccountPage from "./pages/account/DeleteAccountPage";
 import UserWalletDashboard from "./pages/account/UserWalletDashboard";
 import WebCheckinPage from "./pages/public/WebCheckinPage";
 import LegalPage from "./pages/public/LegalPage";
@@ -688,6 +689,7 @@ function AppContent() {
           <Route path="fetch-ticket" element={<FetchTicket />} />
           <Route path="wallet" element={<UserWalletDashboard />} />
           <Route path="my-account" element={<MyAccount />} />
+          <Route path="my-account/delete" element={<DeleteAccountPage />} />
           <Route path="edit-profile" element={<Navigate to="/edit-profile" replace />} />
           <Route path="change-password" element={<Navigate to="/change-password" replace />} />
         </Route>

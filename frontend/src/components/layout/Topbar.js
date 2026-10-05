@@ -63,8 +63,6 @@ function pickFirst(values, fallback = "") {
 
 function getAuthProfile() {
   const rawUser = localStorage.getItem("user") || localStorage.getItem("b2b_user") || sessionStorage.getItem("user") || sessionStorage.getItem("b2b_user");
-  const token = localStorage.getItem("token") || localStorage.getItem("b2b_token") || localStorage.getItem("authToken") || sessionStorage.getItem("token");
-  const tokenPayload = decodeJwtPayload(token);
 
   let parsedUser = {};
   if (rawUser) {
@@ -74,6 +72,15 @@ function getAuthProfile() {
       parsedUser = { name: rawUser };
     }
   }
+
+  const storedRole = localStorage.getItem("role") || sessionStorage.getItem("role") || "";
+  const profileRole = parsedUser.role || parsedUser.Role || storedRole;
+  if (String(profileRole).trim().toLowerCase() === "admin") {
+    return { isLoggedIn: false, displayName: "User", email: "" };
+  }
+
+  const token = localStorage.getItem("token") || localStorage.getItem("b2b_token") || localStorage.getItem("authToken") || sessionStorage.getItem("token");
+  const tokenPayload = decodeJwtPayload(token);
 
   const email = pickFirst(
     [

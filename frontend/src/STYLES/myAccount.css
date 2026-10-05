@@ -285,6 +285,56 @@
   line-height: 1.52;
 }
 
+.account-delete-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 22px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid #edc8cd;
+  border-radius: 12px;
+}
+
+.account-delete-option h2 {
+  margin: 0;
+  color: #7c2632;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.account-delete-option p {
+  margin: 5px 0 0;
+  color: #66758a;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.account-delete-option button {
+  display: inline-flex;
+  min-height: 40px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 13px;
+  color: #a8172a;
+  background: #fff;
+  border: 1px solid #d94b5c;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease;
+}
+
+.account-delete-option button:hover {
+  color: #fff;
+  background: #b5162b;
+}
+
 @media (max-width: 1100px) {
   .account-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -310,6 +360,11 @@
 
   .account-grid {
     grid-template-columns: 1fr;
+  }
+
+  .account-delete-option {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .account-info-row {

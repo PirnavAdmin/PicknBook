@@ -1202,7 +1202,7 @@ export default function HotelSearchResults() {
                         </button>
                       </div>
   
-                      <div className="hotel-stay-content" style={{ padding: "10px 12px", display: "flex", flexDirection: "column", flexGrow: 1 }}>
+                      <div className="hotel-stay-content">
                         <div style={{ flexGrow: 1 }}>
                           <h3 className="hotel-stay-title" style={{ fontSize: "0.92rem", fontWeight: 500, color: "#0f172a", margin: 0 }}>{hotel.name}</h3>
                           <p className="hotel-stay-address" style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", color: "#64748b", fontSize: "0.78rem" }}>

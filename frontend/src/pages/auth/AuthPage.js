@@ -328,15 +328,22 @@ export default function AuthPage() {
       const user = buildUserFromEmailLogin(payload, mobile);
       const userRole = user.role || "Customer";
       
-      localStorage.setItem("user", JSON.stringify(user)); 
-      localStorage.setItem("userId", user.userId); 
-      localStorage.setItem("role", userRole);
+      if (keepSignedIn) {
+        localStorage.setItem("user", JSON.stringify(user)); 
+        localStorage.setItem("userId", user.userId); 
+        localStorage.setItem("role", userRole);
+      } else {
+        localStorage.removeItem("user");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("role");
+      }
       sessionStorage.setItem("user", JSON.stringify(user)); 
       sessionStorage.setItem("userId", user.userId); 
       sessionStorage.setItem("role", userRole);
       
       if (token) {
-        localStorage.setItem("token", token);
+        if (keepSignedIn) localStorage.setItem("token", token);
+        else localStorage.removeItem("token");
         sessionStorage.setItem("token", token);
       } else {
         localStorage.removeItem("token");
@@ -414,7 +421,11 @@ export default function AuthPage() {
         const rawToken = data?.token || data?.Token || data?.tokenString || data?.data?.token || "";
         const rawRole  = data?.role  || data?.Role  || data?.data?.role  || "admin";
         const rawName  = data?.name  || data?.fullName || data?.email || data?.data?.name || "Admin";
-        localStorage.setItem("adminToken", rawToken); localStorage.setItem("adminRole", rawRole); localStorage.setItem("adminName", rawName); localStorage.setItem("role", "Admin");
+        if (keepSignedIn) {
+          localStorage.setItem("adminToken", rawToken); localStorage.setItem("adminRole", rawRole); localStorage.setItem("adminName", rawName); localStorage.setItem("role", "Admin");
+        } else {
+          localStorage.removeItem("adminToken"); localStorage.removeItem("adminRole"); localStorage.removeItem("adminName"); localStorage.removeItem("role");
+        }
         sessionStorage.setItem("adminToken", rawToken); sessionStorage.setItem("adminRole", rawRole); sessionStorage.setItem("adminName", rawName); sessionStorage.setItem("role", "Admin");
         localStorage.removeItem("challengeId"); sessionStorage.removeItem("challengeId");
         completeLogin("Admin login successful.");
@@ -434,22 +445,35 @@ export default function AuthPage() {
       const user     = buildUserFromEmailLogin(payload, trimmedEmail);
       const userRole = user.role || "Customer";
       const roleLower = userRole.toLowerCase();
+      if (roleLower === "admin") throw new Error("Invalid credentials");
       if (roleLower === "agent" || roleLower === "b2b") {
-        localStorage.setItem("b2b_user", JSON.stringify(user)); localStorage.setItem("b2b_userId", user.userId);
-        localStorage.setItem("b2b_role", "Agent"); if (token) localStorage.setItem("b2b_token", token); localStorage.setItem("role", "Agent");
+        if (keepSignedIn) {
+          localStorage.setItem("b2b_user", JSON.stringify(user)); localStorage.setItem("b2b_userId", user.userId);
+          localStorage.setItem("b2b_role", "Agent"); if (token) localStorage.setItem("b2b_token", token); localStorage.setItem("role", "Agent");
+        } else {
+          localStorage.removeItem("b2b_user"); localStorage.removeItem("b2b_userId");
+          localStorage.removeItem("b2b_role"); localStorage.removeItem("b2b_token"); localStorage.removeItem("role");
+        }
         sessionStorage.setItem("b2b_user", JSON.stringify(user)); sessionStorage.setItem("b2b_userId", user.userId);
         sessionStorage.setItem("b2b_role", "Agent"); if (token) sessionStorage.setItem("b2b_token", token); sessionStorage.setItem("role", "Agent");
       } else if (roleLower === "admin") {
-        localStorage.setItem("adminRole", "admin"); if (token) localStorage.setItem("adminToken", token); localStorage.setItem("role", "Admin");
+        if (keepSignedIn) {
+          localStorage.setItem("adminRole", "admin"); if (token) localStorage.setItem("adminToken", token); localStorage.setItem("role", "Admin");
+        } else {
+          localStorage.removeItem("adminRole"); localStorage.removeItem("adminToken"); localStorage.removeItem("role");
+        }
         sessionStorage.setItem("adminRole", "admin"); if (token) sessionStorage.setItem("adminToken", token); sessionStorage.setItem("role", "Admin");
       } else {
-        localStorage.setItem("user", JSON.stringify(user)); localStorage.setItem("userId", user.userId); localStorage.setItem("role", userRole);
+        if (keepSignedIn) {
+          localStorage.setItem("user", JSON.stringify(user)); localStorage.setItem("userId", user.userId); localStorage.setItem("role", userRole);
+          if (token) localStorage.setItem("token", token); else localStorage.removeItem("token");
+        } else {
+          localStorage.removeItem("user"); localStorage.removeItem("userId"); localStorage.removeItem("role"); localStorage.removeItem("token");
+        }
         sessionStorage.setItem("user", JSON.stringify(user)); sessionStorage.setItem("userId", user.userId); sessionStorage.setItem("role", userRole);
         if (token) { 
-          localStorage.setItem("token", token); 
           sessionStorage.setItem("token", token); 
         } else { 
-          localStorage.removeItem("token"); 
           sessionStorage.removeItem("token"); 
         }
       }
@@ -457,14 +481,11 @@ export default function AuthPage() {
       completeLogin(readApiMessage(payload, "Login successful."));
     } catch (error) {
       const errorMsg = String(error?.message || "");
-      if (errorMsg.toLowerCase().includes("admin") || errorMsg.toLowerCase().includes("otp")) {
-        try {
-          const data = await requestAuth("/api/Auth/admin/login/request-otp", { method:"POST", body:JSON.stringify({ email:trimmedEmail, password }) }, "Admin login failed");
-          setAdminChallengeId(data.challengeId || data.ChallengeId); setOtp("");
-          setStatus({type:"success", message:"Admin OTP sent to your email."}); return;
-        } catch (adminErr) { setStatus({type:"error", message: adminErr?.message || "Admin login failed."}); return; }
-      }
-      setStatus({type:"error", message: errorMsg || "Invalid email or password."});
+      const normalizedError = errorMsg.toLowerCase();
+      const message = normalizedError.includes("admin") || normalizedError.includes("otp")
+        ? "Invalid credentials"
+        : errorMsg || "Invalid email or password.";
+      setStatus({type:"error", message});
     } finally { setLoading(false); }
   };
 

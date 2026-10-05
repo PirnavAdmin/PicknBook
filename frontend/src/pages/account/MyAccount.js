@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Trash2 } from "lucide-react";
 import { UserContext } from "../../contexts/UserContext";
 import { getAccountProfile } from "../../services/accountProfileService";
 import PasskeyManager from "../../components/PasskeyManager";
@@ -153,7 +154,6 @@ const MyAccount = () => {
       navigate("/change-password");
       return;
     }
-
     navigate("/dashboard");
   };
 
@@ -233,6 +233,18 @@ const MyAccount = () => {
           </button>
         ))}
       </div>
+
+      {!isB2B && (
+        <section className="account-delete-option" aria-labelledby="account-delete-heading">
+          <div>
+            <h2 id="account-delete-heading">Account closure</h2>
+            <p>Request the closure of your Pick&book account.</p>
+          </div>
+          <button type="button" onClick={() => navigate("/dashboard/my-account/delete")}>
+            <Trash2 size={16} /> Delete account
+          </button>
+        </section>
+      )}
     </div>
   );
 };

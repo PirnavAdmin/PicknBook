@@ -38,9 +38,9 @@ services:
       EmailSettings__SmtpServer: ${SMTP_SERVER:-smtp.gmail.com}
       EmailSettings__Port: ${SMTP_PORT:-587}
       EmailSettings__SenderName: ${SMTP_SENDER_NAME:-PickNBook}
-      EmailSettings__SenderEmail: ${SMTP_SENDER_EMAIL:-picknbook123@gmail.com}
-      EmailSettings__Username: ${SMTP_USERNAME:-picknbook123@gmail.com}
-      EmailSettings__Password: ${SMTP_PASSWORD:-vwxw ytjl piwu guur}
+      EmailSettings__SenderEmail: ${SMTP_SENDER_EMAIL:-rakesh2000hi@gmail.com}
+      EmailSettings__Username: ${SMTP_USERNAME:-rakesh2000hi@gmail.com}
+      EmailSettings__Password: ${SMTP_PASSWORD:-urjo nggz rhrv aozt}
 
       WhatsAppSettings__Enabled: ${WHATSAPP_ENABLED:-false}
       WhatsAppSettings__ApiBaseUrl: ${WHATSAPP_API_BASE_URL:-https://graph.facebook.com/v20.0}
