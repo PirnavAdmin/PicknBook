@@ -12,7 +12,8 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { UserContext } from "../../contexts/UserContext";
-import { submitContactQuery } from "../../services/queryService";
+import { deleteAccount } from "../../services/accountProfileService";
+import { clearAuthSession } from "../../services/authSession";
 import "../../STYLES/deleteAccount.css";
 
 const REASONS = [
@@ -82,17 +83,16 @@ export default function DeleteAccountPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await submitContactQuery({
-        name: fullName,
+      await deleteAccount({
+        reason: reasonLabel,
+        additionalDetails: reason === "other" ? otherReason.trim() : "",
         email,
-        phoneNo,
-        subject: "Account deletion request",
-        message,
       });
-      setRequestId(response?.queryId || null);
+      clearAuthSession();
+      setRequestId("DELETED");
     } catch (submitError) {
-      const responseMessage = submitError?.response?.data?.message || submitError?.response?.data;
-      setError(typeof responseMessage === "string" ? responseMessage : "We could not submit your request. Please try again.");
+      const responseMessage = submitError?.response?.data?.message || submitError?.message;
+      setError(typeof responseMessage === "string" ? responseMessage : "We could not delete your account. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -104,14 +104,16 @@ export default function DeleteAccountPage() {
         <div className="delete-account-container">
           <section className="delete-success-panel" aria-live="polite">
             <span className="delete-success-icon"><CheckCircle2 size={28} /></span>
-            <p className="delete-eyebrow">REQUEST RECEIVED</p>
-            <h1>Your request is with our support team</h1>
+            <p className="delete-eyebrow">ACCOUNT DELETED</p>
+            <h1>Your account has been deleted</h1>
             <p className="delete-success-copy">
-              We sent your account closure request for review. Your account remains active until the request is processed.
+              We're sorry to see you go. Your account has been permanently deleted and all your sessions have been logged out.
             </p>
-            <p className="delete-request-reference">Request reference <strong>#{requestId}</strong></p>
-            <button type="button" className="delete-secondary-button" onClick={() => navigate("/dashboard/my-account")}>
-              <ArrowLeft size={16} /> Back to My Account
+            <button type="button" className="delete-secondary-button" onClick={() => {
+              navigate("/");
+              window.location.reload();
+            }}>
+              <ArrowLeft size={16} /> Go to Home
             </button>
           </section>
         </div>
@@ -129,7 +131,7 @@ export default function DeleteAccountPage() {
         <header className="delete-page-header">
           <p className="delete-eyebrow">ACCOUNT SETTINGS</p>
           <h1>Delete your account</h1>
-          <p>We’re sorry to see you go. Tell us why you’re leaving and our team will review your request.</p>
+          <p>We’re sorry to see you go. This action is permanent and cannot be undone.</p>
         </header>
 
         <div className="delete-account-layout">
@@ -138,14 +140,14 @@ export default function DeleteAccountPage() {
               <AlertTriangle size={20} />
               <div>
                 <h2 id="delete-info-heading">Before you continue</h2>
-                <p>This form submits a deletion request. Your account is not closed immediately; it stays active while our team reviews it.</p>
+                <p>This will instantly and permanently close your account. All your personal data will be removed.</p>
               </div>
             </div>
 
             <ul className="delete-consequences">
               <li>
                 <span><KeyRound size={18} /></span>
-                <div><strong>Account access</strong><p>Once processed, you may no longer sign in or access account features.</p></div>
+                <div><strong>Account access</strong><p>You will be immediately logged out and lose access to all account features.</p></div>
               </li>
               <li>
                 <span><ReceiptText size={18} /></span>
@@ -156,8 +158,6 @@ export default function DeleteAccountPage() {
                 <div><strong>Open activity</strong><p>If you have upcoming travel, a pending refund, or wallet balance, mention it so support can review it before closure.</p></div>
               </li>
             </ul>
-
-            <p className="delete-privacy-note"><ShieldCheck size={16} /> Your reason is shared with Pick&book support to process this request.</p>
           </section>
 
           <form className="delete-request-form" onSubmit={handleSubmit}>
@@ -196,15 +196,14 @@ export default function DeleteAccountPage() {
 
             <label className="delete-confirmation-check">
               <input type="checkbox" checked={acknowledged} onChange={(event) => { setAcknowledged(event.target.checked); setError(""); }} />
-              <span>I understand this submits a request for review and does not close my account immediately.</span>
+              <span>I understand that my account will be instantly and permanently deleted.</span>
             </label>
 
             {error && <p className="delete-form-error" role="alert">{error}</p>}
 
             <button type="submit" className="delete-submit-button" disabled={isSubmitting}>
-              <Send size={16} /> {isSubmitting ? "Submitting request..." : "Submit deletion request"}
+              <Send size={16} /> {isSubmitting ? "Deleting account..." : "Permanently delete account"}
             </button>
-            <p className="delete-form-footnote">You can continue using your account while the request is reviewed.</p>
           </form>
         </div>
       </div>

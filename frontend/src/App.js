@@ -48,6 +48,7 @@ import ContactUsPage from "./pages/public/ContactUsPage";
 import BlogListPage from "./pages/public/BlogListPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
 import NotificationsPage from "./pages/public/NotificationsPage";
+import PublicDeleteAccountPage from "./pages/public/PublicDeleteAccountPage";
 
 import AdminLayout from "./Admin_Portal/adminlayout";
 import AdminLogin from "./Admin_Portal/ADMIN_AUTH/AdminLogin";
@@ -367,11 +368,8 @@ function AppContent() {
         }
 
         if (token && isTokenExpired(token)) {
-          clearExpiredUserCredentials();
-          if (isUserProtectedPath(currentPath)) {
-            const returnTo = encodeURIComponent(buildReturnTo(location));
-            navigate(`/login?returnTo=${returnTo}`, { replace: true });
-          }
+          // Gracefully do nothing here to prevent instant logouts. 
+          // The API will return 401 if the token is actually expired.
         }
       }
     };
@@ -442,6 +440,7 @@ function AppContent() {
         <Route path="/legal/:slug" element={<LegalPage />} />
         <Route path="/contact-us" element={<ContactUsPage />} />
         <Route path="/contact" element={<ContactUsPage />} />
+        <Route path="/delete-account" element={<PublicDeleteAccountPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/travel-guide" element={<BlogListPage />} />
         <Route path="/travel-guide/:slug" element={<BlogDetailPage />} />

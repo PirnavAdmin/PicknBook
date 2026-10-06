@@ -50,8 +50,8 @@ import {
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import CustomDatePicker from "../../components/CustomDatePicker";
-import busHighlandsIllustration from "../../assets/images/buses/bus-gallery-highlands.svg";
-import busCoastalIllustration from "../../assets/images/buses/bus-gallery-coastal.svg";
+import busRealisticExterior from "../../assets/images/buses/bus-realistic-exterior.jpg";
+import busRealisticInterior from "../../assets/images/buses/bus-realistic-interior.jpg";
 import "../../STYLES/BusSearchResults.css";
 
 const GENERAL_BUS_TRAVEL_GUIDANCE = [
@@ -67,7 +67,7 @@ const GENERAL_BUS_TRAVEL_INSIGHTS = [
   { title: "Confirm your pickup point", text: "Use the boarding location shown on your ticket before setting out." },
 ];
 
-const REPRESENTATIVE_BUS_PHOTOS = [busHighlandsIllustration, busCoastalIllustration];
+const REPRESENTATIVE_BUS_PHOTOS = [busRealisticExterior, busRealisticInterior];
 
 function formatBusPillDate(dateStr) {
   if (!dateStr) return { date: "Select Date", day: "DATE OF TRAVEL" };

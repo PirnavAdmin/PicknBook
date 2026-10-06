@@ -190,3 +190,23 @@ export async function updateAccountProfile(formData) {
 
   return response.json();
 }
+
+export async function deleteAccount(payload) {
+  const token = getAuthToken();
+  const headers = withNgrokSkipWarningHeader("/api/Profile/delete", {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  });
+
+  const response = await fetch(toApiUrl("/api/Profile/delete"), {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Account deletion failed: ${response.status}`);
+  }
+
+  return response.json();
+}

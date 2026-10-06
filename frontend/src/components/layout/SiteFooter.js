@@ -252,10 +252,10 @@ export default function SiteFooter() {
                 <li>
                   <button
                     type="button"
-                    onClick={() => openFooterPage("/print-ticket")}
+                    onClick={() => openFooterPage("/delete-account")}
                     className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron">›</span> Print / Download E-Ticket
+                    <span className="pnb-link-chevron">›</span> Delete Account
                   </button>
                 </li>
               </ul>
@@ -297,15 +297,6 @@ export default function SiteFooter() {
                   >
                     <span className="pnb-link-chevron">›</span> Refund &amp; Cancellation Policy
                   </a>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => openFooterPage("/contact")}
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span> 24/7 Support Center
-                  </button>
                 </li>
               </ul>
             </div>

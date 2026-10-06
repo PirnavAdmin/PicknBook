@@ -1220,7 +1220,7 @@
 }
 
 .selected-seat-summary strong {
-  color: #1f3858;
+  color: #000000 !important;
   font-size: 1.3rem;
   font-family: var(--app-font-family) !important;
   white-space: nowrap;

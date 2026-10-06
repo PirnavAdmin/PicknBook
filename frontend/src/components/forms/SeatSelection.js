@@ -104,11 +104,13 @@ function normalizeSrdvSeatData(seatData) {
 
     const upperName = seatName.toUpperCase();
     const isStructuralMarker =
-      ["T", "WC", "D", "DR", "E", "EX", "NA", "BLANK", "EMPTY"].includes(upperName) ||
-      /^(T|WC|D|DR|NA|EX|ST)$|EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i.test(upperName) ||
+      ["T", "WC", "D", "DR", "NA", "BLANK", "EMPTY"].includes(upperName) ||
+      /^(T|WC|D|DR|NA|ST)$|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i.test(upperName) ||
       String(seat.SeatType || seat.seatType || "").trim() === "0";
 
-    if (isStructuralMarker) {
+    const isExitMarker = ["RB_EXIT"].includes(upperName);
+
+    if (isStructuralMarker && !isExitMarker) {
       return;
     }
 
@@ -458,7 +460,7 @@ export default function SeatSelection({
   );  const renderSrdvGridDeck = (deckSeats, deckLabel, showSteering = false) => {
     if (!deckSeats || deckSeats.length === 0) return null;
 
-    const nonSeatPatterns = /EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|NA\b/i;
+    const nonSeatPatterns = /AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|NA\b/i;
     const validSeats = deckSeats.filter(
       (s) => !nonSeatPatterns.test(String(s.label || ""))
     );
@@ -532,8 +534,11 @@ export default function SeatSelection({
               const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
               const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
 
+              const isExit = ["RB_EXIT"].includes(String(seat.label || "").toUpperCase());
+              
               let statusClass = "status-available";
-              if (isBooked) statusClass = "status-booked";
+              if (isExit) statusClass = "status-exit";
+              else if (isBooked) statusClass = "status-booked";
               else if (isSelected) statusClass = "status-selected";
 
               let genderClass = "";
@@ -576,7 +581,7 @@ export default function SeatSelection({
                   type="button"
                   style={seatItemStyle}
                   className={seatWrapperClass}
-                  onClick={() => (isBooked || isDimmed ? null : onSeatToggle(seat))}
+                  onClick={() => (isBooked || isDimmed || isExit ? null : onSeatToggle(seat))}
                   onMouseEnter={(event) =>
                     onSeatHover({
                       label: seat.label,
@@ -601,7 +606,18 @@ export default function SeatSelection({
                   disabled={isBooked || isDimmed}
                   title={`Seat: ${seat.label} | Fare: ₹${displayFareVal}`}
                 >
-                  {seat.kind === "vertical-sleeper" ? (
+                  {isExit ? (
+                    <div className="exit-door-container">
+                      <div className="exit-text-side">Exit</div>
+                      <div className="exit-icon-side">
+                        <svg viewBox="0 0 24 24" fill="white" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M11 18V15H9V18H11ZM15 18V15H13V18H15ZM12 12L10 10L11 9L13 11L12 12ZM15 12L17 10L18 11L16 13L15 12Z" />
+                          <path d="M12 12V2L10 4L12 6L14 4L12 2Z" />
+                          <path d="M12 12L14 14L16 12L14 10L12 12Z" />
+                        </svg>
+                      </div>
+                    </div>
+                  ) : seat.kind === "vertical-sleeper" ? (
                     <VerticalSleeperIcon label={isBooked ? "" : seat.label} />
                   ) : seat.kind === "sleeper" ? (
                     <SleeperIcon label={isBooked ? "" : seat.label} />
