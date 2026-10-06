@@ -147,6 +147,46 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // Draft Filters (for Filter Panel)
+  const [draftSearchQuery, setDraftSearchQuery] = useState(searchQuery);
+  const [draftStatusFilter, setDraftStatusFilter] = useState(statusFilter);
+  const [draftBookingTypeFilter, setDraftBookingTypeFilter] = useState(bookingTypeFilter);
+  const [draftFromDate, setDraftFromDate] = useState(fromDate);
+  const [draftToDate, setDraftToDate] = useState(toDate);
+
+  // Sync draft state whenever filter panel is opened or active filters change
+  useEffect(() => {
+    setDraftSearchQuery(searchQuery);
+    setDraftStatusFilter(statusFilter);
+    setDraftBookingTypeFilter(bookingTypeFilter);
+    setDraftFromDate(fromDate);
+    setDraftToDate(toDate);
+  }, [isFilterPanelOpen, searchQuery, statusFilter, bookingTypeFilter, fromDate, toDate]);
+
+  const handleApplyFilters = () => {
+    setSearchQuery(draftSearchQuery);
+    setStatusFilter(draftStatusFilter);
+    setBookingTypeFilter(draftBookingTypeFilter);
+    setFromDate(draftFromDate);
+    setToDate(draftToDate);
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setDraftSearchQuery("");
+    setDraftStatusFilter("ALL");
+    setDraftBookingTypeFilter("ALL");
+    setDraftFromDate("");
+    setDraftToDate("");
+
+    setSearchQuery("");
+    setStatusFilter("ALL");
+    setBookingTypeFilter("ALL");
+    setFromDate("");
+    setToDate("");
+    setCurrentPage(1);
+  };
+
   // Modals
   const [activeDropdownId, setActiveDropdownId] = useState(null);
   const [viewingPayment, setViewingPayment] = useState(null);
@@ -544,25 +584,35 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
       {/* Filter Panel */}
       {isFilterPanelOpen && (
-        <section className="admin-markup-coupon-filter">
-          <div className="admin-markup-coupon-filter-grid" style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr" }}>
-            <label>
-              <span>Search (Name / Phone / Email / Ref / Order ID / User ID)</span>
+        <section className="admin-markup-coupon-filter" style={{ marginBottom: "16px", padding: "16px", background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
+          <div
+            className="admin-markup-coupon-filter-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: "14px",
+              alignItems: "end",
+            }}
+          >
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>
+                Search (Name / Phone / Email / Ref / Order ID / User ID)
+              </span>
               <input
                 type="text"
                 placeholder="Search name, phone, email, ref..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "6px 10px", fontSize: "12px" }}
+                value={draftSearchQuery}
+                onChange={(e) => setDraftSearchQuery(e.target.value)}
+                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "7px 10px", fontSize: "12px" }}
               />
             </label>
 
-            <label>
-              <span>Status</span>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>Status</span>
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "6px 10px", fontSize: "12px" }}
+                value={draftStatusFilter}
+                onChange={(e) => setDraftStatusFilter(e.target.value)}
+                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "7px 10px", fontSize: "12px" }}
               >
                 <option value="ALL">All Statuses</option>
                 <option value="SUCCESS">Successful Only</option>
@@ -573,12 +623,12 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
               </select>
             </label>
 
-            <label>
-              <span>Booking Type</span>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>Booking Type</span>
               <select
-                value={bookingTypeFilter}
-                onChange={(e) => setBookingTypeFilter(e.target.value)}
-                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "6px 10px", fontSize: "12px" }}
+                value={draftBookingTypeFilter}
+                onChange={(e) => setDraftBookingTypeFilter(e.target.value)}
+                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "7px 10px", fontSize: "12px" }}
               >
                 <option value="ALL">All Types</option>
                 <option value="Bus">Bus</option>
@@ -587,25 +637,85 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
               </select>
             </label>
 
-            <label>
-              <span>From Date</span>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>From Date</span>
               <input
                 type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "6px 10px", fontSize: "12px" }}
+                value={draftFromDate}
+                onChange={(e) => setDraftFromDate(e.target.value)}
+                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "7px 10px", fontSize: "12px" }}
               />
             </label>
 
-            <label>
-              <span>To Date</span>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: "600", color: "#475569" }}>To Date</span>
               <input
                 type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "6px 10px", fontSize: "12px" }}
+                value={draftToDate}
+                onChange={(e) => setDraftToDate(e.target.value)}
+                style={{ border: "1px solid #cbd5e1", borderRadius: "8px", padding: "7px 10px", fontSize: "12px" }}
               />
             </label>
+
+            {/* Action Buttons: Apply Filter (Blue) & Reset Filter (Gray) */}
+            <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "35px" }}>
+              <button
+                type="button"
+                onClick={handleApplyFilters}
+                style={{
+                  height: "35px",
+                  padding: "0 18px",
+                  borderRadius: "8px",
+                  border: "1px solid #2563eb",
+                  background: "#2563eb",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 4px rgba(37, 99, 235, 0.2)",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#1d4ed8";
+                  e.currentTarget.style.borderColor = "#1d4ed8";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#2563eb";
+                  e.currentTarget.style.borderColor = "#2563eb";
+                }}
+              >
+                Apply Filter
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                style={{
+                  height: "35px",
+                  padding: "0 18px",
+                  borderRadius: "8px",
+                  border: "1px solid #64748b",
+                  background: "#64748b",
+                  color: "#ffffff",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#475569";
+                  e.currentTarget.style.borderColor = "#475569";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#64748b";
+                  e.currentTarget.style.borderColor = "#64748b";
+                }}
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -692,7 +802,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                       </td>
                       <td>
                         {hasPassengerDetails ? (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "1px", alignItems: "center", maxWidth: "160px", margin: "0 auto" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "1px", alignItems: "center", maxWidth: "160px", width: "100%", margin: "0 auto" }}>
                             {validName && (
                               <span
                                 title={validName}
@@ -700,6 +810,8 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                                   fontWeight: "600",
                                   color: "#1e293b",
                                   fontSize: "11.5px",
+                                  display: "inline-block",
+                                  maxWidth: "100%",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
@@ -714,6 +826,8 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                                 style={{
                                   fontSize: "10.5px",
                                   color: "#64748b",
+                                  display: "inline-block",
+                                  maxWidth: "100%",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
@@ -728,6 +842,8 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                                 style={{
                                   fontSize: "10.5px",
                                   color: "#64748b",
+                                  display: "inline-block",
+                                  maxWidth: "100%",
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
                                   whiteSpace: "nowrap",
@@ -860,7 +976,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
       {/* DETAIL MODAL (ALL DATA DISPLAYED CLEANLY) */}
       {viewingPayment && (
         <div className="discount-modal-overlay">
-          <div className="discount-modal-container view-modal" style={{ maxWidth: "780px", overflow: "hidden", borderRadius: "12px", padding: 0 }}>
+          <div className="discount-modal-container view-modal" style={{ maxWidth: "780px", width: "95%", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: "12px", padding: 0 }}>
             <div
               className="modal-header"
               style={{
@@ -872,6 +988,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                 justifyContent: "space-between",
                 borderBottom: "none",
                 marginBottom: 0,
+                flexShrink: 0,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -902,8 +1019,8 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
               </button>
             </div>
 
-            <div style={{ padding: "20px" }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "20px", alignItems: "center" }}>
+            <div style={{ padding: "20px", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
                 {renderStatusBadge(viewingPayment.status)}
                 <span style={{ background: "#fdf2f8", color: "#A41B48", padding: "4px 12px", borderRadius: "100px", fontWeight: "700", fontSize: "11px", border: "1px solid rgba(165, 28, 73, 0.15)" }}>
                   Ref: {viewingPayment.paymentReference || "--"}
@@ -922,37 +1039,37 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
               {isLoadingDetail ? (
                 <p style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>Loading full payment breakdown...</p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxHeight: "65vh", overflowY: "auto", paddingRight: "6px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                   
                   {/* Identifiers Section */}
                   <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                     <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
                       Transaction Identifiers
                     </h4>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px" }}>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>TRANSACTION ID</span>
-                        <span style={{ fontSize: "13px", color: "#1e293b", fontWeight: "700" }}>#{viewingPayment.id}</span>
+                        <span style={{ fontSize: "13px", color: "#1e293b", fontWeight: "700", display: "block" }}>#{viewingPayment.id}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>PAYMENT REFERENCE</span>
-                        <span style={{ fontSize: "12px", color: "#1e293b", fontFamily: "monospace", wordBreak: "break-all" }}>{viewingPayment.paymentReference || "--"}</span>
+                        <span style={{ fontSize: "12px", color: "#1e293b", fontFamily: "monospace", wordBreak: "break-all", overflowWrap: "anywhere", display: "block" }}>{viewingPayment.paymentReference || "--"}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>USER ID</span>
-                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>{viewingPayment.userId || "--"}</span>
+                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600", display: "block" }}>{viewingPayment.userId || "--"}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>CASHFREE ORDER ID</span>
-                        <span style={{ fontSize: "12px", color: "#1e293b", fontFamily: "monospace", wordBreak: "break-all" }}>{viewingPayment.cashfreeOrderId || "--"}</span>
+                        <span style={{ fontSize: "12px", color: "#1e293b", fontFamily: "monospace", wordBreak: "break-all", overflowWrap: "anywhere", display: "block" }}>{viewingPayment.cashfreeOrderId || "--"}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>CASHFREE PAYMENT ID</span>
-                        <span style={{ fontSize: "12px", color: "#1e293b", fontFamily: "monospace", wordBreak: "break-all" }}>{viewingPayment.cashfreePaymentId || "--"}</span>
+                        <span style={{ fontSize: "12px", color: "#1e293b", fontFamily: "monospace", wordBreak: "break-all", overflowWrap: "anywhere", display: "block" }}>{viewingPayment.cashfreePaymentId || "--"}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>BOOKING TYPE & ID</span>
-                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>
+                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600", display: "block" }}>
                           {viewingPayment.bookingType || "Bus"} {viewingPayment.bookingId ? `#${viewingPayment.bookingId}` : "(No Booking ID)"}
                         </span>
                       </div>
@@ -964,18 +1081,18 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                     <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
                       Primary Contact Overview
                     </h4>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px" }}>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>LEAD PASSENGER</span>
-                        <span style={{ fontSize: "13px", color: "#1e293b", fontWeight: "700" }}>{viewingPayment.customerName || viewingPayment.CustomerName || "—"}</span>
+                        <span style={{ fontSize: "13px", color: "#1e293b", fontWeight: "700", wordBreak: "break-word", overflowWrap: "anywhere", display: "block" }}>{viewingPayment.customerName || viewingPayment.CustomerName || "—"}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>CONTACT PHONE</span>
-                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>{formatPhoneNumber(viewingPayment.customerPhone || viewingPayment.CustomerPhone)}</span>
+                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600", wordBreak: "break-all", display: "block" }}>{formatPhoneNumber(viewingPayment.customerPhone || viewingPayment.CustomerPhone)}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>CONTACT EMAIL</span>
-                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600", wordBreak: "break-all" }}>{viewingPayment.customerEmail || viewingPayment.CustomerEmail || "—"}</span>
+                        <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600", wordBreak: "break-all", overflowWrap: "anywhere", display: "block" }}>{viewingPayment.customerEmail || viewingPayment.CustomerEmail || "—"}</span>
                       </div>
                     </div>
                   </div>
@@ -985,31 +1102,31 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                     <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
                       Financial Breakdown ({viewingPayment.currency || "INR"})
                     </h4>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "12px" }}>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>ORIGINAL FARE</span>
-                        <span style={{ fontSize: "13px", color: "#334155", fontWeight: "600" }}>{formatCurrency(viewingPayment.originalAmount)}</span>
+                        <span style={{ fontSize: "13px", color: "#334155", fontWeight: "600", display: "block" }}>{formatCurrency(viewingPayment.originalAmount)}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>MARKUP AMOUNT</span>
-                        <span style={{ fontSize: "13px", color: "#334155", fontWeight: "600" }}>+{formatCurrency(viewingPayment.markupAmount)}</span>
+                        <span style={{ fontSize: "13px", color: "#334155", fontWeight: "600", display: "block" }}>+{formatCurrency(viewingPayment.markupAmount)}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>CONVENIENCE FEE</span>
-                        <span style={{ fontSize: "13px", color: "#334155", fontWeight: "600" }}>+{formatCurrency(viewingPayment.convenienceFee)}</span>
+                        <span style={{ fontSize: "13px", color: "#334155", fontWeight: "600", display: "block" }}>+{formatCurrency(viewingPayment.convenienceFee)}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>DISCOUNT AMOUNT</span>
-                        <span style={{ fontSize: "13px", color: "#16a34a", fontWeight: "700" }}>-{formatCurrency(viewingPayment.discountAmount)}</span>
+                        <span style={{ fontSize: "13px", color: "#16a34a", fontWeight: "700", display: "block" }}>-{formatCurrency(viewingPayment.discountAmount)}</span>
                       </div>
                     </div>
 
                     {(viewingPayment.couponCode || viewingPayment.offerCode || viewingPayment.walletUsedAmount > 0 || viewingPayment.gatewayPaidAmount != null) && (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #f1f5f9" }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid #f1f5f9" }}>
                         {viewingPayment.couponCode && (
                           <div>
                             <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>COUPON APPLIED</span>
-                            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "700", background: "#f0fdf4", padding: "2px 6px", borderRadius: "4px" }}>
+                            <span style={{ fontSize: "11px", color: "#16a34a", fontWeight: "700", background: "#f0fdf4", padding: "2px 6px", borderRadius: "4px", wordBreak: "break-all" }}>
                               {viewingPayment.couponCode}
                             </span>
                           </div>
@@ -1017,13 +1134,13 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                         {viewingPayment.walletUsedAmount > 0 && (
                           <div>
                             <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>WALLET PAID</span>
-                            <span style={{ fontSize: "12px", color: "#2563eb", fontWeight: "600" }}>{formatCurrency(viewingPayment.walletUsedAmount)}</span>
+                            <span style={{ fontSize: "12px", color: "#2563eb", fontWeight: "600", display: "block" }}>{formatCurrency(viewingPayment.walletUsedAmount)}</span>
                           </div>
                         )}
                         {viewingPayment.gatewayPaidAmount != null && (
                           <div>
                             <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>GATEWAY PAID</span>
-                            <span style={{ fontSize: "12px", color: "#334155", fontWeight: "600" }}>{formatCurrency(viewingPayment.gatewayPaidAmount)}</span>
+                            <span style={{ fontSize: "12px", color: "#334155", fontWeight: "600", display: "block" }}>{formatCurrency(viewingPayment.gatewayPaidAmount)}</span>
                           </div>
                         )}
                       </div>
@@ -1040,39 +1157,39 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                     <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
                       Status & Timeline Audit
                     </h4>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px" }}>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>PAYMENT STATUS</span>
-                        <span style={{ fontSize: "12px", fontWeight: "700" }}>{viewingPayment.status || "--"}</span>
+                        <span style={{ fontSize: "12px", fontWeight: "700", display: "block" }}>{viewingPayment.status || "--"}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>FULFILLMENT STATUS</span>
-                        <span style={{ fontSize: "12px", color: "#334155", fontWeight: "600" }}>{viewingPayment.fulfillmentStatus || "Pending"}</span>
+                        <span style={{ fontSize: "12px", color: "#334155", fontWeight: "600", display: "block" }}>{viewingPayment.fulfillmentStatus || "Pending"}</span>
                       </div>
                       <div>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>REFUND STATUS</span>
-                        <span style={{ fontSize: "12px", color: "#334155", fontWeight: "600" }}>{viewingPayment.refundStatus === "NotRequired" ? "Not Required" : (viewingPayment.refundStatus || "None")}</span>
+                        <span style={{ fontSize: "12px", color: "#334155", fontWeight: "600", display: "block" }}>{viewingPayment.refundStatus === "NotRequired" ? "Not Required" : (viewingPayment.refundStatus || "None")}</span>
                       </div>
                       {viewingPayment.paidAt && (
                         <div style={{ gridColumn: "span 3" }}>
                           <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>PAID AT TIMESTAMP</span>
-                          <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: "600" }}>{formatCouponDateTime(viewingPayment.paidAt)} ({viewingPayment.paidAt})</span>
+                          <span style={{ fontSize: "12px", color: "#16a34a", fontWeight: "600", wordBreak: "break-all", display: "block" }}>{formatCouponDateTime(viewingPayment.paidAt)} ({viewingPayment.paidAt})</span>
                         </div>
                       )}
                       <div style={{ gridColumn: "span 3" }}>
                         <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>CREATED TIMESTAMP</span>
-                        <span style={{ fontSize: "12px", color: "#334155" }}>{formatCouponDateTime(viewingPayment.createdAt)} ({viewingPayment.createdAt})</span>
+                        <span style={{ fontSize: "12px", color: "#334155", wordBreak: "break-all", display: "block" }}>{formatCouponDateTime(viewingPayment.createdAt)} ({viewingPayment.createdAt})</span>
                       </div>
                       {viewingPayment.updatedAt && viewingPayment.updatedAt !== viewingPayment.createdAt && (
                         <div style={{ gridColumn: "span 3" }}>
                           <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>LAST UPDATED</span>
-                          <span style={{ fontSize: "12px", color: "#64748b" }}>{formatCouponDateTime(viewingPayment.updatedAt)} ({viewingPayment.updatedAt})</span>
+                          <span style={{ fontSize: "12px", color: "#64748b", wordBreak: "break-all", display: "block" }}>{formatCouponDateTime(viewingPayment.updatedAt)} ({viewingPayment.updatedAt})</span>
                         </div>
                       )}
                       {(viewingPayment.refundId || viewingPayment.refundReason) && (
                         <div style={{ gridColumn: "span 3", background: "#fff7ed", padding: "8px 10px", borderRadius: "6px", border: "1px solid #fed7aa" }}>
                           <span style={{ fontSize: "10px", color: "#c2410c", fontWeight: "700", display: "block" }}>REFUND AUDIT INFORMATION</span>
-                          <span style={{ fontSize: "12px", color: "#9a3412" }}>
+                          <span style={{ fontSize: "12px", color: "#9a3412", wordBreak: "break-word", display: "block" }}>
                             {viewingPayment.refundId ? `ID: ${viewingPayment.refundId} | ` : ""}Reason: {viewingPayment.refundReason || "N/A"}
                           </span>
                         </div>
@@ -1083,7 +1200,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                   {(viewingPayment.failureReason || viewingPayment.lastError) && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px", background: "#fef2f2", padding: "12px", borderRadius: "8px", border: "1px solid #fecaca" }}>
                       <span style={{ fontSize: "10px", color: "#dc2626", fontWeight: "700" }}>GATEWAY / SYSTEM FAILURE REASON</span>
-                      <span style={{ fontSize: "12px", color: "#991b1b", fontFamily: "monospace" }}>{viewingPayment.failureReason || viewingPayment.lastError}</span>
+                      <span style={{ fontSize: "12px", color: "#991b1b", fontFamily: "monospace", wordBreak: "break-all" }}>{viewingPayment.failureReason || viewingPayment.lastError}</span>
                     </div>
                   )}
 

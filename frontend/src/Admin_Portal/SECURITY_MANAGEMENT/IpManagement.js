@@ -529,13 +529,13 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
         <span>›</span>
         <span className="crumb-link" onClick={() => navigate('/admin/security-management')}>Security Management</span>
         <span>›</span>
-        <span className="active-crumb">IP Management</span>
+        <span className="active-crumb">User ID Restrictions</span>
       </div>
 
       {/* Top Title/Action Row */}
       <div className="sd-top-header" style={{ marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="sd-header-left">
-          <h1 className="sd-page-title">IP Management</h1>
+          <h1 className="sd-page-title">User ID Security Rules & Restrictions</h1>
         </div>
         <div className="sd-header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button

@@ -49,7 +49,7 @@ import { toApiUrl, toApiAssetUrl } from "../../services/apiClient";
 import './TestimonialManagement.css';
 
 // AvatarImage helper component for resolving asset URLs and providing fallback initials
-function AvatarImage({ src, name, size = 36, className = "" }) {
+function AvatarImage({ src, name, size = 36, className = "", fallback = null }) {
   const [imgError, setImgError] = useState(false);
 
   const resolveImg = (img) => {
@@ -60,14 +60,13 @@ function AvatarImage({ src, name, size = 36, className = "" }) {
   };
 
   const fullUrl = resolveImg(src);
-  const initial = String(name || 'C').charAt(0).toUpperCase();
 
   useEffect(() => {
     setImgError(false);
   }, [src]);
 
   if (!fullUrl || imgError) {
-    return <span style={{ color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>---</span>;
+    return fallback;
   }
 
   return (
@@ -164,10 +163,11 @@ export default function TestimonialManagement() {
     location: '',
     category: 'Hotel Stay',
     rating: 5,
+    categoryStatus: 'Active',
     preview: '',
     image: '',
     order: 1,
-    status: 'Active',
+    status: 'Published',
     featured: false
   });
 
@@ -254,7 +254,7 @@ export default function TestimonialManagement() {
       imageFileName: t.imageFileName || '',
       imageStatus: t.imageStatus || 'uploaded',
       order: t.displayOrder || t.order || (idx + 1),
-      status: t.status || (t.isActive ? 'Active' : 'Active'),
+      status: t.status || (t.isActive ? 'Active' : 'Inactive'),
       featured: Boolean(t.featured || t.isFeatured),
       createdDate: t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-GB') : (t.createdDate || 'N/A'),
       raw: t,
@@ -302,6 +302,16 @@ export default function TestimonialManagement() {
     }
     if (catName && catName !== 'General') return catName;
     return 'General';
+  };
+
+  const getCategoryBadgeClass = (catName) => {
+    const name = String(catName || '').toLowerCase();
+    if (name.includes('bus')) return 'tm-cat-bus';
+    if (name.includes('flight') || name.includes('air')) return 'tm-cat-flight';
+    if (name.includes('hotel') || name.includes('stay') || name.includes('resort')) return 'tm-cat-hotel';
+    if (name.includes('car') || name.includes('cab') || name.includes('taxi')) return 'tm-cat-car';
+    if (name.includes('package') || name.includes('tour')) return 'tm-cat-package';
+    return 'tm-cat-hotel';
   };
 
   const loadData = async (start = pickerStartDate, end = pickerEndDate) => {
@@ -399,7 +409,7 @@ export default function TestimonialManagement() {
       imageFile: null,
       imageFileName: '',
       order: testimonials.length + 1,
-      status: 'Draft',
+      status: 'Active',
       featured: false
     });
   };
@@ -588,7 +598,7 @@ export default function TestimonialManagement() {
     if (e) e.preventDefault();
     if (!testFormData.name.trim()) return showToast('Please enter customer name', 'error');
 
-    const finalStatus = targetStatus || testFormData.status || 'Active';
+    const finalStatus = testFormData.status || targetStatus || 'Active';
 
     try {
       const formData = new FormData();
@@ -598,6 +608,9 @@ export default function TestimonialManagement() {
       formData.append("Rating", String(testFormData.rating || 5));
       formData.append("Comment", (testFormData.preview || testFormData.comment || "").trim());
       formData.append("Status", finalStatus);
+      formData.append("status", finalStatus);
+      formData.append("CategoryStatus", testFormData.categoryStatus || "Active");
+      formData.append("categoryStatus", testFormData.categoryStatus || "Active");
       formData.append("DisplayOrder", String(testFormData.order || 1));
       formData.append("Featured", String(Boolean(testFormData.featured)));
       if (testFormData.categoryId) {
@@ -643,7 +656,8 @@ export default function TestimonialManagement() {
   const handleToggleTestimonialStatus = async (id) => {
     const target = testimonials.find(t => t.id === id);
     if (!target) return;
-    const newStatus = target.status === 'Active' ? 'Inactive' : 'Active';
+    const isActive = target.status === 'Active' || target.status === 'Published' || target.status === 'Approved';
+    const newStatus = isActive ? (target.status === 'Published' ? 'Draft' : 'Inactive') : (target.status === 'Draft' ? 'Published' : 'Active');
     try {
       await toggleTestimonialStatus(id, newStatus, target.featured);
       setTestimonials(testimonials.map(t => t.id === id ? { ...t, status: newStatus } : t));
@@ -1300,7 +1314,7 @@ export default function TestimonialManagement() {
                   <h3 style={{ margin: 0, fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
                     Recent Testimonials
                   </h3>
-                  <button className="tm-btn tm-btn-secondary tm-btn-sm" onClick={() => changeView('review')}>
+                  <button className="tm-btn tm-btn-secondary tm-btn-sm" onClick={() => changeView('testimonial_list')}>
                     View All
                   </button>
                 </div>
@@ -1331,16 +1345,13 @@ export default function TestimonialManagement() {
                         return recentList.map((t, idx) => (
                           <tr key={t.id || t._id || idx}>
                             <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <AvatarImage src={t.image || t.imageUrl} name={t.name} size={30} />
-                                <div>
-                                  <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.8rem' }}>{t.name || 'Customer'}</div>
-                                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{t.role || t.designation || 'Traveler'}</div>
-                                </div>
+                              <div>
+                                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.8rem' }}>{t.name || 'Customer'}</div>
+                                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{t.role || t.designation || 'Traveler'}</div>
                               </div>
                             </td>
                             <td>
-                              <span className={`tm-cat-badge ${t.category === 'Flight' ? 'tm-cat-flight' : t.category === 'Bus Travel' ? 'tm-cat-bus' : 'tm-cat-hotel'}`}>
+                              <span className={`tm-cat-badge ${getCategoryBadgeClass(t.category || t.categoryName)}`}>
                                 {t.category || t.categoryName || 'General'}
                               </span>
                             </td>
@@ -1818,7 +1829,6 @@ export default function TestimonialManagement() {
                   <th style={{ textAlign: 'center', width: '90px' }}>Category</th>
                   <th style={{ textAlign: 'center' }}>Rating</th>
                   <th style={{ textAlign: 'center' }}>Testimonial (Preview)</th>
-                  <th style={{ textAlign: 'center' }}>Image</th>
                   <th style={{ textAlign: 'center' }}>Status</th>
                   <th style={{ textAlign: 'center' }}>Order</th>
                   <th style={{ textAlign: 'center', width: '110px' }}>Actions</th>
@@ -1847,7 +1857,7 @@ export default function TestimonialManagement() {
                   if (filteredTestimonials.length === 0) {
                     return (
                       <tr>
-                        <td colSpan="9" style={{ padding: '30px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                        <td colSpan="8" style={{ padding: '30px 20px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
                           Data not found
                         </td>
                       </tr>
@@ -1866,7 +1876,7 @@ export default function TestimonialManagement() {
                         </td>
                         <td style={{ textAlign: 'center', width: '90px' }}>
                           <span
-                            className={`tm-cat-badge ${resolveCategoryName(t.categoryId, t.category) === 'Flight Bookings' || resolveCategoryName(t.categoryId, t.category) === 'Flight' ? 'tm-cat-flight' : resolveCategoryName(t.categoryId, t.category) === 'Bus Travels' || resolveCategoryName(t.categoryId, t.category) === 'Bus Travel' ? 'tm-cat-bus' : 'tm-cat-hotel'}`}
+                            className={`tm-cat-badge ${getCategoryBadgeClass(resolveCategoryName(t.categoryId, t.category))}`}
                             style={{ padding: '2px 6px', fontSize: '0.68rem', maxWidth: '85px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block' }}
                           >
                             {resolveCategoryName(t.categoryId, t.category)}
@@ -1875,9 +1885,6 @@ export default function TestimonialManagement() {
                         <td style={{ textAlign: 'center' }}>{renderStars(t.rating || 5)}</td>
                         <td style={{ textAlign: 'center', maxWidth: '280px', color: '#475569', fontSize: '0.8rem' }}>
                           {(t.preview || t.comment || '').length > 75 ? `${(t.preview || t.comment || '').substring(0, 75)}...` : (t.preview || t.comment || '--')}
-                        </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <AvatarImage src={t.image || t.imageUrl} name={t.name} size={36} />
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <span className={`tm-badge tm-badge-${(t.status || 'Active').toLowerCase().replace(/\s+/g, '-')}`}>
@@ -2053,7 +2060,7 @@ export default function TestimonialManagement() {
             </button>
           </div>
 
-          <form className="tm-form-fullpage" onSubmit={e => handleSaveTestimonial(e, 'Published')}>
+          <form className="tm-form-fullpage" onSubmit={e => handleSaveTestimonial(e)}>
             {/* Customer Information */}
             <div className="tm-form-card">
               <h3 style={{ margin: '0 0 20px', fontSize: '0.9rem', fontWeight: 700, color: '#A51C49', textTransform: 'uppercase' }}>
@@ -2209,18 +2216,71 @@ export default function TestimonialManagement() {
                 </div>
 
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Rating <span className="req">*</span></label>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <Star
-                        key={star}
-                        size={22}
-                        style={{ cursor: 'pointer' }}
-                        fill={star <= testFormData.rating ? '#f59e0b' : 'none'}
-                        color={star <= testFormData.rating ? '#f59e0b' : '#cbd5e1'}
-                        onClick={() => setTestFormData({ ...testFormData, rating: star })}
-                      />
-                    ))}
+                  <label className="tm-form-label">Rating & Category Status <span className="req">*</span></label>
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star
+                          key={star}
+                          size={22}
+                          style={{ cursor: 'pointer' }}
+                          fill={star <= testFormData.rating ? '#f59e0b' : 'none'}
+                          color={star <= testFormData.rating ? '#f59e0b' : '#cbd5e1'}
+                          onClick={() => setTestFormData({ ...testFormData, rating: star })}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Category Status Button Chips after stars */}
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b' }}>Category:</span>
+                      <button
+                        type="button"
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '16px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          border: (testFormData.categoryStatus || 'Active') === 'Active' ? '1px solid #10b981' : '1px solid #cbd5e1',
+                          background: (testFormData.categoryStatus || 'Active') === 'Active' ? '#dcfce7' : '#ffffff',
+                          color: (testFormData.categoryStatus || 'Active') === 'Active' ? '#15803d' : '#64748b',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onClick={() => {
+                          setTestFormData(prev => ({
+                            ...prev,
+                            categoryStatus: 'Active'
+                          }));
+                        }}
+                      >
+                        ● Active
+                      </button>
+
+                      <button
+                        type="button"
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '16px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          border: (testFormData.categoryStatus || 'Active') === 'Inactive' ? '1px solid #ef4444' : '1px solid #cbd5e1',
+                          background: (testFormData.categoryStatus || 'Active') === 'Inactive' ? '#fee2e2' : '#ffffff',
+                          color: (testFormData.categoryStatus || 'Active') === 'Inactive' ? '#b91c1c' : '#64748b',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onClick={() => {
+                          setTestFormData(prev => ({
+                            ...prev,
+                            categoryStatus: 'Inactive',
+                            status: (prev.status === 'Published' || prev.status === 'Active' || prev.status === 'Approved') ? 'Inactive' : prev.status
+                          }));
+                        }}
+                      >
+                        ○ Inactive
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -2254,16 +2314,30 @@ export default function TestimonialManagement() {
                 </div>
 
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Status <span className="req">*</span></label>
+                  <label className="tm-form-label">Main Testimonial Status <span className="req">*</span></label>
                   <select
                     className="tm-form-select"
                     value={testFormData.status}
-                    onChange={e => setTestFormData({ ...testFormData, status: e.target.value })}
+                    onChange={e => {
+                      const newSt = e.target.value;
+                      const isInactive = newSt === 'Inactive' || newSt === 'Draft';
+                      setTestFormData(prev => ({
+                        ...prev,
+                        status: newSt,
+                        categoryStatus: isInactive ? 'Inactive' : prev.categoryStatus === 'Inactive' ? 'Active' : prev.categoryStatus
+                      }));
+                    }}
                   >
-                    <option value="Draft">Draft</option>
-                    <option value="Pending Review">Pending Review</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Published">Published</option>
+                    <optgroup label="Standard Statuses">
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </optgroup>
+                    <optgroup label="Workflow Statuses">
+                      <option value="Published">Published</option>
+                      <option value="Draft">Draft</option>
+                      <option value="Pending Review">Pending Review</option>
+                      <option value="Approved">Approved</option>
+                    </optgroup>
                   </select>
                 </div>
 
@@ -2577,7 +2651,7 @@ export default function TestimonialManagement() {
                     <div>
                       <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Category</span>
                       <div style={{ marginTop: '2px' }}>
-                        <span className={`tm-cat-badge ${viewModalItem.data.category === 'Flight' ? 'tm-cat-flight' : viewModalItem.data.category === 'Bus Travel' ? 'tm-cat-bus' : 'tm-cat-hotel'}`}>
+                        <span className={`tm-cat-badge ${getCategoryBadgeClass(viewModalItem.data.category)}`}>
                           {viewModalItem.data.category}
                         </span>
                       </div>

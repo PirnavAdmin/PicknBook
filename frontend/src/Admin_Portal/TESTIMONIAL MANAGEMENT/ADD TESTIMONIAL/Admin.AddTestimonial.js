@@ -14,8 +14,9 @@ export default function AdminAddTestimonial() {
     name: "",
     designation: "",
     rating: 5,
+    categoryStatus: "Active",
     comment: "",
-    status: "Active",
+    status: "Published",
     categoryId: "",
     image: null,
   });
@@ -39,12 +40,14 @@ export default function AdminAddTestimonial() {
     fetchCategories();
 
     if (isEditMode && editItem) {
+      const catSt = editItem.categoryStatus || editItem.category?.status || (editItem.status === "Inactive" ? "Inactive" : "Active");
       setFormData({
         name: editItem.name || "",
         designation: editItem.designation || "",
         rating: editItem.rating || 5,
+        categoryStatus: catSt,
         comment: editItem.comment || editItem.message || "",
-        status: editItem.status || "Active",
+        status: editItem.status || "Published",
         categoryId: editItem.categoryId || "",
         image: null,
       });
@@ -67,6 +70,25 @@ export default function AdminAddTestimonial() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleMainStatusChange = (e) => {
+    const newStatus = e.target.value;
+    const isInactiveType = newStatus === "Inactive" || newStatus === "Draft";
+    setFormData((prev) => ({
+      ...prev,
+      status: newStatus,
+      categoryStatus: isInactiveType ? "Inactive" : prev.categoryStatus === "Inactive" ? "Active" : prev.categoryStatus
+    }));
+  };
+
+  const handleCategoryStatusChange = (e) => {
+    const newCatStatus = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      categoryStatus: newCatStatus,
+      status: newCatStatus === "Inactive" && (prev.status === "Published" || prev.status === "Active" || prev.status === "Approved") ? "Inactive" : prev.status
+    }));
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -86,15 +108,24 @@ export default function AdminAddTestimonial() {
       setLoading(true);
       const data = new FormData();
       data.append("Name", formData.name.trim());
+      data.append("name", formData.name.trim());
       data.append("Designation", formData.designation.trim());
+      data.append("designation", formData.designation.trim());
       data.append("Rating", formData.rating);
+      data.append("rating", formData.rating);
       data.append("Comment", formData.comment.trim());
+      data.append("comment", formData.comment.trim());
       data.append("Status", formData.status);
+      data.append("status", formData.status);
+      data.append("CategoryStatus", formData.categoryStatus);
+      data.append("categoryStatus", formData.categoryStatus);
       if (formData.categoryId) {
         data.append("CategoryId", formData.categoryId);
+        data.append("categoryId", formData.categoryId);
       }
       if (formData.image) {
         data.append("Image", formData.image);
+        data.append("image", formData.image);
       }
 
       if (isEditMode) {
@@ -301,20 +332,77 @@ export default function AdminAddTestimonial() {
               />
             </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Rating (1 - 5) *</label>
-              <select
-                name="rating"
-                value={formData.rating}
-                onChange={handleChange}
-                style={styles.input}
-              >
-                <option value={5}>5 Stars</option>
-                <option value={4}>4 Stars</option>
-                <option value={3}>3 Stars</option>
-                <option value={2}>2 Stars</option>
-                <option value={1}>1 Star</option>
-              </select>
+            {/* Rating and Category Status Button Chips in same row */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+              <div style={{ ...styles.formGroup, marginBottom: 0 }}>
+                <label style={styles.label}>Rating (1 - 5) *</label>
+                <select
+                  name="rating"
+                  value={formData.rating}
+                  onChange={handleChange}
+                  style={styles.input}
+                >
+                  <option value={5}>5 Stars</option>
+                  <option value={4}>4 Stars</option>
+                  <option value={3}>3 Stars</option>
+                  <option value={2}>2 Stars</option>
+                  <option value={1}>1 Star</option>
+                </select>
+              </div>
+
+              <div style={{ ...styles.formGroup, marginBottom: 0 }}>
+                <label style={styles.label}>Category Status *</label>
+                <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      border: (formData.categoryStatus || "Active") === "Active" ? "1px solid #10b981" : "1px solid var(--border)",
+                      background: (formData.categoryStatus || "Active") === "Active" ? "#dcfce7" : "var(--surface)",
+                      color: (formData.categoryStatus || "Active") === "Active" ? "#15803d" : "var(--text-secondary)",
+                      transition: "all 0.15s ease"
+                    }}
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        categoryStatus: "Active"
+                      }));
+                    }}
+                  >
+                    ● Active
+                  </button>
+
+                  <button
+                    type="button"
+                    style={{
+                      flex: 1,
+                      padding: "10px 14px",
+                      borderRadius: "8px",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      border: (formData.categoryStatus || "Active") === "Inactive" ? "1px solid #ef4444" : "1px solid var(--border)",
+                      background: (formData.categoryStatus || "Active") === "Inactive" ? "#fee2e2" : "var(--surface)",
+                      color: (formData.categoryStatus || "Active") === "Inactive" ? "#b91c1c" : "var(--text-secondary)",
+                      transition: "all 0.15s ease"
+                    }}
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        categoryStatus: "Inactive",
+                        status: (prev.status === "Published" || prev.status === "Active" || prev.status === "Approved") ? "Inactive" : prev.status
+                      }));
+                    }}
+                  >
+                    ○ Inactive
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div style={styles.formGroup}>
@@ -329,15 +417,23 @@ export default function AdminAddTestimonial() {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Status *</label>
+              <label style={styles.label}>Main Testimonial Status *</label>
               <select
                 name="status"
                 value={formData.status}
-                onChange={handleChange}
+                onChange={handleMainStatusChange}
                 style={styles.input}
               >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
+                <optgroup label="Standard Statuses">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </optgroup>
+                <optgroup label="Workflow Statuses">
+                  <option value="Published">Published</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Pending Review">Pending Review</option>
+                  <option value="Approved">Approved</option>
+                </optgroup>
               </select>
             </div>
 

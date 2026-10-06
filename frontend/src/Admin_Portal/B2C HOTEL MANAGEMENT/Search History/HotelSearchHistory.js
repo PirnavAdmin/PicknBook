@@ -153,18 +153,22 @@ export default function HotelSearchHistory() {
   const formatSearchDate = (value) => {
     if (!value) return "--";
     try {
-      const date = new Date(value);
+      let str = String(value).trim();
+      if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+        str = str.replace(" ", "T") + "Z";
+      }
+      const date = new Date(str);
       if (Number.isNaN(date.getTime())) return value;
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
-      const timeStr = date.toLocaleTimeString("en-GB", {
-        hour: "numeric",
+      const day = String(date.toLocaleDateString("en-GB", { day: "2-digit", timeZone: "Asia/Kolkata" }));
+      const month = String(date.toLocaleDateString("en-GB", { month: "2-digit", timeZone: "Asia/Kolkata" }));
+      const year = date.toLocaleDateString("en-GB", { year: "numeric", timeZone: "Asia/Kolkata" });
+      const timeStr = date.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit",
         hour12: true,
-      });
-      return `${day}-${month}-${year}, ${timeStr}`;
+        timeZone: "Asia/Kolkata",
+      }).toLowerCase();
+      return `${day}-${month}-${year} ${timeStr}`;
     } catch {
       return value;
     }
@@ -708,11 +712,15 @@ export const HotelSearchHistoryRow = ({ item, index, onView }) => {
   const formatDateOnly = (value) => {
     if (!value) return "--";
     try {
-      const date = new Date(value);
+      let str = String(value).trim();
+      if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+        str = str.replace(" ", "T") + "Z";
+      }
+      const date = new Date(str);
       if (Number.isNaN(date.getTime())) return value;
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const year = date.getFullYear();
+      const day = date.toLocaleDateString("en-GB", { day: "2-digit", timeZone: "Asia/Kolkata" });
+      const month = date.toLocaleDateString("en-GB", { month: "2-digit", timeZone: "Asia/Kolkata" });
+      const year = date.toLocaleDateString("en-GB", { year: "numeric", timeZone: "Asia/Kolkata" });
       return `${day}-${month}-${year}`;
     } catch {
       return value;
@@ -722,13 +730,18 @@ export const HotelSearchHistoryRow = ({ item, index, onView }) => {
   const formatTimeOnly = (value) => {
     if (!value) return "";
     try {
-      const date = new Date(value);
+      let str = String(value).trim();
+      if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+        str = str.replace(" ", "T") + "Z";
+      }
+      const date = new Date(str);
       if (Number.isNaN(date.getTime())) return "";
-      return date.toLocaleTimeString("en-GB", {
-        hour: "numeric",
+      return date.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
         minute: "2-digit",
         hour12: true,
-      });
+        timeZone: "Asia/Kolkata",
+      }).toLowerCase();
     } catch {
       return "";
     }

@@ -24,6 +24,7 @@ import './WalletTransactionList.css';
 import { WalletApi } from '../../../services/walletService';
 import { adminWalletService } from '../../../services/adminWalletService';
 import { toApiUrl } from '../../../services/apiClient';
+import AdminPagination from '../../../components/AdminPagination';
 
 export default function WalletTransactionList() {
   const [transactions, setTransactions] = useState([]);
@@ -36,6 +37,10 @@ export default function WalletTransactionList() {
   const [customerSummary, setCustomerSummary] = useState(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [customerSummaryLoading, setCustomerSummaryLoading] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -84,10 +89,28 @@ export default function WalletTransactionList() {
           let formattedDate = 'N/A';
           if (dateVal) {
             try {
-              formattedDate = new Date(dateVal).toLocaleString('en-IN', {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-              });
+              let str = String(dateVal).trim();
+              if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+                str = str.replace(" ", "T") + "Z";
+              }
+              const d = new Date(str);
+              if (!Number.isNaN(d.getTime())) {
+                const day = d.toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  timeZone: "Asia/Kolkata",
+                });
+                const time = d.toLocaleTimeString("en-IN", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                  timeZone: "Asia/Kolkata",
+                }).toLowerCase();
+                formattedDate = `${day}, ${time}`;
+              } else {
+                formattedDate = String(dateVal);
+              }
             } catch (e) {
               formattedDate = String(dateVal);
             }
@@ -223,6 +246,17 @@ export default function WalletTransactionList() {
     });
   }, [transactions, searchTerm, typeFilter, statusFilter]);
 
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, typeFilter, statusFilter]);
+
+  // Paginated logs for table display
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filtered.slice(startIndex, startIndex + itemsPerPage);
+  }, [filtered, currentPage, itemsPerPage]);
+
   // Calculate Metrics dynamically based on filtered transactions
   const metrics = useMemo(() => {
     const totalCredit = filtered.filter(t => t.type === 'Credit').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
@@ -349,9 +383,9 @@ export default function WalletTransactionList() {
               <th>Type</th>
               <th>Category / Method</th>
               <th>Reference ID</th>
-              <th style={{ textAlign: 'right' }}>Amount</th>
-              <th style={{ textAlign: 'center' }}>Status</th>
-              <th style={{ textAlign: 'center' }}>Actions</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -371,14 +405,14 @@ export default function WalletTransactionList() {
                   </button>
                 </td>
               </tr>
-            ) : filtered.length === 0 ? (
+            ) : paginatedLogs.length === 0 ? (
               <tr>
                 <td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
                   No wallet transactions found matching your criteria.
                 </td>
               </tr>
             ) : (
-              filtered.map((t) => (
+              paginatedLogs.map((t) => (
                 <tr key={t.id}>
                   <td style={{ fontWeight: 600, color: '#A51C49' }}>{t.id}</td>
                   <td>{t.dateTime}</td>
@@ -412,7 +446,7 @@ export default function WalletTransactionList() {
                     <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{t.method}</div>
                   </td>
                   <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{t.referenceId}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, color: t.type === 'Credit' ? '#15803d' : '#b91c1c' }}>
+                  <td style={{ textAlign: 'center', fontWeight: 700, color: t.type === 'Credit' ? '#15803d' : '#b91c1c' }}>
                     {t.type === 'Credit' ? '+' : '-'}₹{t.amount.toLocaleString('en-IN')}
                   </td>
                   <td style={{ textAlign: 'center' }}>
@@ -438,6 +472,15 @@ export default function WalletTransactionList() {
             )}
           </tbody>
         </table>
+
+        <AdminPagination
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+          itemName="wallet transactions"
+        />
       </div>
 
       {/* Transaction Details Modal */}

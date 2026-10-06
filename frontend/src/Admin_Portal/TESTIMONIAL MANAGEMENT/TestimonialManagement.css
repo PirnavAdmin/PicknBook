@@ -491,18 +491,21 @@
 }
 
 .tm-cat-hotel {
-  background: #f3e8ff;
-  color: #7e22ce;
+  background: #fce7f3;
+  color: #be185d;
+  border: 1px solid #fbcfe8;
 }
 
 .tm-cat-flight {
   background: #e0f2fe;
-  color: #0369a1;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
 }
 
 .tm-cat-bus {
-  background: #dcfce7;
-  color: #15803d;
+  background: #ede9fe;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
 }
 
 .tm-cat-car {

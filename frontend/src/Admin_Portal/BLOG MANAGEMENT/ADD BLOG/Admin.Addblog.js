@@ -218,6 +218,11 @@ const AddBlogForm = () => {
             if (formData.subTitle?.trim()) {
                 dataToSend.append("SubTitle", formData.subTitle.trim());
             }
+            if (formData.addedBy?.trim()) {
+                dataToSend.append("AddedBy", formData.addedBy.trim());
+                dataToSend.append("AddedByName", formData.addedBy.trim());
+                dataToSend.append("Author", formData.addedBy.trim());
+            }
             dataToSend.append("IsFeatured", formData.featured === 'Yes' ? 'true' : 'false');
             dataToSend.append("IsPublished", formData.isPublished === 'Yes' ? 'true' : 'false');
 

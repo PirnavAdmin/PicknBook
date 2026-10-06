@@ -693,20 +693,22 @@ function hasTimezoneSuffix(value) {
 function parseUtcDate(value) {
   const text = normalizeText(value, "");
   if (!text) {
-    return new Date("");
+    return null;
   }
 
-  if (text.includes(":") && !hasTimezoneSuffix(text)) {
-    return new Date(`${text.replace(" ", "T")}Z`);
+  // If backend sent ISO timestamp like 2026-10-04T12:09:31Z, strip trailing Z so 12:09:31 is treated as wall-clock IST time
+  const cleanText = text.replace(/Z$/i, "").replace(" ", "T");
+  const parsed = new Date(cleanText);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed;
   }
 
-  const parsed = parseDateValue(text);
-  return parsed || new Date(text);
+  return parseDateValue(text);
 }
 
 function toDateValue(value) {
   const parsed = parseUtcDate(value);
-  return Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
+  return !parsed || Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
 }
 
 function formatSearchTime(value) {
@@ -719,7 +721,6 @@ function formatSearchTime(value) {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
-    timeZone: "Asia/Kolkata",
   }).toLowerCase();
 }
 
@@ -729,12 +730,10 @@ function formatSearchDate(value) {
     return "--";
   }
 
-  return parsed.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: "Asia/Kolkata",
-  }).replace(/\//g, "-");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = parsed.getFullYear();
+  return `${day}-${month}-${year}`;
 }
 
 function formatDepartDate(value) {

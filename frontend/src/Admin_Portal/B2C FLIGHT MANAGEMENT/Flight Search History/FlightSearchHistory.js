@@ -719,19 +719,16 @@ async function listAdminFlightSearchHistory({
 }
 
 const parseUtcDate = (value) => {
-  if (!value) return new Date("");
+  if (!value) return null;
   let str = String(value).trim();
-  // If the date string has a time portion (contains ':') but lacks timezone offset information,
-  // we append 'Z' to explicitly parse it as a UTC/GMT timestamp.
-  if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
-    str = str.replace(" ", "T") + "Z";
-  }
-  return new Date(str);
+  const cleanStr = str.replace(/Z$/i, "").replace(" ", "T");
+  const parsed = new Date(cleanStr);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
 const toDateValue = (value) => {
   const parsed = parseUtcDate(value);
-  return Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
+  return !parsed || Number.isNaN(parsed.getTime()) ? Number.NaN : parsed.getTime();
 };
 
 const formatSearchTime = (value) => {
@@ -744,22 +741,19 @@ const formatSearchTime = (value) => {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
-    timeZone: "Asia/Kolkata",
   }).toLowerCase();
 };
 
 const formatSearchDate = (value) => {
   const parsed = parseUtcDate(value);
-  if (Number.isNaN(parsed.getTime())) {
+  if (!parsed || Number.isNaN(parsed.getTime())) {
     return "--";
   }
 
-  return parsed.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    timeZone: "Asia/Kolkata",
-  }).replace(/\//g, "-");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const year = parsed.getFullYear();
+  return `${day}-${month}-${year}`;
 };
 
 const formatDepartDateParts = (value) => {

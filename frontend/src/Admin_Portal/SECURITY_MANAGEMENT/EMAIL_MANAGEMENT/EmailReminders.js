@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import emailService from '../../../services/emailService';
 import '../SecurityManagement.css';
@@ -139,20 +140,12 @@ export default function EmailReminders() {
 
   return (
     <div className="security-mgmt-container">
-      {/* Breadcrumbs */}
-      <div className="sec-breadcrumb">
-        <span className="crumb-link" onClick={() => navigate('/admin/dashbord')}>Dashboard</span>
-        <span>›</span>
-        <span className="crumb-link" onClick={() => navigate('/admin/security-management')}>Security Management</span>
-        <span>›</span>
-        <span className="crumb-link">Email Management</span>
-        <span>›</span>
-        <span className="active-crumb">Email Reminders</span>
-      </div>
-
-      <div className="email-heading-box" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '8px', marginBottom: '15px' }}>
-        <h2 style={{ fontSize: '14px', fontWeight: '700', color: '#901335', margin: '0' }}>Scheduled Email Reminders</h2>
-        <p style={{ fontSize: '10px', color: '#64748b', margin: '2px 0 0 0' }}>Configure automated reminders and track pending scheduled email alerts.</p>
+      <div className="email-heading-box" style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: 600, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>Scheduled Email</h1>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 600, color: '#000000', margin: 0 }}>Reminders</h2>
+        </div>
+        <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>Configure automated reminders and track pending scheduled email alerts.</p>
       </div>
 
       {/* Metrics Cards */}
@@ -281,7 +274,7 @@ export default function EmailReminders() {
       </div>
 
       {/* SCHEDULE REMINDER MODAL POPUP */}
-      {isModalOpen && (
+      {isModalOpen && createPortal(
         <div className="email-full-screen-modal-overlay">
           <div className="email-full-screen-modal-content" style={{ width: '90%', maxWidth: '600px', height: 'auto', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
             <div className="email-form-header">
@@ -376,7 +369,8 @@ export default function EmailReminders() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {toastMessage && <div className="sec-toast">{toastMessage}</div>}

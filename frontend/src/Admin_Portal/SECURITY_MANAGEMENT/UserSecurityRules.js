@@ -1,5 +1,6 @@
 /* eslint-disable */
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import securityService from '../../services/securityService';
 import AdminPagination from '../../components/AdminPagination';
@@ -114,9 +115,21 @@ export default function UserSecurityRules() {
   const [showBlockUrlsModal, setShowBlockUrlsModal] = useState(false);
   const [showUnblockModal, setShowUnblockModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [activeDropdownId, setActiveDropdownId] = useState(null);
 
   const [selectedRule, setSelectedRule] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.usr-dropdown-wrapper')) {
+        setActiveDropdownId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Form States - Block User
   const [blockUserForm, setBlockUserForm] = useState({
@@ -159,35 +172,31 @@ export default function UserSecurityRules() {
         status: filterStatus === 'ALL' ? '' : filterStatus
       });
 
-      const rawItems = response?.data?.items || (Array.isArray(response?.data) ? response.data : null);
-
-      if (response && response.success && Array.isArray(rawItems)) {
-        let fetchedData = rawItems;
-        if (filterStatus !== 'ALL') {
-          fetchedData = fetchedData.filter(r => (r.status || 'ACTIVE').toUpperCase() === filterStatus);
-        }
-        setRules(fetchedData.length > 0 ? fetchedData : MOCK_FALLBACK_RULES);
-        setTotalItems(response?.data?.totalRecords || response?.pagination?.total || fetchedData.length || MOCK_FALLBACK_RULES.length);
-      } else {
-        // Fallback to mock data for presentation
-        let filteredMock = MOCK_FALLBACK_RULES;
-        if (searchUserId.trim()) {
-          filteredMock = filteredMock.filter(r => r.userId.includes(searchUserId.trim()));
-        }
-        if (filterRuleType !== 'ALL') {
-          filteredMock = filteredMock.filter(r => r.ruleType === filterRuleType);
-        }
-        if (filterStatus !== 'ALL') {
-          filteredMock = filteredMock.filter(r => r.status === filterStatus);
-        }
-        setRules(filteredMock);
-        setTotalItems(filteredMock.length);
+      // Extract backend response data strictly
+      const resPayload = response?.data || response;
+      let rawItems = [];
+      if (Array.isArray(resPayload?.items)) {
+        rawItems = resPayload.items;
+      } else if (Array.isArray(resPayload?.data?.items)) {
+        rawItems = resPayload.data.items;
+      } else if (Array.isArray(resPayload)) {
+        rawItems = resPayload;
+      } else if (Array.isArray(response?.items)) {
+        rawItems = response.items;
       }
+
+      let fetchedData = rawItems;
+      if (filterStatus !== 'ALL') {
+        fetchedData = fetchedData.filter(r => (r.status || 'ACTIVE').toUpperCase() === filterStatus);
+      }
+
+      setRules(fetchedData);
+      setTotalItems(resPayload?.totalRecords ?? resPayload?.total ?? response?.totalRecords ?? fetchedData.length);
     } catch (err) {
       console.error('Error fetching user security rules:', err);
       setErrorMsg(err.message || 'Failed to load user security rules from API.');
-      setRules(MOCK_FALLBACK_RULES);
-      setTotalItems(MOCK_FALLBACK_RULES.length);
+      setRules([]);
+      setTotalItems(0);
     } finally {
       setLoading(false);
     }
@@ -231,18 +240,15 @@ export default function UserSecurityRules() {
   // Handler: Block URLs
   const handleBlockUrlsSubmit = async (e) => {
     e.preventDefault();
-    if (!blockUrlsForm.userId.trim()) {
-      triggerToast('Please enter a valid User ID.', 'error');
-      return;
-    }
     if (!blockUrlsForm.urls || blockUrlsForm.urls.length === 0) {
       triggerToast('Please select or add at least one URL to block.', 'error');
       return;
     }
     setSubmittingAction(true);
+    const targetUserId = blockUrlsForm.userId?.trim() || 'ALL';
     try {
       const res = await securityService.blockUserUrls({
-        userId: blockUrlsForm.userId.trim(),
+        userId: targetUserId,
         blockType: blockUrlsForm.blockType,
         durationMinutes: Number(blockUrlsForm.durationMinutes) || 120,
         reason: blockUrlsForm.reason.trim() || 'Temporary feature restriction',
@@ -250,10 +256,10 @@ export default function UserSecurityRules() {
       });
 
       if (res && (res.success || res.data)) {
-        triggerToast(`Successfully blocked ${res.count || blockUrlsForm.urls.length} URL(s) for User ID ${blockUrlsForm.userId}!`);
+        triggerToast(`Successfully blocked ${res.count || blockUrlsForm.urls.length} URL(s)!`);
         setShowBlockUrlsModal(false);
         setBlockUrlsForm({
-          userId: '',
+          userId: 'ALL',
           blockType: 'TEMPORARY',
           durationMinutes: 120,
           reason: '',
@@ -378,18 +384,10 @@ export default function UserSecurityRules() {
         </div>
       )}
 
-      {/* Header & Breadcrumb */}
+      {/* Header */}
       <div className="sd-header">
         <div>
-          <div className="sd-breadcrumb">
-            <span className="crumb-link" onClick={() => navigate('/admin/security-management')}>Security Management</span>
-            <span className="crumb-sep">/</span>
-            <span className="crumb-current">User Security Rules</span>
-          </div>
           <h1 className="sd-title">User Security Rules</h1>
-          <p className="sd-subtitle">
-            Configure User ID restrictions, single/multi API route blocking, temporary vs permanent durations, and active security policies.
-          </p>
         </div>
 
         <div className="usr-header-actions">
@@ -477,164 +475,189 @@ export default function UserSecurityRules() {
             </select>
           </div>
         </div>
-
-        <button className="usr-reset-btn" onClick={() => { setSearchUserId(''); setFilterRuleType('ALL'); setFilterStatus('ALL'); }}>
-          Clear Filters
-        </button>
       </div>
 
-      {/* Main Table Card */}
-      <div className="sd-card usr-table-card">
-        <div className="sd-card-header">
-          <h2 className="sd-card-title">User Security Rules Registry</h2>
-          <span className="usr-record-count">Showing {rules.length} entries</span>
-        </div>
-
+      {/* Unified Attached Table & Pagination Box */}
+      <div className="sec-attached-table-box">
         {errorMsg && (
-          <div className="usr-error-banner">
+          <div className="usr-error-banner" style={{ padding: '12px 16px', margin: 0, borderBottom: '1px solid #fecaca' }}>
             ⚠️ {errorMsg}
           </div>
         )}
 
         {loading ? (
-          <div className="usr-loading-state">
+          <div className="usr-loading-state" style={{ padding: '32px', textAlign: 'center' }}>
             <div className="usr-spinner"></div>
             <p>Loading security rules from backend API...</p>
           </div>
         ) : (
-          <div className="usr-table-wrapper">
-            <table className="usr-table">
-              <thead>
-                <tr>
-                  <th>Rule ID</th>
-                  <th>User ID</th>
-                  <th>Rule Type</th>
-                  <th>Target Scope / Route</th>
-                  <th>Block Type</th>
-                  <th>Duration & Expiry</th>
-                  <th>Status</th>
-                  <th>Reason & Admin</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rules.length === 0 ? (
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="sd-mini-table usr-table">
+                <thead>
                   <tr>
-                    <td colSpan="9" className="usr-empty-td">
-                      No security rules matching current filters.
-                    </td>
+                    <th>Rule ID</th>
+                    <th>User ID</th>
+                    <th>Rule Type</th>
+                    <th>Target Scope / Route</th>
+                    <th>Block Type</th>
+                    <th>Duration & Expiry</th>
+                    <th>Status</th>
+                    <th>Reason & Admin</th>
+                    <th>Actions</th>
                   </tr>
-                ) : (
-                  rules.map((rule) => {
-                    const isUserType = rule.ruleType === 'USER';
-                    const isActive = (rule.status || 'ACTIVE') === 'ACTIVE';
-                    const isExpired = (rule.status || '') === 'EXPIRED';
-                    const isUnblocked = (rule.status || '') === 'UNBLOCKED';
+                </thead>
+                <tbody>
+                  {rules.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '24px 0', color: '#64748b' }}>
+                        No security rules matching current filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    rules.map((rule) => {
+                      const isUserType = rule.ruleType === 'USER';
+                      const isActive = (rule.status || 'ACTIVE') === 'ACTIVE';
+                      const isExpired = (rule.status || '') === 'EXPIRED';
 
-                    return (
-                      <tr key={rule.id} className={!isActive ? 'usr-row-inactive' : ''}>
-                        <td className="usr-td-id">#{rule.id}</td>
-                        <td className="usr-td-user">
-                          <strong>{rule.userId}</strong>
-                        </td>
-                        <td>
-                          <span className={`usr-badge-rule-type ${isUserType ? 'type-user' : 'type-url'}`}>
-                            {isUserType ? '👤 USER BLOCK' : '🌐 URL BLOCK'}
-                          </span>
-                        </td>
-                        <td className="usr-td-route">
-                          {isUserType ? (
-                            <span className="usr-all-routes-tag">🔒 All Endpoints & Session</span>
-                          ) : (
-                            <code className="usr-url-code">{rule.route || '/api/v1/*'}</code>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`usr-badge-scope ${rule.blockType === 'PERMANENT' ? 'scope-perm' : 'scope-temp'}`}>
-                            {rule.blockType === 'PERMANENT' ? 'Permanent' : `${rule.durationMinutes || 120} mins`}
-                          </span>
-                        </td>
-                        <td className="usr-td-time">
-                          {rule.blockType === 'PERMANENT' ? (
-                            <span className="usr-perm-text">Never Expires</span>
-                          ) : (
-                            <>
-                              <div><strong>Start:</strong> {rule.startTime ? new Date(rule.startTime).toLocaleString() : 'N/A'}</div>
-                              <div><strong>Expires:</strong> {rule.expiryTime ? new Date(rule.expiryTime).toLocaleString() : 'N/A'}</div>
-                            </>
-                          )}
-                        </td>
-                        <td>
-                          <span className={`usr-status-badge ${isActive ? 'st-active' : isExpired ? 'st-expired' : 'st-unblocked'}`}>
-                            {isActive ? '● ACTIVE' : isExpired ? '○ EXPIRED' : '✓ UNBLOCKED'}
-                          </span>
-                        </td>
-                        <td className="usr-td-reason">
-                          <div className="usr-reason-text">{rule.reason || 'No reason specified'}</div>
-                          <div className="usr-created-by">By: {rule.createdBy || 'Admin'}</div>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div className="usr-action-btns">
-                            {isActive && rule.blockType === 'TEMPORARY' && (
+                      return (
+                        <tr key={rule.id} className={!isActive ? 'usr-row-inactive' : ''}>
+                          <td className="usr-td-id">#{rule.id}</td>
+                          <td className="usr-td-user">
+                            <strong>{rule.userId}</strong>
+                          </td>
+                          <td>
+                            <span className={`usr-badge-rule-type ${isUserType ? 'type-user' : 'type-url'}`}>
+                              {isUserType ? '👤 USER BLOCK' : '🌐 URL BLOCK'}
+                            </span>
+                          </td>
+                          <td className="usr-td-route">
+                            {isUserType ? (
+                              <span className="usr-all-routes-tag">🔒 All Endpoints & Session</span>
+                            ) : (
+                              <code className="usr-url-code">{rule.route || '/api/v1/*'}</code>
+                            )}
+                          </td>
+                          <td>
+                            <span className={`usr-badge-scope ${rule.blockType === 'PERMANENT' ? 'scope-perm' : 'scope-temp'}`}>
+                              {rule.blockType === 'PERMANENT' ? 'Permanent' : `${rule.durationMinutes || 120} mins`}
+                            </span>
+                          </td>
+                          <td className="usr-td-time">
+                            {rule.blockType === 'PERMANENT' ? (
+                              <span className="usr-perm-text">Never Expires</span>
+                            ) : (
+                              <>
+                                <div><strong>Start:</strong> {rule.startTime ? new Date(rule.startTime).toLocaleString() : 'N/A'}</div>
+                                <div><strong>Expires:</strong> {rule.expiryTime ? new Date(rule.expiryTime).toLocaleString() : 'N/A'}</div>
+                              </>
+                            )}
+                          </td>
+                          <td>
+                            <span className={`usr-status-badge ${isActive ? 'st-active' : isExpired ? 'st-expired' : 'st-unblocked'}`}>
+                              {isActive ? '● ACTIVE' : isExpired ? '○ EXPIRED' : '✓ UNBLOCKED'}
+                            </span>
+                          </td>
+                          <td className="usr-td-reason">
+                            <div className="usr-reason-text">{rule.reason || 'No reason specified'}</div>
+                            <div className="usr-created-by">By: {rule.createdBy || 'Admin'}</div>
+                          </td>
+                          <td>
+                            <div className="usr-dropdown-wrapper">
                               <button
-                                className="usr-action-btn btn-extend"
-                                title="Extend Duration"
-                                onClick={() => {
-                                  setSelectedRule(rule);
-                                  setExtendDurationMinutes(240);
-                                  setShowExtendModal(true);
+                                type="button"
+                                className="usr-action-dropdown-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveDropdownId(activeDropdownId === rule.id ? null : rule.id);
                                 }}
                               >
-                                ⏳ Extend
+                                👁️ View ▾
                               </button>
-                            )}
 
-                            {isActive && (
-                              <button
-                                className="usr-action-btn btn-unblock"
-                                title="Unblock Rule"
-                                onClick={() => {
-                                  setSelectedRule(rule);
-                                  setShowUnblockModal(true);
-                                }}
-                              >
-                                🔓 Unblock
-                              </button>
-                            )}
+                              {activeDropdownId === rule.id && (
+                                <div className="usr-dropdown-menu">
+                                  <button
+                                    type="button"
+                                    className="usr-dropdown-item"
+                                    onClick={() => {
+                                      setSelectedRule(rule);
+                                      setShowViewModal(true);
+                                      setActiveDropdownId(null);
+                                    }}
+                                  >
+                                    👁️ View Details
+                                  </button>
 
-                            <button
-                              className="usr-action-btn btn-delete"
-                              title="Delete Rule Record"
-                              onClick={() => {
-                                setSelectedRule(rule);
-                                setShowDeleteModal(true);
-                              }}
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                                  {isActive && rule.blockType === 'TEMPORARY' && (
+                                    <button
+                                      type="button"
+                                      className="usr-dropdown-item"
+                                      onClick={() => {
+                                        setSelectedRule(rule);
+                                        setExtendDurationMinutes(240);
+                                        setShowExtendModal(true);
+                                        setActiveDropdownId(null);
+                                      }}
+                                    >
+                                      ✏️ Edit / Extend
+                                    </button>
+                                  )}
+
+                                  {isActive && (
+                                    <button
+                                      type="button"
+                                      className="usr-dropdown-item"
+                                      onClick={() => {
+                                        setSelectedRule(rule);
+                                        setShowUnblockModal(true);
+                                        setActiveDropdownId(null);
+                                      }}
+                                    >
+                                      🔓 Unblock Rule
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    className="usr-dropdown-item danger"
+                                    onClick={() => {
+                                      setSelectedRule(rule);
+                                      setShowDeleteModal(true);
+                                      setActiveDropdownId(null);
+                                    }}
+                                  >
+                                    🗑️ Delete Rule
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Attached Pagination Footer */}
+            <div className="sec-pagination-attached-footer">
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={pageSize}
+                onPageChange={(page) => setCurrentPage(page)}
+                onItemsPerPageChange={(size) => setPageSize(size)}
+                itemName="rules"
+              />
+            </div>
+          </>
         )}
-
-        {/* Pagination */}
-        <div className="usr-pagination-footer">
-          <AdminPagination
-            currentPage={currentPage}
-            totalPages={Math.ceil(totalItems / pageSize) || 1}
-            onPageChange={(page) => setCurrentPage(page)}
-          />
-        </div>
       </div>
 
       {/* MODAL 1: Block Entire User ID */}
-      {showBlockUserModal && (
+      {showBlockUserModal && createPortal(
         <div className="usr-modal-overlay">
           <div className="usr-modal-card">
             <div className="usr-modal-header">
@@ -643,10 +666,6 @@ export default function UserSecurityRules() {
             </div>
             <form onSubmit={handleBlockUserSubmit}>
               <div className="usr-modal-body">
-                <p className="usr-modal-desc">
-                  This action will restrict <strong>ALL API access</strong> and terminate active sessions for the specified User ID.
-                </p>
-
                 <div className="usr-form-group">
                   <label className="usr-label">User ID <span className="req">*</span></label>
                   <input
@@ -718,59 +737,47 @@ export default function UserSecurityRules() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 2: Block Multiple Target URLs */}
-      {showBlockUrlsModal && (
+      {showBlockUrlsModal && createPortal(
         <div className="usr-modal-overlay">
           <div className="usr-modal-card wide">
             <div className="usr-modal-header">
-              <h3>🔗 Block Specific Target URLs for User</h3>
+              <h3>🔗 Block Specific Target URLs</h3>
               <button className="usr-modal-close" onClick={() => setShowBlockUrlsModal(false)}>×</button>
             </div>
             <form onSubmit={handleBlockUrlsSubmit}>
               <div className="usr-modal-body">
-                <p className="usr-modal-desc">
-                  Restrict access to specific booking or payment features for a User ID. The user remains logged in, but attempts to access these endpoints will return a <code>403 URL_BLOCKED</code> error toast.
-                </p>
 
-                <div className="usr-form-grid">
-                  <div className="usr-form-group">
-                    <label className="usr-label">Target User ID <span className="req">*</span></label>
-                    <input
-                      type="text"
-                      className="usr-input-text"
-                      placeholder="e.g. 1001"
-                      value={blockUrlsForm.userId}
-                      onChange={(e) => setBlockUrlsForm({ ...blockUrlsForm, userId: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="usr-form-group">
-                    <label className="usr-label">Block Type</label>
-                    <select
-                      className="usr-select"
-                      value={blockUrlsForm.blockType}
-                      onChange={(e) => setBlockUrlsForm({ ...blockUrlsForm, blockType: e.target.value })}
-                    >
-                      <option value="TEMPORARY">Temporary Restriction</option>
-                      <option value="PERMANENT">Permanent Restriction</option>
-                    </select>
-                  </div>
+                {/* Block Type on One Line */}
+                <div className="usr-form-group" style={{ marginBottom: '16px' }}>
+                  <label className="usr-label">Block Type</label>
+                  <select
+                    className="usr-select"
+                    style={{ width: '100%' }}
+                    value={blockUrlsForm.blockType}
+                    onChange={(e) => setBlockUrlsForm({ ...blockUrlsForm, blockType: e.target.value })}
+                  >
+                    <option value="TEMPORARY">Temporary Restriction</option>
+                    <option value="PERMANENT">Permanent Restriction</option>
+                  </select>
                 </div>
 
+                {/* Duration / Timer on One Line */}
                 {blockUrlsForm.blockType === 'TEMPORARY' && (
-                  <div className="usr-form-group">
-                    <label className="usr-label">Duration (Minutes)</label>
-                    <div className="usr-preset-chips">
+                  <div className="usr-form-group" style={{ marginBottom: '18px' }}>
+                    <label className="usr-label">Duration (Timer)</label>
+                    <div className="usr-preset-chips" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {[30, 60, 120, 240, 1440].map(mins => (
                         <button
                           key={mins}
                           type="button"
                           className={`usr-chip ${blockUrlsForm.durationMinutes === mins ? 'active' : ''}`}
                           onClick={() => setBlockUrlsForm({ ...blockUrlsForm, durationMinutes: mins })}
+                          style={{ flex: 1, minWidth: '75px', textAlign: 'center', justifyContent: 'center' }}
                         >
                           {mins >= 1440 ? `${mins / 1440} Day` : `${mins} Mins`}
                         </button>
@@ -779,28 +786,9 @@ export default function UserSecurityRules() {
                   </div>
                 )}
 
+                {/* Add Custom URL Path */}
                 <div className="usr-form-group">
-                  <label className="usr-label">Select Popular API Endpoints to Block</label>
-                  <div className="usr-url-preset-list">
-                    {POPULAR_RESTRICTABLE_URLS.map(item => {
-                      const isSelected = blockUrlsForm.urls.includes(item.url);
-                      return (
-                        <div
-                          key={item.url}
-                          className={`usr-url-chip ${isSelected ? 'selected' : ''}`}
-                          onClick={() => toggleUrlSelection(item.url)}
-                        >
-                          <input type="checkbox" checked={isSelected} readOnly />
-                          <span>{item.label}</span>
-                          <code>{item.url}</code>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="usr-form-group">
-                  <label className="usr-label">Add Custom URL Path</label>
+                  <label className="usr-label">Target URL Path to Block</label>
                   <div className="usr-add-url-row">
                     <input
                       type="text"
@@ -809,23 +797,48 @@ export default function UserSecurityRules() {
                       value={blockUrlsForm.customUrlInput}
                       onChange={(e) => setBlockUrlsForm({ ...blockUrlsForm, customUrlInput: e.target.value })}
                     />
-                    <button type="button" className="sd-btn-secondary" onClick={addCustomUrl}>
+                    <button type="button" className="usr-btn-add-custom" onClick={addCustomUrl}>
                       + Add URL
                     </button>
                   </div>
                 </div>
 
-                <div className="usr-selected-urls-container">
-                  <label className="usr-label">Selected URLs ({blockUrlsForm.urls.length}):</label>
-                  <div className="usr-selected-tags">
-                    {blockUrlsForm.urls.map(url => (
-                      <span key={url} className="usr-tag-item">
-                        {url}
-                        <button type="button" onClick={() => toggleUrlSelection(url)}>×</button>
-                      </span>
-                    ))}
+                {/* Selected Target URLs List with Remove Option */}
+                {blockUrlsForm.urls.length > 0 && (
+                  <div className="usr-selected-urls-container" style={{ marginTop: '12px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label className="usr-label" style={{ margin: 0, fontWeight: 'bold', color: '#1e293b' }}>
+                        Selected Target URLs ({blockUrlsForm.urls.length}):
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setBlockUrlsForm(prev => ({ ...prev, urls: [] }))}
+                        style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                    <div className="usr-selected-tags" style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {blockUrlsForm.urls.map(url => {
+                        const matchedItem = POPULAR_RESTRICTABLE_URLS.find(p => p.url === url);
+                        const displayLabel = matchedItem ? matchedItem.label : url;
+                        return (
+                          <span key={url} className="usr-tag-item" style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', padding: '5px 12px', borderRadius: '16px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                            <span>{displayLabel}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleUrlSelection(url)}
+                              style={{ background: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '50%', width: '16px', height: '16px', fontSize: '11px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                              title="Remove"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="usr-form-group" style={{ marginTop: '15px' }}>
                   <label className="usr-label">Reason</label>
@@ -840,7 +853,7 @@ export default function UserSecurityRules() {
               </div>
 
               <div className="usr-modal-footer">
-                <button type="button" className="sd-btn-secondary" onClick={() => setShowBlockUrlsModal(false)}>
+                <button type="button" className="usr-btn-cancel-orange" onClick={() => setShowBlockUrlsModal(false)}>
                   Cancel
                 </button>
                 <button type="submit" className="sd-btn-primary usr-btn-url-block" disabled={submittingAction}>
@@ -849,11 +862,12 @@ export default function UserSecurityRules() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 3: Unblock Security Rule */}
-      {showUnblockModal && selectedRule && (
+      {showUnblockModal && selectedRule && createPortal(
         <div className="usr-modal-overlay">
           <div className="usr-modal-card">
             <div className="usr-modal-header">
@@ -891,11 +905,12 @@ export default function UserSecurityRules() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 4: Extend Security Rule */}
-      {showExtendModal && selectedRule && (
+      {showExtendModal && selectedRule && createPortal(
         <div className="usr-modal-overlay">
           <div className="usr-modal-card">
             <div className="usr-modal-header">
@@ -950,11 +965,12 @@ export default function UserSecurityRules() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL 5: Delete Rule Confirmation */}
-      {showDeleteModal && selectedRule && (
+      {showDeleteModal && selectedRule && createPortal(
         <div className="usr-modal-overlay">
           <div className="usr-modal-card">
             <div className="usr-modal-header">
@@ -974,7 +990,41 @@ export default function UserSecurityRules() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* MODAL 6: View Security Rule Details */}
+      {showViewModal && selectedRule && createPortal(
+        <div className="usr-modal-overlay">
+          <div className="usr-modal-card">
+            <div className="usr-modal-header">
+              <h3>👁️ Security Rule Details #{selectedRule.id}</h3>
+              <button className="usr-modal-close" onClick={() => setShowViewModal(false)}>×</button>
+            </div>
+            <div className="usr-modal-body">
+              <div className="usr-rule-summary-box" style={{ gap: '10px', fontSize: '0.9rem' }}>
+                <div><strong>Rule ID:</strong> #{selectedRule.id}</div>
+                <div><strong>User ID:</strong> {selectedRule.userId}</div>
+                <div><strong>Rule Type:</strong> {selectedRule.ruleType === 'USER' ? '👤 Full User Block' : '🌐 URL Route Block'}</div>
+                <div><strong>Target Route:</strong> <code>{selectedRule.route || 'All Endpoints & Session'}</code></div>
+                <div><strong>Block Type:</strong> {selectedRule.blockType}</div>
+                <div><strong>Duration:</strong> {selectedRule.durationMinutes ? `${selectedRule.durationMinutes} Minutes` : 'N/A'}</div>
+                <div><strong>Status:</strong> {selectedRule.status}</div>
+                <div><strong>Start Time:</strong> {selectedRule.startTime ? new Date(selectedRule.startTime).toLocaleString() : 'N/A'}</div>
+                <div><strong>Expiry Time:</strong> {selectedRule.expiryTime ? new Date(selectedRule.expiryTime).toLocaleString() : 'Never'}</div>
+                <div><strong>Reason:</strong> {selectedRule.reason || 'No reason specified'}</div>
+                <div><strong>Created By:</strong> {selectedRule.createdBy || 'Admin'}</div>
+              </div>
+            </div>
+            <div className="usr-modal-footer">
+              <button type="button" className="sd-btn-secondary" onClick={() => setShowViewModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

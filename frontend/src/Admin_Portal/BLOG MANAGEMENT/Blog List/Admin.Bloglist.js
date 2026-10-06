@@ -473,6 +473,11 @@ function BlogList() {
             if (editFormData.subTitle?.trim()) {
                 dataToSend.append("SubTitle", editFormData.subTitle.trim());
             }
+            if (editFormData.addedBy?.trim()) {
+                dataToSend.append("AddedBy", editFormData.addedBy.trim());
+                dataToSend.append("AddedByName", editFormData.addedBy.trim());
+                dataToSend.append("Author", editFormData.addedBy.trim());
+            }
             dataToSend.append("IsFeatured", editFormData.featured === 'Yes' ? 'true' : 'false');
             dataToSend.append("IsPublished", editFormData.isPublished === 'Yes' ? 'true' : 'false');
 

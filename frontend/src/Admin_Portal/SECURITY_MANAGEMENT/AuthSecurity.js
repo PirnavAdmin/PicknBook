@@ -332,6 +332,8 @@ export default function AuthSecurity() {
     return true;
   });
 
+  const paginatedPolicies = filteredPolicies.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   return (
     <div className="security-mgmt-container">
       {toastMessage && (
@@ -340,42 +342,10 @@ export default function AuthSecurity() {
         </div>
       )}
 
-      {/* Navigation subtab headers */}
+      {/* Header */}
       <div className="sd-top-header" style={{ marginBottom: '16px' }}>
         <div className="sd-header-left">
-          <h1 className="sd-page-title">Authentication Security / Policies</h1>
-          <p className="sd-page-subtitle">Security Management &nbsp;/&nbsp; Authentication Security &nbsp;/&nbsp; Policies</p>
-        </div>
-        <div className="sd-header-right">
-          {activeTab === 'policies' && (
-            <button className="sd-export-btn" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }} onClick={triggerAddPolicy}>
-              <span>+ Add Policy</span>
-            </button>
-          )}
-          {activeTab === 'password' && (
-            <button className="sd-export-btn" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }} onClick={triggerAddPwdPolicy}>
-              <span>+ Add Password Policy</span>
-            </button>
-          )}
-          <button className="sd-export-btn" onClick={() => showToast('Exporting authentication data CSV...')}>
-            📥 Export
-          </button>
-        </div>
-      </div>
-
-      {/* Tab selectors */}
-      <div className="sec-tabs-bar" style={{ marginBottom: '16px' }}>
-        <div role="button" className={`sec-tab-btn ${activeTab === 'policies' ? 'active' : ''}`} onClick={() => setActiveTab('policies')}>
-          <span>Auth Policies</span>
-        </div>
-        <div role="button" className={`sec-tab-btn ${activeTab === 'mfa' ? 'active' : ''}`} onClick={() => setActiveTab('mfa')}>
-          <span>MFA Users</span>
-        </div>
-        <div role="button" className={`sec-tab-btn ${activeTab === 'password' ? 'active' : ''}`} onClick={() => setActiveTab('password')}>
-          <span>Password Policies</span>
-        </div>
-        <div role="button" className={`sec-tab-btn ${activeTab === 'sessions' ? 'active' : ''}`} onClick={() => setActiveTab('sessions')}>
-          <span>Session Management</span>
+          <h1 className="sd-page-title">Authentication Security</h1>
         </div>
       </div>
 
@@ -468,22 +438,9 @@ export default function AuthSecurity() {
             </div>
           )}
 
-          {/* Policies Table grid */}
-          <div className="sd-panel" style={{ padding: '16px' }}>
-            <div className="sd-panel-header" style={{ marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3>Policies List <span className="sd-records-count">({filteredPolicies.length} Records)</span></h3>
-              <button
-                className={`sd-filter-toggle-btn ${showFilters ? 'active' : ''}`}
-                onClick={() => setShowFilters(!showFilters)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                </svg>
-                <span>Filter</span>
-              </button>
-            </div>
-            <div className="sd-table-container">
+          {/* Unified Attached Table & Pagination Box */}
+          <div className="sec-attached-table-box">
+            <div style={{ overflowX: 'auto' }}>
               <table className="sd-mini-table">
                 <thead>
                   <tr>
@@ -498,59 +455,59 @@ export default function AuthSecurity() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredPolicies.map((p, idx) => (
-                    <tr key={p.id}>
-                      <td>{idx + 1}</td>
-                      <td style={{ fontWeight: 600 }}>{p.name}</td>
-                      <td>
-                        <span className={`badge-custom badge-action-${p.type === 'MFA' ? 'block' : p.type === 'Session' ? 'terminate' : 'none'}`}>
-                          {p.type}
-                        </span>
-                      </td>
-                      <td>{p.appliesTo}</td>
-                      <td>
-                        {p.mfaRequired === 'Yes' ? (
-                          <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓ Yes</span>
-                        ) : (
-                          <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✗ No</span>
-                        )}
-                      </td>
-                      <td>
-                        <span className={`badge-custom badge-status-${p.status.toLowerCase()}`}>
-                          {p.status}
-                        </span>
-                      </td>
-                      <td>{p.createdOn}</td>
-                      <td>
-                        <div className="table-actions">
-                          <button className="btn-act-icon" title="Edit" onClick={() => triggerEditPolicy(p)}>📝</button>
-                          <button className="btn-act-icon delete" title="Delete" onClick={() => triggerDelete(p)}>🗑️</button>
-                        </div>
+                  {paginatedPolicies.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '24px 0', color: '#64748b' }}>
+                        No policies found
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedPolicies.map((p, idx) => (
+                      <tr key={p.id}>
+                        <td>{(currentPage - 1) * pageSize + idx + 1}</td>
+                        <td style={{ fontWeight: 600 }}>{p.name}</td>
+                        <td>
+                          <span className={`badge-custom badge-action-${p.type === 'MFA' ? 'block' : p.type === 'Session' ? 'terminate' : 'none'}`}>
+                            {p.type}
+                          </span>
+                        </td>
+                        <td>{p.appliesTo}</td>
+                        <td>
+                          {p.mfaRequired === 'Yes' ? (
+                            <span style={{ color: '#16a34a', fontWeight: 'bold' }}>✓ Yes</span>
+                          ) : (
+                            <span style={{ color: '#ef4444', fontWeight: 'bold' }}>✗ No</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`badge-custom badge-status-${p.status.toLowerCase()}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td>{p.createdOn}</td>
+                        <td>
+                          <div className="table-actions">
+                            <button className="btn-act-icon" title="Edit" onClick={() => triggerEditPolicy(p)}>📝</button>
+                            <button className="btn-act-icon delete" title="Delete" onClick={() => triggerDelete(p)}>🗑️</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-          </div>
 
-          {/* Bottom Policy Legend reference row cards */}
-          <div style={{ marginTop: '24px' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>Policy Types</h3>
-            <div className="sec-categories-row">
-              {POLICY_TYPES_INFO.map((pt, i) => (
-                <div className="sec-category-card" key={i}>
-                  <div className="sec-category-card-top">
-                    <span className="sec-category-icon">{pt.icon}</span>
-                    <span className="badge-custom sec-category-rules-badge">{pt.count} Policies</span>
-                  </div>
-                  <div className="sec-category-card-middle">
-                    <span className="sec-category-label">{pt.label}</span>
-                    <span className="sec-category-desc">{pt.desc}</span>
-                  </div>
-                  <span className="sec-category-view-link" onClick={() => { setFilterType(pt.key); }}>View Policies →</span>
-                </div>
-              ))}
+            {/* Attached Pagination Footer */}
+            <div className="sec-pagination-attached-footer">
+              <AdminPagination
+                currentPage={currentPage}
+                totalItems={filteredPolicies.length}
+                itemsPerPage={pageSize}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setPageSize}
+                itemName="policies"
+              />
             </div>
           </div>
         </>

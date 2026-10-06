@@ -72,10 +72,15 @@ export default function AdminTestimonialList() {
 
   const handleToggleStatus = async (id) => {
     try {
-      await toggleTestimonialStatus(id);
+      const targetItem = safeTestimonials.find((t) => t.id === id);
+      const currentStatus = targetItem?.status || targetItem?.Status || "Published";
+      const isCurrentlyActive = (currentStatus === "Active" || currentStatus === "Published");
+      const nextStatus = isCurrentlyActive ? "Unpublished" : "Published";
+
+      await toggleTestimonialStatus(id, nextStatus);
       setTestimonials((prev) =>
         (Array.isArray(prev) ? prev : []).map((t) =>
-          t.id === id ? { ...t, status: t.status === "Active" ? "Inactive" : "Active" } : t
+          t.id === id ? { ...t, status: nextStatus, Status: nextStatus } : t
         )
       );
       showToast("Testimonial status updated.", "success");
@@ -490,7 +495,6 @@ export default function AdminTestimonialList() {
             <thead style={styles.thead}>
               <tr>
                 <th style={styles.th}>SN.</th>
-                <th style={styles.th}>Photo</th>
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Designation</th>
                 <th style={styles.th}>Rating</th>
@@ -502,8 +506,6 @@ export default function AdminTestimonialList() {
             <tbody>
               {currentItems.length > 0 ? (
                 currentItems.map((t, index) => {
-                  const rawImg = t.imageUrl || t.image || t.photo || t.imagePath || t.photoUrl || t.avatar || t.picture || t.url || t.filePath;
-                  const imgSrc = rawImg ? toApiAssetUrl(rawImg) : "";
                   return (
                     <tr
                       key={t.id}
@@ -517,39 +519,6 @@ export default function AdminTestimonialList() {
                     >
                       <td style={styles.td}>
                         <span style={styles.sn}>{((page - 1) * pageSize) + index + 1}</span>
-                      </td>
-                      <td style={styles.td}>
-                        {imgSrc ? (
-                          <img
-                            src={imgSrc}
-                            alt={t.name || "Testimonial"}
-                            style={{
-                              width: "36px",
-                              height: "36px",
-                              borderRadius: "50%",
-                              objectFit: "cover",
-                              display: "block",
-                              margin: "0 auto",
-                              border: "1px solid var(--border, #cbd5e1)",
-                            }}
-                            onError={(e) => {
-                              e.currentTarget.style.display = "none";
-                              if (e.currentTarget.nextSibling) {
-                                e.currentTarget.nextSibling.style.display = "inline-block";
-                              }
-                            }}
-                          />
-                        ) : null}
-                        <span
-                          style={{
-                            color: "#94a3b8",
-                            fontSize: "0.85rem",
-                            fontWeight: 600,
-                            display: imgSrc ? "none" : "inline-block",
-                          }}
-                        >
-                          ---
-                        </span>
                       </td>
                       <td style={styles.td}>{t.name}</td>
                       <td style={styles.td}>{t.designation}</td>
@@ -712,7 +681,7 @@ export default function AdminTestimonialList() {
                 })
               ) : (
                 <tr>
-                  <td colSpan="8" style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-secondary, #64748b)" }}>
+                  <td colSpan="7" style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-secondary, #64748b)" }}>
                     <div style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "8px" }}>No data</div>
                     <div>No testimonials found matching search criteria.</div>
                   </td>

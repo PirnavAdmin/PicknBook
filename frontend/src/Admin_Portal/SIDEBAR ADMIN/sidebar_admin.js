@@ -146,10 +146,8 @@ const navGroups = [
       },
       {
         label: 'Security Management', to: p('security-management'), icon: icons.security, submenu: [
-          { label: 'IP Management', to: p('security-management/ip-management') },
           { label: 'User Security Rules', to: p('security-management/user-security-rules') },
           { label: 'Account Security', to: p('security-management/account-security') },
-          { label: 'Authentication Security', to: p('security-management/auth-security') },
         ],
       },
       {

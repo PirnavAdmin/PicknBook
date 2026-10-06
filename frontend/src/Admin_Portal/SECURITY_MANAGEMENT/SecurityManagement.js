@@ -340,7 +340,7 @@ export default function SecurityManagement() {
       key: 'activeLockouts'
     },
     {
-      label: 'Blacklisted IPs',
+      label: 'Blocked User IDs',
       value: metrics.blacklistedIps,
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -354,7 +354,7 @@ export default function SecurityManagement() {
       key: 'blacklistedIps'
     },
     {
-      label: 'Active Blocked IPs',
+      label: 'Active Blocked IDs',
       value: metrics.activeBlockedIps,
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -368,7 +368,7 @@ export default function SecurityManagement() {
       key: 'activeBlockedIps'
     },
     {
-      label: 'Whitelisted IPs',
+      label: 'Whitelisted User IDs',
       value: metrics.whitelistedIps,
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -774,16 +774,16 @@ export default function SecurityManagement() {
           </div>
         </div>
 
-        {/* Top Blocked IPs */}
+        {/* Top Blocked User IDs */}
         <div className="sd-panel">
           <div className="sd-panel-header">
-            <h3>Top Blocked IPs</h3>
-            <span className="sd-view-all" onClick={() => navigate('/admin/security-management/ip-management')}>View All</span>
+            <h3>Top Blocked User IDs</h3>
+            <span className="sd-view-all" onClick={() => navigate('/admin/security-management/user-security-rules')}>View All</span>
           </div>
           <table className="sd-mini-table">
             <thead>
               <tr>
-                <th>IP Address</th>
+                <th>User ID</th>
                 <th>Blocks</th>
                 <th>Last Blocked On</th>
               </tr>
@@ -791,12 +791,12 @@ export default function SecurityManagement() {
             <tbody>
               {topBlockedIps.length > 0 ? topBlockedIps.map((ip, i) => (
                 <tr key={i}>
-                  <td className="sd-ip-cell">{ip.ipAddress || ip.ip || '—'}</td>
+                  <td className="sd-ip-cell">{ip.userId || ip.accountEmail || ip.ipAddress || ip.ip || '—'}</td>
                   <td><span className="sd-block-count">{ip.blockCount ?? ip.blocks ?? 0}</span></td>
                   <td className="sd-date-cell">{formatDateTime(ip.lastBlockedOn || ip.lastBlockedAt || ip.blockedAt)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan="3" className="sd-empty-cell">No blocked IPs found</td></tr>
+                <tr><td colSpan="3" className="sd-empty-cell">No blocked User IDs found</td></tr>
               )}
             </tbody>
           </table>

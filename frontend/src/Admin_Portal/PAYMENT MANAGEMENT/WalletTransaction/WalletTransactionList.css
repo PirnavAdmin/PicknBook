@@ -1,18 +1,19 @@
 /* Admin Wallet Transaction List Styling */
 
 .wt-container {
-  padding: 10px 14px;
+  padding: 16px 24px;
   background-color: #f8fafc;
   min-height: 100vh;
-  font-family: inherit;
+  font-family: 'Inter', sans-serif;
   color: #1e293b;
+  box-sizing: border-box;
 }
 
 .wt-header-area {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -93,15 +94,15 @@
 .wt-metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 
 .wt-metric-card {
   background: #ffffff;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  padding: 10px 14px;
+  padding: 12px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -137,8 +138,8 @@
   background: #ffffff;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  padding: 8px 12px;
-  margin-bottom: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   display: flex;
   align-items: center;
@@ -237,7 +238,7 @@
 .wt-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
+  text-align: center;
 }
 
 .wt-table th {
@@ -245,18 +246,22 @@
   color: #ffffff;
   font-size: 0.74rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 8px 12px;
+  text-transform: none !important;
+  letter-spacing: 0.02em;
+  padding: 10px 12px;
   white-space: nowrap;
+  text-align: center !important;
+  vertical-align: middle !important;
 }
 
 .wt-table td {
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-size: 0.78rem;
   color: #334155;
   border-bottom: 1px solid #f1f5f9;
   white-space: nowrap;
+  text-align: center !important;
+  vertical-align: middle !important;
 }
 
 .wt-table tr:hover td {

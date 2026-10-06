@@ -1900,7 +1900,7 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.ApiBalanceRequestDto",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -1916,7 +1916,7 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.ApiBalanceRequestDto",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -2733,7 +2733,7 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.BalanceRequestDto",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -2749,7 +2749,7 @@
       {
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.BalanceLogRequestDto",
-        "IsRequired": true
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -5037,6 +5037,366 @@
   {
     "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
     "Method": "BlockBusProxy",
+    "RelativePath": "api/bus/block",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.SrdvBusBookingRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBoardingPointsProxy",
+    "RelativePath": "api/bus/boarding-points",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusBoardingPointsProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "BookBus",
+    "RelativePath": "api/bus/book",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.CreateBusBookingRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBookingDetailsV9",
+    "RelativePath": "api/bus/booking-details",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusBookingDetailsQueryRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBusBookings",
+    "RelativePath": "api/bus/bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "passengerPhone",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBusBookingById",
+    "RelativePath": "api/bus/bookings/{bookingId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bookingId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "CancelBusBooking",
+    "RelativePath": "api/bus/bookings/{bookingId}/cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bookingId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "reason",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "refundPreference",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "cancelBody",
+        "Type": "PickNBook.Api.Models.DTOs.BusCancelRequestDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "CancelBusPassengers",
+    "RelativePath": "api/bus/bookings/{bookingId}/cancel-passengers",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bookingId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.CancelPassengersRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "CancelBusTicketV9",
+    "RelativePath": "api/bus/cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusCancelV9RequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetHotRoutes",
+    "RelativePath": "api/bus/hot-routes",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "metric",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBusBookings",
+    "RelativePath": "api/bus/my-bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "passengerPhone",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetPricingConfig",
+    "RelativePath": "api/bus/pricing-config",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "seatType",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "gstCategory",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "baseFare",
+        "Type": "System.Decimal",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetPricingPreview",
+    "RelativePath": "api/bus/pricing-preview",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusPricingPreviewRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "SearchBusesProxy",
+    "RelativePath": "api/bus/search",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusSearchProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "SearchBusCities",
+    "RelativePath": "api/bus/search-cities",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "query",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetSeatLayoutProxy",
+    "RelativePath": "api/bus/seat-layout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusSeatLayoutProxyRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "BlockBusProxy",
+    "RelativePath": "api/bus/v9/Block",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.SrdvBusBookingRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "BookBusV9Proxy",
+    "RelativePath": "api/bus/v9/Book",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusBookV9RequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBookingDetailsV9",
+    "RelativePath": "api/bus/v9/BookingDetails",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusBookingDetailsQueryRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "CancelBusTicketV9",
+    "RelativePath": "api/bus/v9/Cancel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BusCancelV9RequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "BlockBusProxy",
     "RelativePath": "api/BusBookings/block",
     "HttpMethod": "POST",
     "IsController": true,
@@ -5213,6 +5573,27 @@
     "Parameters": [
       {
         "Name": "metric",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBusBookings",
+    "RelativePath": "api/BusBookings/my-bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "passengerPhone",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "status",
         "Type": "System.String",
         "IsRequired": false
       }
@@ -5990,6 +6371,26 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "MyBookings",
+    "RelativePath": "api/flight/bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "MyBookings",
+    "RelativePath": "api/flight/my-bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
     "Method": "GetAirlines",
     "RelativePath": "api/flight/srdv/Airlines",
     "HttpMethod": "GET",
@@ -6028,6 +6429,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.Public.SrdvFlightApiController",
+    "Method": "MyBookings",
+    "RelativePath": "api/flight/srdv/bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -6490,6 +6901,16 @@
         "IsRequired": false
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "MyBookings",
+    "RelativePath": "api/hotel/my-bookings",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

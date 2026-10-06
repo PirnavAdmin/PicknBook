@@ -760,16 +760,16 @@ namespace PickNBook.Api.Models.DTOs
     public class ApiBalanceRequestDto
     {
         [JsonPropertyName("EndUserIp")]
-        public string EndUserIp { get; set; } = string.Empty;
+        public string? EndUserIp { get; set; } = string.Empty;
 
         [JsonPropertyName("ClientId")]
-        public string ClientId { get; set; } = string.Empty;
+        public string? ClientId { get; set; } = string.Empty;
 
         [JsonPropertyName("UserName")]
-        public string UserName { get; set; } = string.Empty;
+        public string? UserName { get; set; } = string.Empty;
 
         [JsonPropertyName("Password")]
-        public string Password { get; set; } = string.Empty;
+        public string? Password { get; set; } = string.Empty;
 
         [JsonPropertyName("ApiToken")]
         public string? ApiToken { get; set; }
@@ -799,6 +799,13 @@ namespace PickNBook.Api.Models.DTOs
         public string? SrdvIndex { get; set; }
 
         public List<MyFlightPassengerDto> Passengers { get; set; } = new();
+
+        public string? CanonicalStatus { get; set; }
+        public string? CanonicalStatusLabel { get; set; }
+        public PickNBook.Api.Helpers.UserLifecycleHierarchyDto? LifecycleHierarchy { get; set; }
+        public List<PickNBook.Api.Helpers.UserBookingTimelineEventDto>? Timeline { get; set; }
+        public object? PaymentBreakdown { get; set; }
+        public object? CancellationAudit { get; set; }
     }
 }
 

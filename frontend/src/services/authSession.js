@@ -322,7 +322,9 @@ export function clearExpiredUserCredentials() {
 }
 
 export function isTokenExpired(token) {
+  console.log(`[AuthDebug] isTokenExpired called for token: ${token ? "Present" : "Missing"}`);
   if (!token || token === "null" || token === "undefined") {
+    console.warn("[AuthDebug] Token is null or undefined.");
     return true;
   }
   
@@ -333,10 +335,20 @@ export function isTokenExpired(token) {
   
   const payload = decodeJwtPayload(cleanToken);
   if (!payload || !payload.exp) {
+    console.warn("[AuthDebug] Token payload missing 'exp' claim. Treating as non-expired for compatibility.");
     return false;
   }
+  
+  const expDate = new Date(payload.exp * 1000);
+  const now = new Date();
+  console.log(`[AuthDebug] Token Exp: ${expDate.toISOString()} | Now: ${now.toISOString()}`);
+
   // exp is in seconds, Date.now() in milliseconds
-  return typeof payload.exp === "number" && payload.exp * 1000 < Date.now();
+  const isExpired = typeof payload.exp === "number" && payload.exp * 1000 < Date.now();
+  if (isExpired) {
+    console.error("[AuthDebug] TOKEN HAS EXPIRED.");
+  }
+  return isExpired;
 }
 
  

@@ -16,12 +16,18 @@ export function isUserAuthenticated() {
     return false;
   }
 
+  console.log("[AuthDebug] Checking authentication status...");
+
   // 1. Check B2B Agent session
   const activePortal = window.sessionStorage.getItem("active_portal") || "b2c";
   const b2bToken = window.localStorage.getItem("b2b_token") || window.sessionStorage.getItem("b2b_token");
   const b2bRole = (window.localStorage.getItem("b2b_role") || window.sessionStorage.getItem("b2b_role") || "").toLowerCase();
-  if (activePortal === "b2b" && b2bToken && b2bRole === "agent" && !isTokenExpired(b2bToken)) {
-    return true;
+  if (activePortal === "b2b") {
+    console.log(`[AuthDebug] B2B Portal active. Token: ${!!b2bToken}, Role: ${b2bRole}`);
+    if (b2bToken && b2bRole === "agent" && !isTokenExpired(b2bToken)) {
+      console.log("[AuthDebug] Authenticated via B2B Agent session.");
+      return true;
+    }
   }
 
   // 2. Check Standard Customer token
@@ -30,10 +36,19 @@ export function isUserAuthenticated() {
     window.sessionStorage.getItem("token") ||
     getAuthToken();
 
-  if (token && !isTokenExpired(token)) {
-    return true;
+  console.log(`[AuthDebug] Standard Token found: ${!!token}`);
+  if (token) {
+    const expired = isTokenExpired(token);
+    console.log(`[AuthDebug] Token expired status: ${expired}`);
+    if (!expired) {
+      console.log("[AuthDebug] Authenticated via Standard session.");
+      return true;
+    } else {
+      console.warn("[AuthDebug] Token exists but is EXPIRED.");
+    }
   }
 
+  console.error("[AuthDebug] Authentication failed: No valid token found.");
   return false;
 }
 

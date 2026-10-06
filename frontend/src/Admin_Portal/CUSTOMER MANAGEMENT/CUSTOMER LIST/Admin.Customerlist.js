@@ -222,13 +222,17 @@ function CustomerList() {
     const handleConfirmResetBalance = async () => {
         if (!resetBalanceCustomer) return;
         try {
-            await resetWalletBalance(resetBalanceCustomer.id);
-            showToast('Wallet balance reset successfully.', 'info');
+            const res = await resetWalletBalance(resetBalanceCustomer.id);
+            setCustomers(prev =>
+                prev.map(c => c.id === resetBalanceCustomer.id ? { ...c, walletBalance: res?.walletBalance ?? 0 } : c)
+            );
+            showToast(res?.message || 'Wallet balance reset successfully.', 'success');
             fetchCustomers();
             setResetBalanceCustomer(null);
         } catch (error) {
             console.error("Error resetting balance:", error);
-            showToast("Failed to reset balance.", "error");
+            const errDetail = error.response?.data?.message || (typeof error.response?.data === 'string' ? error.response.data : 'Failed to reset balance.');
+            showToast(errDetail, "error");
         }
     };
 
