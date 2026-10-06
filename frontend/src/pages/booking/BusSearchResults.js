@@ -2070,7 +2070,7 @@ export default function BusSearchResults() {
                   </p>
                 </div>
               ) : (
-                <div style={{ position: 'relative', minHeight: 'auto' }}>
+                <div style={{ position: 'relative', minHeight: '100%', height: '100%' }}>
                   <BusSeatSelectionPage
                     embedded
                     embeddedState={{

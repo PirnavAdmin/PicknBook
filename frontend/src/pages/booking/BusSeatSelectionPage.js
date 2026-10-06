@@ -4,7 +4,7 @@ import { FaFemale, FaMale } from "react-icons/fa";
 import { Clock3, Info } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
-import SeatSelection from "../../components/forms/SeatSelection";
+import SeatSelection, { ModernRoofExit, ModernEmergencyExit } from "../../components/forms/SeatSelection";
 import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
@@ -14,12 +14,15 @@ import {
 } from "./busBookingFlowStore";
 import { getBusSeatMap } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
+import { groupFaresIntoRanges } from "../../utils/fareRangeFormatter";
 
 function isRealSeat(rawSeat) {
   const name = String(rawSeat?.SeatName || rawSeat?.seatName || rawSeat?.seatCode || rawSeat?.SeatCode || rawSeat?.label || "").trim().toUpperCase();
   if (!name) return false;
+  if (name.includes("EXIT")) return true;
+
   // Exclude known structural/non-bookable markers (exits, aisles, driver area, toilets, etc.)
-  const nonSeatPatterns = /^(T|WC|D|DR|NA|EX|ST|B|BLANK|EMPTY)$|EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i;
+  const nonSeatPatterns = /^(T|WC|D|DR|NA|EX|ST|B|BLANK|EMPTY)$|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i;
   if (nonSeatPatterns.test(name)) return false;
   if (String(rawSeat?.SeatType || rawSeat?.seatType || "").trim() === "0") return false;
   return true;
@@ -712,6 +715,48 @@ export default function BusSeatSelectionPage({
   const [selectionError, setSelectionError] = useState("");
   const [activeCardPanel, setActiveCardPanel] = useState(null);
 
+  const zoomRef = useRef(0.85);
+  const [computedZoom, setComputedZoom] = useState(0.85);
+
+  useEffect(() => {
+    if (!embedded) return;
+    
+    const calculateZoom = () => {
+      const layoutEl = document.querySelector('.bus-decks-container');
+      if (!layoutEl) return;
+
+      const currentScrollHeight = layoutEl.scrollHeight;
+      if (currentScrollHeight < 50) return;
+
+      // Calculate true intrinsic height by reversing current zoom
+      const trueIntrinsicHeight = currentScrollHeight / zoomRef.current;
+      
+      // Calculate available height inside modal (modal is ~90vh, minus headers/padding)
+      const vh = window.innerHeight;
+      const availableHeight = (vh * 0.9) - 220; // 220px for modal header + fares top bar + padding
+      
+      let optimalZoom = availableHeight / trueIntrinsicHeight;
+      if (optimalZoom > 1.3) optimalZoom = 1.3;
+      if (optimalZoom < 0.4) optimalZoom = 0.4;
+      
+      // Only update if changed significantly to avoid jitter
+      if (Math.abs(optimalZoom - zoomRef.current) > 0.02) {
+        zoomRef.current = optimalZoom;
+        setComputedZoom(optimalZoom);
+      }
+    };
+
+    calculateZoom();
+    // Re-calculate after a slight delay to ensure DOM is fully painted
+    const tId = setTimeout(calculateZoom, 150);
+    window.addEventListener('resize', calculateZoom);
+    
+    return () => {
+      window.removeEventListener('resize', calculateZoom);
+      clearTimeout(tId);
+    };
+  }, [backendSeatMap, embedded, activeFareFilter]);
+
 
   const busIdentity = bus?.tripId || bus?.traceId || bus?.id || "";
 
@@ -1065,16 +1110,18 @@ export default function BusSeatSelectionPage({
   }, [seatData.seats, backendSeatMap]);
 
   const finalFareBands = useMemo(() => {
-    const fares = new Set();
-    seatsByLabel.forEach((seat) => {
-      const fareVal = Number(seat.b2cDisplayFare || seat.fareBeforeTax || seat.fare || seat.priceInr || 0);
-      if (fareVal > 0) {
-        fares.add(fareVal);
+    return groupFaresIntoRanges([...seatsByLabel.values()]);
+  }, [seatsByLabel]);
+
+  // Keep the selection only if an identical range still exists, else reset to "All"
+  useEffect(() => {
+    if (activeFareFilter !== "all") {
+      const exists = finalFareBands.some(b => b.id === activeFareFilter);
+      if (!exists) {
+        setActiveFareFilter("all");
       }
-    });
-    const sorted = [...fares].sort((a, b) => a - b);
-    return sorted.length > 0 ? sorted : seatData.fareBands;
-  }, [seatsByLabel, seatData.fareBands]);
+    }
+  }, [finalFareBands]);
 
   const boardingPoints = useMemo(() => {
     if (!bus) {
@@ -1236,7 +1283,7 @@ export default function BusSeatSelectionPage({
 
   if (!bus) {
     return (
-      <main className="bus-flow-page">
+      <main className={`bus-flow-page ${embedded ? "is-embedded" : ""}`}>
         <div className="bus-flow-shell">
           <section className="bus-flow-empty">
             <h2>Select a bus first</h2>
@@ -1402,9 +1449,39 @@ export default function BusSeatSelectionPage({
       return <span className="bus-flow-seat-gap" />;
     }
 
+    const labelUpper = String(seat.label || "").toUpperCase();
+    if (labelUpper.includes("EXIT")) {
+      const isBackExit = labelUpper.includes("BK_EXIT");
+      const isRoofExit = labelUpper.includes("RF_EXIT");
+      const exitText = isRoofExit ? "Roof Exit" : isBackExit ? "Back Exit" : "Exit";
+      
+      return (
+        <div 
+          key={seat.id} 
+          className={`bus-flow-seat-exit ${seat.kind === "sleeper" ? "is-sleeper" : "is-seater"}`}
+          style={{ border: 'none', background: 'transparent' }}
+          title={exitText}
+        >
+          {isRoofExit ? <ModernRoofExit /> : <ModernEmergencyExit />}
+        </div>
+      );
+    }
+
     const isSelected = selectedSeatLabels.includes(seat.label);
     const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
-    const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
+    
+    let isDimmed = false;
+    if (activeFareFilter !== "all") {
+      const activeBucket = finalFareBands.find(b => b.id === activeFareFilter);
+      if (activeBucket) {
+        const isLast = activeBucket.id === finalFareBands[finalFareBands.length - 1].id;
+        if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
+          isDimmed = true;
+        }
+      } else {
+        isDimmed = Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
+      }
+    }
     const isBookedFemale = seat.status === "booked" && seat.bookedGender === "Female";
     const isBookedMale = seat.status === "booked" && seat.bookedGender === "Male";
     const isNextToBookedFemale =
@@ -1837,7 +1914,8 @@ export default function BusSeatSelectionPage({
                       <Info size={12} />
                     </button>
                   </div>
-                  <div className="bus-flow-fare-chips">
+                  {finalFareBands.length > 0 && (
+                    <div className="bus-flow-fare-chips">
                     <button
                       type="button"
                       className={activeFareFilter === "all" ? "active" : ""}
@@ -1845,17 +1923,23 @@ export default function BusSeatSelectionPage({
                     >
                       All
                     </button>
-                    {finalFareBands.map((fare) => (
-                      <button
-                        type="button"
-                        key={fare}
-                        className={Number(activeFareFilter) === fare ? "active" : ""}
-                        onClick={() => setActiveFareFilter(fare)}
-                      >
-                        {formatCurrency(fare)}
-                      </button>
-                    ))}
+                    {finalFareBands.map((bucket) => {
+                      const labelText = bucket.label.replace(/₹/g, '').replace('–', 'to').trim();
+                      return (
+                        <button
+                          type="button"
+                          key={bucket.id}
+                          className={activeFareFilter === bucket.id ? "active" : ""}
+                          onClick={() => setActiveFareFilter(activeFareFilter === bucket.id ? "all" : bucket.id)}
+                          aria-pressed={activeFareFilter === bucket.id}
+                          aria-label={bucket.min === bucket.max ? `Price ${labelText} rupees` : `Price range ${labelText} rupees`}
+                        >
+                          {bucket.label} ({bucket.seatCount})
+                        </button>
+                      );
+                    })}
                   </div>
+                  )}
                 </div>
 
                 <div className="bus-flow-seat-legend">
@@ -1882,7 +1966,7 @@ export default function BusSeatSelectionPage({
                 </div>
               </header>
 
-              <div className="modern-seat-layout-wrapper" style={{ zoom: '0.85' }}>
+              <div className="modern-seat-layout-wrapper" style={{ zoom: computedZoom }}>
                 <SeatSelection
                   vehicleType="bus"
                   seatData={backendSeatMap?.rawLayoutData || null}
@@ -1895,6 +1979,7 @@ export default function BusSeatSelectionPage({
                   mainDeckRows={mainDeckRows}
                   selectedSeatLabels={selectedSeatLabels}
                   activeFareFilter={activeFareFilter}
+                  fareBuckets={finalFareBands}
                   onSeatToggle={handleSeatToggle}
                   onSeatHover={setHoveredSeat}
                   onSeatMouseLeave={() => setHoveredSeat(null)}

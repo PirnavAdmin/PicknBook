@@ -1568,6 +1568,16 @@
         "tags": [
           "AdminBus"
         ],
+        "parameters": [
+          {
+            "name": "requiredAmount",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -7828,6 +7838,50 @@
         }
       }
     },
+    "/api/BusBookings/srdv-wallet/balance": {
+      "get": {
+        "tags": [
+          "BusBookings"
+        ],
+        "parameters": [
+          {
+            "name": "requiredAmount",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/bus/srdv-wallet/balance": {
+      "get": {
+        "tags": [
+          "BusBookings"
+        ],
+        "parameters": [
+          {
+            "name": "requiredAmount",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BusBookings/v9/Block": {
       "post": {
         "tags": [
@@ -12289,6 +12343,37 @@
         }
       }
     },
+    "/api/Profile/delete": {
+      "post": {
+        "tags": [
+          "Profile"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/public/theme/active": {
       "get": {
         "tags": [
@@ -14997,6 +15082,13 @@
         ],
         "parameters": [
           {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "type",
             "in": "query",
             "schema": {
@@ -15047,19 +15139,13 @@
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTravelerRequestDto"
-              }
+              "schema": { }
             },
             "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTravelerRequestDto"
-              }
+              "schema": { }
             },
             "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTravelerRequestDto"
-              }
+              "schema": { }
             }
           }
         },
@@ -15081,8 +15167,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -15102,27 +15187,20 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
         "requestBody": {
           "content": {
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTravelerRequestDto"
-              }
+              "schema": { }
             },
             "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTravelerRequestDto"
-              }
+              "schema": { }
             },
             "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertTravelerRequestDto"
-              }
+              "schema": { }
             }
           }
         },
@@ -15142,8 +15220,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
             }
           }
         ],
@@ -17497,6 +17574,28 @@
         ],
         "type": "string"
       },
+      "DeleteAccountRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          },
+          "additionalDetails": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "EmailReminder": {
         "required": [
           "recipientEmail",
@@ -17751,6 +17850,10 @@
             "nullable": true
           },
           "bookingType": {
+            "type": "string",
+            "nullable": true
+          },
+          "bookingReference": {
             "type": "string",
             "nullable": true
           },
@@ -21446,52 +21549,6 @@
           "status": {
             "minLength": 1,
             "type": "string"
-          }
-        },
-        "additionalProperties": false
-      },
-      "UpsertTravelerRequestDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "nullable": true
-          },
-          "title": {
-            "type": "string",
-            "nullable": true
-          },
-          "firstName": {
-            "type": "string",
-            "nullable": true
-          },
-          "lastName": {
-            "type": "string",
-            "nullable": true
-          },
-          "gender": {
-            "type": "string",
-            "nullable": true
-          },
-          "age": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "email": {
-            "type": "string",
-            "nullable": true
-          },
-          "phoneNo": {
-            "type": "string",
-            "nullable": true
-          },
-          "passportNo": {
-            "type": "string",
-            "nullable": true
-          },
-          "country": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false

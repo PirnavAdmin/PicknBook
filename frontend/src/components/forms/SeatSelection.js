@@ -64,6 +64,35 @@ function VerticalSleeperIcon({ label }) {
   );
 }
 
+export function ModernRoofExit() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#8898a9', fontSize: '9px', fontWeight: '600', width: '100%', height: '100%', userSelect: 'none' }}>
+      <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
+        <path d="M6 0L0 5L6 10V0Z" />
+      </svg>
+      <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2', backgroundColor: 'transparent' }}>
+        <span>Roof</span>
+        <span>Exit</span>
+      </div>
+      <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
+        <path d="M0 0L6 5L0 10V0Z" />
+      </svg>
+    </div>
+  );
+}
+
+export function ModernEmergencyExit() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#8898a9', fontSize: '9px', fontWeight: '600', lineHeight: '1.2', width: '100%', height: '100%', userSelect: 'none' }}>
+      <span>Emergency</span>
+      <span>Exit</span>
+      <svg width="28" height="6" viewBox="0 0 28 6" fill="none" stroke="currentColor" style={{ marginTop: '2px' }}>
+        <path d="M0 3H26M23 0L27 3L23 6" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
 // SVG representing a flight seat (curved top backrest, slim armrests)
 function FlightSeatIcon({ label }) {
   return (
@@ -108,7 +137,7 @@ function normalizeSrdvSeatData(seatData) {
       /^(T|WC|D|DR|NA|ST)$|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i.test(upperName) ||
       String(seat.SeatType || seat.seatType || "").trim() === "0";
 
-    const isExitMarker = ["RB_EXIT"].includes(upperName);
+    const isExitMarker = ["RB_EXIT", "EXIT"].some(marker => upperName.includes(marker));
 
     if (isStructuralMarker && !isExitMarker) {
       return;
@@ -253,6 +282,7 @@ export default function SeatSelection({
   mainDeckRows = [],
   allSeatRows = [],
   activeFareFilter = "all",
+  fareBuckets = [],
   onSeatHover = () => {},
   onSeatMouseLeave = () => {},
 }) {
@@ -315,6 +345,22 @@ export default function SeatSelection({
     ]
       .filter(Boolean)
       .join(" ");
+
+    const labelUpper = String(seat.label || "").toUpperCase();
+    const isExit = ["RB_EXIT", "EXIT"].some(marker => labelUpper.includes(marker));
+    const isRoofExit = labelUpper.includes("RF_EXIT") || labelUpper.includes("ROOF");
+
+    if (isExit) {
+      return (
+        <div key={seat.id} className="seat-button-wrapper exit-wrapper" style={{ border: 'none', background: 'transparent', pointerEvents: 'none' }}>
+          {isRoofExit ? (
+            <ModernRoofExit />
+          ) : (
+            <ModernEmergencyExit />
+          )}
+        </div>
+      );
+    }
 
     return (
       <button
@@ -507,7 +553,7 @@ export default function SeatSelection({
     const gridStyle = {
       display: "grid",
       gridTemplateRows: `repeat(${maxGridRows}, auto)`,
-      gridTemplateColumns: `repeat(${maxGridCols}, 44px)`,
+      gridTemplateColumns: `repeat(${maxGridCols}, ${isOnlySleeper ? "84px" : "44px"})`,
       gap: "18px 6px",
     };
 
@@ -532,9 +578,22 @@ export default function SeatSelection({
               const isSelected = selectedSeatLabels.includes(seat.label);
               const isBooked = !seat.isAvailable;
               const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
-              const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
+              let isDimmed = false;
+              if (activeFareFilter !== "all" && Array.isArray(fareBuckets)) {
+                const activeBucket = fareBuckets.find(b => b.id === activeFareFilter);
+                if (activeBucket) {
+                  const isLast = activeBucket.id === fareBuckets[fareBuckets.length - 1].id;
+                  if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
+                    isDimmed = true;
+                  }
+                } else {
+                  isDimmed = Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
+                }
+              }
 
-              const isExit = ["RB_EXIT"].includes(String(seat.label || "").toUpperCase());
+              const labelUpper = String(seat.label || "").toUpperCase();
+              const isExit = ["RB_EXIT", "EXIT"].some(marker => labelUpper.includes(marker));
+              const isRoofExit = labelUpper.includes("RF_EXIT") || labelUpper.includes("ROOF");
               
               let statusClass = "status-available";
               if (isExit) statusClass = "status-exit";
@@ -575,13 +634,29 @@ export default function SeatSelection({
 
               const displayFareVal = seat.b2cDisplayFare || seat.fare;
 
+              if (isExit) {
+                return (
+                  <div 
+                    key={seat.id || `${seat.label}-${index}`}
+                    style={{ ...seatItemStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', pointerEvents: 'none' }}
+                    className="srdv-grid-seat-box status-exit exit-wrapper"
+                  >
+                    {isRoofExit ? (
+                      <ModernRoofExit />
+                    ) : (
+                      <ModernEmergencyExit />
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <button
                   key={seat.id || `${seat.label}-${index}`}
                   type="button"
                   style={seatItemStyle}
                   className={seatWrapperClass}
-                  onClick={() => (isBooked || isDimmed || isExit ? null : onSeatToggle(seat))}
+                  onClick={() => (isBooked || isDimmed ? null : onSeatToggle(seat))}
                   onMouseEnter={(event) =>
                     onSeatHover({
                       label: seat.label,
@@ -606,18 +681,7 @@ export default function SeatSelection({
                   disabled={isBooked || isDimmed}
                   title={`Seat: ${seat.label} | Fare: ₹${displayFareVal}`}
                 >
-                  {isExit ? (
-                    <div className="exit-door-container">
-                      <div className="exit-text-side">Exit</div>
-                      <div className="exit-icon-side">
-                        <svg viewBox="0 0 24 24" fill="white" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M11 18V15H9V18H11ZM15 18V15H13V18H15ZM12 12L10 10L11 9L13 11L12 12ZM15 12L17 10L18 11L16 13L15 12Z" />
-                          <path d="M12 12V2L10 4L12 6L14 4L12 2Z" />
-                          <path d="M12 12L14 14L16 12L14 10L12 12Z" />
-                        </svg>
-                      </div>
-                    </div>
-                  ) : seat.kind === "vertical-sleeper" ? (
+                  {seat.kind === "vertical-sleeper" ? (
                     <VerticalSleeperIcon label={isBooked ? "" : seat.label} />
                   ) : seat.kind === "sleeper" ? (
                     <SleeperIcon label={isBooked ? "" : seat.label} />

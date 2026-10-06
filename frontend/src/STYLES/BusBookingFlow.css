@@ -5686,7 +5686,6 @@
   overflow-y: visible;
   box-sizing: border-box;
   margin-top: 0 !important;
-  align-self: flex-start !important;
 }
 
 /* Right column: boarding & dropping panel — sticky */
@@ -5736,4 +5735,7 @@
     max-height: none;
   }
 }
+
+
+.bus-flow-seat-exit { display: flex; align-items: center; justify-content: center; border-radius: 6px; background-color: rgba(239, 68, 68, 0.05); border: 1.5px dashed rgba(239, 68, 68, 0.4); color: #ef4444; font-size: 0.6rem; font-weight: 800; text-align: center; line-height: 1.1; user-select: none; text-transform: uppercase; } .bus-flow-seat-exit.is-seater { width: 44px; height: 44px; } .bus-flow-seat-exit.is-sleeper { width: 84px; height: 40px; }
 

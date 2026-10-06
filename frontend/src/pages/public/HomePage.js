@@ -95,7 +95,7 @@ import qatarAirways from "../../assets/images/brands/qatar-airways.png";
 import spiceJet from "../../assets/images/airlines/Spicejet.png";
 import { POPULAR_RTC_OPERATORS } from "../../data/popularBuses";
 import "../../STYLES/HomePage.css";
-import { toDisplayDate } from "../../utils/apiDateFormat";
+import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
 import CustomDatePicker from "../../components/CustomDatePicker";
 import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
 import { listHotBusRoutes, searchBusCities } from "../../services/busBookingService";
@@ -2318,7 +2318,7 @@ export default function HomePage() {
   const [busTo, setBusTo] = useState("");
   const [busFromError, setBusFromError] = useState("");
   const [busToError, setBusToError] = useState("");
-  const [busDepartureDate, setBusDepartureDate] = useState("");
+  const [busDepartureDate, setBusDepartureDate] = useState(() => getDefaultDateString(0));
   const [busReturnDate, setBusReturnDate] = useState("");
   const [activeCalendarField, setActiveCalendarField] = useState(null);
 

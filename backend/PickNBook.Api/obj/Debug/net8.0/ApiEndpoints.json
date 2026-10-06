@@ -993,7 +993,13 @@
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "requiredAmount",
+        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -5332,6 +5338,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetPublicSrdvMasterWalletBalance",
+    "RelativePath": "api/bus/srdv-wallet/balance",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requiredAmount",
+        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
     "Method": "BlockBusProxy",
     "RelativePath": "api/bus/v9/Block",
     "HttpMethod": "POST",
@@ -5686,6 +5708,22 @@
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.BusSeatLayoutProxyRequestDto",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetPublicSrdvMasterWalletBalance",
+    "RelativePath": "api/BusBookings/srdv-wallet/balance",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requiredAmount",
+        "Type": "System.Nullable\u00601[[System.Decimal, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -7917,6 +7955,22 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.ProfileController",
+    "Method": "DeleteAccount",
+    "RelativePath": "api/Profile/delete",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.DeleteAccountRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.ProfileController",
     "Method": "EditProfileFromForm",
     "RelativePath": "api/Profile/edit",
     "HttpMethod": "PUT",
@@ -8129,6 +8183,11 @@
     "Order": 0,
     "Parameters": [
       {
+        "Name": "ids",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
         "Name": "type",
         "Type": "System.String",
         "IsRequired": false
@@ -8165,8 +8224,8 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.UpsertTravelerRequestDto",
+        "Name": "payload",
+        "Type": "System.Text.Json.JsonElement",
         "IsRequired": true
       }
     ],
@@ -8182,7 +8241,7 @@
     "Parameters": [
       {
         "Name": "travelerId",
-        "Type": "System.Int32",
+        "Type": "System.String",
         "IsRequired": true
       }
     ],
@@ -8198,12 +8257,12 @@
     "Parameters": [
       {
         "Name": "travelerId",
-        "Type": "System.Int32",
+        "Type": "System.String",
         "IsRequired": true
       },
       {
-        "Name": "request",
-        "Type": "PickNBook.Api.Models.DTOs.UpsertTravelerRequestDto",
+        "Name": "payload",
+        "Type": "System.Text.Json.JsonElement",
         "IsRequired": true
       }
     ],
@@ -8219,7 +8278,7 @@
     "Parameters": [
       {
         "Name": "travelerId",
-        "Type": "System.Int32",
+        "Type": "System.String",
         "IsRequired": true
       }
     ],
