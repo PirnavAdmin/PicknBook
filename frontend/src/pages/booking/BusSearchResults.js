@@ -51,8 +51,8 @@ import { navigateWithAuth } from "../../utils/authNavigation";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import CustomDatePicker from "../../components/CustomDatePicker";
-import busRealisticExterior from "../../assets/images/buses/bus-realistic-exterior.jpg";
-import busRealisticInterior from "../../assets/images/buses/bus-realistic-interior.jpg";
+import busRealisticExterior from "../../assets/images/bus-image.png.png";
+import busRealisticInterior from "../../assets/images/bus-image.png.png";
 import "../../STYLES/BusSearchResults.css";
 
 const GENERAL_BUS_TRAVEL_GUIDANCE = [
