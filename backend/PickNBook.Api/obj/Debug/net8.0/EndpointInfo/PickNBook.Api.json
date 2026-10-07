@@ -17214,6 +17214,15 @@
           },
           "useWallet": {
             "type": "boolean"
+          },
+          "paymentMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "walletAmount": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
           }
         },
         "additionalProperties": false

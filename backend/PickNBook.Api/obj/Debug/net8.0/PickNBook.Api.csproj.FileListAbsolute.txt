@@ -1918,4 +1918,13 @@ C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\verify_build\runtimes\win-arm64\n
 C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\verify_build\runtimes\win-x64\native\libsodium.dll
 C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\verify_build\runtimes\win-x86\native\libsodium.dll
 C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\verify_build\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\web.config
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\appsettings.json
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\Data\airport_cities_in.json
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\Data\srdv_airline_list.json
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\Data\srdv_airport_list.json
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\PickNBook.Api.deps.json
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\PickNBook.Api.runtimeconfig.json
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\PickNBook.Api.staticwebassets.endpoints.json
+C:\Users\ADMIN\Desktop\Local\PickNBook.Api\bin\Debug\net8.0\publish\test.json
 C:\Users\ADMIN\Desktop\Local\PickNBook.Api\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

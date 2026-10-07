@@ -47,26 +47,40 @@ public class TicketsController : BaseApiController
         var type = (request.BookingType ?? "").Trim().ToLower();
         var bookingRef = (request.BookingReference ?? "").Trim();
 
-        _logger.LogInformation("[TicketsController.Fetch] Request received: Mobile='{Mobile}', Email='{Email}', BookingType='{BookingType}' (normalized: '{Normalized}'), BookingRef='{BookingRef}', ActiveOnly={ActiveOnly}",
-            mobile, email, request.BookingType, type, bookingRef, request.ActiveOnly);
+        if (string.Equals(mobile, "string", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(mobile, "null", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(mobile, "undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            mobile = string.Empty;
+        }
+
+        if (string.Equals(email, "string", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(email, "null", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(email, "undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            email = string.Empty;
+        }
+
+        if (string.Equals(bookingRef, "string", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(bookingRef, "null", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(bookingRef, "undefined", StringComparison.OrdinalIgnoreCase))
+        {
+            bookingRef = string.Empty;
+        }
+
+        if (string.Equals(type, "string", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(type, "null", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(type, "undefined", StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(type))
+        {
+            type = "all";
+        }
+
+        _logger.LogInformation("[TicketsController.Fetch] Request received: Mobile='{Mobile}', Email='{Email}', BookingRef='{BookingRef}', BookingType='{BookingType}' (normalized: '{Normalized}'), ActiveOnly={ActiveOnly}",
+            mobile, email, bookingRef, request.BookingType, type, request.ActiveOnly);
 
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value 
                      ?? User.FindFirst("sub")?.Value;
-
-        if (string.IsNullOrWhiteSpace(mobile) &&
-            string.IsNullOrWhiteSpace(email) &&
-            string.IsNullOrWhiteSpace(bookingRef) &&
-            string.IsNullOrWhiteSpace(userId))
-        {
-            return BadRequest(new
-            {
-                success = false,
-                message = "Mobile, Email, or BookingReference is required"
-            });
-        }
-
-        // IST Reference (UTC + 5:30)
-        var nowIst = DateTime.UtcNow.AddHours(5.5);
 
         // Precompute phone candidates in memory for EF Core index-friendly translation
         var phoneCandidates = new List<string>();
@@ -86,10 +100,21 @@ public class TicketsController : BaseApiController
             phoneCandidates = phoneCandidates.Distinct().ToList();
         }
 
+        bool hasRef = !string.IsNullOrWhiteSpace(bookingRef);
         bool hasPhone = phoneCandidates.Count > 0;
         bool hasEmail = !string.IsNullOrWhiteSpace(email);
-        bool hasRef = !string.IsNullOrWhiteSpace(bookingRef);
         bool hasUser = !string.IsNullOrWhiteSpace(userId);
+
+        if (!hasRef && !hasPhone && !hasEmail && !hasUser)
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "Mobile, Email, or Booking Reference is required."
+            });
+        }
+
+        var nowUtc = DateTime.UtcNow;
 
         // Standardized confirmed statuses
         var busConfirmedStatuses = new[] { "SUCCESS", "Success", "Booked", "BOOKED", "Confirmed", "CONFIRMED", "Completed", "COMPLETED" };
@@ -105,16 +130,12 @@ public class TicketsController : BaseApiController
 
             if (request.ActiveOnly)
             {
-                query = query.Where(x => x.BusBooking!.DepartureTime >= nowIst);
+                query = query.Where(x => x.BusBooking!.DepartureTime >= nowUtc);
             }
 
             if (hasRef)
             {
                 query = query.Where(x => x.BookingReference == bookingRef || x.Pnr == bookingRef);
-            }
-            else if (hasUser)
-            {
-                query = query.Where(x => x.UserId == userId);
             }
             else if (hasPhone && hasEmail)
             {
@@ -128,6 +149,10 @@ public class TicketsController : BaseApiController
             else if (hasEmail)
             {
                 query = query.Where(x => x.PassengerEmail != null && x.PassengerEmail.ToLower() == email);
+            }
+            else if (hasUser)
+            {
+                query = query.Where(x => x.UserId == userId);
             }
 
             var bookings = await query
@@ -178,6 +203,7 @@ public class TicketsController : BaseApiController
                     pnr = booking.Pnr,
                     ticketNumber = booking.SrdvTicketNo ?? "",
                     providerName = booking.BusBooking.OperatorName,
+                    operatorName = booking.BusBooking.OperatorName,
                     tripNumber = booking.BusBooking.BusNumber,
                     busType = booking.BusBooking.BusType,
                     fromCity = booking.BusBooking.FromCity,
@@ -198,6 +224,7 @@ public class TicketsController : BaseApiController
                     passengers = paxList.Select(p => new
                     {
                         fullName = p.FullName,
+                        name = p.FullName,
                         seatNumber = p.SeatNumber,
                         gender = p.Gender,
                         age = p.Age
@@ -220,16 +247,12 @@ public class TicketsController : BaseApiController
 
             if (request.ActiveOnly)
             {
-                query = query.Where(x => x.DepartureTime >= nowIst);
+                query = query.Where(x => x.DepartureTime >= nowUtc);
             }
 
             if (hasRef)
             {
                 query = query.Where(x => x.BookingReference == bookingRef || x.Pnr == bookingRef || x.GdsPnr == bookingRef);
-            }
-            else if (hasUser)
-            {
-                query = query.Where(x => x.UserId == userId);
             }
             else if (hasPhone && hasEmail)
             {
@@ -243,6 +266,10 @@ public class TicketsController : BaseApiController
             else if (hasEmail)
             {
                 query = query.Where(x => x.PassengerEmail != null && x.PassengerEmail.ToLower() == email);
+            }
+            else if (hasUser)
+            {
+                query = query.Where(x => x.UserId == userId);
             }
 
             var bookings = await query
@@ -277,6 +304,7 @@ public class TicketsController : BaseApiController
                     pnr = !string.IsNullOrWhiteSpace(booking.Pnr) ? booking.Pnr : booking.GdsPnr ?? "",
                     gdsPnr = booking.GdsPnr ?? "",
                     airline = booking.Airline,
+                    providerName = booking.Airline,
                     flightNumber = booking.FlightNumber,
                     travelClass = booking.TravelClass,
                     fromCity = booking.FromCity,
@@ -299,6 +327,7 @@ public class TicketsController : BaseApiController
                     passengers = paxList.Select(p => new
                     {
                         fullName = p.FullName,
+                        name = p.FullName,
                         seatNumber = p.SeatNumber,
                         ticketNumber = p.TicketNumber ?? "",
                         passengerType = p.PassengerType,
@@ -320,16 +349,12 @@ public class TicketsController : BaseApiController
 
             if (request.ActiveOnly)
             {
-                query = query.Where(x => x.CheckOutDate >= nowIst.Date);
+                query = query.Where(x => x.CheckOutDate >= nowUtc.Date);
             }
 
             if (hasRef)
             {
                 query = query.Where(x => x.BookingReference == bookingRef || x.ProviderBookingId == bookingRef || x.ConfirmationNo == bookingRef);
-            }
-            else if (hasUser)
-            {
-                query = query.Where(x => x.UserId == userId);
             }
             else if (hasPhone && hasEmail)
             {
@@ -344,6 +369,10 @@ public class TicketsController : BaseApiController
             {
                 query = query.Where(x => x.GuestEmail.ToLower() == email);
             }
+            else if (hasUser)
+            {
+                query = query.Where(x => x.UserId == userId);
+            }
 
             var bookings = await query
                 .OrderByDescending(x => x.CheckInDate)
@@ -356,16 +385,28 @@ public class TicketsController : BaseApiController
             var result = new List<object>();
             foreach (var booking in bookings)
             {
+                var cityLabel = !string.IsNullOrWhiteSpace(booking.CityCode) ? booking.CityCode : "Hotel Stay";
+                var roomName = !string.IsNullOrWhiteSpace(booking.RoomTypeName) ? booking.RoomTypeName : "Standard Room";
+                var fare = booking.TotalPrice > 0 ? booking.TotalPrice : (booking.B2CFinalFare > 0 ? booking.B2CFinalFare : booking.Price);
+
                 result.Add(new
                 {
                     bookingReference = booking.BookingReference,
                     ticketType = "hotel",
+                    pnr = !string.IsNullOrWhiteSpace(booking.ConfirmationNo) ? booking.ConfirmationNo : booking.BookingReference,
                     confirmationNo = booking.ConfirmationNo ?? booking.ProviderBookingId ?? "",
                     hotelName = booking.HotelName,
-                    city = !string.IsNullOrWhiteSpace(booking.CityCode) ? booking.CityCode : "Hotel Stay",
+                    providerName = booking.HotelName,
+                    operatorName = booking.HotelName,
+                    fromCity = cityLabel,
+                    toCity = cityLabel,
+                    city = cityLabel,
+                    departureTime = booking.CheckInDate,
+                    arrivalTime = booking.CheckOutDate,
+                    departureTimeIst = booking.CheckInDate.ToString("yyyy-MM-dd HH:mm:ss"),
                     checkInDate = booking.CheckInDate,
                     checkOutDate = booking.CheckOutDate,
-                    roomType = !string.IsNullOrWhiteSpace(booking.RoomTypeName) ? booking.RoomTypeName : "Standard Room",
+                    roomType = roomName,
                     rooms = booking.Rooms,
                     adults = booking.Adults,
                     children = booking.Children,
@@ -373,7 +414,18 @@ public class TicketsController : BaseApiController
                     guestEmail = booking.GuestEmail,
                     guestPhone = booking.GuestPhone,
                     status = booking.Status,
-                    totalFare = booking.TotalPrice > 0 ? booking.TotalPrice : (booking.B2CFinalFare > 0 ? booking.B2CFinalFare : booking.Price)
+                    totalFare = fare,
+                    passengers = new[]
+                    {
+                        new
+                        {
+                            fullName = booking.GuestName,
+                            name = booking.GuestName,
+                            seatNumber = roomName,
+                            gender = "",
+                            age = 0
+                        }
+                    }
                 });
             }
 
@@ -396,9 +448,15 @@ public class TicketsController : BaseApiController
         }
         else if (string.IsNullOrEmpty(type) || type == "all")
         {
-            tickets.AddRange(await GetBusTickets());
-            tickets.AddRange(await GetFlightTickets());
-            tickets.AddRange(await GetHotelTickets());
+            var busTask = GetBusTickets();
+            var flightTask = GetFlightTickets();
+            var hotelTask = GetHotelTickets();
+
+            await Task.WhenAll(busTask, flightTask, hotelTask);
+
+            tickets.AddRange(busTask.Result);
+            tickets.AddRange(flightTask.Result);
+            tickets.AddRange(hotelTask.Result);
         }
         else
         {
