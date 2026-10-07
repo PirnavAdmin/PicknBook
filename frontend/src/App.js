@@ -10,6 +10,8 @@ import {
   clearExpiredUserCredentials,
   isTokenExpired,
 } from "./services/authSession";
+import { isUserAuthenticated, navigateWithAuth } from "./utils/authNavigation";
+import { writeBusBookingFlowState } from "./pages/booking/busBookingFlowStore";
 
 import BookingConfirmationPage from "./pages/booking/BookingConfirmationPage";
 
@@ -149,7 +151,6 @@ const ADMIN_PATHS = {
 };
 
 const USER_PROTECTED_PATH_PREFIXES = [
-  "/bus/passenger-details",
   "/flight/passenger-details",
   "/bus/payment",
   "/flight/payment",
@@ -292,6 +293,31 @@ function AuthPopupRedirect({ mode }) {
 
 function BookingRouteWrapper({ element }) {
   return element;
+}
+
+function BusPassengerDetailsRoute() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isAuthenticated = isUserAuthenticated();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      return;
+    }
+
+    if (location.state?.bus) {
+      writeBusBookingFlowState(location.state);
+    }
+
+    navigateWithAuth({
+      navigate,
+      location,
+      nextRoute: "/bus/passenger-details",
+      bookingType: "bus",
+    });
+  }, [isAuthenticated, location, navigate]);
+
+  return isAuthenticated ? <BusPassengerDetailsPage /> : null;
 }
 
 function AppContent() {
@@ -467,7 +493,7 @@ function AppContent() {
         <Route path="/bus/search" element={<BookingRouteWrapper element={<BusSearchResults />} />} />
         <Route path="/bus/seats" element={<BookingRouteWrapper element={<BusSeatSelectionPage />} />} />
         <Route path="/bus/seat-selection" element={<BookingRouteWrapper element={<BusSeatSelectionPage />} />} />
-        <Route path="/bus/passenger-details" element={<BookingRouteWrapper element={<BusPassengerDetailsPage />} />} />
+        <Route path="/bus/passenger-details" element={<BusPassengerDetailsRoute />} />
         
 
         {/* Hotel search & checkout variants */}

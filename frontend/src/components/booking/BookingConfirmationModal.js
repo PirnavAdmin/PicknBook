@@ -6,6 +6,10 @@ import { prepareFlightBookingPayload, buildBookingPayload as buildBusBookingPayl
 import { getWalletSummary } from "../../services/walletService";
 import "../../STYLES/FlightBookingFlow.css";
 
+function roundCurrency(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
 export default function BookingConfirmationModal({ isOpen, onClose, bookingType, flowState, payload, onSuccess }) {
   const navigate = useNavigate();
   const { initializePaymentSession, cfStatus, paymentError, isSubmitting: cfIsSubmitting, clearError } = useCashfreePayment();
@@ -83,7 +87,23 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   if (bookingType === "Hotel") {
     totalPayable = flowState?.payableAmount || flowState?.finalPayableAmount || 0;
   }
-  totalPayable = Math.max(0, Number(totalPayable) || 0);
+  totalPayable = roundCurrency(Math.max(0, Number(totalPayable) || 0));
+  const isBusBooking = bookingType === "Bus";
+  const offerDiscountAmount = isBusBooking
+    ? roundCurrency(
+      flowState?.offerDiscount ??
+      flowState?.couponDiscount ??
+      fareSummary?.couponAmount ??
+      fareSummary?.discount ??
+      0
+    )
+    : 0;
+  const discountedBookingTotal = isBusBooking
+    ? roundCurrency(flowState?.discountedBookingTotal ?? totalPayable)
+    : totalPayable;
+  const originalBookingTotal = isBusBooking
+    ? roundCurrency(flowState?.originalBookingTotal ?? discountedBookingTotal + offerDiscountAmount)
+    : totalPayable;
   const walletBalance = Number(
     b2cWallet?.availableBalance ??
     b2cWallet?.AvailableBalance ??
@@ -91,13 +111,35 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     b2cWallet?.WalletBalance ??
     b2cWallet?.balance ??
     b2cWallet?.Balance ??
+    flowState?.walletAvailableBalance ??
     0,
   ) || 0;
-  const walletStatus = b2cWallet?.walletStatus || b2cWallet?.WalletStatus || b2cWallet?.status || b2cWallet?.Status || "Inactive";
-  const walletAppliedAmount = useWallet && walletStatus === "Active"
-    ? Math.min(walletBalance, totalPayable)
-    : 0;
-  const gatewayPayableAmount = Math.max(0, totalPayable - walletAppliedAmount);
+  const walletStatus =
+    b2cWallet?.walletStatus ||
+    b2cWallet?.WalletStatus ||
+    b2cWallet?.status ||
+    b2cWallet?.Status ||
+    flowState?.walletStatus ||
+    "Inactive";
+  const requestedWalletAmount = roundCurrency(Math.max(
+    0,
+    Number(flowState?.walletAppliedAmount ?? flowState?.walletAmount ?? 0) || 0
+  ));
+  const walletAppliedAmount = isBusBooking
+    ? requestedWalletAmount
+    : useWallet && walletStatus === "Active"
+      ? Math.min(walletBalance, totalPayable)
+      : 0;
+  const gatewayPayableAmount = roundCurrency(Math.max(
+    0,
+    (isBusBooking ? discountedBookingTotal : totalPayable) - walletAppliedAmount
+  ));
+  const selectedPaymentMethod =
+    walletAppliedAmount <= 0
+      ? "Cashfree"
+      : gatewayPayableAmount <= 0
+        ? "Wallet"
+        : "Hybrid";
 
   // --- B2C Wallet / Cashfree Logic ---
   const handleCashfreePay = async () => {
@@ -172,13 +214,25 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       });
     }
 
-    if (useWallet && walletStatus !== "Active") {
+    if (walletAppliedAmount > 0 && walletStatus !== "Active") {
       setLocalError(`Wallet is currently ${walletStatus}.`);
       setIsProcessing(false);
       return;
     }
 
-    if (bookingType !== "Flight" && gatewayPayableAmount <= 0) {
+    if (walletAppliedAmount > walletBalance) {
+      setLocalError("Wallet amount cannot exceed your available balance. Please review your wallet amount.");
+      setIsProcessing(false);
+      return;
+    }
+
+    if (isBusBooking && walletAppliedAmount > discountedBookingTotal) {
+      setLocalError("Wallet amount cannot exceed the final payable amount.");
+      setIsProcessing(false);
+      return;
+    }
+
+    if (!isBusBooking && bookingType !== "Flight" && gatewayPayableAmount <= 0) {
       onSuccess({
         paymentMethod: "Wallet",
         walletAppliedAmount,
@@ -191,7 +245,10 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
     const sessionData = await initializePaymentSession({
       orderAmount: bookingType === "Flight" ? totalPayable : gatewayPayableAmount,
-      useWallet: bookingType === "Flight" && useWallet,
+      useWallet: isBusBooking
+        ? walletAppliedAmount > 0
+        : bookingType === "Flight" && useWallet,
+      walletAmount: isBusBooking ? walletAppliedAmount : null,
       customerId,
       customerName,
       customerEmail,
@@ -200,9 +257,19 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       bookingPayloadJson: JSON.stringify({
         ...JSON.parse(bookingPayloadJson),
         walletAppliedAmount,
+        walletAmount: walletAppliedAmount,
         gatewayPayableAmount,
+        ...(isBusBooking ? {
+          paymentMethod: selectedPaymentMethod,
+          originalBookingTotal,
+          offerDiscount: offerDiscountAmount,
+          discountedBookingTotal,
+        } : {}),
       }),
       couponCode: flowState.couponCode || null,
+      promotionId: isBusBooking
+        ? flowState.selectedFeaturedOfferId || flowState.promotionId || null
+        : null,
     });
 
     if (sessionData && sessionData.isWalletFullyPaid) {
@@ -314,7 +381,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
             <span>Total Payable</span>
             <span>₹ {totalPayable}</span>
           </div>
-          {useWallet && walletAppliedAmount > 0 && (
+          {walletAppliedAmount > 0 && (
             <div style={{ display: "grid", gap: "4px", marginTop: "12px", color: "#555" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>Wallet applied</span><span>- ₹ {walletAppliedAmount.toFixed(2)}</span></div>
               <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}><span>Pay via gateway</span><span>₹ {gatewayPayableAmount.toFixed(2)}</span></div>
@@ -330,7 +397,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
         <button
           onClick={handlePayNow}
-          disabled={isProcessing || cfIsSubmitting || (useWallet && (walletStatus !== "Active" || walletBalance <= 0))}
+          disabled={isProcessing || cfIsSubmitting || (!isBusBooking && useWallet && (walletStatus !== "Active" || walletBalance <= 0))}
           style={{
             width: "100%", padding: "14px", backgroundColor: "var(--pnb-red, #e60000)", color: "white",
             border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer",

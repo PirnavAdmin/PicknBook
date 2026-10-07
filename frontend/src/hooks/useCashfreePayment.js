@@ -24,7 +24,8 @@ export function useCashfreePayment() {
    */
   const initializePaymentSession = async ({
     orderAmount, customerId, customerName, customerEmail,
-    customerPhone, bookingType, bookingPayloadJson, couponCode = null, promotionId = null, useWallet = false
+    customerPhone, bookingType, bookingPayloadJson, couponCode = null, promotionId = null, useWallet = false,
+    walletAmount = null
   }) => {
     if (isSubmitting || cfStatus === "creating") return null;
 
@@ -35,7 +36,7 @@ export function useCashfreePayment() {
     try {
       const orderData = await createCashfreeOrder({
         orderAmount, customerId, customerName, customerEmail,
-        customerPhone, bookingType, bookingPayloadJson, couponCode, promotionId, useWallet,
+        customerPhone, bookingType, bookingPayloadJson, couponCode, promotionId, useWallet, walletAmount,
       });
 
       try {

@@ -14,6 +14,7 @@ import {
 } from "./busBookingFlowStore";
 import { getBusSeatMap } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
+import { navigateWithAuth } from "../../utils/authNavigation";
 import { groupFaresIntoRanges } from "../../utils/fareRangeFormatter";
 
 function isRealSeat(rawSeat) {
@@ -760,6 +761,24 @@ export default function BusSeatSelectionPage({
 
   const busIdentity = bus?.tripId || bus?.traceId || bus?.id || "";
 
+  const goToPassengerDetails = useCallback((bookingState) => {
+    const state = bookingState || {};
+    if (state.bus) {
+      writeBusBookingFlowState(state);
+    }
+
+    const authenticated = navigateWithAuth({
+      navigate,
+      location,
+      nextRoute: "/bus/passenger-details",
+      bookingType: "bus",
+    });
+
+    if (authenticated) {
+      navigate("/bus/passenger-details", { state });
+    }
+  }, [location, navigate]);
+
   // ── Resume-hold banner ──────────────────────────────────────────────────────
   // ms remaining on any active block hold for THIS bus. 0 = no banner shown.
   const [resumeBannerMs, setResumeBannerMs] = useState(() => {
@@ -795,8 +814,8 @@ export default function BusSeatSelectionPage({
 
   const handleResume = useCallback(() => {
     const state = readBusBookingFlowState();
-    navigate("/bus/passenger-details", { state: state || {} });
-  }, [navigate]);
+    goToPassengerDetails(state);
+  }, [goToPassengerDetails]);
 
   const handleChooseDifferentSeat = useCallback(() => {
     clearBlockKey();
@@ -1409,7 +1428,7 @@ export default function BusSeatSelectionPage({
     };
 
     writeBusBookingFlowState(flowData);
-    navigate("/bus/passenger-details", { state: flowData });
+    goToPassengerDetails(flowData);
   };
 
   const handleRetryFetchSeats = async () => {
@@ -1468,15 +1487,25 @@ export default function BusSeatSelectionPage({
     }
 
     const isSelected = selectedSeatLabels.includes(seat.label);
-    const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
+    let rawFare = seat.b2cDisplayFare || seat.fareBeforeTax || seat.fare || seat.priceInr || 0;
+    if (typeof rawFare === 'string') {
+      rawFare = rawFare.replace(/[^\d.-]/g, '');
+    }
+    const seatFareVal = Number(rawFare) || 0;
     
     let isDimmed = false;
     if (activeFareFilter !== "all") {
       const activeBucket = finalFareBands.find(b => b.id === activeFareFilter);
       if (activeBucket) {
         const isLast = activeBucket.id === finalFareBands[finalFareBands.length - 1].id;
-        if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
-          isDimmed = true;
+        if (activeBucket.min === activeBucket.max) {
+          if (Math.abs(seatFareVal - activeBucket.min) > 0.01) {
+            isDimmed = true;
+          }
+        } else {
+          if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
+            isDimmed = true;
+          }
         }
       } else {
         isDimmed = Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
@@ -1934,7 +1963,7 @@ export default function BusSeatSelectionPage({
                           aria-pressed={activeFareFilter === bucket.id}
                           aria-label={bucket.min === bucket.max ? `Price ${labelText} rupees` : `Price range ${labelText} rupees`}
                         >
-                          {bucket.label} ({bucket.seatCount})
+                          {bucket.label}
                         </button>
                       );
                     })}

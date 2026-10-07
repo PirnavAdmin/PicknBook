@@ -532,29 +532,78 @@ export default function SeatSelection({
     });
     const maxGridRows = gridRow - 1;
 
+    const aisleGridCols = new Set();
     const uniqueCols = Array.from(colSet).sort((a, b) => a - b);
     const colMap = new Map();
     let gridCol = 1;
     uniqueCols.forEach((colVal, idx) => {
       if (idx > 0 && colVal - uniqueCols[idx - 1] > 1) {
-        gridCol += 1; // Create aisle gap
+        aisleGridCols.add(gridCol); // mark this as an aisle column
+        gridCol += 1;
       }
       colMap.set(colVal, gridCol);
       gridCol += 1;
     });
     const maxGridCols = gridCol - 1;
 
-    const hasSeater = validSeats.some((s) => s.kind === "seater" || s.kind === "semi-sleeper");
     const isOnlySleeper = validSeats.every((s) => s.kind === "sleeper");
 
-    const baseCellW = isOnlySleeper ? 84 : 44;
-    const baseCellH = isOnlySleeper ? 34 : 36;
+    // Pre-calculate spanning and column width requirements
+    const seatSpans = new Map();
+    const colNeeds92px = new Map();
+
+    validSeats.forEach((seat) => {
+      const layoutRow = rowMap.get(seat.rowNo || 0) || 1;
+      const layoutCol = colMap.get(seat.colNo || 0) || 1;
+      const isHorz = seat.kind === "sleeper";
+      const isVert = seat.kind === "vertical-sleeper";
+
+      let colSpan = 1;
+      if (seat.width > 1) {
+        colSpan = seat.width;
+      } else if (isHorz) {
+        if (isOnlySleeper) {
+          colSpan = 1; 
+        } else {
+          // Check if we can safely span 2 seater columns
+          const nextColIndex = layoutCol + 1;
+          const isNextColAisle = aisleGridCols.has(nextColIndex);
+          const isNextColOccupied = validSeats.some(s => 
+             (rowMap.get(s.rowNo || 0) || 1) === layoutRow && 
+             (colMap.get(s.colNo || 0) || 1) === nextColIndex
+          );
+          
+          if (!isNextColAisle && !isNextColOccupied && nextColIndex <= maxGridCols) {
+            colSpan = 2; // Spans two 50px columns perfectly
+          } else {
+            colSpan = 1; // Blocked, must fit in 1 column
+            colNeeds92px.set(layoutCol, true);
+          }
+        }
+      }
+      
+      if (isOnlySleeper && isHorz) {
+        colNeeds92px.set(layoutCol, true);
+      }
+
+      seatSpans.set(seat.label, { colSpan, rowSpan: seat.length > 1 ? seat.length : (isVert ? 2 : 1) });
+    });
+
+    const aisleColW = "14px";
+    const baseSeatW = isOnlySleeper ? "92px" : "50px";
+    const colTemplate = Array.from({ length: maxGridCols }, (_, i) => {
+      const gridColIndex = i + 1;
+      if (aisleGridCols.has(gridColIndex)) return aisleColW;
+      return colNeeds92px.get(gridColIndex) ? "92px" : baseSeatW;
+    }).join(" ");
 
     const gridStyle = {
       display: "grid",
       gridTemplateRows: `repeat(${maxGridRows}, auto)`,
-      gridTemplateColumns: `repeat(${maxGridCols}, ${isOnlySleeper ? "84px" : "44px"})`,
-      gap: "18px 6px",
+      gridTemplateColumns: colTemplate,
+      gap: "20px 4px",
+      alignContent: "start",
+      justifyContent: "start",
     };
 
     return (
@@ -577,14 +626,24 @@ export default function SeatSelection({
             {validSeats.map((seat, index) => {
               const isSelected = selectedSeatLabels.includes(seat.label);
               const isBooked = !seat.isAvailable;
-              const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
+              let rawFare = seat.b2cDisplayFare || seat.fareBeforeTax || seat.fare || seat.priceInr || 0;
+              if (typeof rawFare === 'string') {
+                rawFare = rawFare.replace(/[^\d.-]/g, '');
+              }
+              const seatFareVal = Number(rawFare) || 0;
               let isDimmed = false;
               if (activeFareFilter !== "all" && Array.isArray(fareBuckets)) {
                 const activeBucket = fareBuckets.find(b => b.id === activeFareFilter);
                 if (activeBucket) {
                   const isLast = activeBucket.id === fareBuckets[fareBuckets.length - 1].id;
-                  if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
-                    isDimmed = true;
+                  if (activeBucket.min === activeBucket.max) {
+                    if (Math.abs(seatFareVal - activeBucket.min) > 0.01) {
+                      isDimmed = true;
+                    }
+                  } else {
+                    if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
+                      isDimmed = true;
+                    }
                   }
                 } else {
                   isDimmed = Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
@@ -617,12 +676,7 @@ export default function SeatSelection({
               const layoutRow = rowMap.get(seat.rowNo || 0) || 1;
               const layoutCol = colMap.get(seat.colNo || 0) || 1;
 
-              const isVert = seat.kind === "vertical-sleeper";
-              const isHorz = seat.kind === "sleeper";
-
-              // Determine spanning: default to 2 for sleepers if API width/length is missing
-              const colSpan = seat.width > 1 ? seat.width : (isHorz ? 2 : 1);
-              const rowSpan = seat.length > 1 ? seat.length : (isVert ? 2 : 1);
+              const { colSpan, rowSpan } = seatSpans.get(seat.label) || { colSpan: 1, rowSpan: 1 };
 
               const seatW = seat.kind === "vertical-sleeper" ? 44 : seat.kind === "sleeper" ? 84 : 44;
               const seatH = seat.kind === "vertical-sleeper" ? 84 : seat.kind === "sleeper" ? 34 : 36;
@@ -632,7 +686,7 @@ export default function SeatSelection({
                 gridColumn: `${layoutCol} / span ${colSpan}`,
               };
 
-              const displayFareVal = seat.b2cDisplayFare || seat.fare;
+              const displayFareVal = seatFareVal;
 
               if (isExit) {
                 return (

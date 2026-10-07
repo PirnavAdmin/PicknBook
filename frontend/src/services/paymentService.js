@@ -30,6 +30,8 @@ export async function createCashfreeOrder({
   bookingPayloadJson,
   couponCode,
   promotionId,
+  useWallet = false,
+  walletAmount = null,
 }) {
   let origin = typeof window !== "undefined" ? window.location.origin : "";
   if (origin && origin.startsWith("http://localhost")) {
@@ -57,6 +59,8 @@ export async function createCashfreeOrder({
     couponCode: couponCode || null,
     promotionId: promotionId || null,
     selectedFeaturedOfferId: promotionId || null,
+    useWallet: Boolean(useWallet),
+    walletAmount: walletAmount == null ? null : Number(walletAmount),
   };
 
   const url = toApiUrl(CASHFREE_CREATE_ORDER_PATH);
@@ -91,13 +95,22 @@ export async function createCashfreeOrder({
   }
 
   const data = await response.json();
+  if (!data || typeof data !== "object") {
+    throw new Error("Invalid response from payment server.");
+  }
 
   const paymentSessionId = data.payment_session_id || data.paymentSessionId;
-  const orderId = data.order_id || data.cashfreeOrderId || data.orderId;
+  const isWalletFullyPaid = Boolean(data.isWalletFullyPaid ?? data.IsWalletFullyPaid);
+  const orderId =
+    data.order_id ||
+    data.cashfreeOrderId ||
+    data.orderId ||
+    data.paymentReference ||
+    data.PaymentReference;
   const cfOrderId = data.cf_order_id || data.cfOrderId;
   const orderStatus = data.order_status || data.orderStatus || "ACTIVE";
 
-  if (!data || !paymentSessionId) {
+  if (!paymentSessionId && !isWalletFullyPaid) {
     throw new Error("Invalid response from payment server: payment_session_id missing.");
   }
 
@@ -108,11 +121,14 @@ export async function createCashfreeOrder({
     order_amount: data.order_amount || data.totalAmount || orderAmount,
     order_currency: data.order_currency || "INR",
     order_status: orderStatus,
+    isWalletFullyPaid,
+    wallet_used_amount: data.walletUsedAmount ?? data.WalletUsedAmount ?? 0,
+    gateway_paid_amount: data.gatewayPaidAmount ?? data.GatewayPaidAmount ?? orderAmount,
   };
 }
 
 export async function verifyCashfreePayment(orderId) {
-  const url = toApiUrl(`/api/cashfree/orders/${orderId}/payments`);
+  const url = toApiUrl(`/api/cashfree/orders/${encodeURIComponent(orderId)}/payments`);
   
   let token = "";
   try {

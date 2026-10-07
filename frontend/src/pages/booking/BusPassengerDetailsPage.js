@@ -35,6 +35,10 @@ function formatCurrency(amount) {
   return `₹ ${new Intl.NumberFormat("en-IN").format(Number(amount) || 0)}`;
 }
 
+function roundCurrency(amount) {
+  return Math.round((Number(amount) + Number.EPSILON) * 100) / 100;
+}
+
 function formatDateLabel(dateString) {
   if (!dateString) return "";
   try {
@@ -714,7 +718,11 @@ export default function BusPassengerDetailsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checkoutPayload, setCheckoutPayload] = useState(null);
   const [walletSummary, setWalletSummary] = useState(null);
-  const [useWallet, setUseWallet] = useState(false);
+  const [walletAmountInput, setWalletAmountInput] = useState(
+    flowState.walletAppliedAmount != null && Number(flowState.walletAppliedAmount) > 0
+      ? String(flowState.walletAppliedAmount)
+      : ""
+  );
   const [errors, setErrors] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [formErrorList, setFormErrorList] = useState([]);
@@ -809,7 +817,10 @@ export default function BusPassengerDetailsPage() {
     return () => { isMounted = false; };
   }, []);
 
-  const totalAfterDiscount = Number(fareSummary.grandTotal) || 0;
+  const offerDiscountAmount = roundCurrency(getPromotionDiscountAmount(pricingPreview, couponDiscount));
+  const discountedBookingTotal = roundCurrency(Number(fareSummary.grandTotal) || 0);
+  const originalBookingTotal = roundCurrency(discountedBookingTotal + offerDiscountAmount);
+  const totalAfterDiscount = discountedBookingTotal;
   const walletBalance = Number(
     walletSummary?.availableBalance ??
     walletSummary?.AvailableBalance ??
@@ -820,10 +831,51 @@ export default function BusPassengerDetailsPage() {
     0,
   ) || 0;
   const walletStatus = walletSummary?.walletStatus || walletSummary?.WalletStatus || walletSummary?.status || walletSummary?.Status || "Inactive";
-  const walletAppliedAmount = useWallet && walletStatus === "Active"
-    ? Math.min(walletBalance, totalAfterDiscount)
-    : 0;
-  const gatewayPayableAmount = Math.max(0, totalAfterDiscount - walletAppliedAmount);
+  const parseWalletAmount = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return 0;
+    const amount = Number(raw);
+    return Number.isFinite(amount) ? amount : NaN;
+  };
+  const getWalletValidationMessage = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const amount = parseWalletAmount(raw);
+    if (!Number.isFinite(amount)) return "Please enter a valid wallet amount.";
+    if (amount < 0) return "Wallet amount cannot be negative.";
+    if (amount > walletBalance) return "Wallet amount cannot exceed your available balance.";
+    if (amount > discountedBookingTotal) return "Wallet amount cannot exceed the final payable amount.";
+    if (amount > 0 && walletStatus !== "Active") return `Wallet is currently ${walletStatus}.`;
+    return "";
+  };
+  const walletValidationMessage = getWalletValidationMessage(walletAmountInput);
+  const walletAppliedAmount = walletValidationMessage
+    ? 0
+    : roundCurrency(parseWalletAmount(walletAmountInput));
+  const walletAmountForBalance = walletValidationMessage
+    ? null
+    : Math.min(walletBalance, Math.max(0, parseWalletAmount(walletAmountInput) || 0));
+  const balanceAfterBooking = walletAmountForBalance == null
+    ? null
+    : Math.max(0, walletBalance - walletAmountForBalance);
+  const gatewayPayableAmount = roundCurrency(Math.max(0, discountedBookingTotal - walletAppliedAmount));
+  const selectedPaymentMethod =
+    walletAppliedAmount <= 0
+      ? "Cashfree"
+      : walletAppliedAmount >= totalAfterDiscount
+        ? "Wallet"
+        : "Hybrid";
+
+  const handleWalletAmountChange = (event) => {
+    const nextValue = event.target.value.replace(/,/g, "").trim();
+    if (nextValue === "" || /^-?\d*(?:\.\d{0,2})?$/.test(nextValue)) {
+      setWalletAmountInput(nextValue);
+    }
+  };
+
+  const validateWalletAmount = () => {
+    return !getWalletValidationMessage(walletAmountInput);
+  };
 
   const loadPricingPreview = async (
     { selectedFeaturedOfferId = null, promotionId = null, couponCode = null } = {}
@@ -1195,14 +1247,20 @@ export default function BusPassengerDetailsPage() {
       const seatLabel = passenger.seatNumber || seat.label || `Seat ${index + 1}`;
       const prefix = `passenger_${index}_`;
 
+      if (passengerModes[index] && !passenger.selectedTravelerId) {
+        newErrors[`${prefix}traveler`] = "Please select a saved traveler or add a new traveler.";
+        errorDetails.push(`${seatLabel}: Select an existing traveler or add a new traveler.`);
+        return;
+      }
+
       if (!passenger.title) {
-        newErrors[`${prefix}title`] = "Required";
+        newErrors[`${prefix}title`] = "Please select a title.";
         errorDetails.push(`${seatLabel}: Title is required to verify the salutation.`);
       }
 
       const firstName = String(passenger.firstName || "").trim();
       if (!firstName) {
-        newErrors[`${prefix}firstName`] = "Required";
+        newErrors[`${prefix}firstName`] = "Please enter the passenger's first name.";
         errorDetails.push(`${seatLabel}: First name is required.`);
       } else if (!/^[A-Za-z\s]+$/.test(firstName)) {
         newErrors[`${prefix}firstName`] = "Letters only";
@@ -1211,7 +1269,7 @@ export default function BusPassengerDetailsPage() {
 
       const lastName = String(passenger.lastName || "").trim();
       if (!lastName) {
-        newErrors[`${prefix}lastName`] = "Required";
+        newErrors[`${prefix}lastName`] = "Please enter the passenger's last name.";
         errorDetails.push(`${seatLabel}: Last name is required.`);
       } else if (!/^[A-Za-z\s]+$/.test(lastName)) {
         newErrors[`${prefix}lastName`] = "Letters only";
@@ -1220,25 +1278,25 @@ export default function BusPassengerDetailsPage() {
 
       const ageVal = passenger.age;
       if (ageVal === undefined || ageVal === null || String(ageVal).trim() === "") {
-        newErrors[`${prefix}age`] = "Required";
+        newErrors[`${prefix}age`] = "Please enter the passenger's age.";
         errorDetails.push(`${seatLabel}: Age is required.`);
       } else {
         const age = Number(ageVal);
         if (Number.isNaN(age) || age < 1 || age > 120) {
-          newErrors[`${prefix}age`] = "1-120";
+          newErrors[`${prefix}age`] = "Enter an age between 1 and 120.";
           errorDetails.push(`${seatLabel}: Age must be a number between 1 and 120.`);
         }
       }
 
       if (!passenger.gender) {
-        newErrors[`${prefix}gender`] = "Required";
+        newErrors[`${prefix}gender`] = "Please select the passenger's gender.";
         errorDetails.push(`${seatLabel}: Gender selection is required.`);
       }
 
       if (isIdProofRequired) {
         const idNumDigits = String(passenger.idNumber || "").replace(/\D/g, "");
         if (!idNumDigits) {
-          newErrors[`${prefix}idNumber`] = "Required";
+          newErrors[`${prefix}idNumber`] = "Please enter the 12-digit Aadhaar number.";
           errorDetails.push(`${seatLabel}: 12-digit Aadhaar Card number is required.`);
         } else if (idNumDigits.length !== 12) {
           newErrors[`${prefix}idNumber`] = "Must be 12 digits";
@@ -1323,7 +1381,19 @@ export default function BusPassengerDetailsPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const clearPassengerErrors = (index) => {
+    const prefix = `passenger_${index}_`;
+    setErrors((previous) => {
+      const nextErrors = { ...previous };
+      Object.keys(nextErrors).forEach((key) => {
+        if (key.startsWith(prefix)) delete nextErrors[key];
+      });
+      return nextErrors;
+    });
+  };
+
   const setPassengerMode = (index, isExisting) => {
+    clearPassengerErrors(index);
     setPassengerModes((prev) =>
       prev.map((mode, i) => (i === index ? isExisting : mode))
     );
@@ -1361,6 +1431,7 @@ export default function BusPassengerDetailsPage() {
 
   const handleSelectExistingTraveler = (index, travelerId) => {
     if (!travelerId) {
+      clearPassengerErrors(index);
       setPassengers((prev) =>
         prev.map((passenger, i) =>
           i === index
@@ -1412,6 +1483,7 @@ export default function BusPassengerDetailsPage() {
     }
 
     setFormError("");
+    clearPassengerErrors(index);
     const travelerEmail = getTravelerEmail(found);
     const travelerMobile = getTravelerMobile(found);
     let finalTitle = found.title || "";
@@ -1669,7 +1741,8 @@ export default function BusPassengerDetailsPage() {
   const handleOpenConfirmation = async () => {
     setSubmitAttempted(true);
     const isValid = validateForm();
-    if (!isValid) {
+    const isWalletValid = validateWalletAmount();
+    if (!isValid || !isWalletValid) {
       return;
     }
     setFormError("");
@@ -1916,9 +1989,16 @@ export default function BusPassengerDetailsPage() {
       pricingPreview,
       basePricingPreview,
       agreedToFare,
-      payableAmount: Number(fareSummary.grandTotal) || totalAfterDiscount,
+      originalBookingTotal,
+      offerDiscount: offerDiscountAmount,
+      discountedBookingTotal,
+      payableAmount: discountedBookingTotal,
       walletAppliedAmount,
+      walletAmount: walletAppliedAmount,
       gatewayPayableAmount,
+      paymentMethod: selectedPaymentMethod,
+      walletAvailableBalance: walletBalance,
+      walletStatus,
       fareSummary,
       blockKey,
       boardingPointName: String(flowState.boardingPoint?.name || ""),
@@ -2182,11 +2262,13 @@ export default function BusPassengerDetailsPage() {
                           )}
 
                           <select
-                            className="passenger-existing-select"
+                            className={`passenger-existing-select ${errors[`passenger_${index}_traveler`] ? "field-has-error" : ""}`}
                             value={passenger.selectedTravelerId || ""}
                             onChange={(e) =>
                               handleSelectExistingTraveler(index, e.target.value)
                             }
+                            aria-invalid={Boolean(errors[`passenger_${index}_traveler`])}
+                            aria-describedby={errors[`passenger_${index}_traveler`] ? `passenger-${index}-traveler-error` : undefined}
                           >
                             <option value="">-- Select Existing Traveler --</option>
                             {savedTravelers.length === 0 ? (
@@ -2206,6 +2288,11 @@ export default function BusPassengerDetailsPage() {
                               ))
                             )}
                           </select>
+                          {errors[`passenger_${index}_traveler`] && (
+                            <span id={`passenger-${index}-traveler-error`} className="field-error-text">
+                              {errors[`passenger_${index}_traveler`]}
+                            </span>
+                          )}
 
                           {passenger.selectedTravelerId &&
                             renderPassengerFields(passenger, index)}
@@ -2445,34 +2532,61 @@ export default function BusPassengerDetailsPage() {
                       <span>Grand Total</span>
                       <strong>{formatCurrency(fareSummary.grandTotal)}</strong>
                     </div>
-                    <label style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={useWallet}
-                        onChange={(event) => setUseWallet(event.target.checked)}
-                        disabled={!walletSummary || walletStatus !== "Active" || walletBalance <= 0}
-                        style={{ width: "18px", height: "18px", accentColor: "var(--flow-primary, #ff0000)" }}
-                      />
-                      <span>
-                        Use Pick&book Wallet
-                        <small style={{ display: "block", color: "#66757b", marginTop: "3px" }}>
-                          Available: {formatCurrency(walletBalance)}
-                          {walletStatus !== "Active" ? ` (${walletStatus})` : ""}
-                        </small>
-                      </span>
-                    </label>
-                    {useWallet && walletAppliedAmount > 0 && (
-                      <>
-                        <div>
-                          <span>Wallet Applied</span>
-                          <strong>(-) {formatCurrency(walletAppliedAmount)}</strong>
+                    <div className="wallet-payment-box">
+                      <div className="wallet-payment-heading">
+                        <span className="wallet-payment-icon" aria-hidden="true">₹</span>
+                        <span>Wallet payment</span>
+                      </div>
+                      <div className="wallet-payment-divider" />
+                      <div className="wallet-payment-entry-row">
+                        <label className="wallet-amount-field">
+                          <span>Amount to use</span>
+                          <div className={`wallet-amount-input ${walletValidationMessage ? "field-has-error" : ""}`}>
+                            <b aria-hidden="true">₹</b>
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={walletAmountInput}
+                              onChange={handleWalletAmountChange}
+                              onBlur={validateWalletAmount}
+                              placeholder="Enter amount"
+                              disabled={!walletSummary || walletStatus !== "Active" || walletBalance <= 0}
+                              aria-invalid={Boolean(walletValidationMessage)}
+                              aria-describedby={walletValidationMessage ? "bus-wallet-amount-error" : undefined}
+                            />
+                          </div>
+                        </label>
+                        <div className="wallet-balance-summary">
+                          <span>Available balance</span>
+                          <strong>{formatCurrency(walletBalance)}</strong>
+                          {walletSummary && walletStatus !== "Active" && (
+                            <span>Wallet is {walletStatus.toLowerCase()}.</span>
+                          )}
                         </div>
-                        <div className="grand-total">
-                          <span>Payable Online</span>
-                          <strong>{formatCurrency(gatewayPayableAmount)}</strong>
-                        </div>
-                      </>
-                    )}
+                      </div>
+                      {walletValidationMessage && (
+                        <span id="bus-wallet-amount-error" className="field-error-text">
+                          {walletValidationMessage}
+                        </span>
+                      )}
+                      <div className="wallet-payment-divider" />
+                      {walletAppliedAmount > 0 && (
+                        <>
+                          <div className="wallet-payment-row">
+                            <span>Wallet applied</span>
+                            <strong>− {formatCurrency(walletAppliedAmount)}</strong>
+                          </div>
+                          <div className="wallet-payment-row muted">
+                            <span>Pay via Cashfree</span>
+                            <strong>{formatCurrency(gatewayPayableAmount)}</strong>
+                          </div>
+                        </>
+                      )}
+                      <div className="wallet-balance-after-row">
+                        <span>Balance after booking</span>
+                        <strong>{balanceAfterBooking == null ? "--" : formatCurrency(balanceAfterBooking)}</strong>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>

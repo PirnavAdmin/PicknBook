@@ -47,6 +47,7 @@ import {
   clearBusBookingFlowState,
   clearBlockKey
 } from "./busBookingFlowStore";
+import { navigateWithAuth } from "../../utils/authNavigation";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import CustomDatePicker from "../../components/CustomDatePicker";
@@ -1404,7 +1405,16 @@ export default function BusSearchResults() {
     }
 
     if (activeBlockBusId === bus.id) {
-      navigate("/bus/passenger-details", { state: location.state || {} });
+      const bookingState = flowState || location.state || {};
+      const authenticated = navigateWithAuth({
+        navigate,
+        location,
+        nextRoute: "/bus/passenger-details",
+        bookingType: "bus",
+      });
+      if (authenticated) {
+        navigate("/bus/passenger-details", { state: bookingState });
+      }
       return;
     }
 
