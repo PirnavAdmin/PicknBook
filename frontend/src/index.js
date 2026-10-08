@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import 'icofont/dist/icofont.min.css';
 import App from './App';
-import { clearAuthSession, isTokenExpired } from './services/authSession';
+import { clearAdminAuthSession, clearUserAuthSession, isTokenExpired } from './services/authSession';
 
 
 const USER_PROTECTED_PATH_PREFIXES = [
@@ -94,7 +94,10 @@ window.fetch = async function (input, init) {
       token = authHeader;
     }
   } else if (typeof window !== "undefined") {
-    token = window.localStorage.getItem("token");
+    const isAdminPath = window.location.pathname.toLowerCase().startsWith("/admin");
+    token = isAdminPath
+      ? window.localStorage.getItem("adminToken") || window.sessionStorage.getItem("adminToken")
+      : window.localStorage.getItem("token") || window.sessionStorage.getItem("token");
   }
 
   // Normalize token: if it's the string "null" or "undefined", treat it as null
@@ -106,8 +109,11 @@ window.fetch = async function (input, init) {
   if (token && isTokenExpired(token)) {
     token = null;
     if (typeof window !== "undefined") {
-      window.localStorage.removeItem("token");
-      window.localStorage.removeItem("user");
+      if (window.location.pathname.toLowerCase().startsWith("/admin")) {
+        clearAdminAuthSession();
+      } else {
+        clearUserAuthSession();
+      }
     }
   }
 
@@ -152,7 +158,7 @@ window.fetch = async function (input, init) {
           const isAdmin = currentPath.startsWith("/admin");
 
           if (isAdmin) {
-            clearAuthSession();
+            clearAdminAuthSession();
             const loginPath = "/admin/login";
             if (currentPath !== loginPath) {
               window.location.href = loginPath;
@@ -170,7 +176,7 @@ window.fetch = async function (input, init) {
               return response;
             }
 
-            clearAuthSession();
+            clearUserAuthSession();
             const returnTo = encodeURIComponent(currentPath);
             window.location.href = `/login?returnTo=${returnTo}`;
           }
@@ -200,4 +206,3 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
       <App />
 );
-

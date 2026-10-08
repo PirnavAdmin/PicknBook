@@ -2532,7 +2532,7 @@ export default function BusPassengerDetailsPage() {
                       <span>Grand Total</span>
                       <strong>{formatCurrency(fareSummary.grandTotal)}</strong>
                     </div>
-                    <div className="wallet-payment-box">
+                    <section className="wallet-payment-box">
                       <div className="wallet-payment-heading">
                         <span className="wallet-payment-icon" aria-hidden="true">₹</span>
                         <span>Wallet payment</span>
@@ -2584,9 +2584,13 @@ export default function BusPassengerDetailsPage() {
                       )}
                       <div className="wallet-balance-after-row">
                         <span>Balance after booking</span>
-                        <strong>{balanceAfterBooking == null ? "--" : formatCurrency(balanceAfterBooking)}</strong>
+                        <strong>
+                          {walletAppliedAmount <= 0 || balanceAfterBooking == null
+                            ? "—"
+                            : formatCurrency(balanceAfterBooking)}
+                        </strong>
                       </div>
-                    </div>
+                    </section>
                   </>
                 )}
               </div>

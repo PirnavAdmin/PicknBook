@@ -257,10 +257,13 @@ export default function AuthPage() {
     clearPendingBookingReturn();
 
     window.setTimeout(() => {
+      const adminToken = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+      const adminRole = (localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole") || "").toLowerCase();
       const role = (localStorage.getItem("role") || sessionStorage.getItem("role")) || "";
+
       if (targetReturn && targetReturn.startsWith("/")) {
         navigate(targetReturn, { state: targetContext || undefined, replace: true });
-      } else if (role === "Admin") {
+      } else if (adminToken || adminRole === "admin") {
         navigate("/admin", { replace: true });
       } else if (role === "Agent" || role === "B2B") {
         navigate("/b2b/dashboard", { replace: true });
@@ -414,8 +417,9 @@ export default function AuthPage() {
         const rawToken = data?.token || data?.Token || data?.tokenString || data?.data?.token || "";
         const rawRole  = data?.role  || data?.Role  || data?.data?.role  || "admin";
         const rawName  = data?.name  || data?.fullName || data?.email || data?.data?.name || "Admin";
-        localStorage.setItem("adminToken", rawToken); localStorage.setItem("adminRole", rawRole); localStorage.setItem("adminName", rawName); localStorage.setItem("role", "Admin");
-        sessionStorage.setItem("adminToken", rawToken); sessionStorage.setItem("adminRole", rawRole); sessionStorage.setItem("adminName", rawName); sessionStorage.setItem("role", "Admin");
+
+        localStorage.setItem("adminToken", rawToken); localStorage.setItem("adminRole", rawRole); localStorage.setItem("adminName", rawName); localStorage.setItem("adminUser", JSON.stringify({ email: email.trim(), name: rawName, role: rawRole, userId: "admin-" + Date.now() }));
+        sessionStorage.setItem("adminToken", rawToken); sessionStorage.setItem("adminRole", rawRole); sessionStorage.setItem("adminName", rawName); sessionStorage.setItem("adminUser", JSON.stringify({ email: email.trim(), name: rawName, role: rawRole, userId: "admin-" + Date.now() }));
         localStorage.removeItem("challengeId"); sessionStorage.removeItem("challengeId");
         completeLogin("Admin login successful.");
       } catch (error) { setStatus({type:"error", message: error?.message || "Invalid OTP"}); } finally { setLoading(false); }
@@ -440,8 +444,10 @@ export default function AuthPage() {
         sessionStorage.setItem("b2b_user", JSON.stringify(user)); sessionStorage.setItem("b2b_userId", user.userId);
         sessionStorage.setItem("b2b_role", "Agent"); if (token) sessionStorage.setItem("b2b_token", token); sessionStorage.setItem("role", "Agent");
       } else if (roleLower === "admin") {
-        localStorage.setItem("adminRole", "admin"); if (token) localStorage.setItem("adminToken", token); localStorage.setItem("role", "Admin");
-        sessionStorage.setItem("adminRole", "admin"); if (token) sessionStorage.setItem("adminToken", token); sessionStorage.setItem("role", "Admin");
+        localStorage.setItem("adminRole", "admin"); if (token) localStorage.setItem("adminToken", token);
+        localStorage.setItem("adminUser", JSON.stringify(user));
+        sessionStorage.setItem("adminRole", "admin"); if (token) sessionStorage.setItem("adminToken", token);
+        sessionStorage.setItem("adminUser", JSON.stringify(user));
       } else {
         localStorage.setItem("user", JSON.stringify(user)); localStorage.setItem("userId", user.userId); localStorage.setItem("role", userRole);
         sessionStorage.setItem("user", JSON.stringify(user)); sessionStorage.setItem("userId", user.userId); sessionStorage.setItem("role", userRole);
@@ -646,6 +652,7 @@ export default function AuthPage() {
         {/* RIGHT PANEL: Auth Card Wrap */}
       <div className="auth-card-wrap">
         <div className="auth-card">
+          <div className="auth-card-scroll">
 
 
           {/* Step dots — forgot-password only */}
@@ -665,14 +672,14 @@ export default function AuthPage() {
               <>
                 <StatusBanner status={status} />
                 {authMethod === "email" ? (
-                  <form className="auth-page-form" onSubmit={loginWithEmail} noValidate>
+                  <form className="auth-page-form" onSubmit={loginWithEmail} autoComplete="on" noValidate>
                     {!adminChallengeId ? (
                       <>
                         <div className="auth-field-group">
                           <label className="auth-field-label" htmlFor="l-email">Email</label>
                           <div className="auth-field-input-wrap">
                             <Mail size={15} className="auth-field-icon" />
-                            <input id="l-email" type="email" placeholder="Enter email address" value={email} onChange={handleEmailChange} autoComplete="email" className="auth-field-input" />
+                            <input id="l-email" name="userLoginEmail" type="email" placeholder="Enter email address" value={email} onChange={handleEmailChange} autoComplete="section-user-login username" className="auth-field-input" />
                           </div>
                           {errors.email && <span className="auth-field-error">{errors.email}</span>}
                         </div>
@@ -680,7 +687,7 @@ export default function AuthPage() {
                           <label className="auth-field-label" htmlFor="l-pwd">Password</label>
                           <div className="auth-field-input-wrap">
                             <LockKeyhole size={15} className="auth-field-icon" />
-                            <input id="l-pwd" type={showPassword ? "text" : "password"} placeholder="Enter password" value={password} onChange={handlePasswordChange} autoComplete="current-password" className="auth-field-input" />
+                            <input id="l-pwd" name="userLoginPassword" type={showPassword ? "text" : "password"} placeholder="Enter password" value={password} onChange={handlePasswordChange} autoComplete="section-user-login current-password" className="auth-field-input" />
                             <button type="button" className="auth-eye-btn" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide" : "Show"}>
                               {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                             </button>
@@ -1016,6 +1023,7 @@ export default function AuthPage() {
             </button>
           )}
 
+          </div>{/* /auth-card-scroll */}
         </div>{/* /auth-card */}
       </div>{/* /auth-card-wrap */}
       </div>{/* /scenic-layout */}

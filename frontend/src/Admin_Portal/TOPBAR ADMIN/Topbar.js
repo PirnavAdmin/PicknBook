@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAdminDashboardSummary, deriveAdminMetrics } from '../../services/adminDashboardService';
 import { adminNotificationService } from '../../services/adminNotificationService';
-import { clearAuthSession } from '../../services/authSession';
+import { clearAdminAuthSession } from '../../services/authSession';
 import pickNBookLogo from '../../assets/images/brand/pick-n-book-logo.png';
 
 
@@ -588,7 +588,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
     }, []);
 
     const handleLogout = () => {
-        clearAuthSession();
+        clearAdminAuthSession();
         setIsDropdownOpen(false);
         navigate('/admin/login', { replace: true });
     };
@@ -1845,4 +1845,3 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
 }
 
 export default Topbar;
-

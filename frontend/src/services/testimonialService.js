@@ -30,7 +30,11 @@ let resolvedTestimonialRoot = null;
 let resolvedSettingsRoot = null;
 
 function getAuthHeaders(isFormData = false) {
-  const token = getAuthToken() || localStorage.getItem("adminToken") || localStorage.getItem("token");
+  const token =
+    localStorage.getItem("adminToken") ||
+    sessionStorage.getItem("adminToken") ||
+    getAuthToken() ||
+    localStorage.getItem("token");
 
   return {
     Accept: "application/json",
@@ -295,4 +299,3 @@ export async function submitPublicTestimonial(formDataOrObj) {
     (path) => { resolvedPublicSubmitRoot = path; }
   );
 }
-

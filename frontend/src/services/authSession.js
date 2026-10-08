@@ -211,9 +211,9 @@ export function setAdminChallengeId(challengeId) {
   updateSession({ adminChallengeId: normalizeText(challengeId) });
 }
  
-export function clearAuthSession() {
+export function clearUserAuthSession() {
   if (typeof window !== "undefined") {
-    const userKeys = [
+    const localKeys = [
       "user",
       "token",
       "authToken",
@@ -241,67 +241,6 @@ export function clearAuthSession() {
       "ticket_confirmation_history_v1",
       "selectedOffer",
     ];
-    const adminKeys = [
-      "adminToken",
-      "adminRole",
-      "adminId",
-      "adminName",
-      "adminEmail",
-      "adminLoginEmail",
-      "adminChallengeId",
-      "challengeId",
-    ];
-
-    userKeys.forEach((key) => {
-      try {
-        window.localStorage.removeItem(key);
-      } catch {}
-    });
-    sessionKeys.forEach((key) => {
-      try {
-        window.sessionStorage.removeItem(key);
-      } catch {}
-    });
-    adminKeys.forEach((key) => {
-      try {
-        window.localStorage.removeItem(key);
-      } catch {}
-    });
-  }
-
-  updateSession({
-    token: "",
-    user: null,
-    adminRole: "",
-    adminChallengeId: "",
-  });
-}
-
-export function clearExpiredUserCredentials() {
-  if (typeof window !== "undefined") {
-    const localKeys = [
-      "user",
-      "token",
-      "authToken",
-      "accessToken",
-      "userId",
-      "UserId",
-      "x-user-id",
-      "role",
-      "challengeId",
-      "my_traveler_data",
-    ];
-    const sessionKeys = [
-      "user",
-      "token",
-      "authToken",
-      "accessToken",
-      "userId",
-      "UserId",
-      "x-user-id",
-      "role",
-      "challengeId",
-    ];
 
     localKeys.forEach((key) => {
       try {
@@ -319,6 +258,45 @@ export function clearExpiredUserCredentials() {
     token: "",
     user: null,
   });
+}
+
+export function clearAdminAuthSession() {
+  if (typeof window !== "undefined") {
+    const adminKeys = [
+      "adminToken",
+      "adminRole",
+      "adminId",
+      "adminName",
+      "adminEmail",
+      "adminLoginEmail",
+      "adminChallengeId",
+      "adminUser",
+    ];
+
+    adminKeys.forEach((key) => {
+      try {
+        window.localStorage.removeItem(key);
+      } catch {}
+    });
+    adminKeys.forEach((key) => {
+      try {
+        window.sessionStorage.removeItem(key);
+      } catch {}
+    });
+  }
+
+  updateSession({
+    adminRole: "",
+    adminChallengeId: "",
+  });
+}
+
+export function clearAuthSession() {
+  clearUserAuthSession();
+}
+
+export function clearExpiredUserCredentials() {
+  clearUserAuthSession();
 }
 
 export function isTokenExpired(token) {

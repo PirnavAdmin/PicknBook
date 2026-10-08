@@ -528,8 +528,13 @@
   overflow-x: auto;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   padding-bottom: 2px;
+}
+
+.bus-details-tabs-header::-webkit-scrollbar {
+  display: none;
 }
 
 .bus-details-tab-btn {

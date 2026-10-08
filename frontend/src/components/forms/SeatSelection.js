@@ -89,40 +89,29 @@ function FlightSeatIcon({ label }) {
   );
 }
 
-// Roof Exit icon: ← [EXIT] →  compact inline style matching reference image
+// Roof Exit icon: ◀ [Roof Exit] ▶
 function RoofExitIcon() {
   return (
-    <div className="exit-badge exit-badge--roof">
-      <div className="exit-badge-icon">
-        <svg viewBox="0 0 60 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Left arrow ← */}
-          <line x1="15" y1="9" x2="4" y2="9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-          <polyline points="8,5.5 4,9 8,12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-          {/* EXIT box */}
-          <rect x="17" y="3" width="26" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" fill="currentColor" fillOpacity="0.07"/>
-          <text x="30" y="12.5" textAnchor="middle" fontSize="6" fill="currentColor" fontWeight="700" letterSpacing="0.5">EXIT</text>
-          {/* Right arrow → */}
-          <line x1="45" y1="9" x2="56" y2="9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-          <polyline points="52,5.5 56,9 52,12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        </svg>
+    <div style={{ display: "flex", alignItems: "center", color: "#64748b", fontSize: "12px" }}>
+      <span style={{ transform: "scale(0.8)", marginRight: "2px" }}>◀</span>
+      <div style={{ border: "1px solid #cbd5e1", borderRadius: "4px", padding: "3px 4px", fontSize: "8px", fontWeight: "700", lineHeight: "1.2", textAlign: "center", background: "#f8fafc" }}>
+        Roof<br/>Exit
       </div>
-      <span className="exit-badge-label">Roof<br/>Exit</span>
+      <span style={{ transform: "scale(0.8)", marginLeft: "2px" }}>▶</span>
     </div>
   );
 }
 
-// Emergency Exit icon: ——→  with amber styling
+// Emergency Exit icon: text with arrow below
 function EmergencyExitIcon() {
   return (
-    <div className="exit-badge exit-badge--emergency">
-      <div className="exit-badge-icon">
-        <svg viewBox="0 0 60 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          {/* Arrow line → */}
-          <line x1="4" y1="9" x2="52" y2="9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-          <polyline points="47,5.5 52,9 47,12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-        </svg>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "#64748b", fontSize: "8px", fontWeight: "700", lineHeight: "1.2", marginTop: "-4px" }}>
+      <span>Emergency</span>
+      <span>Exit</span>
+      <div style={{ display: "flex", alignItems: "center", marginTop: "2px" }}>
+        <div style={{ width: "24px", height: "1.2px", background: "#64748b" }}></div>
+        <span style={{ fontSize: "10px", marginLeft: "-2px", transform: "translateY(-0.2px)" }}>▶</span>
       </div>
-      <span className="exit-badge-label">Emergency<br/>Exit</span>
     </div>
   );
 }

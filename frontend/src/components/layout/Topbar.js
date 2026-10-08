@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import '../../STYLES/Topbar.css';
 import '../../STYLES/Notifications.css';
-import { clearAuthSession, subscribeAuthSession } from "../../services/authSession";
+import { clearUserAuthSession, subscribeAuthSession } from "../../services/authSession";
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -249,7 +249,7 @@ export default function Topbar() {
   }, []);
 
   const handleLogout = () => {
-    clearAuthSession();
+    clearUserAuthSession();
     setAuthProfile({ isLoggedIn: false, displayName: "User", email: "" });
     setOpen(false);
     navigate("/");

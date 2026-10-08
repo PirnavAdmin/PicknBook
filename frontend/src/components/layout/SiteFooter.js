@@ -249,15 +249,7 @@ export default function SiteFooter() {
                     <span className="pnb-link-chevron">›</span> Track Booking Status
                   </button>
                 </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => openFooterPage("/delete-account")}
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span> Delete Account
-                  </button>
-                </li>
+
               </ul>
             </div>
 

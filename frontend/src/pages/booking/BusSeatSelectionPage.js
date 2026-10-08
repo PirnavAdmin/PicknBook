@@ -685,6 +685,7 @@ export default function BusSeatSelectionPage({
   const [backendSeatMap, setBackendSeatMap] = useState(null);
   const [selectionError, setSelectionError] = useState("");
   const [activeCardPanel, setActiveCardPanel] = useState(null);
+  const [showMoreFares, setShowMoreFares] = useState(false);
 
 
   const busIdentity = bus?.tripId || bus?.traceId || bus?.id || "";
@@ -1805,24 +1806,88 @@ export default function BusSeatSelectionPage({
                       <Info size={12} />
                     </button>
                   </div>
-                  <div className="bus-flow-fare-chips">
+                  <div className="bus-flow-fare-chips" style={{ position: "relative", display: "flex", flexWrap: "wrap", gap: "8px" }}>
                     <button
                       type="button"
                       className={activeFareFilter === "all" ? "active" : ""}
-                      onClick={() => setActiveFareFilter("all")}
+                      onClick={() => {
+                        setActiveFareFilter("all");
+                        setShowMoreFares(false);
+                      }}
                     >
                       All
                     </button>
-                    {finalFareBands.map((fare) => (
+                    {finalFareBands.slice(0, 4).map((fare) => (
                       <button
                         type="button"
                         key={fare}
                         className={Number(activeFareFilter) === fare ? "active" : ""}
-                        onClick={() => setActiveFareFilter(fare)}
+                        onClick={() => {
+                          setActiveFareFilter(fare);
+                          setShowMoreFares(false);
+                        }}
                       >
                         {formatCurrency(fare)}
                       </button>
                     ))}
+                    {finalFareBands.length > 4 && (
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <button
+                          type="button"
+                          className={finalFareBands.slice(4).includes(Number(activeFareFilter)) ? "active" : ""}
+                          onClick={() => setShowMoreFares(!showMoreFares)}
+                        >
+                          +{finalFareBands.length - 4} More
+                        </button>
+                        {showMoreFares && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "110%",
+                              left: "0",
+                              background: "white",
+                              border: "1px solid #e2e8f0",
+                              borderRadius: "8px",
+                              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+                              padding: "8px",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "4px",
+                              zIndex: 100,
+                              minWidth: "120px",
+                              maxHeight: "200px",
+                              overflowY: "auto"
+                            }}
+                          >
+                            {finalFareBands.slice(4).map((fare) => (
+                              <button
+                                type="button"
+                                key={fare}
+                                style={{
+                                  padding: "8px 12px",
+                                  borderRadius: "4px",
+                                  border: "none",
+                                  background: Number(activeFareFilter) === fare ? "#fee2e2" : "transparent",
+                                  color: Number(activeFareFilter) === fare ? "#dc2626" : "#475569",
+                                  textAlign: "left",
+                                  cursor: "pointer",
+                                  fontSize: "13px",
+                                  fontWeight: "600",
+                                  width: "100%",
+                                  whiteSpace: "nowrap"
+                                }}
+                                onClick={() => {
+                                  setActiveFareFilter(fare);
+                                  setShowMoreFares(false);
+                                }}
+                              >
+                                {formatCurrency(fare)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1850,7 +1915,7 @@ export default function BusSeatSelectionPage({
                 </div>
               </header>
 
-              <div className="modern-seat-layout-wrapper" style={{ zoom: '0.85' }}>
+              <div className="modern-seat-layout-wrapper">
                 <SeatSelection
                   vehicleType="bus"
                   seatData={backendSeatMap?.rawLayoutData || null}
@@ -1891,7 +1956,7 @@ export default function BusSeatSelectionPage({
               )}
             </div>
 
-            <aside className="bus-flow-point-panel" style={{ zoom: '0.85' }}>
+            <aside className="bus-flow-point-panel">
               <h3>Select Boarding & Dropping</h3>
 
               <div className="point-tabs">
@@ -1911,7 +1976,7 @@ export default function BusSeatSelectionPage({
                 </button>
               </div>
 
-              <div className="point-list">
+              <div className="bus-flow-point-list">
                 {(activePointTab === "boarding" ? boardingPoints : droppingPoints).map((point) => {
                   const checked =
                     activePointTab === "boarding"
@@ -1919,10 +1984,9 @@ export default function BusSeatSelectionPage({
                       : selectedDroppingId === point.id;
 
                   return (
-                    <button
-                      type="button"
+                    <div
                       key={point.id}
-                      className={`point-item ${checked ? "selected" : ""}`}
+                      className={`bus-flow-point-item ${checked ? "selected" : ""}`}
                       onClick={() => {
                         if (readBusBookingFlowState()?.blockKey) {
                           handleChooseDifferentSeat();
@@ -1944,7 +2008,7 @@ export default function BusSeatSelectionPage({
                         <Clock3 size={14} />
                         {point.time}
                       </small>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -1973,14 +2037,25 @@ export default function BusSeatSelectionPage({
                 </p>
               )}
 
-              <button
-                type="button"
-                className="flow-continue-btn"
-                disabled={selectedSeats.length === 0 || !selectedBoarding || !selectedDropping}
-                onClick={handleContinue}
-              >
-                Continue
-              </button>
+              {activePointTab === "boarding" ? (
+                <button
+                  type="button"
+                  className="flow-continue-btn"
+                  disabled={selectedSeats.length === 0 || !selectedBoarding}
+                  onClick={() => setActivePointTab("dropping")}
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="flow-continue-btn"
+                  disabled={selectedSeats.length === 0 || !selectedBoarding || !selectedDropping}
+                  onClick={handleContinue}
+                >
+                  Continue
+                </button>
+              )}
             </aside>
           </section>
         )}

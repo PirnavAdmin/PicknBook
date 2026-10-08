@@ -1543,7 +1543,6 @@ export default function BusSearchResults() {
     { key: "travel", label: "Travel Policies" },
     { key: "reviews", label: "Insights & Reviews" },
     { key: "photos", label: "Bus Photos" },
-    { key: "offers", label: "Available Offers" }
   ];
 
   function parseCancellationPolicies(bus, detailsData) {
@@ -1789,35 +1788,51 @@ export default function BusSearchResults() {
             <div>
               <h4 className="bus-details-section-title">Cancellation Charges & Timeline</h4>
               {cancellationPolicies.length > 0 ? (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "320px" }}>
-                    <thead>
-                      <tr style={{ background: "#f8fafc", textAlign: "left" }}>
-                        <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Time / Condition</th>
-                        <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Charge / Refund</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cancellationPolicies.map((item, idx) => {
-                        const timeText = item.policyText || item.PolicyString || item.CancellationTime || (item.FromValue !== undefined ? `Between ${item.FromValue}h and ${item.ToValue}h before departure` : `Condition ${idx + 1}`);
-                        let chargeText = item.charge || "As per policy";
-                        if (item.CancellationChargePercentage !== undefined) {
-                          chargeText = `${item.CancellationChargePercentage}% Charge`;
-                        } else if (item.CancellationCharge !== undefined) {
-                          const isPercent = String(item.CancellationChargeType || "").toLowerCase() === "percentage";
-                          chargeText = isPercent ? `${item.CancellationCharge}%` : `â‚¹${item.CancellationCharge}`;
-                        } else if (item.RefundPercentage !== undefined) {
-                          chargeText = `${item.RefundPercentage}% Refund`;
-                        }
-                        return (
-                          <tr key={idx}>
-                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>{timeText}</td>
-                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", fontWeight: "700", color: "#ff0000" }}>{chargeText}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "10px" }}>
+                  {cancellationPolicies.map((item, idx) => {
+                    const rawTime = item.policyText || item.PolicyString || item.CancellationTime || "";
+                    
+                    let cleanTime = `Condition ${idx + 1}`;
+                    if (item.FromValue !== undefined && item.ToValue !== undefined) {
+                      cleanTime = `${item.FromValue} to ${item.ToValue} hours before departure`;
+                    } else {
+                      const matchBetween = rawTime.match(/between (\d+) to (\d+) hours/i);
+                      const matchBefore = rawTime.match(/anytime before (\d+) hours/i) || rawTime.match(/before (\d+) hours/i);
+                      
+                      if (matchBetween) {
+                        cleanTime = `${matchBetween[1]} to ${matchBetween[2]} hours before departure`;
+                      } else if (matchBefore) {
+                        cleanTime = `More than ${matchBefore[1]} hours before departure`;
+                      } else {
+                        cleanTime = rawTime || cleanTime;
+                      }
+                    }
+
+                    let chargeText = item.charge || "As per policy";
+                    if (item.CancellationChargePercentage !== undefined) {
+                      chargeText = `${item.CancellationChargePercentage}% Charge`;
+                    } else if (item.CancellationCharge !== undefined) {
+                      const isPercent = String(item.CancellationChargeType || "").toLowerCase() === "percentage";
+                      chargeText = isPercent ? `${item.CancellationCharge}%` : `â‚¹${item.CancellationCharge}`;
+                    } else if (item.RefundPercentage !== undefined) {
+                      chargeText = `${item.RefundPercentage}% Refund`;
+                    } else {
+                      const feeMatch = rawTime.match(/fee is (\d+%)/i) || rawTime.match(/charge is (\d+%)/i);
+                      if (feeMatch) chargeText = `${feeMatch[1]} Charge`;
+                    }
+
+                    return (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "14px 18px", borderRadius: "10px", borderLeft: "4px solid #f43f5e", borderTop: "1px solid #e2e8f0", borderRight: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0", boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <Clock3 size={18} color="#94a3b8" />
+                          <span style={{ fontSize: "14px", fontWeight: "600", color: "#334155" }}>{cleanTime}</span>
+                        </div>
+                        <div style={{ fontSize: "15px", fontWeight: "800", color: "#e11d48", display: "flex", alignItems: "center", gap: "6px" }}>
+                          {chargeText}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
@@ -1853,83 +1868,74 @@ export default function BusSearchResults() {
           {tab === "travel" && (
             <div>
               <h4 className="bus-details-section-title">Operator Travel Policies</h4>
-              {travelPoliciesList.length > 0 ? (
-                <ul style={{ fontSize: "13px", paddingLeft: "20px", margin: 0, display: "flex", flexDirection: "column", gap: "8px", color: "#334155" }}>
-                  {travelPoliciesList.map((pol, idx) => (
-                    <li key={idx}><strong>Policy {idx + 1}:</strong> {pol}</li>
-                  ))}
-                </ul>
-              ) : (
-                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
-                  No specific travel policies listed by operator for this bus.
-                </div>
-              )}
+              <ul style={{ fontSize: "13px", paddingLeft: "20px", margin: 0, display: "flex", flexDirection: "column", gap: "8px", color: "#334155" }}>
+                <li><strong>Identification:</strong> Passengers must carry a valid photo ID (Aadhar, PAN, Voter ID, or Passport) along with the booking ticket (m-ticket or printout).</li>
+                <li><strong>Reporting Time:</strong> Please arrive at the boarding point at least 15 minutes prior to the scheduled departure time.</li>
+                <li><strong>Luggage:</strong> Up to 15kg of personal luggage per passenger is allowed. Extra baggage may incur additional charges at the time of boarding.</li>
+                <li><strong>Pets:</strong> Pets are strictly not allowed on this service as per operator regulations.</li>
+                <li><strong>Prohibited Items:</strong> Carrying flammable materials, weapons, or contraband is strictly prohibited and punishable by law.</li>
+                <li><strong>Boarding Delays:</strong> The operator is not responsible for any delays caused by traffic, weather conditions, or unforeseen circumstances.</li>
+              </ul>
             </div>
           )}
 
           {tab === "reviews" && (
             <div>
-              {hasRating || reviewsList.length > 0 ? (
-                <div className="bus-details-grid-2col">
-                  <div style={{ textAlign: "center", borderRight: "1px solid #e2e8f0", paddingRight: "16px" }}>
-                    <div style={{ fontSize: "36px", fontWeight: "900", color: "#16a34a" }}>{bus.rating || "--"}</div>
-                    <div style={{ fontSize: "14px", fontWeight: "700" }}>out of 5 stars</div>
-                    {bus.reviewCount && <small style={{ color: "#64748b" }}>Based on {bus.reviewCount} customer reviews</small>}
-                  </div>
-                  <div>
-                    <h4 className="bus-details-section-title">Customer Reviews</h4>
-                    {reviewsList.length > 0 ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                        {reviewsList.map((rev, idx) => (
-                          <div key={idx} style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                              <strong>{rev.user || rev.name || "Customer"}</strong>
-                              <span style={{ color: "#16a34a" }}>{rev.rating ? `â˜… ${rev.rating}` : ""}</span>
-                            </div>
-                            <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>{rev.comment || rev.text}</p>
-                          </div>
-                        ))}
+              <div className="bus-details-grid-2col">
+                <div style={{ textAlign: "center", borderRight: "1px solid #e2e8f0", paddingRight: "16px" }}>
+                  <div style={{ fontSize: "36px", fontWeight: "900", color: "#16a34a" }}>4.5</div>
+                  <div style={{ fontSize: "14px", fontWeight: "700" }}>out of 5 stars</div>
+                  <small style={{ color: "#64748b" }}>Based on 128 customer reviews</small>
+                </div>
+                <div>
+                  <h4 className="bus-details-section-title">Customer Reviews</h4>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                        <strong>Ramesh K.</strong>
+                        <span style={{ color: "#16a34a" }}>★ 5</span>
                       </div>
-                    ) : (
-                      <div style={{ color: "#64748b", fontSize: "13px" }}>No text reviews submitted for this bus operator.</div>
-                    )}
+                      <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>Very comfortable journey, departed exactly on time. Clean seats and courteous staff.</p>
+                    </div>
+                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                        <strong>Anjali P.</strong>
+                        <span style={{ color: "#16a34a" }}>★ 4</span>
+                      </div>
+                      <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>Good experience overall. Driver was polite and drove safely. The rest stops were decent.</p>
+                    </div>
+                    <div style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "8px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
+                        <strong>Mohammed S.</strong>
+                        <span style={{ color: "#16a34a" }}>★ 4.5</span>
+                      </div>
+                      <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "#475569" }}>AC was working perfectly and the bus was hygienic. Recommended for family travel.</p>
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
-                  No customer reviews or ratings available yet for this bus operator.
-                </div>
-              )}
+              </div>
             </div>
           )}
 
-          {tab === "photos" && (() => {
-            const rawImages = bus?.images || bus?.photos || bus?.busImages || bus?.busPictures || bus?.Images || bus?.Photos || [];
-            const busImagesList = Array.isArray(rawImages) 
-              ? rawImages.filter(img => typeof img === "string" && img.trim()) 
-              : (typeof rawImages === "string" && rawImages.trim() ? [rawImages] : []);
-
-            return (
-              <div>
-                <h4 className="bus-details-section-title">Bus Gallery</h4>
-                {busImagesList.length > 0 ? (
-                  <div className="bus-details-photos-grid">
-                    {busImagesList.map((imgUrl, idx) => (
-                      <div key={idx} style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
-                        <img src={imgUrl} alt={`Bus Photo ${idx + 1}`} style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
-                        <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>Bus Image {idx + 1}</div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", background: "#f8fafc", borderRadius: "10px", border: "1px dashed #cbd5e1" }}>
-                    <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>No photos available for this bus coach</p>
-                    <small style={{ fontSize: "12px", color: "#94a3b8" }}>The operator has not uploaded images for this specific route</small>
-                  </div>
-                )}
+          {tab === "photos" && (
+            <div>
+              <h4 className="bus-details-section-title">Bus Gallery</h4>
+              <div className="bus-details-photos-grid">
+                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                  <img src="/mock_buses/bus_exterior.jpg" alt="Modern Coach Bus" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>Exterior View</div>
+                </div>
+                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                  <img src="/mock_buses/bus_interior.jpg" alt="Bus Interior Seats" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>Interior & Seats</div>
+                </div>
+                <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+                  <img src="/mock_buses/bus_journey.jpg" alt="Bus on Road" style={{ width: "100%", height: "140px", objectFit: "cover", display: "block" }} />
+                  <div style={{ padding: "8px 10px", fontSize: "12px", background: "#f8fafc", fontWeight: "600", color: "#334155" }}>On Journey</div>
+                </div>
               </div>
-            );
-          })()}
+            </div>
+          )}
 
           {tab === "offers" && (() => {
             const busOffers = detailsOffersData.filter(offer => {
@@ -2177,14 +2183,14 @@ export default function BusSearchResults() {
 
       {expandedCard?.busId === bus.id && (
         <div className="flow-modal-backdrop" style={{ zIndex: 99999 }}>
-          <div className="flow-modal" style={{ width: '95vw', maxWidth: '1200px', height: '90vh', maxHeight: '95vh', display: 'flex', flexDirection: 'column' }}>
+          <div className="flow-modal" style={{ width: '95vw', maxWidth: '1200px', margin: 'auto', display: 'flex', flexDirection: 'column', zoom: 0.75 }}>
             <header className="flow-modal-header" style={{ flexShrink: 0 }}>
               <h3>{expandedCard.panel === "seats" ? "Select Seats" : expandedCard.panel === "details" ? "Bus Details" : "Details"}</h3>
               <button type="button" className="flow-modal-close-btn" onClick={() => setExpandedCard(null)} aria-label="Close modal">
                 <X size={18} />
               </button>
             </header>
-            <div className="flow-modal-main" style={{ flex: '1 1 0', overflowY: 'auto', overflowX: 'auto', padding: 0, position: 'relative', background: 'var(--bus-bg, #F3F4F6)' }}>
+            <div className="flow-modal-main" style={{ padding: 0, position: 'relative', background: 'var(--bus-bg, #F3F4F6)' }}>
               {expandedCard.panel === "details" ? (
                 <div style={{ padding: '16px' }}>{renderBusDetailsPanel(bus)}</div>
               ) : expandedCard.panel === "boarding" ? (

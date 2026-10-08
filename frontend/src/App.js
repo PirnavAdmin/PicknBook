@@ -234,35 +234,20 @@ function RequireAdmin({ children }) {
   };
 
   const adminToken = sanitize((localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")));
-  const adminRole = sanitize((localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole")));
+  const adminRole = sanitize((localStorage.getItem("adminRole") || sessionStorage.getItem("adminRole"))).toLowerCase();
 
   if (adminToken && adminRole) {
     return children;
   }
 
-  // Legacy fallback if admin keys are missing but user token and user role exist:
   const userToken = sanitize((localStorage.getItem("token") || sessionStorage.getItem("token")));
-  const userRole = sanitize((localStorage.getItem("role") || sessionStorage.getItem("role")));
+  const legacyAdminRole = sanitize((localStorage.getItem("role") || sessionStorage.getItem("role"))).toLowerCase();
 
-  let parsedUserRole = "";
-  try {
-    const userStr = (localStorage.getItem("user") || sessionStorage.getItem("user"));
-    if (userStr) {
-      const userObj = JSON.parse(userStr);
-      parsedUserRole = sanitize(userObj?.role || userObj?.Role);
-    }
-  } catch {
-    // Ignore JSON parse errors
+  if (!userToken && (legacyAdminRole === "admin" || legacyAdminRole === "administrator")) {
+    return children;
   }
 
-  const resolvedRole = adminRole || userRole || parsedUserRole;
-  const resolvedToken = adminToken || userToken;
-
-  if (!resolvedToken || resolvedRole !== "admin") {
-    return <Navigate to={ADMIN_PATHS.login} replace />;
-  }
-
-  return children;
+  return <Navigate to={ADMIN_PATHS.login} replace />;
 }
 
 
