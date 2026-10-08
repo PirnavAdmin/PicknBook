@@ -6,6 +6,7 @@ using PickNBook.Api.Models.DTOs;
 using PickNBook.Api.Models.Payments;
 using PickNBook.Api.Models.Entities;
 using PickNBook.Api.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 
 namespace PickNBook.Api.Services.Implementations
@@ -584,6 +585,7 @@ namespace PickNBook.Api.Services.Implementations
                         await _dbContext.SaveChangesAsync();
 
                         payment.BookingReferenceId = reservation.Id;
+                        payment.BookingId = reservation.Id;
                     }
                     catch (Exception pEx)
                     {
@@ -736,17 +738,66 @@ namespace PickNBook.Api.Services.Implementations
                 // Update payment success status
                 payment.FulfillmentStatus = "Success";
                 payment.BookingReferenceId = reservation.Id;
+                payment.BookingId = reservation.Id;
 
                 // Coupon Consumption
                 await ProcessCouponConsumptionAsync(payment.CouponCode, payment.UserId, reservation.Id, payment.FinalPayableAmount, payment.DiscountAmount, "Bus");
 
-                await _notificationService.EnqueueAsync(
-                    eventType: "BusBookingSuccess",
-                    channel: "Email",
-                    recipient: reservation.PassengerEmail ?? payment.UserId,
-                    templateKey: "BUS_BOOKING_CONFIRMED",
-                    payload: new { Pnr = reservation.Pnr, Name = reservation.PassengerName, Amount = payment.FinalPayableAmount }
-                );
+                // Dispatch formatted e-ticket email with attached PDF ticket
+                if (!string.IsNullOrWhiteSpace(reservation.PassengerEmail))
+                {
+                    try
+                    {
+                        var ticketEmailService = _serviceProvider.GetRequiredService<ITicketEmailService>();
+                        var seatNumbers = string.Join(", ", dbPassengers.Select(p => p.SeatNumber).Where(s => !string.IsNullOrWhiteSpace(s)));
+                        if (string.IsNullOrWhiteSpace(seatNumbers)) seatNumbers = "N/A";
+
+                        var emailRequest = new SendBusTicketEmailRequest
+                        {
+                            ToEmail = reservation.PassengerEmail,
+                            PassengerName = reservation.PassengerName,
+                            BookingReference = reservation.BookingReference,
+                            Pnr = reservation.Pnr,
+                            OperatorName = bus.OperatorName,
+                            BusType = bus.BusType,
+                            Origin = srdvBusService.MapCityCodeToName(bus.FromCity),
+                            Destination = srdvBusService.MapCityCodeToName(bus.ToCity),
+                            DepartureTime = bus.DepartureTime,
+                            ArrivalTime = bus.ArrivalTime,
+                            IsOvernightArrival = bus.ArrivalTime.Date > bus.DepartureTime.Date,
+                            DurationMinutes = (int)(bus.ArrivalTime - bus.DepartureTime).TotalMinutes,
+                            BoardingPoint = !string.IsNullOrWhiteSpace(reservation.BoardingPointName) ? reservation.BoardingPointName : bus.BoardingPoint,
+                            BoardingPointTime = reservation.BoardingPointTime ?? bus.DepartureTime,
+                            ArrivalPoint = !string.IsNullOrWhiteSpace(reservation.DroppingPointName) ? reservation.DroppingPointName : bus.ToCity,
+                            ArrivalPointTime = reservation.DroppingPointTime ?? bus.ArrivalTime,
+                            Price = reservation.TotalPriceInr,
+                            BaseFare = reservation.BaseFareInr,
+                            Currency = "INR",
+                            NetFare = reservation.NetFareInr,
+                            AppliedPromotionCode = reservation.AppliedPromotionCode,
+                            AppliedPromotionType = reservation.AppliedPromotionType,
+                            DiscountSource = reservation.DiscountSource,
+                            DiscountAmount = reservation.DiscountAmountInr > 0 ? reservation.DiscountAmountInr : null,
+                            SeatNumber = seatNumbers,
+                            GstPercent = reservation.GstPercent,
+                            GstAmount = reservation.GstAmountInr,
+                            AutoDiscountAmount = reservation.AutoDiscountAmountInr,
+                            CouponDiscountAmount = reservation.CouponDiscountAmountInr,
+                            Passengers = dbPassengers.Select(p => new BusPassengerSeatDto
+                            {
+                                FullName = p.FullName,
+                                Gender = p.Gender,
+                                SeatNumber = p.SeatNumber ?? string.Empty
+                            }).ToList()
+                        };
+
+                        await ticketEmailService.SendBusTicketAsync(emailRequest);
+                    }
+                    catch (Exception mailEx)
+                    {
+                        _logger.LogError(mailEx, "Failed to dispatch bus ticket email for booking {BookingReference}", reservation.BookingReference);
+                    }
+                }
 
                 var boardingTime = reservation.BoardingPointTime ?? bus.DepartureTime;
                 string formattedTime = boardingTime.ToString("dd/MM/yyyy hh:mm tt");
@@ -1489,6 +1540,7 @@ namespace PickNBook.Api.Services.Implementations
                         _dbContext.FlightReservations.Add(failedLccRes);
                         await _dbContext.SaveChangesAsync();
                         payment.BookingReferenceId = failedLccRes.Id;
+                        payment.BookingId = failedLccRes.Id;
                     }
                     catch (Exception pEx)
                     {
@@ -1579,12 +1631,50 @@ namespace PickNBook.Api.Services.Implementations
             }
             else
             {
+                // Extract itinerary fields from response if present
+                string flightAirline = "", flightAirlineCode = "", flightNum = "", fromCity = "", toCity = "";
+                DateTime depTime = DateTime.UtcNow, arrTime = DateTime.UtcNow;
+
+                if (resp.TryGetProperty("FlightItinerary", out var itinerary))
+                {
+                    if (itinerary.TryGetProperty("Segments", out var segs) && segs.ValueKind == JsonValueKind.Array && segs.GetArrayLength() > 0)
+                    {
+                        var firstSeg = segs[0];
+                        if (firstSeg.TryGetProperty("Airline", out var alNode))
+                        {
+                            flightAirlineCode = alNode.TryGetProperty("AirlineCode", out var alCodeNode) ? (alCodeNode.GetString() ?? "") : "";
+                            var rawName = alNode.TryGetProperty("AirlineName", out var alNameNode) ? (alNameNode.GetString() ?? "") : "";
+                            var lookupSvc = _serviceProvider.GetService<IAirlineLookupService>();
+                            flightAirline = lookupSvc != null ? lookupSvc.GetAirlineName(flightAirlineCode, rawName) : (!string.IsNullOrEmpty(rawName) ? rawName : flightAirlineCode);
+                            flightNum = alNode.TryGetProperty("FlightNumber", out var fnNode) ? (fnNode.ToString() ?? "") : "";
+                        }
+                        if (firstSeg.TryGetProperty("Origin", out var orig) && orig.TryGetProperty("CityCode", out var origCity))
+                            fromCity = origCity.ToString() ?? "";
+                        if (firstSeg.TryGetProperty("Destination", out var dest) && dest.TryGetProperty("CityCode", out var destCity))
+                            toCity = destCity.ToString() ?? "";
+                        if (firstSeg.TryGetProperty("DepTime", out var dTime) && DateTime.TryParse(dTime.ToString(), out var parsedDep))
+                            depTime = parsedDep;
+
+                        var lastSeg = segs[segs.GetArrayLength() - 1];
+                        if (lastSeg.TryGetProperty("Destination", out var dest2) && dest2.TryGetProperty("CityCode", out var destCity2))
+                            toCity = destCity2.ToString() ?? toCity;
+                        if (lastSeg.TryGetProperty("ArrTime", out var aTime) && DateTime.TryParse(aTime.ToString(), out var parsedArr))
+                            arrTime = parsedArr;
+                    }
+                }
+
                 // LCC: Create Reservation
                 reservation = new FlightReservation
                 {
                     BookingReference = $"FL-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 1000)}",
                     Pnr = pnr,
                     UserId = payment.UserId,
+                    Airline = flightAirline,
+                    FlightNumber = flightNum,
+                    FromCity = fromCity,
+                    ToCity = toCity,
+                    DepartureTime = depTime,
+                    ArrivalTime = arrTime,
                     Status = "Booked",
                     BookedAtUtc = DateTime.UtcNow,
                     TraceId = traceId,
@@ -1619,6 +1709,7 @@ namespace PickNBook.Api.Services.Implementations
             {
                 payment.FulfillmentStatus = "Success";
                 payment.BookingReferenceId = reservation.Id;
+                payment.BookingId = reservation.Id;
 
                 // Ensure passenger records with ticket numbers are populated
                 if (requestPassengers != null && requestPassengers.Any())

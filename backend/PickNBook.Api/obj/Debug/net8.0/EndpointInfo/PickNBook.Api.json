@@ -8983,6 +8983,28 @@
         }
       }
     },
+    "/api/cashfree/orders/{orderId}/cancel": {
+      "post": {
+        "tags": [
+          "CashfreePayment"
+        ],
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/cashfree/webhook": {
       "post": {
         "tags": [
@@ -11507,6 +11529,15 @@
         "tags": [
           "Hotels"
         ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -11518,6 +11549,15 @@
       "get": {
         "tags": [
           "Hotels"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -14488,6 +14528,15 @@
         "tags": [
           "SrdvFlightApi"
         ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -14499,6 +14548,15 @@
       "get": {
         "tags": [
           "SrdvFlightApi"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -14512,6 +14570,15 @@
         "tags": [
           "SrdvFlightApi"
         ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -14523,6 +14590,15 @@
       "get": {
         "tags": [
           "SrdvFlightApi"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
