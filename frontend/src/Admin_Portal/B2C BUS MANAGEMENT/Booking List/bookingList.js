@@ -1671,7 +1671,21 @@ export default function AdminB2CBookingListPage() {
                   </span>
                 </div>
               </div>
-              <button type="button" onClick={() => setSelectedBooking(null)} className="admin-view-close-btn">
+              <button
+                type="button"
+                onClick={() => setSelectedBooking(null)}
+                style={{
+                  padding: "6px 18px",
+                  fontSize: "0.85rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#A51C49",
+                  color: "#ffffff",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  boxShadow: "0 2px 6px rgba(165, 28, 73, 0.3)"
+                }}
+              >
                 Close
               </button>
             </header>

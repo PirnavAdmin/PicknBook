@@ -116,7 +116,6 @@ export default function UserSecurityRules() {
   const [showUnblockModal, setShowUnblockModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState(null);
 
   const [selectedRule, setSelectedRule] = useState(null);

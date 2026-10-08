@@ -1220,7 +1220,7 @@
 }
 
 .selected-seat-summary strong {
-  color: #000000 !important;
+  color: #1f3858;
   font-size: 1.3rem;
   font-family: var(--app-font-family) !important;
   white-space: nowrap;
@@ -4981,8 +4981,8 @@
 }
 
 /* Hide input label spans */
-.bus-flow-page .passenger-field > span:first-child,
-.bus-flow-page .contact-grid label > span:first-child {
+.bus-flow-page .passenger-field span,
+.bus-flow-page .contact-grid label span {
   display: none !important;
 }
 
@@ -5686,6 +5686,7 @@
   overflow-y: visible;
   box-sizing: border-box;
   margin-top: 0 !important;
+  align-self: flex-start !important;
 }
 
 /* Right column: boarding & dropping panel — sticky */
@@ -5696,15 +5697,16 @@
   box-sizing: border-box;
 }
 
-/* Bus coach containers — stable fixed size, overflow hidden so layout never shifts */
+/* Bus coach containers inside the SRDV grid must not be clipped */
 .bus-flow-page .bus-coach-container {
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 /* The actual SRDV coach scroll scrolls only the floor, not the entire deck */
 .bus-flow-page .srdv-coach-scroll {
   overflow-x: auto;
-  padding-bottom: 0;
+  overflow-y: visible;
+  padding-bottom: 14px;
 }
 
 /* Bus decks stack vertically inside the scroll zone */
@@ -5735,150 +5737,3 @@
   }
 }
 
-/* Customer wallet payment layout on bus passenger fare details */
-.bus-flow-page .fare-list > .wallet-payment-box {
-  display: grid !important;
-  gap: 14px !important;
-  margin-top: 16px !important;
-  padding: 18px !important;
-  border: 1px solid rgba(255, 0, 0, 0.16) !important;
-  border-radius: 12px !important;
-  background: #fff5f6 !important;
-  color: #050b18 !important;
-}
-
-.bus-flow-page .wallet-payment-heading {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  color: #050b18 !important;
-  font-size: 1rem !important;
-  font-weight: 800 !important;
-}
-
-.bus-flow-page .wallet-payment-icon {
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: 9px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: #ffe6ea !important;
-  color: var(--theme-primary, #ff0000) !important;
-  font-weight: 800 !important;
-}
-
-.bus-flow-page .wallet-payment-divider {
-  width: 100% !important;
-  height: 1px !important;
-  background: #dde5ef !important;
-}
-
-.bus-flow-page .wallet-payment-entry-row {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto !important;
-  align-items: end !important;
-  gap: 18px !important;
-}
-
-.bus-flow-page .wallet-amount-field {
-  display: grid !important;
-  gap: 8px !important;
-  min-width: 0 !important;
-}
-
-.bus-flow-page .wallet-amount-field > span,
-.bus-flow-page .wallet-balance-summary > span,
-.bus-flow-page .wallet-balance-after-row > span {
-  color: #526173 !important;
-  font-size: 0.84rem !important;
-  font-weight: 600 !important;
-  line-height: 1.2 !important;
-}
-
-.bus-flow-page .wallet-amount-input {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
-  width: 100% !important;
-  min-height: 46px !important;
-  padding: 0 14px !important;
-  border: 1px solid #d8e0ea !important;
-  border-radius: 10px !important;
-  background: #ffffff !important;
-}
-
-.bus-flow-page .wallet-amount-input b {
-  color: var(--theme-primary, #ff0000) !important;
-  font-size: 1rem !important;
-  font-weight: 800 !important;
-}
-
-.bus-flow-page .wallet-amount-input input {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  width: 100% !important;
-  height: 44px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  outline: 0 !important;
-  background: transparent !important;
-  color: #050b18 !important;
-  font-size: 1rem !important;
-  font-weight: 700 !important;
-}
-
-.bus-flow-page .wallet-amount-input:focus-within {
-  border-color: rgba(255, 0, 0, 0.34) !important;
-  box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.08) !important;
-}
-
-.bus-flow-page .wallet-balance-summary {
-  display: grid !important;
-  gap: 8px !important;
-  min-width: 118px !important;
-  text-align: right !important;
-}
-
-.bus-flow-page .wallet-balance-summary strong,
-.bus-flow-page .wallet-payment-row strong,
-.bus-flow-page .wallet-balance-after-row strong {
-  color: #050b18 !important;
-  font-size: 0.95rem !important;
-  font-weight: 800 !important;
-  white-space: nowrap !important;
-}
-
-.bus-flow-page .wallet-payment-row,
-.bus-flow-page .wallet-balance-after-row {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  gap: 16px !important;
-}
-
-.bus-flow-page .wallet-payment-row > span {
-  color: #526173 !important;
-  font-size: 0.84rem !important;
-  font-weight: 600 !important;
-}
-
-@media (max-width: 640px) {
-  .bus-flow-page .wallet-payment-entry-row {
-    grid-template-columns: 1fr !important;
-    align-items: stretch !important;
-  }
-
-  .bus-flow-page .wallet-balance-summary {
-    text-align: left !important;
-  }
-
-  .bus-flow-page .wallet-balance-after-row {
-    align-items: flex-start !important;
-    flex-direction: column !important;
-    gap: 8px !important;
-  }
-}
-
-
-.bus-flow-seat-exit { display: flex; align-items: center; justify-content: center; border-radius: 6px; background-color: rgba(239, 68, 68, 0.05); border: 1.5px dashed rgba(239, 68, 68, 0.4); color: #ef4444; font-size: 0.6rem; font-weight: 800; text-align: center; line-height: 1.1; user-select: none; text-transform: uppercase; } .bus-flow-seat-exit.is-seater { width: 44px; height: 44px; } .bus-flow-seat-exit.is-sleeper { width: 84px; height: 40px; }

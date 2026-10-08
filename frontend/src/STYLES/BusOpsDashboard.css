@@ -729,3 +729,56 @@
   border-color: #ffb29c !important;
   box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.12) !important;
 }
+
+/* Scope button alignment to the customer Bus Bookings filter card. */
+.bus-booking-status-page .flight-ops-filters label {
+  min-width: 0;
+}
+.bus-booking-status-page .flight-ops-filters input,
+.bus-booking-status-page .flight-ops-filters select {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+}
+.bus-booking-status-page .flight-ops-filters .filters-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  align-self: end;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+.bus-booking-status-page .flight-ops-filters .filters-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 38px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 9px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.702rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.bus-booking-status-page .flight-ops-filters .filters-actions .primary {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+}
+.bus-booking-status-page .flight-ops-filters .filters-actions .secondary {
+  background: var(--theme-primary-soft, #fef2f2) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
+}
+.bus-booking-status-page .flight-ops-filters .filters-actions button span {
+  color: inherit !important;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: normal;
+}
+.bus-booking-status-page .flight-ops-filters .filters-actions svg {
+  color: inherit;
+  flex-shrink: 0;
+}

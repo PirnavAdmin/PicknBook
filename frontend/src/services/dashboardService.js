@@ -1,4 +1,6 @@
 /* eslint-disable */
+import { getAuthToken } from "./authSession";
+
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 const DASHBOARD_ROOT = "/api/BDashboard";
 
@@ -145,7 +147,8 @@ function resolveAuthToken() {
 }
 
 async function requestJson(urlOrPath, options = {}) {
-  const token = resolveAuthToken();
+  const token = (typeof window !== "undefined" && window.sessionStorage.getItem("active_portal") === "b2b"
+    ? window.localStorage.getItem("b2b_token") : "") || getAuthToken() || resolveAuthToken();
   const headers = {
     Accept: "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -188,67 +191,20 @@ async function requestJson(urlOrPath, options = {}) {
   return payload;
 }
 
-function normalizeRecentUpdate(item, index) {
-  return {
-    id: `recent-update-${index + 1}`,
-    type: String(pickFirst(item, ["type", "Type"], "") || "").trim(),
-    message: String(pickFirst(item, ["message", "Message"], "") || "").trim(),
-    occurredAtUtc: pickFirst(item, ["occurredAtUtc", "OccurredAtUtc"], null),
-  };
-}
-
-function normalizeTopRoute(item, index) {
-  return {
-    id: `top-route-${index + 1}`,
-    tripType: String(pickFirst(item, ["tripType", "TripType"], "") || "").trim(),
-    fromCity: String(pickFirst(item, ["fromCity", "FromCity"], "") || "").trim(),
-    toCity: String(pickFirst(item, ["toCity", "ToCity"], "") || "").trim(),
-    searchCount: toNumber(pickFirst(item, ["searchCount", "SearchCount"], 0)),
-    bookingCount: toNumber(pickFirst(item, ["bookingCount", "BookingCount"], 0)),
-    score: toNumber(pickFirst(item, ["score", "Score"], 0)),
-  };
-}
-
 function normalizeDashboardSummary(payload) {
   const safePayload = payload && typeof payload === "object" ? payload : {};
-  const pendingActions = pickFirst(
-    safePayload,
-    ["pendingActions", "PendingActions"],
-    {}
-  );
   const revenueSnapshot = pickFirst(
     safePayload,
     ["revenueSnapshot", "RevenueSnapshot"],
     {}
   );
   const busBookings = pickFirst(safePayload, ["busBookings", "BusBookings"], {});
-  const recentUpdateCounters = pickFirst(
-    safePayload,
-    ["recentUpdateCounters", "RecentUpdateCounters"],
-    {}
-  );
-  const recentUpdatesRaw = pickFirst(
-    safePayload,
-    ["recentUpdates", "RecentUpdates"],
-    []
-  );
-  const topRoutesRaw = pickFirst(safePayload, ["topRoutes", "TopRoutes"], []);
 
   return {
     totalBookings: toNumber(pickFirst(safePayload, ["totalBookings", "TotalBookings"], 0)),
     completionRatePercent: toNumber(
       pickFirst(safePayload, ["completionRatePercent", "CompletionRatePercent"], 0)
     ),
-    pendingActions: {
-      cancellations: toNumber(
-        pickFirst(pendingActions, ["cancellations", "Cancellations"], 0)
-      ),
-      deposits: toNumber(pickFirst(pendingActions, ["deposits", "Deposits"], 0)),
-      travelerUpdates: toNumber(
-        pickFirst(pendingActions, ["travelerUpdates", "TravelerUpdates"], 0)
-      ),
-      total: toNumber(pickFirst(pendingActions, ["total", "Total"], 0)),
-    },
     revenueSnapshot: {
       totalRevenueInr: toNumber(
         pickFirst(revenueSnapshot, ["totalRevenueInr", "TotalRevenueInr"], 0)
@@ -260,43 +216,13 @@ function normalizeDashboardSummary(payload) {
         pickFirst(revenueSnapshot, ["cancelledValueInr", "CancelledValueInr"], 0)
       ),
     },
+    flightBookings: Object.fromEntries(["completed", "upcoming", "cancelled", "total"].map(key => [key, toNumber(safePayload.flightBookings?.[key])])),
     busBookings: {
       completed: toNumber(pickFirst(busBookings, ["completed", "Completed"], 0)),
       upcoming: toNumber(pickFirst(busBookings, ["upcoming", "Upcoming"], 0)),
       cancelled: toNumber(pickFirst(busBookings, ["cancelled", "Cancelled"], 0)),
       total: toNumber(pickFirst(busBookings, ["total", "Total"], 0)),
     },
-    recentUpdates: Array.isArray(recentUpdatesRaw)
-      ? recentUpdatesRaw.map((item, index) => normalizeRecentUpdate(item, index))
-      : [],
-    recentUpdateCounters: {
-      bookingUpdates: toNumber(
-        pickFirst(recentUpdateCounters, ["bookingUpdates", "BookingUpdates"], 0)
-      ),
-      cancellationUpdates: toNumber(
-        pickFirst(
-          recentUpdateCounters,
-          ["cancellationUpdates", "CancellationUpdates"],
-          0
-        )
-      ),
-      travelerUpdates: toNumber(
-        pickFirst(recentUpdateCounters, ["travelerUpdates", "TravelerUpdates"], 0)
-      ),
-      walletPaymentUpdates: toNumber(
-        pickFirst(
-          recentUpdateCounters,
-          ["walletPaymentUpdates", "WalletPaymentUpdates"],
-          0
-        )
-      ),
-      bankAddUpdates: toNumber(
-        pickFirst(recentUpdateCounters, ["bankAddUpdates", "BankAddUpdates"], 0)
-      ),
-    },
-    topRoutes: Array.isArray(topRoutesRaw)
-      ? topRoutesRaw.map((item, index) => normalizeTopRoute(item, index))
-      : [],
   };
 }
 

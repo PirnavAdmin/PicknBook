@@ -231,14 +231,15 @@ export async function bookHotelRoom(payload) {
   }
 }
 
-export async function getMyHotelBookings() {
+export async function getMyHotelBookings({ status = "all" } = {}) {
   try {
     const response = await requestHotelJson(
-      "/api/Hotels/my-bookings",
+      `/api/hotel/my-bookings?${new URLSearchParams({ status: String(status).trim().toLowerCase() })}`,
       { method: "GET" },
       "Unable to load hotel bookings."
     );
-    return response?.data || response || [];
+    const records = Array.isArray(response) ? response : response?.tickets ?? response?.bookings ?? response?.data;
+    return Array.isArray(records) ? records.filter(Boolean).map(record => ({ ...record, status: record.canonicalStatus ?? record.bookingStatus ?? record.tripState ?? record.status ?? "Unknown", createdAt: record.bookingTime ?? record.createdAt })) : [];
   } catch (err) {
     console.error("Backend loading of hotel bookings failed:", err);
     throw err;

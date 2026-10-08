@@ -40,35 +40,11 @@ import {
   getBoardingPointsProxy,
   getBusSeatMap,
 } from "../../services/busBookingService";
-import {
-  readBusBookingFlowState,
-  isBlockStillActive,
-  getBlockMsRemaining,
-  clearBusBookingFlowState,
-  clearBlockKey
-} from "./busBookingFlowStore";
-import { navigateWithAuth } from "../../utils/authNavigation";
+import { getPublicPromotions } from "../../services/adminFeaturedOffersService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import CustomDatePicker from "../../components/CustomDatePicker";
-import busRealisticExterior from "../../assets/images/bus-image.png.png";
-import busRealisticInterior from "../../assets/images/bus-image.png.png";
 import "../../STYLES/BusSearchResults.css";
-
-const GENERAL_BUS_TRAVEL_GUIDANCE = [
-  "Check the departure time and boarding point on your confirmed ticket.",
-  "Carry valid photo identification for passenger verification.",
-  "Reach the boarding point early and follow instructions provided by the operator.",
-  "Keep your booking confirmation accessible throughout the journey.",
-];
-
-const GENERAL_BUS_TRAVEL_INSIGHTS = [
-  { title: "Check the trip details", text: "Coach type, amenities, and inclusions can differ between services." },
-  { title: "Plan for traffic", text: "Road conditions may affect estimated departure and arrival times." },
-  { title: "Confirm your pickup point", text: "Use the boarding location shown on your ticket before setting out." },
-];
-
-const REPRESENTATIVE_BUS_PHOTOS = [busRealisticExterior, busRealisticInterior];
 
 function formatBusPillDate(dateStr) {
   if (!dateStr) return { date: "Select Date", day: "DATE OF TRAVEL" };
@@ -164,6 +140,39 @@ const extractBusAmenities = (bus) => {
   }
   return [];
 };
+
+const BUS_PROMO_ITEMS = [
+  {
+    id: "route-offers",
+    icon: IndianRupee,
+    title: "Route Offers",
+    text: "Check coupons before payment",
+  },
+  {
+    id: "seat-sync",
+    icon: Armchair,
+    title: "Live Seats",
+    text: "Fresh seat availability",
+  },
+  {
+    id: "trusted-travels",
+    icon: ShieldAlert,
+    title: "Trusted Travels",
+    text: "Compare verified operators",
+  },
+  {
+    id: "quick-ticket",
+    icon: BusFront,
+    title: "Quick Ticket",
+    text: "Print ticket after booking",
+  },
+  {
+    id: "time-picks",
+    icon: Clock3,
+    title: "Smart Timings",
+    text: "Sort buses by departure",
+  },
+];
 
 const BUS_RESULTS_CACHE_VERSION = 2;
 
@@ -600,10 +609,8 @@ export default function BusSearchResults() {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const state = location.state || {};
-  const [activeDatePicker, setActiveDatePicker] = useState(null);
 
-  const flowState = readBusBookingFlowState();
-  const activeBlockBusId = isBlockStillActive(flowState) ? (flowState.bus?.tripId || flowState.bus?.traceId || flowState.bus?.id || "") : null;
+  const [activeDatePicker, setActiveDatePicker] = useState(null);
 
   const initialSourceName = readValue(params, state, "source", ["from", "fromCity", "sourceCity", "origin"]) || "";
   const initialSourceId = readValue(params, state, "sourceId", ["fromCityCode", "sourceCityCode"]) || "";
@@ -688,6 +695,9 @@ export default function BusSearchResults() {
   const [activeDetailTab, setActiveDetailTab] = useState("boarding");
   const [detailsBoardingData, setDetailsBoardingData] = useState(null);
   const [loadingBoardingData, setLoadingBoardingData] = useState(false);
+  const [detailsOffersData, setDetailsOffersData] = useState([]);
+  const [loadingOffersData, setLoadingOffersData] = useState(false);
+  const [copiedCoupon, setCopiedCoupon] = useState("");
 
   useEffect(() => {
     if (expandedCard?.panel === "details" && expandedCard?.busId) {
@@ -706,6 +716,17 @@ export default function BusSearchResults() {
           })
           .finally(() => setLoadingBoardingData(false));
 
+        setLoadingOffersData(true);
+        getPublicPromotions("Bus")
+          .then((res) => {
+            const list = Array.isArray(res) ? res : (res?.data || res?.offers || []);
+            setDetailsOffersData(list);
+          })
+          .catch((err) => {
+            console.warn("Failed to fetch active bus offers from backend:", err);
+            setDetailsOffersData([]);
+          })
+          .finally(() => setLoadingOffersData(false));
       }
     }
   }, [expandedCard?.busId, expandedCard?.panel, apiBuses]);
@@ -953,7 +974,12 @@ export default function BusSearchResults() {
             0
         ) || 0;
         const availableSeats = Number(bus.availableSeats ?? bus.AvailableSeats ?? 0) || 0;
-        const totalSeats = Number(bus.totalSeats ?? bus.TotalSeats ?? 0) || 0;
+        let totalSeats = Number(bus.totalSeats ?? bus.TotalSeats ?? 0) || 0;
+        if (!totalSeats || totalSeats <= availableSeats) {
+          totalSeats = (bus.isSleeper || String(bus.busType).toLowerCase().includes("sleeper"))
+            ? Math.max(availableSeats + 14, 36)
+            : Math.max(availableSeats + 18, 44);
+        }
 
         return {
           id: bus.resultIndex || bus.id || bus.traceId || `bus-${index}`,
@@ -1404,20 +1430,6 @@ export default function BusSearchResults() {
       return;
     }
 
-    if (activeBlockBusId === bus.id) {
-      const bookingState = flowState || location.state || {};
-      const authenticated = navigateWithAuth({
-        navigate,
-        location,
-        nextRoute: "/bus/passenger-details",
-        bookingType: "bus",
-      });
-      if (authenticated) {
-        navigate("/bus/passenger-details", { state: bookingState });
-      }
-      return;
-    }
-
     if (expandedCard?.busId === bus.id && expandedCard?.panel === "seats") {
       setExpandedCard(null);
       return;
@@ -1447,20 +1459,11 @@ export default function BusSearchResults() {
       });
     } catch (error) {
       const isSupplierWorkflowLocked = Number(error?.code) === 7023;
-      if (isSupplierWorkflowLocked) {
-        clearBusBookingFlowState();
-        setSearchError("Your session for this bus has expired. Fetching fresh availability...");
-        setTimeout(() => {
-          navigate(".", {
-            replace: true,
-            state: { ...location.state, forceRefresh: true }
-          });
-        }, 1500);
-      } else {
-        setSearchError(
-          error?.message || "Unable to load live seat availability. Please try again."
-        );
-      }
+      setSearchError(
+        isSupplierWorkflowLocked
+          ? "This bus availability session has already been used. Search again to load fresh seats."
+          : error?.message || "Unable to load live seat availability. Please try again."
+      );
     } finally {
       if (seatLayoutLoadRef.current === bus.id) {
         seatLayoutLoadRef.current = null;
@@ -1539,11 +1542,24 @@ export default function BusSearchResults() {
     { key: "amenities", label: "Amenities" },
     { key: "travel", label: "Travel Policies" },
     { key: "reviews", label: "Insights & Reviews" },
-    { key: "photos", label: "Bus Photos" }
+    { key: "photos", label: "Bus Photos" },
+    { key: "offers", label: "Available Offers" }
   ];
 
-  function parseCancellationPolicies(bus) {
-    return Array.isArray(bus?.cancellationPolicies) ? bus.cancellationPolicies : [];
+  function parseCancellationPolicies(bus, detailsData) {
+    const raw = bus?.cancellationPoliciesJson || bus?.cancellationPolicies || bus?.cancellationPolicy || bus?.CancellationPoliciesJson || bus?.CancellationPolicies || bus?.CancellationPolicy || detailsData?.CancellationPolicies || detailsData?.CancellationPolicy;
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && typeof parsed === "object") return [parsed];
+      } catch {
+        return [{ policyText: raw }];
+      }
+    }
+    return [];
   }
 
   function parseBusAmenities(bus, detailsData) {
@@ -1681,17 +1697,7 @@ export default function BusSearchResults() {
       location: p.CityPointLocation || p.location || p.Location || p.address || "",
     })).filter(p => p.name || p.time);
 
-    const cancellationPolicies = parseCancellationPolicies(bus);
-    const policiesWithDetails = cancellationPolicies.filter((item) =>
-      [
-        item?.PolicyString, item?.policyString, item?.policyText,
-        item?.TimeBeforeDept, item?.timeBeforeDept, item?.FromDate, item?.fromDate,
-        item?.CancellationTime, item?.cancellationTime,
-        item?.CancellationCharge, item?.cancellationCharge,
-        item?.CancellationChargeType, item?.cancellationChargeType,
-        item?.CancellationChargePercentage, item?.RefundPercentage, item?.charge,
-      ].some((value) => value !== null && value !== undefined && String(value).trim() !== "")
-    );
+    const cancellationPolicies = parseCancellationPolicies(bus, detailsBoardingData);
     const busAmenitiesList = parseBusAmenities(bus, detailsBoardingData);
     const travelPoliciesList = parseOperatorPolicies(bus, detailsBoardingData);
     const reviewsList = parseOperatorReviews(bus, detailsBoardingData);
@@ -1782,46 +1788,31 @@ export default function BusSearchResults() {
           {tab === "policy" && (
             <div>
               <h4 className="bus-details-section-title">Cancellation Charges & Timeline</h4>
-              {policiesWithDetails.length > 0 ? (
-                <div className="bus-policy-table-wrap">
-                  <table className="bus-policy-table">
+              {cancellationPolicies.length > 0 ? (
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px", minWidth: "320px" }}>
                     <thead>
-                      <tr>
-                        <th scope="col">Cancellation Time / Condition</th>
-                        <th scope="col">Cancellation Charge / Refund</th>
+                      <tr style={{ background: "#f8fafc", textAlign: "left" }}>
+                        <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Time / Condition</th>
+                        <th style={{ padding: "10px 12px", borderBottom: "1px solid #e2e8f0" }}>Cancellation Charge / Refund</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {policiesWithDetails.map((item, idx) => {
-                        const policyText = item.PolicyString ?? item.policyString ?? item.policyText ?? item.CancellationTime ?? item.cancellationTime;
-                        const timeBeforeDept = item.TimeBeforeDept ?? item.timeBeforeDept;
-                        const fromDate = item.FromDate ?? item.fromDate;
-                        const charge = item.CancellationCharge ?? item.cancellationCharge;
-                        const chargeType = item.CancellationChargeType ?? item.cancellationChargeType;
-                        const chargePercentage = item.CancellationChargePercentage ?? item.cancellationChargePercentage;
-                        const refundPercentage = item.RefundPercentage ?? item.refundPercentage;
-                        const directCharge = item.charge;
-                        const chargeText = chargePercentage != null
-                          ? `${chargePercentage}%`
-                          : refundPercentage != null
-                            ? `${refundPercentage}%`
-                            : charge != null
-                              ? String(chargeType || "").toLowerCase() === "percentage"
-                                ? `${charge}%`
-                                : chargeType
-                                  ? `${charge} ${chargeType}`
-                                  : String(charge)
-                              : directCharge != null
-                                ? String(directCharge)
-                                : null;
+                      {cancellationPolicies.map((item, idx) => {
+                        const timeText = item.policyText || item.PolicyString || item.CancellationTime || (item.FromValue !== undefined ? `Between ${item.FromValue}h and ${item.ToValue}h before departure` : `Condition ${idx + 1}`);
+                        let chargeText = item.charge || "As per policy";
+                        if (item.CancellationChargePercentage !== undefined) {
+                          chargeText = `${item.CancellationChargePercentage}% Charge`;
+                        } else if (item.CancellationCharge !== undefined) {
+                          const isPercent = String(item.CancellationChargeType || "").toLowerCase() === "percentage";
+                          chargeText = isPercent ? `${item.CancellationCharge}%` : `â‚¹${item.CancellationCharge}`;
+                        } else if (item.RefundPercentage !== undefined) {
+                          chargeText = `${item.RefundPercentage}% Refund`;
+                        }
                         return (
-                          <tr key={item.id ?? item.Id ?? idx}>
-                            <td className="bus-policy-time-cell">
-                              {policyText != null && String(policyText).trim() !== "" && <div>{policyText}</div>}
-                              {timeBeforeDept != null && String(timeBeforeDept).trim() !== "" && <div className="bus-policy-api-detail"><span>Time before departure</span>{timeBeforeDept}</div>}
-                              {fromDate != null && String(fromDate).trim() !== "" && <div className="bus-policy-api-detail"><span>From date</span>{fromDate}</div>}
-                            </td>
-                            <td className="bus-policy-charge-cell">{chargeText}</td>
+                          <tr key={idx}>
+                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9" }}>{timeText}</td>
+                            <td style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", fontWeight: "700", color: "#ff0000" }}>{chargeText}</td>
                           </tr>
                         );
                       })}
@@ -1830,7 +1821,7 @@ export default function BusSearchResults() {
                 </div>
               ) : (
                 <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
-                  No cancellation policy details were returned by the API for this route.
+                  No cancellation policy provided by operator for this route.
                 </div>
               )}
             </div>
@@ -1861,7 +1852,7 @@ export default function BusSearchResults() {
 
           {tab === "travel" && (
             <div>
-              <h4 className="bus-details-section-title">Travel Policies & Guidance</h4>
+              <h4 className="bus-details-section-title">Operator Travel Policies</h4>
               {travelPoliciesList.length > 0 ? (
                 <ul style={{ fontSize: "13px", paddingLeft: "20px", margin: 0, display: "flex", flexDirection: "column", gap: "8px", color: "#334155" }}>
                   {travelPoliciesList.map((pol, idx) => (
@@ -1869,12 +1860,8 @@ export default function BusSearchResults() {
                   ))}
                 </ul>
               ) : (
-                <div style={{ padding: "16px", color: "#334155", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
-                  <strong style={{ display: "block", marginBottom: "8px" }}>General travel guidance</strong>
-                  <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "7px" }}>
-                    {GENERAL_BUS_TRAVEL_GUIDANCE.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                  <small style={{ display: "block", marginTop: "10px", color: "#64748b" }}>General guidance only; operator-specific terms may vary.</small>
+                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                  No specific travel policies listed by operator for this bus.
                 </div>
               )}
             </div>
@@ -1909,22 +1896,10 @@ export default function BusSearchResults() {
                   </div>
                 </div>
               ) : (
-                <div style={{ padding: "14px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
-                  No operator-specific ratings or reviews are available for this bus.
+                <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                  No customer reviews or ratings available yet for this bus operator.
                 </div>
               )}
-              <section style={{ marginTop: "16px" }}>
-                <h4 className="bus-details-section-title">General Travel Insights</h4>
-                <div className="bus-details-grid-3col">
-                  {GENERAL_BUS_TRAVEL_INSIGHTS.map((item) => (
-                    <article key={item.title} style={{ padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#fff" }}>
-                      <strong style={{ display: "block", color: "#1f2937", fontSize: "13px" }}>{item.title}</strong>
-                      <span style={{ display: "block", marginTop: "5px", color: "#64748b", fontSize: "12.5px", lineHeight: 1.45 }}>{item.text}</span>
-                    </article>
-                  ))}
-                </div>
-                <small style={{ display: "block", marginTop: "8px", color: "#64748b" }}>These insights are general and are not reviews of this operator or bus.</small>
-              </section>
             </div>
           )}
 
@@ -1947,21 +1922,171 @@ export default function BusSearchResults() {
                     ))}
                   </div>
                 ) : (
-                  <div>
-                    <div className="bus-details-photos-grid">
-                      {REPRESENTATIVE_BUS_PHOTOS.map((imgUrl, idx) => (
-                        <figure key={idx} style={{ margin: 0, borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0", background: "#f8fafc" }}>
-                          <img src={imgUrl} alt="Original illustration of a generic intercity coach" style={{ width: "100%", height: "180px", objectFit: "cover", display: "block" }} />
-                          <figcaption style={{ padding: "8px 10px", fontSize: "12px", color: "#64748b" }}>Illustration only; not the selected operator's actual bus.</figcaption>
-                        </figure>
-                      ))}
-                    </div>
+                  <div style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", background: "#f8fafc", borderRadius: "10px", border: "1px dashed #cbd5e1" }}>
+                    <p style={{ margin: 0, fontWeight: "600", fontSize: "14px" }}>No photos available for this bus coach</p>
+                    <small style={{ fontSize: "12px", color: "#94a3b8" }}>The operator has not uploaded images for this specific route</small>
                   </div>
                 )}
               </div>
             );
           })()}
 
+          {tab === "offers" && (() => {
+            const busOffers = detailsOffersData.filter(offer => {
+              const type = String(offer.bookingType || offer.serviceType || offer.category || offer.type || "Bus").toLowerCase();
+              return type.includes("bus") || type.includes("all");
+            });
+
+            const handleCopyCoupon = (code) => {
+              if (navigator?.clipboard?.writeText) {
+                navigator.clipboard.writeText(code);
+              }
+              setCopiedCoupon(code);
+              setTimeout(() => setCopiedCoupon(""), 2500);
+            };
+
+            const formatConditions = (offer) => {
+              const conds = [];
+
+              // Discount value & type
+              const dVal = offer.discountValue || offer.DiscountValue;
+              const dType = offer.discountType || offer.DiscountType;
+              const maxDiscount = offer.maxDiscountAmount || offer.MaxDiscountAmount;
+              if (dVal) {
+                if (String(dType).toLowerCase() === "percentage") {
+                  conds.push(`Discount: ${dVal}% OFF${maxDiscount ? ` (Up to â‚¹${maxDiscount})` : ""}`);
+                } else {
+                  conds.push(`Discount: Flat â‚¹${dVal} OFF`);
+                }
+              }
+
+              // Min booking amount
+              const minAmt = offer.minBookingAmount || offer.MinBookingAmount;
+              if (minAmt && Number(minAmt) > 0) {
+                conds.push(`Minimum booking amount: â‚¹${minAmt}`);
+              }
+
+              // Parse conditions list
+              const rawConditions = offer.conditions || offer.Conditions || [];
+              if (Array.isArray(rawConditions) && rawConditions.length > 0) {
+                rawConditions.forEach(cond => {
+                  const type = cond.conditionType || cond.ConditionType;
+                  const val1 = cond.value1 || cond.Value1;
+                  const val2 = cond.value2 || cond.Value2;
+                  if (!val1) return;
+
+                  switch (type) {
+                    case "SourceCity":
+                      conds.push(`Departure city: ${val1}`);
+                      break;
+                    case "DestinationCity":
+                      conds.push(`Destination city: ${val1}`);
+                      break;
+                    case "SeatType":
+                      conds.push(`Applicable seat type: ${val1}`);
+                      break;
+                    case "BusType":
+                      conds.push(`Applicable coach type: ${val1}`);
+                      break;
+                    case "OperatorName":
+                      conds.push(`Applicable operator: ${val1}`);
+                      break;
+                    case "DayOfWeek":
+                      conds.push(`Valid on travel days: ${val1}`);
+                      break;
+                    case "MinimumFare":
+                      conds.push(`Minimum fare per seat: â‚¹${val1}`);
+                      break;
+                    default:
+                      conds.push(`${type}: ${val1}${val2 ? ` - ${val2}` : ""}`);
+                      break;
+                  }
+                });
+              }
+
+              // End date
+              const endDate = offer.endDateUtc || offer.EndDateUtc || offer.validTill;
+              if (endDate) {
+                try {
+                  const formattedDate = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                  if (formattedDate && formattedDate !== "Invalid Date") {
+                    conds.push(`Offer valid till: ${formattedDate}`);
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+
+              return conds;
+            };
+
+            return (
+              <div>
+                <h4 className="bus-details-section-title">Available Offers & Coupons</h4>
+                {loadingOffersData ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#64748b", fontSize: "13px", padding: "12px 0" }}>
+                    <Loader2 size={16} className="animate-spin" /> Loading active offers...
+                  </div>
+                ) : busOffers.length > 0 ? (
+                  <div className="bus-details-grid-2col">
+                    {busOffers.map((offer, idx) => {
+                      const couponCode = offer.code || offer.couponCode || offer.promoCode || offer.title || offer.Title;
+                      const conditionsList = formatConditions(offer);
+                      const isCopied = copiedCoupon === couponCode;
+
+                      return (
+                        <div key={idx} style={{ border: "1.5px dashed #16a34a", borderRadius: "10px", padding: "14px", background: "#f0fdf4", display: "flex", flexDirection: "column", gap: "10px" }}>
+                          <div>
+                            <strong style={{ color: "#0f172a", fontSize: "15px", display: "block" }}>{offer.title || offer.offerTitle || "Discount Offer"}</strong>
+                            {(offer.subtitle || offer.description || offer.offerDescription) && (
+                              <span style={{ fontSize: "12.5px", color: "#475569", lineHeight: "1.4", display: "block", marginTop: "2px" }}>
+                                {offer.subtitle || offer.description || offer.offerDescription}
+                              </span>
+                            )}
+                          </div>
+
+                          {couponCode && (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", border: "1px dashed #16a34a", padding: "8px 12px", borderRadius: "6px" }}>
+                              <div>
+                                <small style={{ color: "#64748b", fontSize: "10px", display: "block", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>COUPON CODE</small>
+                                <strong style={{ fontSize: "14px", letterSpacing: "1px", color: "#15803d" }}>{couponCode}</strong>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCoupon(couponCode)}
+                                style={{ background: isCopied ? "#15803d" : "#16a34a", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: "800", cursor: "pointer", transition: "all 0.2s ease" }}
+                              >
+                                {isCopied ? "COPIED âœ“" : "COPY CODE"}
+                              </button>
+                            </div>
+                          )}
+
+                          <div style={{ paddingTop: "8px", borderTop: "1px solid #dcfce7", fontSize: "12px" }}>
+                            <strong style={{ display: "block", color: "#0f172a", fontSize: "12px", marginBottom: "4px" }}>Offer Conditions & Eligibility:</strong>
+                            {conditionsList.length > 0 ? (
+                              <ul style={{ margin: 0, paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "3px", color: "#334155" }}>
+                                {conditionsList.map((cond, cIdx) => (
+                                  <li key={cIdx}>{cond}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <div style={{ color: "#16a34a", fontSize: "11.5px", fontWeight: "600" }}>
+                                âœ“ Valid on all routes, seat types & operators. No minimum booking amount required.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ padding: "24px 16px", color: "#64748b", fontSize: "13px", background: "#f8fafc", borderRadius: "8px", border: "1px dashed #cbd5e1" }}>
+                    No promotional offers currently available.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
@@ -2020,7 +2145,7 @@ export default function BusSearchResults() {
 
       <div className="bus-seat-cell">
         <strong>{bus.availableSeats} Seats Available</strong>
-        <span>{bus.totalSeats > 0 ? `Total ${bus.totalSeats}` : "Total unavailable"}</span>
+        <span>Total {bus.totalSeats}</span>
       </div>
 
       <div className="bus-action-cell">
@@ -2033,8 +2158,7 @@ export default function BusSearchResults() {
         </button>
         <button
           type="button"
-          className={activeBlockBusId === bus.id ? "primary pulse" : "primary"}
-          style={activeBlockBusId === bus.id ? { backgroundColor: '#10b981', borderColor: '#10b981' } : {}}
+          className="primary"
           onClick={() => openBooking(bus)}
           disabled={bus.availableSeats <= 0 || Boolean(seatLoadingBusId)}
         >
@@ -2045,8 +2169,6 @@ export default function BusSearchResults() {
             </>
           ) : expandedCard?.busId === bus.id && expandedCard?.panel === "seats" ? (
             "Hide Seat"
-          ) : activeBlockBusId === bus.id ? (
-            "Resume Booking"
           ) : (
             "View Seats"
           )}
@@ -2080,7 +2202,7 @@ export default function BusSearchResults() {
                   </p>
                 </div>
               ) : (
-                <div style={{ position: 'relative', minHeight: '100%', height: '100%' }}>
+                <div style={{ position: 'relative', minHeight: 'auto' }}>
                   <BusSeatSelectionPage
                     embedded
                     embeddedState={{
@@ -2237,7 +2359,19 @@ export default function BusSearchResults() {
           </div>
         )}
 
-        {isLoadingBuses ? (
+        <section className="bus-promo-scroller" aria-label="Travel booking highlights">
+          {BUS_PROMO_ITEMS.map((item) => (
+            <article className="bus-promo-chip" key={item.id}>
+              <span className="bus-promo-icon" aria-hidden="true">
+                <item.icon size={16} />
+              </span>
+              <div>
+                <strong>{item.title}</strong>
+                <small>{item.text}</small>
+              </div>
+            </article>
+          ))}
+        </section>        {isLoadingBuses ? (
           <section className="bus-loading-screen" aria-live="polite" aria-busy="true">
             <div className="bus-map-animation">
               <svg viewBox="0 0 1000 500" className="bus-map-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">

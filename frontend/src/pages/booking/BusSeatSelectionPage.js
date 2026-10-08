@@ -4,7 +4,7 @@ import { FaFemale, FaMale } from "react-icons/fa";
 import { Clock3, Info } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
-import SeatSelection, { ModernRoofExit, ModernEmergencyExit } from "../../components/forms/SeatSelection";
+import SeatSelection from "../../components/forms/SeatSelection";
 import {
   readBusBookingFlowState,
   writeBusBookingFlowState,
@@ -14,16 +14,12 @@ import {
 } from "./busBookingFlowStore";
 import { getBusSeatMap } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
-import { navigateWithAuth } from "../../utils/authNavigation";
-import { groupFaresIntoRanges } from "../../utils/fareRangeFormatter";
 
 function isRealSeat(rawSeat) {
   const name = String(rawSeat?.SeatName || rawSeat?.seatName || rawSeat?.seatCode || rawSeat?.SeatCode || rawSeat?.label || "").trim().toUpperCase();
   if (!name) return false;
-  if (name.includes("EXIT")) return true;
-
   // Exclude known structural/non-bookable markers (exits, aisles, driver area, toilets, etc.)
-  const nonSeatPatterns = /^(T|WC|D|DR|NA|EX|ST|B|BLANK|EMPTY)$|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i;
+  const nonSeatPatterns = /^(T|WC|D|DR|NA|EX|ST|B|BLANK|EMPTY)$|EXIT|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i;
   if (nonSeatPatterns.test(name)) return false;
   if (String(rawSeat?.SeatType || rawSeat?.seatType || "").trim() === "0") return false;
   return true;
@@ -612,7 +608,7 @@ function formatTripDateLabel(dateValue) {
     .toUpperCase();
 }
 
-function Seat({ label, bookedGender }) {
+function Seat({ label }) {
   return (
     <svg
       className="seat-svg seat-svg--seater"
@@ -627,27 +623,14 @@ function Seat({ label, bookedGender }) {
       <rect className="seat-handle seat-handle--right" x="36" y="16" width="6" height="17" rx="2" />
       <rect className="seat-footrest" x="17" y="37" width="14" height="6" rx="2" />
       <rect className="seat-body" x="10" y="9" width="28" height="30" rx="4" />
-      
-      {!bookedGender ? (
-        <text className="seat-label" x="24" y="27" textAnchor="middle">
-          {label}
-        </text>
-      ) : (
-        <svg x="16" y="14" width="16" height="20">
-          <g fill={bookedGender === 'Female' ? "#ec4899" : "#3b82f6"}>
-            {bookedGender === 'Female' ? (
-              <FaFemale width="100%" height="100%" color="#ec4899" opacity="0.8" />
-            ) : (
-              <FaMale width="100%" height="100%" color="#3b82f6" opacity="0.8" />
-            )}
-          </g>
-        </svg>
-      )}
+      <text className="seat-label" x="24" y="27" textAnchor="middle">
+        {label}
+      </text>
     </svg>
   );
 }
 
-function SleeperSeat({ label, bookedGender }) {
+function SleeperSeat({ label }) {
   return (
     <svg
       className="seat-svg seat-svg--sleeper"
@@ -659,22 +642,9 @@ function SleeperSeat({ label, bookedGender }) {
     >
       <rect className="seat-body" x="4" y="5" width="84" height="30" rx="4" />
       <rect className="sleeper-pillow" x="73" y="9" width="11" height="22" rx="4" />
-      
-      {!bookedGender ? (
-        <text className="seat-label" x="41" y="24" textAnchor="middle">
-          {label}
-        </text>
-      ) : (
-        <svg x="33" y="10" width="16" height="20">
-          <g fill={bookedGender === 'Female' ? "#ec4899" : "#3b82f6"}>
-            {bookedGender === 'Female' ? (
-              <FaFemale width="100%" height="100%" color="#ec4899" opacity="0.8" />
-            ) : (
-              <FaMale width="100%" height="100%" color="#3b82f6" opacity="0.8" />
-            )}
-          </g>
-        </svg>
-      )}
+      <text className="seat-label" x="41" y="24" textAnchor="middle">
+        {label}
+      </text>
     </svg>
   );
 }
@@ -712,72 +682,12 @@ export default function BusSeatSelectionPage({
   const [isSeatLayoutLoading, setIsSeatLayoutLoading] = useState(true);
   const [isFetchingSeats, setIsFetchingSeats] = useState(false);
   const [seatFetchError, setSeatFetchError] = useState("");
-  const [backendSeatMap, setBackendSeatMap] = useState(stateData.seatLayout || null);
+  const [backendSeatMap, setBackendSeatMap] = useState(null);
   const [selectionError, setSelectionError] = useState("");
   const [activeCardPanel, setActiveCardPanel] = useState(null);
 
-  const zoomRef = useRef(0.85);
-  const [computedZoom, setComputedZoom] = useState(0.85);
-
-  useEffect(() => {
-    if (!embedded) return;
-    
-    const calculateZoom = () => {
-      const layoutEl = document.querySelector('.bus-decks-container');
-      if (!layoutEl) return;
-
-      const currentScrollHeight = layoutEl.scrollHeight;
-      if (currentScrollHeight < 50) return;
-
-      // Calculate true intrinsic height by reversing current zoom
-      const trueIntrinsicHeight = currentScrollHeight / zoomRef.current;
-      
-      // Calculate available height inside modal (modal is ~90vh, minus headers/padding)
-      const vh = window.innerHeight;
-      const availableHeight = (vh * 0.9) - 220; // 220px for modal header + fares top bar + padding
-      
-      let optimalZoom = availableHeight / trueIntrinsicHeight;
-      if (optimalZoom > 1.3) optimalZoom = 1.3;
-      if (optimalZoom < 0.4) optimalZoom = 0.4;
-      
-      // Only update if changed significantly to avoid jitter
-      if (Math.abs(optimalZoom - zoomRef.current) > 0.02) {
-        zoomRef.current = optimalZoom;
-        setComputedZoom(optimalZoom);
-      }
-    };
-
-    calculateZoom();
-    // Re-calculate after a slight delay to ensure DOM is fully painted
-    const tId = setTimeout(calculateZoom, 150);
-    window.addEventListener('resize', calculateZoom);
-    
-    return () => {
-      window.removeEventListener('resize', calculateZoom);
-      clearTimeout(tId);
-    };
-  }, [backendSeatMap, embedded, activeFareFilter]);
-
 
   const busIdentity = bus?.tripId || bus?.traceId || bus?.id || "";
-
-  const goToPassengerDetails = useCallback((bookingState) => {
-    const state = bookingState || {};
-    if (state.bus) {
-      writeBusBookingFlowState(state);
-    }
-
-    const authenticated = navigateWithAuth({
-      navigate,
-      location,
-      nextRoute: "/bus/passenger-details",
-      bookingType: "bus",
-    });
-
-    if (authenticated) {
-      navigate("/bus/passenger-details", { state });
-    }
-  }, [location, navigate]);
 
   // ── Resume-hold banner ──────────────────────────────────────────────────────
   // ms remaining on any active block hold for THIS bus. 0 = no banner shown.
@@ -814,8 +724,8 @@ export default function BusSeatSelectionPage({
 
   const handleResume = useCallback(() => {
     const state = readBusBookingFlowState();
-    goToPassengerDetails(state);
-  }, [goToPassengerDetails]);
+    navigate("/bus/passenger-details", { state: state || {} });
+  }, [navigate]);
 
   const handleChooseDifferentSeat = useCallback(() => {
     clearBlockKey();
@@ -877,17 +787,11 @@ export default function BusSeatSelectionPage({
       return undefined;
     }
 
-    setIsSeatLayoutLoading(!backendSeatMap);
-    setIsFetchingSeats(!backendSeatMap);
+    setIsSeatLayoutLoading(true);
+    setIsFetchingSeats(true);
     setSeatFetchError("");
 
     const fetchSeatMap = async () => {
-      if (backendSeatMap) {
-        setIsFetchingSeats(false);
-        setIsSeatLayoutLoading(false);
-        return;
-      }
-
       try {
         const seatMap = await getBusSeatMap(bus);
         setBackendSeatMap(seatMap);
@@ -1129,18 +1033,16 @@ export default function BusSeatSelectionPage({
   }, [seatData.seats, backendSeatMap]);
 
   const finalFareBands = useMemo(() => {
-    return groupFaresIntoRanges([...seatsByLabel.values()]);
-  }, [seatsByLabel]);
-
-  // Keep the selection only if an identical range still exists, else reset to "All"
-  useEffect(() => {
-    if (activeFareFilter !== "all") {
-      const exists = finalFareBands.some(b => b.id === activeFareFilter);
-      if (!exists) {
-        setActiveFareFilter("all");
+    const fares = new Set();
+    seatsByLabel.forEach((seat) => {
+      const fareVal = Number(seat.b2cDisplayFare || seat.fareBeforeTax || seat.fare || seat.priceInr || 0);
+      if (fareVal > 0) {
+        fares.add(fareVal);
       }
-    }
-  }, [finalFareBands]);
+    });
+    const sorted = [...fares].sort((a, b) => a - b);
+    return sorted.length > 0 ? sorted : seatData.fareBands;
+  }, [seatsByLabel, seatData.fareBands]);
 
   const boardingPoints = useMemo(() => {
     if (!bus) {
@@ -1302,7 +1204,7 @@ export default function BusSeatSelectionPage({
 
   if (!bus) {
     return (
-      <main className={`bus-flow-page ${embedded ? "is-embedded" : ""}`}>
+      <main className="bus-flow-page">
         <div className="bus-flow-shell">
           <section className="bus-flow-empty">
             <h2>Select a bus first</h2>
@@ -1428,7 +1330,7 @@ export default function BusSeatSelectionPage({
     };
 
     writeBusBookingFlowState(flowData);
-    goToPassengerDetails(flowData);
+    navigate("/bus/passenger-details", { state: flowData });
   };
 
   const handleRetryFetchSeats = async () => {
@@ -1468,49 +1370,9 @@ export default function BusSeatSelectionPage({
       return <span className="bus-flow-seat-gap" />;
     }
 
-    const labelUpper = String(seat.label || "").toUpperCase();
-    if (labelUpper.includes("EXIT")) {
-      const isBackExit = labelUpper.includes("BK_EXIT");
-      const isRoofExit = labelUpper.includes("RF_EXIT");
-      const exitText = isRoofExit ? "Roof Exit" : isBackExit ? "Back Exit" : "Exit";
-      
-      return (
-        <div 
-          key={seat.id} 
-          className={`bus-flow-seat-exit ${seat.kind === "sleeper" ? "is-sleeper" : "is-seater"}`}
-          style={{ border: 'none', background: 'transparent' }}
-          title={exitText}
-        >
-          {isRoofExit ? <ModernRoofExit /> : <ModernEmergencyExit />}
-        </div>
-      );
-    }
-
     const isSelected = selectedSeatLabels.includes(seat.label);
-    let rawFare = seat.b2cDisplayFare || seat.fareBeforeTax || seat.fare || seat.priceInr || 0;
-    if (typeof rawFare === 'string') {
-      rawFare = rawFare.replace(/[^\d.-]/g, '');
-    }
-    const seatFareVal = Number(rawFare) || 0;
-    
-    let isDimmed = false;
-    if (activeFareFilter !== "all") {
-      const activeBucket = finalFareBands.find(b => b.id === activeFareFilter);
-      if (activeBucket) {
-        const isLast = activeBucket.id === finalFareBands[finalFareBands.length - 1].id;
-        if (activeBucket.min === activeBucket.max) {
-          if (Math.abs(seatFareVal - activeBucket.min) > 0.01) {
-            isDimmed = true;
-          }
-        } else {
-          if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
-            isDimmed = true;
-          }
-        }
-      } else {
-        isDimmed = Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
-      }
-    }
+    const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
+    const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
     const isBookedFemale = seat.status === "booked" && seat.bookedGender === "Female";
     const isBookedMale = seat.status === "booked" && seat.bookedGender === "Male";
     const isNextToBookedFemale =
@@ -1574,9 +1436,9 @@ export default function BusSeatSelectionPage({
         )}`}
       >
         {seat.kind === "sleeper" ? (
-          <SleeperSeat label={seat.displayLabel || seat.label} bookedGender={seat.status === 'booked' ? seat.bookedGender : null} />
+          <SleeperSeat label={seat.displayLabel || seat.label} />
         ) : (
-          <Seat label={seat.displayLabel || seat.label} bookedGender={seat.status === 'booked' ? seat.bookedGender : null} />
+          <Seat label={seat.displayLabel || seat.label} />
         )}
       </button>
     );
@@ -1943,8 +1805,7 @@ export default function BusSeatSelectionPage({
                       <Info size={12} />
                     </button>
                   </div>
-                  {finalFareBands.length > 0 && (
-                    <div className="bus-flow-fare-chips">
+                  <div className="bus-flow-fare-chips">
                     <button
                       type="button"
                       className={activeFareFilter === "all" ? "active" : ""}
@@ -1952,23 +1813,17 @@ export default function BusSeatSelectionPage({
                     >
                       All
                     </button>
-                    {finalFareBands.map((bucket) => {
-                      const labelText = bucket.label.replace(/₹/g, '').replace('–', 'to').trim();
-                      return (
-                        <button
-                          type="button"
-                          key={bucket.id}
-                          className={activeFareFilter === bucket.id ? "active" : ""}
-                          onClick={() => setActiveFareFilter(activeFareFilter === bucket.id ? "all" : bucket.id)}
-                          aria-pressed={activeFareFilter === bucket.id}
-                          aria-label={bucket.min === bucket.max ? `Price ${labelText} rupees` : `Price range ${labelText} rupees`}
-                        >
-                          {bucket.label}
-                        </button>
-                      );
-                    })}
+                    {finalFareBands.map((fare) => (
+                      <button
+                        type="button"
+                        key={fare}
+                        className={Number(activeFareFilter) === fare ? "active" : ""}
+                        onClick={() => setActiveFareFilter(fare)}
+                      >
+                        {formatCurrency(fare)}
+                      </button>
+                    ))}
                   </div>
-                  )}
                 </div>
 
                 <div className="bus-flow-seat-legend">
@@ -1995,7 +1850,7 @@ export default function BusSeatSelectionPage({
                 </div>
               </header>
 
-              <div className="modern-seat-layout-wrapper" style={{ zoom: computedZoom }}>
+              <div className="modern-seat-layout-wrapper" style={{ zoom: '0.85' }}>
                 <SeatSelection
                   vehicleType="bus"
                   seatData={backendSeatMap?.rawLayoutData || null}
@@ -2008,7 +1863,6 @@ export default function BusSeatSelectionPage({
                   mainDeckRows={mainDeckRows}
                   selectedSeatLabels={selectedSeatLabels}
                   activeFareFilter={activeFareFilter}
-                  fareBuckets={finalFareBands}
                   onSeatToggle={handleSeatToggle}
                   onSeatHover={setHoveredSeat}
                   onSeatMouseLeave={() => setHoveredSeat(null)}

@@ -769,6 +769,7 @@ function normalizeBusBookingRecord(record) {
   const seatsBookedFallback = passengers.length;
 
   return {
+    ...record,
     bookingId: pickFirst(record, ["bookingId", "BookingId"], null),
     bookingReference: String(
       pickFirst(record, ["bookingReference", "BookingReference"], "") || ""
@@ -821,15 +822,14 @@ function normalizeBusBookingRecord(record) {
       null
     ),
     seatsBooked:
-      Number(pickFirst(record, ["seatsBooked", "SeatsBooked"], null)) ||
-      seatsBookedFallback,
+      Number(pickFirst(record, ["seatsBooked", "SeatsBooked"], seatsBookedFallback)) || 0,
     totalPriceInr:
       Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr"], 0)) || 0,
     cancellationChargeInr:
       Number(pickFirst(record, ["cancellationChargeInr", "CancellationChargeInr"], 0)) || 0,
     refundAmountInr:
       Number(pickFirst(record, ["refundAmountInr", "RefundAmountInr"], 0)) || 0,
-    status: String(pickFirst(record, ["status", "Status"], "Unknown") || "Unknown"),
+    status: String(pickFirst(record, ["canonicalStatus", "bookingStatus", "tripState", "status", "Status"], "Unknown") || "Unknown"),
     bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc"], null),
     cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
     cancellationReason: String(
@@ -2708,25 +2708,21 @@ export async function listBusUsedCoupons({ couponCode, userId, limit = 200 } = {
     : [];
 }
 
-export async function listBusBookings({ passengerPhone, status } = {}) {
-  const url = buildUrl(`${BUS_BOOKINGS_ROOT}/bookings`, {
-    passengerPhone,
-    status,
-  });
+export async function listBusBookings({ passengerPhone, status = "all" } = {}) {
+  status = String(status).trim().toLowerCase();
   const legacyUrl = buildUrl(`${LEGACY_BUS_BOOKINGS_ROOT}/bookings`, {
     passengerPhone,
     status,
   });
 
-  const data = await requestJsonWithFallback([url, legacyUrl], { method: "GET" });
-  return Array.isArray(data)
-    ? data.map((record) => normalizeBusBookingRecord(record))
-    : [];
+  const data = await requestJson(legacyUrl, { method: "GET" });
+  const records = Array.isArray(data) ? data : data?.bookings ?? data?.data;
+  return Array.isArray(records) ? records.filter(Boolean).map(normalizeBusBookingRecord) : [];
 }
 
 export async function getBusBookingById(bookingId) {
   const data = await requestJsonWithFallback(
-    [`${BUS_BOOKINGS_ROOT}/bookings/${bookingId}`, `${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}`],
+    [`${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${bookingId}`, `${BUS_BOOKINGS_ROOT}/bookings/${bookingId}`],
     { method: "GET" }
   );
 

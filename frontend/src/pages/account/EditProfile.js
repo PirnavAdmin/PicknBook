@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../contexts/UserContext";
 import { updateAccountProfile } from "../../services/accountProfileService";
 import "../../STYLES/editProfile.css";
-
+ 
 const EditProfileCard = () => {
   const { userData, updateUserData } = useContext(UserContext);
   const navigate = useNavigate();
-
+ 
   const [formData, setFormData] = useState({
     firstName: userData.firstName || "",
     lastName: userData.lastName || "",
@@ -16,18 +16,18 @@ const EditProfileCard = () => {
     mobile: userData.mobile || "",
     profileImage: userData.profileImage || null,
   });
-
+ 
   const [errors, setErrors] = useState({});
   const [previewUrl, setPreviewUrl] = useState(userData.profileImage || null);
   const [statusMessage, setStatusMessage] = useState("");
-
+ 
   const fields = [
     { id: "firstName", label: "First Name", type: "text", placeholder: "Enter first name" },
     { id: "lastName", label: "Last name", type: "text", placeholder: "Enter last name" },
     { id: "email", label: "Email ID", type: "email", placeholder: "example@gmail.com" },
     { id: "mobile", label: "Mobile No", type: "text", placeholder: "Enter mobile number" },
   ];
-
+ 
   const validate = () => {
     let tempErrors = {};
     if (!formData.firstName) tempErrors.firstName = "First name is required";
@@ -45,13 +45,13 @@ const EditProfileCard = () => {
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
-
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
   };
-
+ 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -59,14 +59,14 @@ const EditProfileCard = () => {
       setPreviewUrl(URL.createObjectURL(file));
     }
   };
-
+ 
   const handleResetImage = () => {
     setFormData((prev) => ({ ...prev, profileImage: null }));
     setPreviewUrl(null);
     const fileInput = document.getElementById("fileInput");
     if (fileInput) fileInput.value = "";
   };
-
+ 
   const handleSubmit = async () => {
     if (validate()) {
       try {
@@ -78,9 +78,9 @@ const EditProfileCard = () => {
         if (formData.profileImage instanceof File) {
           payload.append("profileImage", formData.profileImage);
         }
-
+ 
         const updatedProfile = await updateAccountProfile(payload);
-        
+       
         updateUserData({
           firstName: updatedProfile.firstName,
           lastName: updatedProfile.lastName,
@@ -88,7 +88,7 @@ const EditProfileCard = () => {
           mobile: updatedProfile.phoneNumber,
           profileImage: updatedProfile.profileImageUrl,
         });
-
+ 
         navigate("/dashboard/my-account");
       } catch (err) {
         setStatusMessage("Failed to update profile.");
@@ -97,16 +97,26 @@ const EditProfileCard = () => {
       setStatusMessage("");
     }
   };
-
+ 
   return (
     <div className="edit-profile-page">
       <div className="edit-profile-card">
-        <div className="edit-profile-header-line">
-          <h2 className="edit-profile-title">
-            Edit <span>Profile</span>
-          </h2>
+        <div className="edit-profile-heading-row">
+          <div className="edit-profile-header-line">
+            <h2 className="edit-profile-title">
+              Edit <span>Profile</span>
+            </h2>
+          </div>
+          <button
+            type="button"
+            className="edit-profile-back-btn"
+            onClick={() => navigate("/dashboard/my-account")}
+          >
+            <span aria-hidden="true">&larr;</span>
+            <span>Back</span>
+          </button>
         </div>
-
+ 
         <div className="edit-profile-grid">
           {fields.map((field) => (
             <div key={field.id}>
@@ -123,14 +133,14 @@ const EditProfileCard = () => {
             </div>
           ))}
         </div>
-
+ 
         <div className="edit-profile-submit-row">
           <button type="button" className="edit-profile-submit-btn" onClick={handleSubmit}>
             Submit
           </button>
           {statusMessage && <div className="edit-profile-success">{statusMessage}</div>}
         </div>
-
+ 
         <div className="edit-profile-image-section">
           <div className="edit-profile-image-tag">Profile Image</div>
           <div className="edit-profile-file-input-box">
@@ -160,5 +170,7 @@ const EditProfileCard = () => {
     </div>
   );
 };
-
+ 
 export default EditProfileCard;
+ 
+ 

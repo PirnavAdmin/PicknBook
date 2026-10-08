@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export default function AdminPagination({
   currentPage,
@@ -16,7 +16,17 @@ export default function AdminPagination({
 }) {
   const activePage = typeof currentPage === "number" ? currentPage : (typeof page === "number" ? page : 1);
   const activeTotal = typeof totalItems === "number" ? totalItems : (typeof total === "number" ? total : 0);
-  const activeItemsPerPage = Number(itemsPerPage || pageSize || 20);
+  
+  const initialSize = Number(itemsPerPage || pageSize || 10);
+  const [internalSize, setInternalSize] = useState(initialSize);
+
+  useEffect(() => {
+    if (itemsPerPage || pageSize) {
+      setInternalSize(Number(itemsPerPage || pageSize));
+    }
+  }, [itemsPerPage, pageSize]);
+
+  const activeItemsPerPage = internalSize || 10;
 
   const totalPages = Math.ceil(activeTotal / activeItemsPerPage);
 
@@ -53,6 +63,7 @@ export default function AdminPagination({
 
   const handleSizeChange = (e) => {
     const newSize = Number(e.target.value);
+    setInternalSize(newSize);
     if (onItemsPerPageChange) {
       onItemsPerPageChange(newSize);
     }

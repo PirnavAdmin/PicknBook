@@ -1235,7 +1235,6 @@ body .menu-list-add-btn:hover {
    CLOSE / CANCEL / WRONG OPTION BUTTON STYLING (Decreased Text Size & #A51C49 Hover)
    ══════════════════════════════════════════════════════════════════════════ */
 .navy-close-btn,
-.admin-view-close-btn,
 .close-btn,
 .close-x,
 .admin-modal-close,
@@ -1258,7 +1257,6 @@ body .navy-close-btn {
 }
 
 .navy-close-btn:hover,
-.admin-view-close-btn:hover,
 .close-btn:hover,
 .close-x:hover,
 .admin-modal-close:hover,
@@ -1270,6 +1268,39 @@ body .navy-close-btn:hover {
   border-color: #A51C49 !important;
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(165, 28, 73, 0.3) !important;
+}
+
+/* Boxed Theme Red Close Button for Detail View Popups */
+.admin-view-close-btn,
+button.admin-view-close-btn,
+.admin-view-header button.admin-view-close-btn,
+.admin-booking-page .admin-view-close-btn {
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 8px 22px !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.35) !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  margin-left: auto !important;
+}
+
+.admin-view-close-btn:hover,
+button.admin-view-close-btn:hover,
+.admin-view-header button.admin-view-close-btn:hover,
+.admin-booking-page .admin-view-close-btn:hover {
+  background: #851237 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(133, 18, 55, 0.45) !important;
+  transform: translateY(-1px) !important;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

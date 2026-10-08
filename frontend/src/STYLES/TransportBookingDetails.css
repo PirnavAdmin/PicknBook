@@ -1,0 +1,132 @@
+/* Shared Bus/Flight details treatment, scoped away from Hotel and other modals. */
+.ops-modal-backdrop.transport-booking-details {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+.transport-booking-details.booking-details-scrollbar > .ops-modal {
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  border-radius: 16px;
+  background: #ffffff !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+.transport-booking-details .ops-modal > header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  flex-shrink: 0;
+  border-radius: 16px 16px 0 0;
+}
+.transport-booking-details .ops-modal > header h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.transport-booking-details .ops-modal > header button {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.transport-booking-details .ops-modal > header button:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+.transport-booking-details .booking-details-body {
+  padding: 24px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.transport-booking-details .ops-modal-grid {
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+.transport-booking-details .ops-modal-grid > div {
+  min-width: 0;
+  min-height: 74px;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6px;
+}
+.transport-booking-details .ops-modal-grid > div > span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #7c3f2b !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bus-booking-status-page .transport-booking-details .ops-modal-grid > div > span,
+.customer-flight-bookings .transport-booking-details .ops-modal-grid > div > span {
+  color: #ff0000 !important;
+}
+.customer-flight-bookings .transport-booking-details .ops-modal > header {
+  position: relative;
+  inset: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  gap: 12px;
+  padding: 18px 24px;
+  min-width: 0;
+}
+.customer-flight-bookings .transport-booking-details .ops-modal > header h3 {
+  position: static;
+  margin: 0;
+  min-width: 0;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.customer-flight-bookings .transport-booking-details .ops-modal > header button {
+  position: static;
+  flex-shrink: 0;
+  margin: 0;
+}
+.transport-booking-details .ops-modal-grid > div > strong {
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  overflow-wrap: anywhere;
+}
+/* Match Hotel's label-above-value structure without changing modal geometry. */
+:is(.customer-flight-bookings, .bus-booking-status-page) .transport-booking-details .ops-modal-grid > div {
+  min-height: 0;
+  padding: 0;
+  border: none !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  gap: 6px;
+}
+:is(.customer-flight-bookings, .bus-booking-status-page) .transport-booking-details .ops-modal-grid > div > strong {
+  display: block;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+@media (max-width: 640px) {
+  .transport-booking-details .ops-modal-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+}

@@ -52,32 +52,67 @@ export function formatCurrency(value) {
 
 export function formatDateTime(value) {
   if (!value) return "--";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  const hh = String(date.getHours()).padStart(2, "0");
-  const min = String(date.getMinutes()).padStart(2, "0");
-  return `${dd}-${mm}-${yyyy}, ${hh}:${min}`;
+  try {
+    let str = String(value).trim();
+    if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+      str = str.replace(" ", "T") + "Z";
+    }
+    const date = new Date(str);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    const dd = date.toLocaleDateString("en-GB", { day: "2-digit", timeZone: "Asia/Kolkata" });
+    const mm = date.toLocaleDateString("en-GB", { month: "2-digit", timeZone: "Asia/Kolkata" });
+    const yyyy = date.toLocaleDateString("en-GB", { year: "numeric", timeZone: "Asia/Kolkata" });
+    const timeStr = date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" }).toLowerCase();
+    return `${dd}-${mm}-${yyyy}, ${timeStr}`;
+  } catch {
+    return String(value);
+  }
 }
 
 export function formatCouponDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "--";
-  }
+  if (!value) return "--";
+  try {
+    let str = String(value).trim();
+    if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+      str = str.replace(" ", "T") + "Z";
+    }
+    const date = new Date(str);
+    if (Number.isNaN(date.getTime())) return String(value);
 
-  return DATE_ONLY_FORMATTER.format(date);
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Kolkata",
+    }).format(date);
+  } catch {
+    return String(value);
+  }
 }
 
 export function formatCouponDateTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "--";
-  }
+  if (!value) return "--";
+  try {
+    let str = String(value).trim();
+    if (str.includes(":") && !str.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(str)) {
+      str = str.replace(" ", "T") + "Z";
+    }
+    const date = new Date(str);
+    if (Number.isNaN(date.getTime())) return String(value);
 
-  return DATE_TIME_FORMATTER.format(date);
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Kolkata",
+    }).format(date).toLowerCase();
+  } catch {
+    return String(value);
+  }
 }
 
 export function csvCell(value) {
@@ -337,76 +372,23 @@ export function RefundAmountDisplay({ amount, adminAmount, refundStatus }) {
  * - Completed / Refunded -> "View Details"
  */
 export function RefundActionButton({ refundStatus, refundAmount, onClick, disabled = false }) {
-  const lower = String(refundStatus || "").toLowerCase();
-  const amount = Number(refundAmount) || 0;
-
-  let btnText = "View";
-  let btnStyle = {
+  const btnStyle = {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "4px",
-    padding: "3px 10px",
-    fontSize: "0.74rem",
+    padding: "5px 14px",
+    fontSize: "0.78rem",
     fontWeight: "600",
     borderRadius: "6px",
     border: "none",
+    backgroundColor: "#d97706",
+    color: "#ffffff",
+    boxShadow: "0 2px 4px rgba(217,119,6,0.2)",
     cursor: "pointer",
     transition: "all 0.15s ease-in-out",
   };
 
-  if (lower.includes("failed")) {
-    btnText = "Retry Payout";
-    btnStyle = {
-      ...btnStyle,
-      backgroundColor: "#dc2626",
-      color: "#ffffff",
-      boxShadow: "0 2px 4px rgba(220,38,38,0.2)",
-    };
-    return (
-      <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
-        <RefreshCw size={11} /> {btnText}
-      </button>
-    );
-  }
-
-  if (lower.includes("process")) {
-    btnText = "Refresh Status";
-    btnStyle = {
-      ...btnStyle,
-      backgroundColor: "#0284c7",
-      color: "#ffffff",
-      boxShadow: "0 2px 4px rgba(2,132,199,0.2)",
-    };
-    return (
-      <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
-        <RefreshCw size={11} className="spin-animation" style={{ animation: "spin 1.5s linear infinite" }} /> {btnText}
-      </button>
-    );
-  }
-
-  if (amount > 0 && (lower.includes("pending") || !lower)) {
-    btnText = "Process Refund";
-    btnStyle = {
-      ...btnStyle,
-      backgroundColor: "#d97706",
-      color: "#ffffff",
-      boxShadow: "0 2px 4px rgba(217,119,6,0.2)",
-    };
-    return (
-      <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
-        {btnText}
-      </button>
-    );
-  }
-
-  // Default view button
-  btnStyle = {
-    ...btnStyle,
-    backgroundColor: "#f1f5f9",
-    color: "#334155",
-    border: "1px solid #cbd5e1",
-  };
   return (
     <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
       View

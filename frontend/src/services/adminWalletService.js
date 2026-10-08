@@ -107,9 +107,10 @@ export const adminWalletService = {
     });
   },
 
-  // 6. Reset Wallet Balance with Audit Trail (POST /api/Customers/{userId}/wallet/reset)
-  resetWalletBalance: async (userId) => {
-    return adminWalletRequest(`/api/Customers/${userId}/wallet/reset`, {
+  // 6. Reset Wallet Balance with Audit Trail (POST /api/customers/{userId}/wallet/reset)
+  resetWalletBalance: async (userId, referenceId = "") => {
+    const query = referenceId ? `?referenceId=${encodeURIComponent(referenceId)}` : "";
+    return adminWalletRequest(`/api/customers/${userId}/wallet/reset${query}`, {
       method: "POST",
     });
   },

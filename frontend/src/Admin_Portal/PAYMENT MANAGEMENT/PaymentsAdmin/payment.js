@@ -218,13 +218,15 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
         const data = res?.data || res || {};
         if (isMounted) {
           setMetrics({
-            totalRevenue: Number(data.totalRevenue || 9200),
-            totalPayments: Number(data.totalPayments || 3),
-            successfulPayments: Number(data.successfulPayments || 3),
+            totalRevenue: Number(data.totalRevenue || 0),
+            totalPayments: Number(data.totalPayments || 0),
+            successfulPayments: Number(data.successfulPayments || 0),
             failedPayments: Number(data.failedPayments || 0),
             pendingPayments: Number(data.pendingPayments || 0),
             pendingRefunds: Number(data.pendingRefunds || 0),
             completedRefunds: Number(data.completedRefunds || 0),
+            supplierConfirmed: Number(data.supplierConfirmed || 0),
+            supplierFailed: Number(data.supplierFailed || 0),
           });
         }
       } catch (err) {
@@ -475,6 +477,20 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
         <span>{raw || "PENDING"}</span>
       </span>
     );
+  };
+
+  const renderCanonicalBadge = (item) => {
+    const canonicalKey = item?.canonicalStatus || item?.lifecycleHierarchy?.canonicalStatus;
+    const label = item?.canonicalStatusLabel || item?.lifecycleHierarchy?.canonicalStatusLabel;
+
+    if (canonicalKey) {
+      return (
+        <span className={`payment-canonical-badge ${canonicalKey}`} title={canonicalKey}>
+          <span>{label || canonicalKey}</span>
+        </span>
+      );
+    }
+    return renderStatusBadge(item?.status || item);
   };
 
   return (
@@ -883,7 +899,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                           {p.paymentMethod ? String(p.paymentMethod).toUpperCase() : "--"}
                         </span>
                       </td>
-                      <td className="status-col">{renderStatusBadge(p.status)}</td>
+                      <td className="status-col">{renderCanonicalBadge(p)}</td>
                       <td>
                         <span
                           title={refundText}
@@ -967,7 +983,16 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
             currentPage={currentPage}
             totalItems={totalRecords}
             itemsPerPage={pageSize}
+            pageSize={pageSize}
             onPageChange={setCurrentPage}
+            onItemsPerPageChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
             itemName="payments"
           />
         )}
@@ -1021,7 +1046,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
             <div style={{ padding: "20px", flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
-                {renderStatusBadge(viewingPayment.status)}
+                {renderCanonicalBadge(viewingPayment)}
                 <span style={{ background: "#fdf2f8", color: "#A41B48", padding: "4px 12px", borderRadius: "100px", fontWeight: "700", fontSize: "11px", border: "1px solid rgba(165, 28, 73, 0.15)" }}>
                   Ref: {viewingPayment.paymentReference || "--"}
                 </span>
@@ -1040,6 +1065,211 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                 <p style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>Loading full payment breakdown...</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+                  {/* 🟢 REFUND SUCCESSFUL MESSAGE BANNER */}
+                  {((viewingPayment.refundStatus || "").toUpperCase() === "COMPLETED" ||
+                    (viewingPayment.refundStatus || "").toUpperCase() === "REFUND_COMPLETED" ||
+                    viewingPayment.canonicalStatus === "CANCELLED_AND_REFUNDED" ||
+                    viewingPayment.canonicalStatus === "BOOKING_FAILED_REFUNDED" ||
+                    viewingPayment.lifecycleHierarchy?.stages?.[4]?.status === "COMPLETED") && (
+                    <div className="refund-success-banner">
+                      <div className="refund-success-icon">
+                        <CheckCircle2 size={22} />
+                      </div>
+                      <div className="refund-success-content">
+                        <span className="refund-success-title">Refund Successful & Settled</span>
+                        <span className="refund-success-desc">
+                          {formatCurrency(viewingPayment.customerRefundAmount || viewingPayment.finalPayableAmount)} has been successfully credited back to the customer. (Refund ID: {viewingPayment.refundId || "REF-" + viewingPayment.id})
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 📊 VISUAL PROCESS FLOWCHART DIAGRAM (Shown ONLY when Cancelled, Failed, or in Refund Flow) */}
+                  {(() => {
+                    const stages = viewingPayment.lifecycleHierarchy?.stages || [];
+                    
+                    const isCancelled =
+                      viewingPayment.isCancelled ||
+                      String(viewingPayment.canonicalStatus || "").includes("CANCELLED") ||
+                      String(viewingPayment.canonicalStatus || "").includes("REFUND") ||
+                      String(viewingPayment.canonicalStatus || "").includes("FAILED") ||
+                      (viewingPayment.refundStatus &&
+                        viewingPayment.refundStatus !== "NONE" &&
+                        viewingPayment.refundStatus !== "NotRequired" &&
+                        viewingPayment.refundStatus !== "N/A") ||
+                      viewingPayment.status === "FAILED" ||
+                      viewingPayment.fulfillmentStatus === "Failed_SupplierError" ||
+                      viewingPayment.srdvBookingStatus === "Failed" ||
+                      stages[4]?.status === "IN_PROGRESS" ||
+                      stages[4]?.status === "COMPLETED";
+
+                    // In case of normal booking success (no cancellation/failure/refund), do NOT show chart
+                    if (!isCancelled) {
+                      return null;
+                    }
+
+                    const isPaymentCaptured =
+                      viewingPayment.status === "SUCCESS" ||
+                      stages[0]?.status === "COMPLETED" ||
+                      Number(viewingPayment.gatewayPaidAmount || viewingPayment.finalPayableAmount) > 0;
+
+                    const isTicketBooked =
+                      viewingPayment.canonicalStatus === "BOOKING_CONFIRMED" ||
+                      Boolean(viewingPayment.pnr) ||
+                      stages[2]?.status === "COMPLETED" ||
+                      viewingPayment.srdvBookingStatus === "Confirmed";
+
+                    const isRefundCompleted =
+                      (viewingPayment.refundStatus || "").toUpperCase() === "COMPLETED" ||
+                      (viewingPayment.refundStatus || "").toUpperCase() === "REFUND_COMPLETED" ||
+                      viewingPayment.canonicalStatus === "CANCELLED_AND_REFUNDED" ||
+                      viewingPayment.canonicalStatus === "BOOKING_FAILED_REFUNDED" ||
+                      stages[4]?.status === "COMPLETED";
+
+                    return (
+                      <div className="lifecycle-flowchart-card" style={{ border: "1.5px solid #cbd5e1", background: "#ffffff", padding: "18px" }}>
+                        <div className="lifecycle-flowchart-header" style={{ marginBottom: "6px" }}>
+                          <span className="lifecycle-flowchart-title" style={{ fontSize: "13px", fontWeight: "800", color: "#A51C49" }}>
+                            <CreditCard size={16} />
+                            Cancellation & Refund Lifecycle Flowchart
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: "800",
+                              padding: "3px 10px",
+                              borderRadius: "100px",
+                              background: isRefundCompleted ? "#d1fae5" : "#fff7ed",
+                              color: isRefundCompleted ? "#047857" : "#c2410c",
+                              border: `1px solid ${isRefundCompleted ? "#a7f3d0" : "#ffedd5"}`,
+                            }}
+                          >
+                            {isRefundCompleted ? "STATUS: REFUND SETTLED" : "STATUS: CANCELLATION / REFUND IN PROGRESS"}
+                          </span>
+                        </div>
+
+                        <div className="flowchart-nodes-wrapper" style={{ paddingTop: "14px", paddingBottom: "10px" }}>
+                          {/* Node 1: Payment Authorized */}
+                          <div className={`flowchart-node-item ${isPaymentCaptured ? "booked" : "pending"}`}>
+                            <div className="flowchart-node-circle" style={{ width: "44px", height: "44px" }}>
+                              <CheckCircle2 size={22} />
+                            </div>
+                            <span className="flowchart-node-label" style={{ fontWeight: "700", fontSize: "11.5px", marginTop: "8px" }}>
+                              1. Payment
+                            </span>
+                            <span className="flowchart-node-status" style={{ fontSize: "10.5px", color: isPaymentCaptured ? "#047857" : "#64748b", fontWeight: "600" }}>
+                              {isPaymentCaptured ? "Captured (Green)" : "Pending"}
+                            </span>
+                            <div className={`flowchart-connector-line ${isPaymentCaptured ? "active-green" : ""}`} style={{ top: "22px" }} />
+                          </div>
+
+                          {/* Node 2: Supplier Booking & Ticket */}
+                          <div className={`flowchart-node-item ${isTicketBooked ? "booked" : stages[2]?.status === "FAILED" || viewingPayment.fulfillmentStatus === "Failed_SupplierError" ? "failed" : "pending"}`}>
+                            <div className="flowchart-node-circle" style={{ width: "44px", height: "44px" }}>
+                              {isTicketBooked ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
+                            </div>
+                            <span className="flowchart-node-label" style={{ fontWeight: "700", fontSize: "11.5px", marginTop: "8px", color: isTicketBooked ? "#047857" : "#dc2626" }}>
+                              2. Ticket Status
+                            </span>
+                            <span className="flowchart-node-status" style={{ fontSize: "10.5px", color: isTicketBooked ? "#047857" : "#dc2626", fontWeight: "700" }}>
+                              {isTicketBooked ? "PNR Issued (Green)" : "Supplier Failed"}
+                            </span>
+                            <div className={`flowchart-connector-line ${isTicketBooked ? "active-green" : "active-orange"}`} style={{ top: "22px" }} />
+                          </div>
+
+                          {/* Node 3: Cancellation Flow */}
+                          <div className="flowchart-node-item cancelled">
+                            <div className="flowchart-node-circle" style={{ width: "44px", height: "44px" }}>
+                              <RefreshCw size={22} className="animate-spin" />
+                            </div>
+                            <span className="flowchart-node-label" style={{ fontWeight: "700", fontSize: "11.5px", marginTop: "8px", color: "#c2410c" }}>
+                              3. Cancellation
+                            </span>
+                            <span className="flowchart-node-status" style={{ fontSize: "10.5px", color: "#c2410c", fontWeight: "700" }}>
+                              Processing Refund
+                            </span>
+                            <div className={`flowchart-connector-line ${isRefundCompleted ? "active-green" : "active-orange"}`} style={{ top: "22px" }} />
+                          </div>
+
+                          {/* Node 4: Refund Settlement */}
+                          <div className={`flowchart-node-item ${isRefundCompleted ? "refund_completed" : "in_progress"}`}>
+                            <div className="flowchart-node-circle" style={{ width: "44px", height: "44px" }}>
+                              {isRefundCompleted ? <CheckCircle2 size={22} /> : <RotateCcw size={22} />}
+                            </div>
+                            <span className="flowchart-node-label" style={{ fontWeight: "700", fontSize: "11.5px", marginTop: "8px", color: isRefundCompleted ? "#047857" : "#1d4ed8" }}>
+                              4. Refund Status
+                            </span>
+                            <span className="flowchart-node-status" style={{ fontSize: "10.5px", color: isRefundCompleted ? "#047857" : "#1d4ed8", fontWeight: "700" }}>
+                              {isRefundCompleted ? "Refund Successful" : "Processing Gateway"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* 5-Stage Lifecycle Hierarchy Pipeline */}
+                  {viewingPayment.lifecycleHierarchy?.stages?.length > 0 && (
+                    <div className="lifecycle-hierarchy-container">
+                      <div className="lifecycle-hierarchy-header">
+                        <h4>
+                          <SlidersHorizontal size={14} />
+                          5-Stage Lifecycle Hierarchy Pipeline
+                        </h4>
+                        {viewingPayment.lifecycleHierarchy.nextActionRequired && (
+                          <div className="lifecycle-next-action">
+                            Next Action: {viewingPayment.lifecycleHierarchy.nextActionRequired}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="lifecycle-stages-stepper">
+                        {viewingPayment.lifecycleHierarchy.stages.map((stg) => {
+                          const statusClass = (stg.status || "PENDING").toUpperCase();
+                          return (
+                            <div key={stg.stageIndex ?? stg.key} className={`lifecycle-stage-node ${statusClass}`}>
+                              <div className="node-icon-wrap">
+                                {statusClass === "COMPLETED" ? (
+                                  <CheckCircle2 size={16} />
+                                ) : statusClass === "IN_PROGRESS" ? (
+                                  <RefreshCw size={16} className="animate-spin" />
+                                ) : statusClass === "WARNING" ? (
+                                  <AlertCircle size={16} />
+                                ) : statusClass === "FAILED" ? (
+                                  <XCircle size={16} />
+                                ) : statusClass === "SKIPPED" ? (
+                                  <Info size={16} />
+                                ) : (
+                                  <Clock size={16} />
+                                )}
+                              </div>
+                              <div className="node-content">
+                                <div className="node-title-row">
+                                  <span className="node-name">
+                                    Stage {stg.stageIndex}: {stg.name}
+                                  </span>
+                                  {stg.timestamp && (
+                                    <span className="node-time">{formatCouponDateTime(stg.timestamp)}</span>
+                                  )}
+                                </div>
+                                <div className="node-summary">{stg.summary || "No details available."}</div>
+                                {stg.meta && Object.keys(stg.meta).length > 0 && (
+                                  <div className="node-meta-grid">
+                                    {Object.entries(stg.meta).map(([mk, mv]) => (
+                                      <span key={mk} className="node-meta-item">
+                                        {mk}: {typeof mv === "object" ? JSON.stringify(mv) : String(mv)}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Identifiers Section */}
                   <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
@@ -1197,10 +1427,95 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                     </div>
                   </div>
 
-                  {(viewingPayment.failureReason || viewingPayment.lastError) && (
+                  {(viewingPayment.failureReason || viewingPayment.lastError || viewingPayment.supplierError) && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px", background: "#fef2f2", padding: "12px", borderRadius: "8px", border: "1px solid #fecaca" }}>
-                      <span style={{ fontSize: "10px", color: "#dc2626", fontWeight: "700" }}>GATEWAY / SYSTEM FAILURE REASON</span>
-                      <span style={{ fontSize: "12px", color: "#991b1b", fontFamily: "monospace", wordBreak: "break-all" }}>{viewingPayment.failureReason || viewingPayment.lastError}</span>
+                      <span style={{ fontSize: "10px", color: "#dc2626", fontWeight: "700" }}>GATEWAY / SUPPLIER FAILURE REASON</span>
+                      <span style={{ fontSize: "12px", color: "#991b1b", fontFamily: "monospace", wordBreak: "break-all" }}>
+                        {viewingPayment.failureReason || viewingPayment.lastError || viewingPayment.supplierError}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Supplier Fulfillment Breakdown */}
+                  {viewingPayment.supplierFulfillment && (
+                    <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
+                        SRDV Supplier Fulfillment Audit
+                      </h4>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px" }}>
+                        <div>
+                          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>SUPPLIER REF</span>
+                          <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>{viewingPayment.supplierFulfillment.supplierReference || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>SUPPLIER STATUS</span>
+                          <span style={{ fontSize: "12px", color: viewingPayment.supplierFulfillment.supplierBookingStatus === "Failed" ? "#dc2626" : "#16a34a", fontWeight: "700" }}>
+                            {viewingPayment.supplierFulfillment.supplierBookingStatus || viewingPayment.srdvBookingStatus || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>RESERVATION ID</span>
+                          <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>{viewingPayment.supplierFulfillment.reservationId || viewingPayment.bookingId || "N/A"}</span>
+                        </div>
+                        {viewingPayment.supplierFulfillment.lastError && (
+                          <div style={{ gridColumn: "span 3", background: "#fef2f2", padding: "6px 10px", borderRadius: "4px" }}>
+                            <span style={{ fontSize: "10px", color: "#dc2626", fontWeight: "700", display: "block" }}>LAST ERROR</span>
+                            <span style={{ fontSize: "11px", color: "#991b1b", fontFamily: "monospace" }}>{viewingPayment.supplierFulfillment.lastError}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Booking Details Breakdown */}
+                  {viewingPayment.bookingDetails && (
+                    <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
+                        Reservation & Booking Meta
+                      </h4>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "12px" }}>
+                        <div>
+                          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>PNR / TICKET NUMBER</span>
+                          <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "700", fontFamily: "monospace" }}>{viewingPayment.bookingDetails.pnr || viewingPayment.pnr || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>BOOKING REFERENCE</span>
+                          <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>{viewingPayment.bookingDetails.bookingReference || viewingPayment.bookingReference || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>TRAVEL DATE</span>
+                          <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>{viewingPayment.bookingDetails.travelDate || "N/A"}</span>
+                        </div>
+                        {viewingPayment.bookingDetails.title && (
+                          <div style={{ gridColumn: "span 3" }}>
+                            <span style={{ fontSize: "10px", color: "#64748b", fontWeight: "700", display: "block" }}>TRIP / ROUTE SUMMARY</span>
+                            <span style={{ fontSize: "12px", color: "#1e293b", fontWeight: "600" }}>{viewingPayment.bookingDetails.title}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Chronological Timeline Audit Stream */}
+                  {viewingPayment.timeline?.length > 0 && (
+                    <div style={{ background: "#ffffff", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+                      <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
+                        Chronological Event Timeline
+                      </h4>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {viewingPayment.timeline.map((ev, i) => (
+                          <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start", paddingBottom: "8px", borderBottom: i < viewingPayment.timeline.length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: ev.status === "COMPLETED" ? "#10b981" : ev.status === "FAILED" ? "#ef4444" : "#3b82f6", marginTop: "5px", flexShrink: 0 }} />
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: "11.5px", fontWeight: "700", color: "#1e293b" }}>{ev.title || ev.stage}</span>
+                                <span style={{ fontSize: "10px", color: "#64748b" }}>{formatCouponDateTime(ev.timestamp)}</span>
+                              </div>
+                              {ev.description && <div style={{ fontSize: "11px", color: "#475569", marginTop: "2px" }}>{ev.description}</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 

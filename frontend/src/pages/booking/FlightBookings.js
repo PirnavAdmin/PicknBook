@@ -1,4 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+/* eslint-disable */
+import BookingStatusTabs from "../../components/booking/BookingStatusTabs";
+import { bookingStatusOptions, bookingStatusLabel, bookingStatusClass, bookingCategory } from "../../utils/bookingStatus";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Eye,
   Loader2,
@@ -18,8 +21,16 @@ import {
   getCancellationCharges,
 } from "../../services/flightBookingService";
 import "../../STYLES/FlightOpsDashboard.css";
+import "../../STYLES/BookingDetailsScrollbar.css";
+import "../../STYLES/BookingTableRows.css";
+import "../../STYLES/TransportBookingDetails.css";
 import CancellationModal from "./CancellationModal";
+import BookingPagination, { paginateBookings } from "../../components/booking/BookingPagination";
+import BookingLifecycle from "../../components/booking/BookingLifecycle";
+import { matchesFlightFilters } from "../../utils/flightBookingFilters";
 import { formatDateTime } from "../../utils/apiDateFormat";
+
+const emptyFlightFilters = () => ({ passengerPhone: "", status: "All", bookingReference: "", passengerName: "", fromCity: "", toCity: "", departureDate: "" });
 
 function formatCurrency(value) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -62,33 +73,11 @@ function formatBookedAt(dateStr) {
   }
 }
 
-function getStatusClassName(status) {
-  if (status === "Cancelled") {
-    return "danger";
-  }
-
-  if (status === "Booked") {
-    return "success";
-  }
-
-  if (status === "Pending") {
-    return "warning";
-  }
-
-  return "default";
-}
-
 export default function FlightBookings() {
+  const [page, setPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    passengerPhone: "",
-    status: "All",
-    bookingReference: "",
-    passengerName: "",
-    fromCity: "",
-    toCity: "",
-    departureDate: "",
-  });
+  const [filters, setFilters] = useState(emptyFlightFilters);
+  const [appliedFilters, setAppliedFilters] = useState(emptyFlightFilters);
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -106,76 +95,32 @@ export default function FlightBookings() {
   const [isFetchingCharges, setIsFetchingCharges] = useState(false);
   const [cancelCharges, setCancelCharges] = useState(null);
 
+  const bookingRequestId = useRef(0);
   const fetchBookings = async () => {
+    const requestId = ++bookingRequestId.current;
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      const result = await listFlightBookings({
-        passengerPhone: filters.passengerPhone || undefined,
-        status: filters.status === "All" ? undefined : filters.status,
-      });
+      const result = await listFlightBookings({ status: "all" });
+      if (requestId !== bookingRequestId.current) return;
       setBookings(Array.isArray(result) ? result : []);
     } catch (error) {
+      if (requestId !== bookingRequestId.current) return;
       setBookings([]);
       setErrorMessage(error.message || "Unable to load flight bookings.");
     } finally {
-      setIsLoading(false);
+      if (requestId === bookingRequestId.current) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchBookings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { bookingRequestId.current += 1; };
   }, []);
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter((booking) => {
-      if (
-        filters.bookingReference &&
-        !String(booking.bookingReference || "")
-          .toLowerCase()
-          .includes(filters.bookingReference.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.passengerName &&
-        !String(booking.passengerName || "")
-          .toLowerCase()
-          .includes(filters.passengerName.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.fromCity &&
-        !String(booking.fromCity || "")
-          .toLowerCase()
-          .includes(filters.fromCity.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.toCity &&
-        !String(booking.toCity || "")
-          .toLowerCase()
-          .includes(filters.toCity.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (filters.departureDate) {
-        const departureDate = String(booking.departureTimeUtc || "").slice(0, 10);
-        if (departureDate !== filters.departureDate) {
-          return false;
-        }
-      }
-
-      return true;
-    }).sort((a, b) => {
+    return bookings.filter((booking) => matchesFlightFilters(booking, appliedFilters)).sort((a, b) => {
       if (typeof a._localRank === "number" && typeof b._localRank === "number") {
         if (a._localRank !== b._localRank) return a._localRank - b._localRank;
       }
@@ -211,19 +156,16 @@ export default function FlightBookings() {
 
       return 0;
     });
-  }, [bookings, filters]);
+  }, [bookings, appliedFilters]);
+
+  const paginated = paginateBookings(filteredBookings, page);
+  useEffect(() => { setPage(1); }, [appliedFilters]);
+  useEffect(() => { if (page !== paginated.currentPage) setPage(paginated.currentPage); }, [page, paginated.currentPage]);
 
   const handleReset = () => {
-    setFilters({
-      passengerPhone: "",
-      status: "All",
-      bookingReference: "",
-      passengerName: "",
-      fromCity: "",
-      toCity: "",
-      departureDate: "",
-    });
-    setErrorMessage("");
+    setPage(1);
+    setFilters(emptyFlightFilters());
+    setAppliedFilters(emptyFlightFilters());
   };
 
   const handleViewDetails = async (bookingItem) => {
@@ -233,7 +175,7 @@ export default function FlightBookings() {
     setErrorMessage("");
 
     try {
-      const detail = await getFlightBookingById(bookingId);
+      const detail = targetBooking || await getFlightBookingById(bookingId);
       setSelectedBooking(detail || targetBooking);
       setSelectedLegIndexes([]);
       setSelectedPassengerIds([]);
@@ -326,7 +268,7 @@ export default function FlightBookings() {
   };
 
   return (
-    <div className="flight-ops-page">
+    <div className="flight-ops-page customer-flight-bookings">
       <header className="flight-ops-header">
         <div>
           <h1>Flight Bookings</h1>
@@ -392,119 +334,36 @@ export default function FlightBookings() {
         </div>
       )}
 
+      <BookingStatusTabs className="booking-status-tabs--bus-aligned" value={appliedFilters.status} onChange={(status) => { setFilters(previous => ({ ...previous, status })); setAppliedFilters(previous => ({ ...previous, status })); setPage(1); }} />
+
       {isFilterOpen && (
-        <section className="flight-ops-filters">
-          <label>
-            <span>Passenger Phone</span>
-            <input
-              type="text"
-              value={filters.passengerPhone}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  passengerPhone: event.target.value,
-                }))
-              }
-              placeholder="+91XXXXXXXXXX"
-            />
+        <form id="flight-booking-filters" className="flight-ops-filters flight-booking-filter-panel" onSubmit={(event) => { event.preventDefault(); setAppliedFilters({ ...filters }); setPage(1); }} aria-label="Flight booking filters">
+          <label><span>Passenger Phone</span>
+            <input type="text" value={filters.passengerPhone} onChange={(event) => setFilters((previous) => ({ ...previous, passengerPhone: event.target.value }))} placeholder="+91XXXXXXXXXX" />
           </label>
-
-          <label>
-            <span>Status</span>
-            <select
-              value={filters.status}
-              onChange={(event) =>
-                setFilters((previous) => ({ ...previous, status: event.target.value }))
-              }
-            >
-              <option value="All">All</option>
-              <option value="Booked">Booked</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
+          <label><span>Status</span>
+            <select value={filters.status} onChange={(event) => { const status = event.target.value; setFilters(previous => ({ ...previous, status })); setAppliedFilters(previous => ({ ...previous, status })); setPage(1); }}>{bookingStatusOptions.map((status) => <option key={status}>{status}</option>)}</select>
           </label>
-
-          <label>
-            <span>Booking Reference</span>
-            <input
-              type="text"
-              value={filters.bookingReference}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  bookingReference: event.target.value,
-                }))
-              }
-              placeholder="FL-2026..."
-            />
+          <label><span>Booking Reference</span>
+            <input type="text" value={filters.bookingReference} onChange={(event) => setFilters((previous) => ({ ...previous, bookingReference: event.target.value }))} placeholder="FL-2026..." />
           </label>
-
-          <label>
-            <span>Passenger Name</span>
-            <input
-              type="text"
-              value={filters.passengerName}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  passengerName: event.target.value,
-                }))
-              }
-              placeholder="Passenger name"
-            />
+          <label><span>Passenger Name</span>
+            <input type="text" value={filters.passengerName} onChange={(event) => setFilters((previous) => ({ ...previous, passengerName: event.target.value }))} placeholder="Passenger name" />
           </label>
-
-          <label>
-            <span>From City</span>
-            <input
-              type="text"
-              value={filters.fromCity}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  fromCity: event.target.value,
-                }))
-              }
-              placeholder="Hyderabad"
-            />
+          <label><span>From City</span>
+            <input type="text" value={filters.fromCity} onChange={(event) => setFilters((previous) => ({ ...previous, fromCity: event.target.value }))} placeholder="Hyderabad" />
           </label>
-
-          <label>
-            <span>To City</span>
-            <input
-              type="text"
-              value={filters.toCity}
-              onChange={(event) =>
-                setFilters((previous) => ({ ...previous, toCity: event.target.value }))
-              }
-              placeholder="Delhi"
-            />
+          <label><span>To City</span>
+            <input type="text" value={filters.toCity} onChange={(event) => setFilters((previous) => ({ ...previous, toCity: event.target.value }))} placeholder="Bangalore" />
           </label>
-
-          <label>
-            <span>Departure Date</span>
-            <input
-              type="date"
-              value={filters.departureDate}
-              onChange={(event) =>
-                setFilters((previous) => ({
-                  ...previous,
-                  departureDate: event.target.value,
-                }))
-              }
-            />
+          <label><span>Departure Date</span>
+            <input type="date" value={filters.departureDate} onChange={(event) => setFilters((previous) => ({ ...previous, departureDate: event.target.value }))} placeholder="mm/dd/yyyy" />
           </label>
-
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={fetchBookings}>
-              <Search size={14} />
-              <span>Search</span>
-            </button>
-            <button type="button" className="secondary" onClick={handleReset}>
-              <X size={14} />
-              <span>Clear</span>
-            </button>
+            <button type="submit" className="primary"><Search size={14} /><span>SEARCH</span></button>
+            <button type="button" className="secondary" onClick={handleReset}><X size={14} /><span>CLEAR</span></button>
           </div>
-        </section>
+        </form>
       )}
 
       <section className="flight-ops-table-wrap">
@@ -515,11 +374,11 @@ export default function FlightBookings() {
           </div>
         ) : filteredBookings.length === 0 ? (
           <div className="ops-empty">
-            <p>No flight bookings found for current filters.</p>
+            <p>No flight bookings found</p>
           </div>
         ) : (
           <div className="ops-table-scroll">
-            <table className="ops-table">
+            <table className="ops-table booking-table-rows">
               <thead>
                 <tr>
                   <th>BOOKING REF / DATE</th>
@@ -533,15 +392,16 @@ export default function FlightBookings() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings.map((booking) => {
+                {paginated.rows.map((booking) => {
                   const dep = formatSplitDeparture(booking.departureTimeUtc || booking.departureDate);
-                  const bookedAt = formatBookedAt(booking.createdAt || booking.createdAtUtc || booking.bookingDate || booking.bookedAt || booking.bookedAtUtc || booking.entryDate || booking.entryDateUtc);
-                  const totalFormatted = Number(booking.totalPriceInr || booking.totalAmount || 0).toLocaleString("en-IN");
+                  const bookedAt = formatBookedAt(booking.bookingTime ?? booking.bookedAtUtc ?? booking.createdAt ?? booking.createdAtUtc ?? booking.bookingDate ?? booking.bookedAt ?? booking.entryDate ?? booking.entryDateUtc);
+                  const totalFormatted = Number(booking.totalFare ?? booking.totalPriceInr ?? booking.totalAmount ?? 0).toLocaleString("en-IN");
                   return (
                   <tr key={booking.bookingId || booking.bookingReference}>
                     <td>
                       <strong>{booking.bookingReference}</strong>
-                      <small>ID: {booking.bookingId}</small>
+                      <small>ID: {booking.bookingId ?? "--"}</small>
+                      {booking.pnr && <small>PNR: {booking.pnr}</small>}
                       {bookedAt && <small>Booked: {bookedAt}</small>}
                     </td>
                     <td>
@@ -552,29 +412,32 @@ export default function FlightBookings() {
                       {booking.isMultiCity || (Array.isArray(booking.segments) && booking.segments.length > 1) ? (
                         <>
                           <strong style={{ color: "#0f172a" }}>
-                            {booking.segments && booking.segments.length > 0
+                            {booking.flightName || (booking.segments && booking.segments.length > 0
                               ? booking.segments.map(s => s.fromCity || s.sourceCode).join(" → ") + " → " + (booking.toCity || booking.segments[booking.segments.length - 1]?.toCity)
-                              : `${booking.fromCity} to ${booking.toCity}`}
+                              : `${booking.fromCity} to ${booking.toCity}`)}
                           </strong>
                           <small style={{ color: "#ff0000", fontWeight: 700, display: "block" }}>
-                            {booking.providerName || booking.airline || "Flight Service"} · Multi-City ({booking.segments?.length || 2} Legs)
+                            {booking.flightName || booking.airline || booking.providerName || "Flight"} · Multi-City ({booking.segments?.length || 2} Legs)
                           </small>
                         </>
                       ) : (
                         <>
                           <strong>
-                            {booking.fromCity} to {booking.toCity}
+                            {booking.flightName || `${booking.fromCity} to ${booking.toCity}`}
                           </strong>
-                          <small>{booking.providerName || booking.airline || "SRDV Flight"}</small>
+                          <small>{booking.airline || booking.providerName || "Flight"} {booking.airlineCode} {booking.flightNumber}</small>
+                          {booking.flightName && <small>{booking.fromCity} to {booking.toCity}</small>}
                         </>
                       )}
                     </td>
                     <td>
                       <strong>{dep.date}</strong>
                       {dep.time && <strong>{dep.time}</strong>}
+                      {booking.dates && <small>{booking.dates}</small>}
+                      {booking.arrivalTime && <small>Arrival: {formatDateTime(booking.arrivalTime)}</small>}
                     </td>
                     <td>
-                      <strong>{booking.seatsBooked || "1"}</strong>
+                      <strong>{booking.seatsBooked ?? "--"}</strong>
                       <small>{booking.travelClass || "Economy"}</small>
                     </td>
                     <td>
@@ -582,9 +445,10 @@ export default function FlightBookings() {
                       <strong>{totalFormatted}</strong>
                     </td>
                     <td>
-                      <span className={`status-badge ${getStatusClassName(booking.status)}`}>
-                        {booking.status === "Pending" ? "Processing" : (booking.status || "Booked")}
+                      <span className={`status-badge ${bookingStatusClass(booking)}`}>
+                        {bookingStatusLabel(booking)}
                       </span>
+                      {booking.bookingStatus === "Payment Failed" && booking.pendingDays != null && <small>Payment session expired after {booking.pendingDays} day(s)</small>}
                     </td>
                     <td>
                       <div className="table-actions">
@@ -608,7 +472,7 @@ export default function FlightBookings() {
                             title="Cancel flight booking"
                             onClick={() => triggerCancelBooking(booking)}
                             disabled={
-                              booking.status === "Cancelled" ||
+                              ["cancelled", "past", "payment failed"].includes(bookingCategory(booking)) ||
                               cancellingBookingId === (booking.bookingId || booking.bookingReference)
                             }
                           >
@@ -629,17 +493,19 @@ export default function FlightBookings() {
           </div>
         )}
       </section>
+        {!isLoading && filteredBookings.length > 0 && <BookingPagination page={paginated.currentPage} pageCount={paginated.pageCount} onChange={setPage} />}
 
       {selectedBooking && (
-        <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
-          <div className="ops-modal" onClick={(event) => event.stopPropagation()} style={{ maxWidth: 650 }}>
+        <div className="ops-modal-backdrop booking-details-scrollbar transport-booking-details" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
+          <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
             <header>
-              <h3>{selectedBooking.status === "Cancelled" ? "Flight Cancellation Details" : "Flight Booking Details"}</h3>
+              <h3>{bookingCategory(selectedBooking) === "cancelled" ? "Flight Cancellation Details" : "Flight Booking Details"}</h3>
               <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
                 <X size={16} />
               </button>
             </header>
-
+            <div className="booking-details-body">
+            <BookingLifecycle booking={selectedBooking} />
             {(actionMessage || errorMessage) && (
               <div style={{ background: errorMessage ? "#fef2f2" : "#ecfdf5", borderLeft: `4px solid ${errorMessage ? "#ef4444" : "#10b981"}`, padding: "12px 18px", margin: "16px 20px 4px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: errorMessage ? "#ff0000" : "#047857", fontWeight: 700, fontSize: "0.93rem" }}>
@@ -649,7 +515,7 @@ export default function FlightBookings() {
               </div>
             )}
 
-            {selectedBooking.status === "Cancelled" && (
+            {bookingCategory(selectedBooking) === "cancelled" && (
               <div style={{ background: "#f0fdf4", borderLeft: "4px solid #16a34a", padding: "12px 18px", margin: "16px 20px 4px", borderRadius: "8px", boxShadow: "0 2px 6px rgba(0, 0, 0, 0.05)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#166534", fontWeight: 700, fontSize: "0.96rem" }}>
                   <span>✅ Ticket Fully Cancelled &amp; Email Dispatched</span>
@@ -660,15 +526,15 @@ export default function FlightBookings() {
               </div>
             )}
 
-            <div className="ops-modal-grid" style={{ marginTop: selectedBooking.status === "Cancelled" ? 8 : undefined }}>
+            <div className="ops-modal-grid" style={{ marginTop: bookingCategory(selectedBooking) === "cancelled" ? 8 : undefined }}>
               <div>
                 <span>Booking Ref / PNR</span>
                 <strong>{selectedBooking.bookingReference || selectedBooking.pnr}</strong>
               </div>
               <div>
                 <span>Status</span>
-                <strong style={{ color: selectedBooking.status === "Cancelled" ? "#ff0000" : "#16a34a", fontWeight: 800 }}>
-                  {selectedBooking.status}
+                <strong style={{ color: bookingCategory(selectedBooking) === "cancelled" ? "#ff0000" : "#16a34a", fontWeight: 800 }}>
+                  {bookingStatusLabel(selectedBooking)}
                 </strong>
               </div>
               {selectedBooking.changeRequestId && (
@@ -715,7 +581,7 @@ export default function FlightBookings() {
                 <span>Total Price</span>
                 <strong>{formatCurrency(selectedBooking.totalPriceInr)}</strong>
               </div>
-              {(selectedBooking.refundAmountInr > 0 || selectedBooking.refundAmount > 0 || selectedBooking?.RefundAmount > 0 || selectedBooking?.RefundDetails?.RefundAmount > 0 || selectedBooking.status === "Cancelled") && (
+              {(selectedBooking.refundAmountInr > 0 || selectedBooking.refundAmount > 0 || selectedBooking?.RefundAmount > 0 || selectedBooking?.RefundDetails?.RefundAmount > 0 || bookingCategory(selectedBooking) === "cancelled") && (
                 <div>
                   <span style={{ color: "#16a34a", fontWeight: 700 }}>Refund Processed</span>
                   <strong style={{ color: "#16a34a", fontSize: "1.05rem" }}>
@@ -723,7 +589,7 @@ export default function FlightBookings() {
                   </strong>
                 </div>
               )}
-              {(selectedBooking.cancellationChargeInr > 0 || selectedBooking.cancellationCharge > 0 || selectedBooking?.CancellationCharge > 0 || selectedBooking?.RefundDetails?.CancellationCharge > 0 || selectedBooking.status === "Cancelled") && (
+              {(selectedBooking.cancellationChargeInr > 0 || selectedBooking.cancellationCharge > 0 || selectedBooking?.CancellationCharge > 0 || selectedBooking?.RefundDetails?.CancellationCharge > 0 || bookingCategory(selectedBooking) === "cancelled") && (
                 <div>
                   <span style={{ color: "#ff0000", fontWeight: 700 }}>Cancellation Fee</span>
                   <strong style={{ color: "#ff0000" }}>
@@ -735,6 +601,11 @@ export default function FlightBookings() {
                 <span>Booked At</span>
                 <strong>{formatDateTime(selectedBooking.bookedAtUtc)}</strong>
               </div>
+                <div className="booking-payment-field">
+                  <span>Payment Transaction ID</span>
+                  <strong>{selectedBooking.paymentId ?? "--"}</strong>
+                </div>
+
             </div>
 
             {Array.isArray(selectedBooking.segments) && selectedBooking.segments.length > 1 && (
@@ -933,6 +804,7 @@ export default function FlightBookings() {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

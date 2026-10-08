@@ -1,5 +1,7 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
+import BookingStatusTabs from "../../components/booking/BookingStatusTabs";
+import { bookingStatusOptions, bookingStatusLabel, bookingStatusClass } from "../../utils/bookingStatus";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Eye,
   Loader2,
@@ -18,8 +20,16 @@ import {
 } from "../../services/busBookingService";
 import TravelLoadingScreen from "../../components/layout/TravelLoadingScreen";
 import CancellationModal from "./CancellationModal";
+import BookingPagination, { paginateBookings } from "../../components/booking/BookingPagination";
+import BookingLifecycle from "../../components/booking/BookingLifecycle";
 import "../../STYLES/BusOpsDashboard.css";
+import "../../STYLES/BookingDetailsScrollbar.css";
+import "../../STYLES/BookingTableRows.css";
+import "../../STYLES/TransportBookingDetails.css";
+import { getBusBookingStatus, matchesBusFilters } from "../../utils/busBookingFilters";
 import { formatDateTime } from "../../utils/apiDateFormat";
+
+const emptyBusFilters = () => ({ passengerPhone: "", status: "All", bookingReference: "", passengerName: "", fromCity: "", toCity: "", departureDate: "" });
 
 function formatCurrency(value) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -43,60 +53,11 @@ function formatBookedAt(dateStr) {
   }
 }
 
-function getStatusClassName(status) {
-  const norm = String(status || "").trim().toLowerCase();
-  if (norm.includes("cancel")) {
-    return "danger";
-  }
-  if (
-    norm.includes("confirm") ||
-    norm.includes("success") ||
-    norm.includes("complete") ||
-    norm.includes("booked") ||
-    norm.includes("active")
-  ) {
-    return "success";
-  }
-  return "default";
-}
-
-function hasJourneyCompleted(booking) {
-  const departureTime = booking?.departureTimeUtc
-    ? new Date(booking.departureTimeUtc)
-    : null;
-
-  return Boolean(
-    departureTime &&
-      !Number.isNaN(departureTime.getTime()) &&
-      departureTime.getTime() < Date.now()
-  );
-}
-
-function getDisplayStatus(booking) {
-  const status = String(booking?.status || "").trim();
-
-  if (status === "Cancelled") {
-    return "Cancelled";
-  }
-
-  if (hasJourneyCompleted(booking)) {
-    return "Completed";
-  }
-
-  return status || "Booked";
-}
-
 export default function BusBookings() {
+  const [page, setPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    passengerPhone: "",
-    status: "All",
-    bookingReference: "",
-    passengerName: "",
-    fromCity: "",
-    toCity: "",
-    departureDate: "",
-  });
+  const [filters, setFilters] = useState(emptyBusFilters);
+  const [appliedFilters, setAppliedFilters] = useState(emptyBusFilters);
 
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -112,20 +73,18 @@ export default function BusBookings() {
   const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
   const [refundPreference, setRefundPreference] = useState("Original");
 
+  const bookingRequestId = useRef(0);
   const fetchBookings = async () => {
+    const requestId = ++bookingRequestId.current;
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      const result = await listBusBookings({
-        passengerPhone: filters.passengerPhone || undefined,
-        status:
-          filters.status === "All" || filters.status === "Completed"
-            ? undefined
-            : filters.status,
-      });
+      const result = await listBusBookings({ status: "all", passengerPhone: appliedFilters.passengerPhone });
+      if (requestId !== bookingRequestId.current) return;
       setBookings(result);
     } catch (error) {
+      if (requestId !== bookingRequestId.current) return;
       setBookings([]);
       const status = Number(error?.status);
       const msg = String(error?.message || "").toLowerCase();
@@ -135,80 +94,26 @@ export default function BusBookings() {
         setErrorMessage(error.message || "Unable to load bus bookings.");
       }
     } finally {
-      setIsLoading(false);
+      if (requestId === bookingRequestId.current) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchBookings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => { bookingRequestId.current += 1; };
+  }, [appliedFilters.passengerPhone]);
 
-  const filteredBookings = useMemo(() => {
-    return bookings.filter((booking) => {
-      const displayStatus = getDisplayStatus(booking);
+  const filteredBookings = useMemo(() => bookings.filter((booking) => matchesBusFilters(booking, appliedFilters)), [bookings, appliedFilters]);
 
-      if (filters.status !== "All" && displayStatus !== filters.status) {
-        return false;
-      }
-
-      if (
-        filters.bookingReference &&
-        !String(booking.bookingReference || "")
-          .toLowerCase()
-          .includes(filters.bookingReference.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.passengerName &&
-        !String(booking.passengerName || "")
-          .toLowerCase()
-          .includes(filters.passengerName.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.fromCity &&
-        !String(booking.fromCity || "")
-          .toLowerCase()
-          .includes(filters.fromCity.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.toCity &&
-        !String(booking.toCity || "")
-          .toLowerCase()
-          .includes(filters.toCity.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (filters.departureDate) {
-        const departureDate = String(booking.departureTimeUtc || "").slice(0, 10);
-        if (departureDate !== filters.departureDate) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [bookings, filters]);
+  const handleSearch = () => { setAppliedFilters({ ...filters }); setPage(1); };
+  const paginated = paginateBookings(filteredBookings, page);
+  useEffect(() => { setPage(1); }, [appliedFilters]);
+  useEffect(() => { if (page !== paginated.currentPage) setPage(paginated.currentPage); }, [page, paginated.currentPage]);
 
   const handleReset = () => {
-    setFilters({
-      passengerPhone: "",
-      status: "All",
-      bookingReference: "",
-      passengerName: "",
-      fromCity: "",
-      toCity: "",
-      departureDate: "",
-    });
+    setPage(1);
+    setFilters(emptyBusFilters());
+    setAppliedFilters(emptyBusFilters());
     setErrorMessage("");
     setActionMessage("");
   };
@@ -320,6 +225,8 @@ export default function BusBookings() {
         </div>
       )}
 
+      <BookingStatusTabs value={appliedFilters.status} onChange={(status) => { setFilters(previous => ({ ...previous, status })); setAppliedFilters(previous => ({ ...previous, status })); setPage(1); }} />
+
       {isFilterOpen && (
         <section className="flight-ops-filters">
           <label>
@@ -342,13 +249,10 @@ export default function BusBookings() {
             <select
               value={filters.status}
               onChange={(event) =>
-                setFilters((previous) => ({ ...previous, status: event.target.value }))
+                { const status = event.target.value; setFilters(previous => ({ ...previous, status })); setAppliedFilters(previous => ({ ...previous, status })); setPage(1); }
               }
             >
-              <option value="All">All</option>
-              <option value="Booked">Booked</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
+              {bookingStatusOptions.map(status => <option key={status} value={status}>{status}</option>)}
             </select>
           </label>
 
@@ -424,13 +328,13 @@ export default function BusBookings() {
           </label>
 
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={fetchBookings}>
+            <button type="button" className="primary" onClick={handleSearch}>
               <Search size={14} />
-              <span>Search</span>
+              <span>SEARCH</span>
             </button>
             <button type="button" className="secondary" onClick={handleReset}>
               <X size={14} />
-              <span>Clear</span>
+              <span>CLEAR</span>
             </button>
           </div>
         </section>
@@ -447,7 +351,7 @@ export default function BusBookings() {
           </div>
         ) : (
           <div className="ops-table-scroll">
-            <table className="ops-table">
+            <table className="ops-table booking-table-rows">
               <thead>
                 <tr>
                   <th>BOOKING REF / DATE</th>
@@ -461,16 +365,17 @@ export default function BusBookings() {
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings.map((booking) => {
-                  const displayStatus = getDisplayStatus(booking);
-                  const bookedAt = formatBookedAt(booking.createdAt || booking.createdAtUtc || booking.bookingDate || booking.bookedAt || booking.bookedAtUtc || booking.entryDate || booking.entryDateUtc);
-                  const totalFormatted = Number(booking.totalPriceInr || booking.totalAmount || 0).toLocaleString("en-IN");
+                {paginated.rows.map((booking) => {
+                  const displayStatus = bookingStatusLabel(booking);
+                  const bookedAt = formatBookedAt(booking.bookingTime ?? booking.bookedAtUtc ?? booking.createdAt ?? booking.createdAtUtc ?? booking.bookingDate ?? booking.bookedAt ?? booking.entryDate ?? booking.entryDateUtc);
+                  const totalFormatted = Number(booking.totalFare ?? booking.totalPriceInr ?? booking.totalAmount ?? 0).toLocaleString("en-IN");
 
                   return (
                   <tr key={booking.bookingId || booking.bookingReference}>
                     <td>
                       <strong>{booking.bookingReference}</strong>
-                      <small>ID: {booking.bookingId}</small>
+                      <small>ID: {booking.bookingId ?? "--"}</small>
+                      {booking.pnr && <small>PNR: {booking.pnr}</small>}
                       {bookedAt && <small>Booked: {bookedAt}</small>}
                     </td>
                     <td>
@@ -487,14 +392,13 @@ export default function BusBookings() {
                       <strong>{formatDateTime(booking.departureTimeUtc || booking.departureDate)}</strong>
                     </td>
                     <td>
-                      <strong>{booking.seatsBooked || "1"}</strong>
-                      <small>{booking.tripNumber || booking.seatNumbers || "--"}</small>
+                      <strong>{booking.seatsBooked ?? "--"}</strong>
                     </td>
                     <td>
                       <strong>INR {totalFormatted}</strong>
                     </td>
                     <td>
-                      <span className={`status-badge ${getStatusClassName(displayStatus)}`}>
+                      <span className={`status-badge ${bookingStatusClass(booking)}`}>
                         {displayStatus}
                       </span>
                     </td>
@@ -520,8 +424,7 @@ export default function BusBookings() {
                           title="Cancel booking"
                           onClick={() => triggerCancelBooking(booking.bookingId)}
                           disabled={
-                            displayStatus === "Cancelled" ||
-                            displayStatus === "Completed" ||
+                            ["cancelled", "past", "completed", "payment failed"].includes(getBusBookingStatus(booking)) ||
                             cancellingBookingId === booking.bookingId
                           }
                         >
@@ -541,9 +444,10 @@ export default function BusBookings() {
           </div>
         )}
       </section>
+        {!isLoading && filteredBookings.length > 0 && <BookingPagination page={paginated.currentPage} pageCount={paginated.pageCount} onChange={setPage} />}
 
       {selectedBooking && (
-        <div className="ops-modal-backdrop" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
+        <div className="ops-modal-backdrop booking-details-scrollbar transport-booking-details" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
           <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
             <header>
               <h3>Bus Booking Details</h3>
@@ -551,6 +455,8 @@ export default function BusBookings() {
                 <X size={16} />
               </button>
             </header>
+            <div className="booking-details-body">
+            <BookingLifecycle booking={selectedBooking} />
             <div className="ops-modal-grid">
               <div>
                 <span>Booking Ref</span>
@@ -558,7 +464,7 @@ export default function BusBookings() {
               </div>
               <div>
                 <span>Status</span>
-                <strong>{getDisplayStatus(selectedBooking)}</strong>
+                <strong>{bookingStatusLabel(selectedBooking)}</strong>
               </div>
               <div>
                 <span>Passenger</span>
@@ -614,6 +520,15 @@ export default function BusBookings() {
                 <span>Operator</span>
                 <strong>{selectedBooking.providerName || "--"}</strong>
               </div>
+              <div><span>PNR</span><strong>{selectedBooking.pnr ?? "--"}</strong></div>
+              <div><span>Bus / Trip Number</span><strong>{selectedBooking.tripNumber || "--"}</strong></div>
+              <div><span>Departure</span><strong>{formatDateTime(selectedBooking.departureTimeUtc)}</strong></div>
+              <div><span>Arrival</span><strong>{formatDateTime(selectedBooking.arrivalTimeUtc)}</strong></div>
+                <div className="booking-payment-field">
+                  <span>Payment Transaction ID</span>
+                  <strong>{selectedBooking.paymentId ?? "--"}</strong>
+                </div>
+
             </div>
 
             {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
@@ -706,6 +621,7 @@ export default function BusBookings() {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

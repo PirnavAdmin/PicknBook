@@ -64,35 +64,6 @@ function VerticalSleeperIcon({ label }) {
   );
 }
 
-export function ModernRoofExit() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#8898a9', fontSize: '9px', fontWeight: '600', width: '100%', height: '100%', userSelect: 'none' }}>
-      <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
-        <path d="M6 0L0 5L6 10V0Z" />
-      </svg>
-      <div style={{ border: '1.5px solid #cbd5e1', borderRadius: '4px', padding: '2px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2', backgroundColor: 'transparent' }}>
-        <span>Roof</span>
-        <span>Exit</span>
-      </div>
-      <svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
-        <path d="M0 0L6 5L0 10V0Z" />
-      </svg>
-    </div>
-  );
-}
-
-export function ModernEmergencyExit() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#8898a9', fontSize: '9px', fontWeight: '600', lineHeight: '1.2', width: '100%', height: '100%', userSelect: 'none' }}>
-      <span>Emergency</span>
-      <span>Exit</span>
-      <svg width="28" height="6" viewBox="0 0 28 6" fill="none" stroke="currentColor" style={{ marginTop: '2px' }}>
-        <path d="M0 3H26M23 0L27 3L23 6" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </div>
-  );
-}
-
 // SVG representing a flight seat (curved top backrest, slim armrests)
 function FlightSeatIcon({ label }) {
   return (
@@ -118,13 +89,66 @@ function FlightSeatIcon({ label }) {
   );
 }
 
+// Roof Exit icon: ← [EXIT] →  compact inline style matching reference image
+function RoofExitIcon() {
+  return (
+    <div className="exit-badge exit-badge--roof">
+      <div className="exit-badge-icon">
+        <svg viewBox="0 0 60 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Left arrow ← */}
+          <line x1="15" y1="9" x2="4" y2="9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <polyline points="8,5.5 4,9 8,12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          {/* EXIT box */}
+          <rect x="17" y="3" width="26" height="12" rx="2" stroke="currentColor" strokeWidth="1.2" fill="currentColor" fillOpacity="0.07"/>
+          <text x="30" y="12.5" textAnchor="middle" fontSize="6" fill="currentColor" fontWeight="700" letterSpacing="0.5">EXIT</text>
+          {/* Right arrow → */}
+          <line x1="45" y1="9" x2="56" y2="9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <polyline points="52,5.5 56,9 52,12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <span className="exit-badge-label">Roof<br/>Exit</span>
+    </div>
+  );
+}
+
+// Emergency Exit icon: ——→  with amber styling
+function EmergencyExitIcon() {
+  return (
+    <div className="exit-badge exit-badge--emergency">
+      <div className="exit-badge-icon">
+        <svg viewBox="0 0 60 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          {/* Arrow line → */}
+          <line x1="4" y1="9" x2="52" y2="9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          <polyline points="47,5.5 52,9 47,12.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <span className="exit-badge-label">Emergency<br/>Exit</span>
+    </div>
+  );
+}
+
 /**
- * Normalizes an SRDV / SeatSeller API response into a dynamic grid layout structure
+ * Determines the exit type from a seat name:
+ *   RB_RF_EXIT* → "roof"
+ *   RB_BK_EXIT* → "emergency"
+ *   anything else containing EXIT → "roof" (safe default)
+ */
+function getExitType(seatName) {
+  const upper = seatName.toUpperCase();
+  if (/BK_EXIT|BACK.*EXIT|EMERGENCY/i.test(upper)) return "emergency";
+  return "roof";
+}
+
+/**
+ * Normalizes an SRDV / SeatSeller API response into a dynamic grid layout structure.
+ * Returns { lower, upper, hasUpper } for seats and also collects exit markers.
  */
 function normalizeSrdvSeatData(seatData) {
   if (!seatData) return null;
 
   const seats = [];
+  const exits = [];  // { rowNo, colNo, isUpper, exitType }
+
   const processItem = (seat, forceUpper = null) => {
     if (!seat || typeof seat !== "object") return;
 
@@ -132,14 +156,28 @@ function normalizeSrdvSeatData(seatData) {
     if (!seatName) return;
 
     const upperName = seatName.toUpperCase();
-    const isStructuralMarker =
-      ["T", "WC", "D", "DR", "NA", "BLANK", "EMPTY"].includes(upperName) ||
-      /^(T|WC|D|DR|NA|ST)$|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i.test(upperName) ||
-      String(seat.SeatType || seat.seatType || "").trim() === "0";
 
-    const isExitMarker = ["RB_EXIT", "EXIT"].some(marker => upperName.includes(marker));
+    // Check if it's an exit marker (RB_RF_EXIT, RB_BK_EXIT, etc.)
+    const isExitMarker = /EXIT/i.test(upperName);
 
-    if (isStructuralMarker && !isExitMarker) {
+    // Non-exit structural markers to skip entirely
+    const isOtherStructural =
+      !isExitMarker &&
+      (["T", "WC", "D", "DR", "E", "EX", "NA", "BLANK", "EMPTY"].includes(upperName) ||
+        /^(T|WC|D|DR|NA|EX|ST)$|AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|\bNA\b/i.test(upperName) ||
+        String(seat.SeatType || seat.seatType || "").trim() === "0");
+
+    if (isOtherStructural) return;
+
+    if (isExitMarker) {
+      // Collect exit position
+      const rowNo = parseInt(seat.RowNo ?? seat.rowNo ?? 0, 10);
+      const colNo = parseInt(seat.ColumnNo ?? seat.columnNo ?? 0, 10);
+      const isUpper =
+        forceUpper !== null
+          ? forceUpper
+          : Boolean(seat.IsUpper) || String(seat.IsUpper).toLowerCase() === "true";
+      exits.push({ rowNo, colNo, isUpper, exitType: getExitType(seatName), id: seatName });
       return;
     }
 
@@ -257,7 +295,16 @@ function normalizeSrdvSeatData(seatData) {
   const finalLower = lower.length > 0 ? lower : upper;
   const finalUpper = lower.length > 0 && upper.length > 0 ? upper : [];
 
-  return { lower: finalLower, upper: finalUpper, hasUpper: finalUpper.length > 0 };
+  const lowerExits = exits.filter((e) => !e.isUpper);
+  const upperExits = exits.filter((e) => e.isUpper);
+
+  return {
+    lower: finalLower,
+    upper: finalUpper,
+    hasUpper: finalUpper.length > 0,
+    lowerExits,
+    upperExits,
+  };
 }
 
 export default function SeatSelection({
@@ -282,7 +329,6 @@ export default function SeatSelection({
   mainDeckRows = [],
   allSeatRows = [],
   activeFareFilter = "all",
-  fareBuckets = [],
   onSeatHover = () => {},
   onSeatMouseLeave = () => {},
 }) {
@@ -345,22 +391,6 @@ export default function SeatSelection({
     ]
       .filter(Boolean)
       .join(" ");
-
-    const labelUpper = String(seat.label || "").toUpperCase();
-    const isExit = ["RB_EXIT", "EXIT"].some(marker => labelUpper.includes(marker));
-    const isRoofExit = labelUpper.includes("RF_EXIT") || labelUpper.includes("ROOF");
-
-    if (isExit) {
-      return (
-        <div key={seat.id} className="seat-button-wrapper exit-wrapper" style={{ border: 'none', background: 'transparent', pointerEvents: 'none' }}>
-          {isRoofExit ? (
-            <ModernRoofExit />
-          ) : (
-            <ModernEmergencyExit />
-          )}
-        </div>
-      );
-    }
 
     return (
       <button
@@ -503,21 +533,23 @@ export default function SeatSelection({
       {/* Bus Coach floor containing actual grid running left-to-right */}
       <div className="bus-coach-floor">{content}</div>
     </div>
-  );  const renderSrdvGridDeck = (deckSeats, deckLabel, showSteering = false) => {
+  );  const renderSrdvGridDeck = (deckSeats, deckLabel, showSteering = false, deckExits = []) => {
     if (!deckSeats || deckSeats.length === 0) return null;
 
-    const nonSeatPatterns = /AISLE|DRIVER|TOILET|WATER|STAIRCASE|STAIR|WASHROOM|VACANT|NA\b/i;
-    const validSeats = deckSeats.filter(
-      (s) => !nonSeatPatterns.test(String(s.label || ""))
-    );
+    const validSeats = deckSeats; // exits are already separated out in normalizeSrdvSeatData
 
     if (validSeats.length === 0) return null;
-    // Collect all unique rows/cols
+
+    // Build a unified row/col set from both seats AND exits so exits land in the right grid cell
     const rowSet = new Set();
     const colSet = new Set();
     validSeats.forEach((s) => {
       rowSet.add(s.rowNo || 0);
       colSet.add(s.colNo || 0);
+    });
+    deckExits.forEach((e) => {
+      rowSet.add(e.rowNo || 0);
+      colSet.add(e.colNo || 0);
     });
 
     const uniqueRows = Array.from(rowSet).sort((a, b) => a - b);
@@ -532,14 +564,12 @@ export default function SeatSelection({
     });
     const maxGridRows = gridRow - 1;
 
-    const aisleGridCols = new Set();
     const uniqueCols = Array.from(colSet).sort((a, b) => a - b);
     const colMap = new Map();
     let gridCol = 1;
     uniqueCols.forEach((colVal, idx) => {
       if (idx > 0 && colVal - uniqueCols[idx - 1] > 1) {
-        aisleGridCols.add(gridCol); // mark this as an aisle column
-        gridCol += 1;
+        gridCol += 1; // Create aisle gap
       }
       colMap.set(colVal, gridCol);
       gridCol += 1;
@@ -548,62 +578,11 @@ export default function SeatSelection({
 
     const isOnlySleeper = validSeats.every((s) => s.kind === "sleeper");
 
-    // Pre-calculate spanning and column width requirements
-    const seatSpans = new Map();
-    const colNeeds92px = new Map();
-
-    validSeats.forEach((seat) => {
-      const layoutRow = rowMap.get(seat.rowNo || 0) || 1;
-      const layoutCol = colMap.get(seat.colNo || 0) || 1;
-      const isHorz = seat.kind === "sleeper";
-      const isVert = seat.kind === "vertical-sleeper";
-
-      let colSpan = 1;
-      if (seat.width > 1) {
-        colSpan = seat.width;
-      } else if (isHorz) {
-        if (isOnlySleeper) {
-          colSpan = 1; 
-        } else {
-          // Check if we can safely span 2 seater columns
-          const nextColIndex = layoutCol + 1;
-          const isNextColAisle = aisleGridCols.has(nextColIndex);
-          const isNextColOccupied = validSeats.some(s => 
-             (rowMap.get(s.rowNo || 0) || 1) === layoutRow && 
-             (colMap.get(s.colNo || 0) || 1) === nextColIndex
-          );
-          
-          if (!isNextColAisle && !isNextColOccupied && nextColIndex <= maxGridCols) {
-            colSpan = 2; // Spans two 50px columns perfectly
-          } else {
-            colSpan = 1; // Blocked, must fit in 1 column
-            colNeeds92px.set(layoutCol, true);
-          }
-        }
-      }
-      
-      if (isOnlySleeper && isHorz) {
-        colNeeds92px.set(layoutCol, true);
-      }
-
-      seatSpans.set(seat.label, { colSpan, rowSpan: seat.length > 1 ? seat.length : (isVert ? 2 : 1) });
-    });
-
-    const aisleColW = "14px";
-    const baseSeatW = isOnlySleeper ? "92px" : "50px";
-    const colTemplate = Array.from({ length: maxGridCols }, (_, i) => {
-      const gridColIndex = i + 1;
-      if (aisleGridCols.has(gridColIndex)) return aisleColW;
-      return colNeeds92px.get(gridColIndex) ? "92px" : baseSeatW;
-    }).join(" ");
-
     const gridStyle = {
       display: "grid",
       gridTemplateRows: `repeat(${maxGridRows}, auto)`,
-      gridTemplateColumns: colTemplate,
-      gap: "20px 4px",
-      alignContent: "start",
-      justifyContent: "start",
+      gridTemplateColumns: `repeat(${maxGridCols}, minmax(44px, auto))`,
+      gap: "18px 6px",
     };
 
     return (
@@ -623,40 +602,15 @@ export default function SeatSelection({
         )}
         <div className="bus-coach-floor srdv-coach-scroll">
           <div className="srdv-grid-layout" style={gridStyle}>
+            {/* Render seat buttons */}
             {validSeats.map((seat, index) => {
               const isSelected = selectedSeatLabels.includes(seat.label);
               const isBooked = !seat.isAvailable;
-              let rawFare = seat.b2cDisplayFare || seat.fareBeforeTax || seat.fare || seat.priceInr || 0;
-              if (typeof rawFare === 'string') {
-                rawFare = rawFare.replace(/[^\d.-]/g, '');
-              }
-              const seatFareVal = Number(rawFare) || 0;
-              let isDimmed = false;
-              if (activeFareFilter !== "all" && Array.isArray(fareBuckets)) {
-                const activeBucket = fareBuckets.find(b => b.id === activeFareFilter);
-                if (activeBucket) {
-                  const isLast = activeBucket.id === fareBuckets[fareBuckets.length - 1].id;
-                  if (activeBucket.min === activeBucket.max) {
-                    if (Math.abs(seatFareVal - activeBucket.min) > 0.01) {
-                      isDimmed = true;
-                    }
-                  } else {
-                    if (seatFareVal < activeBucket.min || (isLast ? seatFareVal > activeBucket.max : seatFareVal >= activeBucket.max)) {
-                      isDimmed = true;
-                    }
-                  }
-                } else {
-                  isDimmed = Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
-                }
-              }
+              const seatFareVal = Number(seat.b2cDisplayFare || seat.fare || seat.priceInr || 0);
+              const isDimmed = activeFareFilter !== "all" && Math.abs(Number(activeFareFilter) - seatFareVal) > 0.01;
 
-              const labelUpper = String(seat.label || "").toUpperCase();
-              const isExit = ["RB_EXIT", "EXIT"].some(marker => labelUpper.includes(marker));
-              const isRoofExit = labelUpper.includes("RF_EXIT") || labelUpper.includes("ROOF");
-              
               let statusClass = "status-available";
-              if (isExit) statusClass = "status-exit";
-              else if (isBooked) statusClass = "status-booked";
+              if (isBooked) statusClass = "status-booked";
               else if (isSelected) statusClass = "status-selected";
 
               let genderClass = "";
@@ -676,33 +630,19 @@ export default function SeatSelection({
               const layoutRow = rowMap.get(seat.rowNo || 0) || 1;
               const layoutCol = colMap.get(seat.colNo || 0) || 1;
 
-              const { colSpan, rowSpan } = seatSpans.get(seat.label) || { colSpan: 1, rowSpan: 1 };
+              const isVert = seat.kind === "vertical-sleeper";
+              const isHorz = seat.kind === "sleeper";
 
-              const seatW = seat.kind === "vertical-sleeper" ? 44 : seat.kind === "sleeper" ? 84 : 44;
-              const seatH = seat.kind === "vertical-sleeper" ? 84 : seat.kind === "sleeper" ? 34 : 36;
+              // Determine spanning: default to 2 for sleepers if API width/length is missing
+              const colSpan = seat.width > 1 ? seat.width : (isHorz ? 2 : 1);
+              const rowSpan = seat.length > 1 ? seat.length : (isVert ? 2 : 1);
 
               const seatItemStyle = {
                 gridRow: `${layoutRow} / span ${rowSpan}`,
                 gridColumn: `${layoutCol} / span ${colSpan}`,
               };
 
-              const displayFareVal = seatFareVal;
-
-              if (isExit) {
-                return (
-                  <div 
-                    key={seat.id || `${seat.label}-${index}`}
-                    style={{ ...seatItemStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', pointerEvents: 'none' }}
-                    className="srdv-grid-seat-box status-exit exit-wrapper"
-                  >
-                    {isRoofExit ? (
-                      <ModernRoofExit />
-                    ) : (
-                      <ModernEmergencyExit />
-                    )}
-                  </div>
-                );
-              }
+              const displayFareVal = seat.b2cDisplayFare || seat.fare;
 
               return (
                 <button
@@ -748,6 +688,26 @@ export default function SeatSelection({
                 </button>
               );
             })}
+
+            {/* Render exit markers at their correct grid positions */}
+            {deckExits.map((exitMarker) => {
+              const layoutRow = rowMap.get(exitMarker.rowNo || 0) || 1;
+              const layoutCol = colMap.get(exitMarker.colNo || 0) || 1;
+              const isEmergency = exitMarker.exitType === "emergency";
+
+              return (
+                <div
+                  key={exitMarker.id}
+                  className="srdv-exit-marker-cell"
+                  style={{
+                    gridRow: layoutRow,
+                    gridColumn: layoutCol,
+                  }}
+                >
+                  {isEmergency ? <EmergencyExitIcon /> : <RoofExitIcon />}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -761,12 +721,12 @@ export default function SeatSelection({
         <div className="bus-decks-container">
           {srdvParsed.upper.length > 0 && (
             <div className="bus-deck-wrapper">
-              {renderSrdvGridDeck(srdvParsed.upper, "Upper Deck")}
+              {renderSrdvGridDeck(srdvParsed.upper, "Upper Deck", false, srdvParsed.upperExits || [])}
             </div>
           )}
           {srdvParsed.lower.length > 0 && (
             <div className="bus-deck-wrapper">
-              {renderSrdvGridDeck(srdvParsed.lower, srdvParsed.hasUpper ? "Lower Deck" : "Bus Layout", true)}
+              {renderSrdvGridDeck(srdvParsed.lower, srdvParsed.hasUpper ? "Lower Deck" : "Bus Layout", true, srdvParsed.lowerExits || [])}
             </div>
           )}
         </div>

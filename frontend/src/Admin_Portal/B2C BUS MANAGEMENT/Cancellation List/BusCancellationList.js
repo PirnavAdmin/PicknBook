@@ -790,7 +790,7 @@ export default function BusCancellationList() {
                 </div>
               </div>
               <button className="admin-view-close-btn" onClick={() => setSelectedCancellation(null)} title="Close" aria-label="Close">
-                <X size={18} />
+                Close
               </button>
             </div>
 
@@ -1015,7 +1015,9 @@ export default function BusCancellationList() {
           <div style={{ background: "#0f172a", color: "#38bdf8", borderRadius: "12px", width: "100%", maxWidth: "700px", maxHeight: "80vh", overflowY: "auto", padding: "20px", fontFamily: "monospace", fontSize: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", color: "#ffffff", marginBottom: "12px" }}>
               <strong>Raw Bus Cancellation Response (ID #{selectedCancellation.id})</strong>
-              <button onClick={() => setShowRawJsonModal(false)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", fontSize: "16px" }}>×</button>
+              <button type="button" className="close-x" onClick={() => setShowRawJsonModal(false)} title="Close">
+                <X size={14} />
+              </button>
             </div>
             <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{JSON.stringify(selectedCancellation.raw || selectedCancellation, null, 2)}</pre>
           </div>

@@ -68,6 +68,26 @@
   min-width: 0;
 }
 
+.traveller-container .section-heading-block .traveler-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: none;
+  vertical-align: top;
+}
+
+.traveller-container .section-heading-block .traveler-back-btn svg {
+  color: #1f2937;
+}
+
 .traveller-container .section-kicker {
   display: inline-flex;
   min-height: 28px;
@@ -176,6 +196,49 @@
 /* ── Submit wrap ── */
 .traveller-container .submit-wrap {
   margin-top: 20px;
+}
+
+.traveller-container .traveler-batch-grid {
+  grid-template-columns: minmax(0, 0.65fr) minmax(0, 2fr) minmax(0, 0.65fr) minmax(0, 1fr);
+}
+
+.traveller-container .traveler-entry + .traveler-entry {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--trav-border);
+}
+
+.traveller-container .traveler-entry-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--trav-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.traveller-container .traveler-add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.traveller-container .traveler-add-another {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.traveller-container .traveler-add-success {
+  font-size: 0.82rem;
+  color: #15803d;
+}
+
+.traveller-container .traveler-entry button:disabled,
+.traveller-container .traveler-add-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ── Form Fields ── */
@@ -420,6 +483,50 @@
   background: #fecaca;
 }
 
+.traveller-container .traveler-table .traveler-btn-save,
+.traveller-container .traveler-table .traveler-btn-cancel {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.traveller-container .traveler-table .traveler-btn-save {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.traveller-container .traveler-table .traveler-btn-save:hover {
+  background: #bae6fd;
+}
+
+.traveller-container .traveler-table .traveler-btn-cancel {
+  background: #fee2e2;
+  color: #ff0000;
+}
+
+.traveller-container .traveler-table .traveler-btn-cancel:hover {
+  background: #fecaca;
+}
+
+.traveller-container .traveler-table .traveler-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.traveller-container .traveler-table .traveler-actions-wrap svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
 .traveller-container .btn-filter {
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -516,5 +623,76 @@
 
   .traveller-container .span-full {
     grid-column: span 1;
+  }
+}
+
+.traveller-container .traveler-filter-panel {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  color: var(--trav-text);
+}
+.traveller-container .traveler-filter-grid {
+  flex: 1 1 480px;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.traveller-container .traveler-filter-grid label {
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.traveller-container .traveler-filter-grid .input-field {
+  min-width: 0;
+  max-width: 100%;
+}
+.traveller-container .traveler-filter-panel .filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 1px auto;
+}
+.traveller-container .traveler-filter-panel .filter-actions .btn {
+  margin: 0;
+  flex: 0 0 auto;
+  min-height: 42px;
+}
+.traveller-container .traveler-filter-panel .traveler-filter-clear {
+  background: #ffffff;
+  border: 1px solid #ff0000;
+  color: #ff0000;
+  box-shadow: none;
+}
+.traveller-container .traveler-filter-search {
+  position: relative;
+  min-width: 0;
+}
+.traveller-container .traveler-filter-search svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  pointer-events: none;
+}
+.traveller-container .traveler-filter-search .input-field {
+  padding-left: 36px;
+}
+@media (max-width: 600px) {
+  .traveller-container .traveler-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+    flex-basis: 100%;
   }
 }

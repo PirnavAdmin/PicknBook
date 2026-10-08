@@ -669,3 +669,83 @@
   border-color: #ffb29c !important;
   box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.12) !important;
 }
+
+/* Customer Flight Bookings: keep the filter panel in normal document flow. */
+.customer-flight-bookings {
+  width: 100%;
+  min-width: 0;
+}
+.customer-flight-bookings > .flight-ops-header {
+  position: static;
+  height: auto;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.customer-flight-bookings > .flight-booking-filter-panel {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  margin: 12px 0 0;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 10px;
+}
+.customer-flight-bookings .flight-booking-filter-panel label {
+  min-width: 0;
+}
+.customer-flight-bookings .flight-booking-filter-panel input,
+.customer-flight-bookings .flight-booking-filter-panel select {
+  width: 100%;
+  min-width: 0;
+  height: 38px;
+}
+.customer-flight-bookings .flight-booking-filter-panel .filters-actions {
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-self: end;
+  margin: 0;
+}
+.customer-flight-bookings .flight-booking-filter-panel .filters-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 12px;
+  white-space: nowrap;
+  border-radius: 9px;
+}
+.customer-flight-bookings .flight-booking-filter-panel .filters-actions button span {
+  color: inherit !important;
+}
+.customer-flight-bookings .flight-booking-filter-panel button {
+  height: 38px;
+  min-height: 38px;
+  justify-content: center;
+}
+.customer-flight-bookings .flight-booking-filter-panel .filters-actions .primary {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+}
+.customer-flight-bookings .flight-booking-filter-panel .filters-actions .secondary {
+  background: var(--theme-primary-soft, #fef2f2) !important;
+  color: var(--theme-primary-strong, #ff0000) !important;
+  border-color: var(--theme-border, #e5e7eb) !important;
+}
+.customer-flight-bookings .flight-booking-filter-panel .filters-actions svg {
+  color: inherit;
+  flex-shrink: 0;
+}
+.customer-flight-bookings > .flight-ops-table-wrap {
+  margin-top: 12px;
+}
+@media (max-width: 1100px) {
+  .customer-flight-bookings > .flight-booking-filter-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .customer-flight-bookings > .flight-booking-filter-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

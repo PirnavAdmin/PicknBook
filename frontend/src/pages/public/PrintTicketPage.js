@@ -1,10 +1,10 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { fetchTicketByContact } from "../../services/ticketService";
+import { fetchTicketByContact, normalizeBookingType } from "../../services/ticketService";
 import "../../STYLES/PrintTicket.css";
 
-const TICKET_TYPES = { BUS: "bus" };
+const TICKET_TYPES = { BUS: "bus", FLIGHT: "flight", HOTEL: "hotel" };
 const FALLBACK_STOP = "--";
 const INDIA_TIME_ZONE = "Asia/Kolkata";
 
@@ -13,9 +13,51 @@ function normalizeRef(value) {
 }
 
 function formatCurrency(value) {
-  return `INR ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(
-    Math.round(Number(value) || 0)
-  )}`;
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return "--";
+  return `INR ${new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)}`;
+}
+
+function getFareValue(ticket) {
+  const directFare = pickTicketField(ticket, ["totalPaid", "TotalPaid", "totalFare", "TotalFare"], null);
+  if (directFare !== null) return directFare;
+
+  const fare = pickTicketField(ticket, ["fare", "Fare"], null);
+  if (fare && typeof fare === "object") {
+    return pickTicketField(fare, ["totalFare", "TotalFare", "amount", "Amount"], 0);
+  }
+  return fare ?? 0;
+}
+
+function hasValue(value) {
+  return value !== undefined && value !== null && value !== "";
+}
+
+function displayValue(value) {
+  if (value === undefined || value === null || value === "") return "--";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "--";
+  if (typeof value === "object") return readPointName(value);
+  return String(value);
+}
+
+function formatDateTimeValue(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "--";
+  const normalizedRaw = raw.replace(/\.(\d{3})\d+/, ".$1");
+  const parsed = new Date(normalizedRaw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+  return parsed.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 function hasExplicitTimezone(value) {
@@ -172,17 +214,22 @@ function getArrivalValue(ticket) {
 
 function normalizePassengers(ticket) {
   const seats = Array.isArray(ticket?.seats) ? ticket.seats : [];
-  const passengers = Array.isArray(ticket?.passengers) ? ticket.passengers : [];
+  const passengers = Array.isArray(ticket?.passengers)
+    ? ticket.passengers
+    : Array.isArray(ticket?.Passengers)
+      ? ticket.Passengers
+      : [];
   const source =
     passengers.length > 0
       ? passengers
       : seats.map((seat, index) => ({ name: `Passenger ${index + 1}`, seat }));
 
   return source.map((p, index) => ({
-    name: String(p?.name || p?.fullName || `Passenger ${index + 1}`).trim(),
-    detail: String(p?.age || p?.passengerType || "").trim(),
-    seat: String(p?.seat || p?.seatLabel || p?.seatNumber || seats[index] || "--").trim(),
-    meal: String(p?.meal || "--").trim(),
+    ...p,
+    name: String(p?.name ?? p?.fullName ?? p?.FullName ?? p?.guestName ?? `Passenger ${index + 1}`).trim(),
+    detail: String(p?.age ?? p?.passengerType ?? p?.type ?? "").trim(),
+    seat: String(p?.seat ?? p?.Seat ?? p?.seatLabel ?? p?.seatNumber ?? seats[index] ?? "--").trim(),
+    meal: String(p?.meal ?? "--").trim(),
   }));
 }
 
@@ -263,7 +310,7 @@ function mapTicketToBus(ticket, fallbackPnr) {
   ).trim();
   const pnr = String(ticket?.bookingReference || ticket?.pnr || fallbackPnr || "--").trim();
   
-  let totalFare = Number(ticket?.totalPaid ?? ticket?.totalFare ?? ticket?.fare?.totalFare ?? 0);
+  let totalFare = Number(getFareValue(ticket));
   const isAgent = localStorage.getItem("b2b_role") === "Agent";
   if (isAgent) {
     const markup = Number(ticket?.fare?.markup || 0);
@@ -297,6 +344,270 @@ function mapTicketToBus(ticket, fallbackPnr) {
     fare: formatCurrency(totalFare),
   };
 }
+
+function getTicketType(ticket, fallbackType = "") {
+  return normalizeBookingType(ticket?.bookingType || ticket?.ticketType || ticket?.type, fallbackType);
+}
+
+function getReference(ticket) {
+  return String(
+    pickTicketField(ticket, [
+      "bookingReference",
+      "BookingReference",
+      "pnr",
+      "PNR",
+      "reference",
+      "Reference",
+      "bookingId",
+      "BookingId",
+    ], "--") || "--"
+  ).trim();
+}
+
+function mapTicketToFlight(ticket) {
+  const departureValue = getDepartureValue(ticket);
+  const arrivalValue = getArrivalValue(ticket);
+  const passengers = normalizePassengers(ticket);
+  const fareValue = Number(getFareValue(ticket));
+
+  return {
+    type: "flight",
+    pnr: getReference(ticket),
+    gdsPnr: String(pickTicketField(ticket, ["gdsPnr", "GdsPnr", "GDSPnr", "gdsPNR"], "--") ?? "--").trim(),
+    airline: String(pickTicketField(ticket, ["airline", "Airline", "providerName", "ProviderName"], "Flight Service") ?? "Flight Service").trim(),
+    flightNumber: String(pickTicketField(ticket, ["flightNumber", "FlightNumber", "flightNo", "FlightNo", "tripNumber", "TripNumber"], "--") || "--").trim(),
+    from: String(pickTicketField(ticket, ["fromCity", "FromCity", "source", "Source"], "--") || "--").trim(),
+    to: String(pickTicketField(ticket, ["toCity", "ToCity", "destination", "Destination"], "--") || "--").trim(),
+    date: formatJourneyDate(departureValue),
+    arrivalDate: formatJourneyDate(arrivalValue),
+    departure: formatJourneyTime(departureValue),
+    arrival: formatJourneyTime(arrivalValue),
+    travelClass: String(pickTicketField(ticket, ["travelClass", "TravelClass", "className", "ClassName", "class", "Class"], "--") || "--").trim(),
+    duration: String(pickTicketField(ticket, ["duration", "Duration"], "--") ?? "--").trim(),
+    passengers,
+    status: String(ticket?.status || "Booked").toUpperCase(),
+    fare: formatCurrency(fareValue),
+  };
+}
+
+function mapTicketToHotel(ticket) {
+  const fareValue = Number(getFareValue(ticket));
+
+  return {
+    type: "hotel",
+    pnr: getReference(ticket),
+    confirmationNo: displayValue(pickTicketField(ticket, ["confirmationNo", "ConfirmationNo", "confirmationNumber", "ConfirmationNumber"], "--")),
+    hotelName: String(pickTicketField(ticket, ["hotelName", "HotelName", "providerName", "ProviderName", "name", "Name"], "Hotel Stay") ?? "Hotel Stay").trim(),
+    city: displayValue(pickTicketField(ticket, ["city", "City"], "--")),
+    location: displayValue(pickTicketField(ticket, ["address", "Address", "location", "Location", "city", "City"], "--")),
+    checkIn: formatDateTimeValue(pickTicketField(ticket, ["checkInDate", "CheckInDate", "checkIn", "CheckIn", "departureTime", "DepartureTime", "departureDateTime"], "")),
+    checkOut: formatDateTimeValue(pickTicketField(ticket, ["checkOutDate", "CheckOutDate", "checkOut", "CheckOut", "arrivalTime", "ArrivalTime", "arrivalDateTime"], "")),
+    rooms: displayValue(pickTicketField(ticket, ["rooms", "Rooms", "noOfRooms", "NoOfRooms", "roomCount", "RoomCount"], "--")),
+    adults: displayValue(pickTicketField(ticket, ["adults", "Adults"], "--")),
+    children: displayValue(pickTicketField(ticket, ["children", "Children"], "--")),
+    guestName: displayValue(pickTicketField(ticket, ["guestName", "GuestName", "primaryGuest", "PrimaryGuest"], "--")),
+    guestEmail: displayValue(pickTicketField(ticket, ["guestEmail", "GuestEmail"], ticket?.contact?.email ?? "--")),
+    guestPhone: displayValue(pickTicketField(ticket, ["guestPhone", "GuestPhone"], ticket?.contact?.mobile ?? "--")),
+    roomType: displayValue(pickTicketField(ticket, ["roomType", "RoomType", "bedType", "BedType"], "--")),
+    mealPlan: displayValue(pickTicketField(ticket, ["mealPlan", "MealPlan", "plan", "Plan"], "--")),
+    status: String(ticket?.status ?? "Booked").toUpperCase(),
+    fare: formatCurrency(fareValue),
+  };
+}
+
+function getTicketSummary(ticket, fallbackType) {
+  const type = getTicketType(ticket, fallbackType);
+  if (type === TICKET_TYPES.FLIGHT) {
+    const data = mapTicketToFlight(ticket);
+    return {
+      type,
+      typeLabel: "FLIGHT",
+      pillClass: "flight-badge",
+      title: `${data.from} to ${data.to}`,
+      service: `${data.airline} - ${data.flightNumber}`,
+      passenger: data.passengers[0]?.name || "--",
+      ref: data.pnr,
+      date: data.date,
+      time: data.departure,
+      fare: data.fare,
+    };
+  }
+  if (type === TICKET_TYPES.HOTEL) {
+    const data = mapTicketToHotel(ticket);
+    return {
+      type,
+      typeLabel: "HOTEL",
+      pillClass: "hotel-badge",
+      title: data.hotelName,
+      service: data.location,
+      passenger: data.guestName,
+      ref: data.pnr,
+      date: data.checkIn,
+      time: "Check-in",
+      fare: data.fare,
+    };
+  }
+
+  const data = mapTicketToBus(ticket, ticket?.bookingReference);
+  return {
+    type: TICKET_TYPES.BUS,
+    typeLabel: "BUS",
+    pillClass: "bus-badge",
+    title: `${data.from.city} to ${data.to.city}`,
+    service: data.busNo && data.busNo !== "--" ? `${data.operator} - ${data.busNo}` : data.operator,
+    passenger: data.passengers[0]?.name || "--",
+    ref: data.pnr,
+    date: data.date,
+    time: data.departure,
+    fare: data.fare,
+  };
+}
+
+function getPickerDetails(ticket, fallbackType) {
+  const type = getTicketType(ticket, fallbackType);
+  if (type === TICKET_TYPES.HOTEL) {
+    const data = mapTicketToHotel(ticket);
+    return [
+      { label: "Reference", value: data.pnr },
+      { label: "Check-in", value: data.checkIn },
+      { label: "Fare", value: data.fare },
+    ];
+  }
+
+  if (type === TICKET_TYPES.FLIGHT) {
+    const data = mapTicketToFlight(ticket);
+    return [
+      { label: "PNR", value: data.pnr },
+      { label: "Departure", value: `${data.date} ${data.departure}` },
+      { label: "Arrival", value: `${data.arrivalDate} ${data.arrival}` },
+      { label: "Fare", value: data.fare },
+    ];
+  }
+
+  const data = mapTicketToBus(ticket, ticket?.bookingReference);
+  return [
+    { label: "Reference", value: data.pnr },
+    { label: "Departure", value: `${data.date} ${data.departure}` },
+    { label: "Fare", value: data.fare },
+  ];
+}
+
+const DISPLAYED_FIELD_KEYS = new Set([
+  "bookingType",
+  "ticketType",
+  "normalizedBookingType",
+  "fetchVerified",
+  "contact",
+  "fare",
+  "passengers",
+  "Passengers",
+  "normalizedPassengers",
+  "NormalizedPassengers",
+  "seats",
+  "segments",
+  "Segments",
+  "bookingReference",
+  "BookingReference",
+  "pnr",
+  "PNR",
+  "gdsPnr",
+  "confirmationNo",
+  "hotelName",
+  "city",
+  "checkInDate",
+  "checkOutDate",
+  "roomType",
+  "rooms",
+  "adults",
+  "children",
+  "guestName",
+  "guestEmail",
+  "guestPhone",
+  "status",
+  "totalFare",
+  "totalPaid",
+  "providerName",
+  "airline",
+  "flightNumber",
+  "flightNo",
+  "tripNumber",
+  "fromCity",
+  "toCity",
+  "departureTime",
+  "arrivalTime",
+  "duration",
+  "busType",
+  "boardingPoint",
+  "droppingPoint",
+  "arrivalPoint",
+]);
+
+function isSegmentField(key) {
+  return /segment/i.test(String(key || ""));
+}
+
+function humanizeKey(key) {
+  return String(key)
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatApiValue(key, value) {
+  if (!hasValue(value)) return "--";
+  if (/date|time|arrival|departure|checkin|checkout/i.test(key) && typeof value === "string") {
+    return formatDateTimeValue(value);
+  }
+  if (/fare|amount|price|paid|total/i.test(key) && Number.isFinite(Number(value))) {
+    return formatCurrency(value);
+  }
+  if (Array.isArray(value)) return value.length ? `${value.length} item${value.length === 1 ? "" : "s"}` : "0 items";
+  if (typeof value === "object") return readPointName(value);
+  return displayValue(value);
+}
+
+function getAdditionalFields(ticket) {
+  if (!ticket || typeof ticket !== "object") return [];
+  const type = getTicketType(ticket);
+  return Object.entries(ticket)
+    .filter(([key, value]) => {
+      if (type === TICKET_TYPES.FLIGHT && isSegmentField(key)) return false;
+      return !DISPLAYED_FIELD_KEYS.has(key) && hasValue(value) && typeof value !== "function";
+    })
+    .map(([key, value]) => ({
+      label: humanizeKey(key),
+      value: formatApiValue(key, value),
+    }));
+}
+
+const DetailGrid = ({ details }) => (
+  <div className="pb-detail-grid">
+    {details.map((item) => (
+      <div key={item.label}>
+        <span>{item.label}</span>
+        <strong>{displayValue(item.value)}</strong>
+      </div>
+    ))}
+  </div>
+);
+
+const CompactApiFields = ({ fields }) => {
+  if (!fields.length) return null;
+  return (
+    <>
+      <div className="pb-pax-title">Additional Details</div>
+      <div className="pb-passengers">
+        {fields.map((field) => (
+          <div className="pb-passenger-row" key={field.label}>
+            <b>i</b>
+            <span>{field.label}</span>
+            <small>{field.value}</small>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
 
 // ============ HELPER COMPONENTS ============
 
@@ -352,7 +663,7 @@ const FlipCard = ({ frontElement, backElement }) => {
 
 // ============ BUS TICKET ============
 
-const BusTicket = ({ data, id }) => (
+const BusTicket = ({ data, id, rawTicket }) => (
   <article id={id} className="pb-ticket-card">
     <header className="pb-ticket-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -416,6 +727,10 @@ const BusTicket = ({ data, id }) => (
 
         <div className="pb-detail-grid">
           <div>
+            <span>Booking Ref</span>
+            <strong>{data.pnr}</strong>
+          </div>
+          <div>
             <span>Bus Type</span>
             <strong>{data.class}</strong>
           </div>
@@ -443,6 +758,7 @@ const BusTicket = ({ data, id }) => (
             </div>
           ))}
         </div>
+        <CompactApiFields fields={getAdditionalFields(rawTicket).slice(0, 8)} />
       </section>
 
       <aside className="pb-ticket-stub">
@@ -474,17 +790,158 @@ const BusTicket = ({ data, id }) => (
   </article>
 );
 
+const SimpleTravelTicket = ({
+  data,
+  id,
+  title,
+  primaryLabel,
+  details,
+  qrLines,
+  rawTicket,
+  showPassengerSeats = true,
+  showAdditionalDetails = true,
+}) => (
+  <article id={id} className="pb-ticket-card">
+    <header className="pb-ticket-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div>
+        <span>{title}</span>
+        <h2>{primaryLabel}</h2>
+      </div>
+      <strong>{data.status}</strong>
+    </header>
+
+    <div className="pb-ticket-body">
+      <section className="pb-ticket-main">
+        <div className="pb-route-row">
+          <div>
+            <h3>{data.from || data.hotelName}</h3>
+            <span>{data.departure || data.checkIn}</span>
+          </div>
+          <div className="pb-route-line">
+            <span>{data.travelClass || data.roomType || "--"}</span>
+            <i />
+            <small>{data.type}</small>
+          </div>
+          <div>
+            <h3>{data.to || data.location}</h3>
+            <span>{data.arrival || data.checkOut}</span>
+          </div>
+        </div>
+
+        <DetailGrid details={details} />
+
+        {showPassengerSeats && (
+          <>
+            <div className="pb-pax-title">Passengers &amp; Seats</div>
+            <div className="pb-passengers">
+              {(data.passengers.length > 0 ? data.passengers : [{ name: "--", seat: "--" }]).map((p, i) => (
+                <div className="pb-passenger-row" key={`${p.name}-${p.seat}-${i}`}>
+                  <b>{i + 1}</b>
+                  <span>{p.name}</span>
+                  <small>{p.seat && p.seat !== "--" ? `Seat ${p.seat}` : "--"}</small>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {showAdditionalDetails && <CompactApiFields fields={getAdditionalFields(rawTicket).slice(0, 8)} />}
+      </section>
+
+      <aside className="pb-ticket-stub">
+        <div className="pb-stub-label">Ticket</div>
+        <span>Reference</span>
+        <strong>{data.pnr}</strong>
+        <span>Fare</span>
+        <b>{data.fare}</b>
+        <QRCode text={qrLines.join("\n")} size={64} />
+        <small>Keep for verification</small>
+      </aside>
+    </div>
+  </article>
+);
+
+const FlightTicket = ({ data, id, rawTicket }) => (
+  <SimpleTravelTicket
+    data={data}
+    id={id}
+    title="Flight Ticket"
+    primaryLabel={`${data.airline} - ${data.flightNumber}`}
+    rawTicket={rawTicket}
+    details={[
+      { label: "PNR", value: data.pnr },
+      { label: "GDS PNR", value: data.gdsPnr },
+      { label: "Airline", value: data.airline },
+      { label: "Flight Number", value: data.flightNumber },
+      { label: "From City", value: data.from },
+      { label: "To City", value: data.to },
+      { label: "Departure", value: `${data.date} ${data.departure}` },
+      { label: "Arrival", value: `${data.arrivalDate} ${data.arrival}` },
+      { label: "Class", value: data.travelClass },
+      { label: "Duration", value: data.duration },
+      { label: "Fare", value: data.fare },
+    ]}
+    qrLines={[
+      "Ticket Type: Flight",
+      `PNR: ${data.pnr}`,
+      `Airline: ${data.airline}`,
+      `Flight: ${data.flightNumber}`,
+      `From: ${data.from}`,
+      `To: ${data.to}`,
+      `Departure: ${data.date} ${data.departure}`,
+      `Fare: ${data.fare}`,
+    ]}
+  />
+);
+
+const HotelTicket = ({ data, id, rawTicket }) => (
+  <SimpleTravelTicket
+    data={data}
+    id={id}
+    title="Hotel Ticket"
+    primaryLabel={data.hotelName}
+    rawTicket={rawTicket}
+    showPassengerSeats={false}
+    showAdditionalDetails={false}
+    details={[
+      { label: "Booking Ref", value: data.pnr },
+      { label: "Confirmation No", value: data.confirmationNo },
+      { label: "Hotel Name", value: data.hotelName },
+      { label: "City", value: data.city },
+      { label: "Check-in", value: data.checkIn },
+      { label: "Check-out", value: data.checkOut },
+      { label: "Room Type", value: data.roomType },
+      { label: "Rooms", value: data.rooms },
+      { label: "Adults", value: data.adults },
+      { label: "Children", value: data.children },
+      { label: "Guest", value: data.guestName },
+      { label: "Guest Email", value: data.guestEmail },
+      { label: "Guest Phone", value: data.guestPhone },
+      { label: "Status", value: data.status },
+      { label: "Total Fare", value: data.fare },
+    ]}
+    qrLines={[
+      "Ticket Type: Hotel",
+      `Reference: ${data.pnr}`,
+      `Hotel: ${data.hotelName}`,
+      `Location: ${data.location}`,
+      `Check-in: ${data.checkIn}`,
+      `Check-out: ${data.checkOut}`,
+      `Fare: ${data.fare}`,
+    ]}
+  />
+);
+
 // ============ BACK SIDES ============
 
 const BusBackSide = ({ id, ticket }) => {
-  const fare = ticket?.fare || {};
+  const fare = ticket?.fare && typeof ticket.fare === "object" ? ticket.fare : {};
   const isAgent = localStorage.getItem("b2b_role") === "Agent";
   
   const discount = isAgent ? 0 : Number(fare.discount ?? fare.discountAmount ?? ticket?.discount ?? ticket?.discountAmount ?? 0);
   const tax = Number(fare.tax ?? fare.taxes ?? fare.gstAmount ?? ticket?.tax ?? ticket?.gstAmount ?? 0);
   const convenienceFee = Number(fare.convenienceFee ?? ticket?.convenienceFee ?? 0);
   
-  let totalFare = Number(ticket?.totalPaid ?? ticket?.totalFare ?? fare.totalFare ?? 0);
+  let totalFare = Number(getFareValue(ticket));
   if (isAgent) {
     const markup = Number(fare.markup || 0);
     const tierDiscount = Number(fare.tierDiscount || 0);
@@ -589,6 +1046,48 @@ const BusBackSide = ({ id, ticket }) => {
   );
 };
 
+const GenericBackSide = ({ id, title, ticket }) => {
+  const fare = ticket?.fare && typeof ticket.fare === "object" ? ticket.fare : {};
+  const totalFare = Number(getFareValue(ticket));
+  return (
+    <div id={id} className="pb-ticket-card pb-ticket-back-card" style={ticketShell}>
+      <div style={{ ...hdr, background: 'linear-gradient(135deg, #ff0000 0%, #ff0000 100%)' }}>
+        <div style={{ fontSize: 14.5, fontWeight: 900, letterSpacing: 0, color: '#ffffff' }}>{title} Details</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, flex: 1, padding: 28 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 900, color: '#071b3d', marginBottom: 8 }}>IMPORTANT INFORMATION</div>
+          <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#66758d', lineHeight: 1.7 }}>
+            <li>Carry a valid government-issued photo ID.</li>
+            <li>Keep this booking reference available during check-in.</li>
+            <li>Cancellation and refund rules follow the service provider policy.</li>
+          </ul>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 900, color: '#ff0000', marginBottom: 8, textTransform: 'uppercase' }}>
+            Fare Breakdown
+          </div>
+          <div style={{ border: '1px solid rgba(220, 30, 38,0.34)', borderRadius: 8, padding: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#66758d', marginBottom: 8 }}>
+              <span>Base Fare</span>
+              <span>INR {Number(fare.baseFare || totalFare).toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#66758d', marginBottom: 8 }}>
+              <span>Taxes & Fees</span>
+              <span>INR {Number(fare.tax || fare.taxes || 0).toFixed(2)}</span>
+            </div>
+            <div style={{ borderTop: '1px dashed #d8dee8', margin: '12px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 900, color: '#071b3d' }}>
+              <span>Total Fare</span>
+              <span style={{ color: '#ff0000' }}>INR {totalFare.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ============ DOWNLOAD ============
 
 const downloadTicketAsImage = async (frontId, backId, filename) => {
@@ -652,7 +1151,7 @@ const TicketPreviewPage = () => {
   const requestedPnr = typeof location.state?.pnr === "string" ? location.state.pnr.trim() : "";
   const requestedEmail = typeof location.state?.email === "string" ? location.state.email.trim() : "";
   const requestedMobile = typeof location.state?.mobile === "string" ? location.state.mobile.trim() : "";
-  const requestedType = TICKET_TYPES.BUS;
+  const requestedType = normalizeBookingType(location.state?.bookingType, TICKET_TYPES.BUS);
 
   // Support both single ticket (legacy) and multiple tickets (new)
   const providedTickets = useMemo(() => {
@@ -667,12 +1166,14 @@ const TicketPreviewPage = () => {
 
   const matchingProvidedTickets = useMemo(() => {
     const normalizedPnr = normalizeRef(requestedPnr);
-    if (!normalizedPnr) return providedTickets;
     return providedTickets.filter((ticket) => {
+      const ticketType = getTicketType(ticket, requestedType);
+      if (requestedType && ticketType !== requestedType) return false;
+      if (!normalizedPnr) return true;
       const ticketReference = normalizeRef(ticket?.bookingReference || ticket?.pnr);
       return ticketReference === normalizedPnr;
     });
-  }, [providedTickets, requestedPnr]);
+  }, [providedTickets, requestedPnr, requestedType]);
 
   const [tickets, setTickets] = useState(matchingProvidedTickets);
   const [isFetchingTickets, setIsFetchingTickets] = useState(false);
@@ -728,13 +1229,16 @@ const TicketPreviewPage = () => {
     })
       .then((fetchedTickets) => {
         if (!isCurrent) return;
+        const scopedTickets = (Array.isArray(fetchedTickets) ? fetchedTickets : [fetchedTickets])
+          .filter(Boolean)
+          .filter((ticket) => getTicketType(ticket, requestedType) === requestedType);
         const normalizedPnr = normalizeRef(requestedPnr);
         const filteredTickets = normalizedPnr
-          ? fetchedTickets.filter((ticket) => {
+          ? scopedTickets.filter((ticket) => {
               const ticketReference = normalizeRef(ticket?.bookingReference || ticket?.pnr);
               return ticketReference === normalizedPnr;
             })
-          : fetchedTickets;
+          : scopedTickets;
         setTickets(filteredTickets);
       })
       .catch((error) => {
@@ -794,44 +1298,31 @@ const TicketPreviewPage = () => {
 
   const renderTicketPicker = () => (
     <div className="pb-select-shell">
-      <div className="pb-active-chip">{tickets.length} Active Tickets</div>
+      <div className="pb-active-chip">{tickets.length} {tickets.length === 1 ? "Ticket" : "Tickets"} Found</div>
       <h1>Select Ticket</h1>
       <p>
         {`Fetched for ${requestSummary || "--"}. Choose a ticket to view, print, or download it.`}
       </p>
       <div className="pb-ticket-list">
         {tickets.map((ticket, index) => {
-          const data = mapTicketToBus(ticket, ticket?.bookingReference);
-          const rawType = String(ticket?.ticketType || ticket?.type || "").toLowerCase();
-          const refUpper = String(data.pnr || "").toUpperCase();
-
-          let typeLabel = "BUS";
-          let pillClass = "bus-badge";
-
-          if (rawType === "flight" || refUpper.startsWith("FL")) {
-            typeLabel = "FLIGHT";
-            pillClass = "flight-badge";
-          } else if (rawType === "hotel" || refUpper.startsWith("HTL") || refUpper.startsWith("HOTEL")) {
-            typeLabel = "HOTEL";
-            pillClass = "hotel-badge";
-          }
-
-          const serviceText = data.busNo && data.busNo !== "--"
-            ? `${data.operator} - ${data.busNo}`
-            : data.operator;
+          const summary = getTicketSummary(ticket, requestedType);
+          const pickerDetails = getPickerDetails(ticket, requestedType);
 
           return (
-            <article className="pb-select-card" key={ticket?.bookingReference || ticket?.pnr || index}>
+            <article className="pb-select-card" key={`${summary.type}-${summary.ref}-${ticket?._id || ticket?.id || index}`}>
               <div className="pb-select-main">
-                <span className={`pb-type-pill ${pillClass}`}>{typeLabel}</span>
-                <strong>{data.from.city} to {data.to.city}</strong>
-                <small>{serviceText}</small>
-                <em>{data.passengers[0]?.name || "--"}</em>
+                <span className={`pb-type-pill ${summary.pillClass}`}>{summary.typeLabel}</span>
+                <strong>{summary.title}</strong>
+                <small>{summary.service}</small>
+                <em>{summary.passenger}</em>
               </div>
               <div className="pb-select-meta">
-                <div><span>PNR</span><strong>{data.pnr}</strong></div>
-                <div><span>{data.date}</span><strong>{data.departure}</strong></div>
-                <div><span>Fare</span><strong>{data.fare}</strong></div>
+                {pickerDetails.map((item) => (
+                  <div key={item.label}>
+                    <span>{item.label}</span>
+                    <strong>{displayValue(item.value)}</strong>
+                  </div>
+                ))}
               </div>
               <button type="button" onClick={() => setSelectedTicketIndex(index)}>
                 Open Ticket
@@ -900,7 +1391,7 @@ const TicketPreviewPage = () => {
         {shouldShowTicketPicker ? renderTicketPicker() : (
         <div className="pb-preview-shell">
           {ticketsToRender.map((rawTicket, index) => {
-            const activeTicketType = TICKET_TYPES.BUS;
+            const activeTicketType = getTicketType(rawTicket, requestedType);
             const frontId = `${activeTicketType}-ticket-${index}`;
             const backId = `${activeTicketType}-ticket-back-${index}`;
 
@@ -917,7 +1408,43 @@ const TicketPreviewPage = () => {
                   onDownload={() => downloadTicketAsImage(frontId, backId, `bus-ticket-${index + 1}`)}
                   backElement={<BusBackSide id={backId} ticket={rawTicket} />}
                 >
-                  <BusTicket data={busData} id={frontId} />
+                  <BusTicket data={busData} id={frontId} rawTicket={rawTicket} />
+                </TicketSection>
+              );
+            }
+
+            if (activeTicketType === TICKET_TYPES.FLIGHT) {
+              const flightData = mapTicketToFlight(rawTicket);
+              return (
+                <TicketSection
+                  key={frontId}
+                  icon="F"
+                  label="Flight Ticket"
+                  sub={`${flightData.airline} - ${flightData.flightNumber} - PNR: ${flightData.pnr}`}
+                  accent="#2563eb"
+                  onPrint={() => printById(frontId, backId, 'Flight Ticket')}
+                  onDownload={() => downloadTicketAsImage(frontId, backId, `flight-ticket-${index + 1}`)}
+                  backElement={<GenericBackSide id={backId} title="Flight Ticket" ticket={rawTicket} />}
+                >
+                  <FlightTicket data={flightData} id={frontId} rawTicket={rawTicket} />
+                </TicketSection>
+              );
+            }
+
+            if (activeTicketType === TICKET_TYPES.HOTEL) {
+              const hotelData = mapTicketToHotel(rawTicket);
+              return (
+                <TicketSection
+                  key={frontId}
+                  icon="H"
+                  label="Hotel Ticket"
+                  sub={`${hotelData.hotelName} - Ref: ${hotelData.pnr}`}
+                  accent="#059669"
+                  onPrint={() => printById(frontId, backId, 'Hotel Ticket')}
+                  onDownload={() => downloadTicketAsImage(frontId, backId, `hotel-ticket-${index + 1}`)}
+                  backElement={<GenericBackSide id={backId} title="Hotel Ticket" ticket={rawTicket} />}
+                >
+                  <HotelTicket data={hotelData} id={frontId} rawTicket={rawTicket} />
                 </TicketSection>
               );
             }

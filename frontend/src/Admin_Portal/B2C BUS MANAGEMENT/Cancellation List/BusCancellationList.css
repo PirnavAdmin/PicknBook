@@ -540,36 +540,39 @@
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2) !important;
 }
 
-/* Light colored Modal Close Button */
+/* Theme Red Boxed Close Button for Bus Cancellation View Popups */
 .admin-cancel-page .admin-view-close-btn,
 .admin-cancel-page .admin-view-header button.admin-view-close-btn,
 .admin-view-header button.admin-view-close-btn {
-  background: #f1f5f9 !important;
-  color: #64748b !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 50% !important;
-  width: 34px !important;
-  height: 34px !important;
-  min-width: 34px !important;
-  min-height: 34px !important;
-  padding: 0 !important;
-  font-size: 1.1rem !important;
+  background: #A51C49 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 8px 22px !important;
   font-weight: 700 !important;
-  box-shadow: none !important;
-  display: flex !important;
+  font-size: 0.88rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.35) !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  margin-left: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: unset !important;
+  min-height: unset !important;
 }
 
 .admin-cancel-page .admin-view-close-btn:hover,
 .admin-cancel-page .admin-view-header button.admin-view-close-btn:hover,
 .admin-view-header button.admin-view-close-btn:hover {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
-  border-color: #94a3b8 !important;
-  transform: scale(1.06) !important;
+  background: #851237 !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 16px rgba(133, 18, 55, 0.45) !important;
+  transform: translateY(-1px) !important;
 }
 
 /* === Modal View Sections & Tables === */

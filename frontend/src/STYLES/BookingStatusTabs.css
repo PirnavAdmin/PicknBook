@@ -1,0 +1,14 @@
+.booking-status-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.booking-status-tabs button { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #1e293b; font: inherit; cursor: pointer; }
+.booking-status-tabs button[aria-pressed="true"] { background: #ff0000; border-color: #ff0000; color: #ffffff; }
+.booking-status-tabs--bus-aligned { flex-wrap: nowrap; overflow-x: auto; min-width: 0; }
+.booking-status-tabs--bus-aligned button { flex-shrink: 0; white-space: nowrap; }
+.hotel-bookings-page .booking-status-tabs { gap: 4px; margin-bottom: 8px; }
+.customer-flight-bookings > .booking-status-tabs--bus-aligned { margin-top: 12px; }
+@media (max-width: 768px) {
+  /* Offset Hotel's existing page inset for the tab row only. */
+  .hotel-bookings-shell > .booking-status-tabs--bus-aligned { margin-inline: -12px; }
+}
+:is(.bus-booking-status-page, .customer-flight-bookings, .hotel-bookings-page) .status-badge.success { color: #059669 !important; background: #ecfdf5 !important; border-color: #a7f3d0 !important; }
+:is(.bus-booking-status-page, .customer-flight-bookings, .hotel-bookings-page) .status-badge.default { color: #334155 !important; background: #f1f5f9 !important; border-color: #e2e8f0 !important; }
+:is(.bus-booking-status-page, .customer-flight-bookings, .hotel-bookings-page) .status-badge.danger { color: #ff0000 !important; background: #fef2f2 !important; border-color: #fecaca !important; }

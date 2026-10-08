@@ -131,6 +131,7 @@ const navGroups = [
         icon: icons.customers,
         submenu: [
           { label: 'Customers', to: p('customer-management/customer-list') },
+          { label: 'Security', to: p('customer-management/security') },
           { label: 'Queries', to: p('query-management/query-list') },
           { label: 'Testimonial', to: p('testimonial-management/dashboard') },
           {

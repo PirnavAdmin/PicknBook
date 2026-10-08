@@ -368,28 +368,39 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--admin-border);
 }
 
+.admin-booking-page .admin-view-header-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .admin-booking-page .admin-view-header button,
-.admin-booking-page .admin-view-close-btn {
+.admin-booking-page .admin-view-close-btn,
+.admin-view-close-btn {
   background: #A51C49 !important;
   color: #ffffff !important;
   border: none !important;
-  border-radius: 8px !important;
-  padding: 6px 16px !important;
+  border-radius: 14px !important;
+  padding: 8px 22px !important;
   font-weight: 700 !important;
-  font-size: 0.85rem !important;
+  font-size: 0.88rem !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 6px rgba(165, 28, 73, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.35) !important;
   transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  margin-left: auto !important;
 }
 
 .admin-booking-page .admin-view-header button:hover,
-.admin-booking-page .admin-view-close-btn:hover {
+.admin-booking-page .admin-view-close-btn:hover,
+.admin-view-close-btn:hover {
   background: #851237 !important;
+  box-shadow: 0 6px 16px rgba(133, 18, 55, 0.45) !important;
   transform: translateY(-1px) !important;
 }
 

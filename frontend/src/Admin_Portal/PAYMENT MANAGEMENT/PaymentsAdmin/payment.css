@@ -485,3 +485,444 @@
 .passenger-roster-table tr:hover td {
   background: #f8fafc;
 }
+
+/* Canonical Status Badges */
+.payment-canonical-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.payment-canonical-badge.BOOKING_CONFIRMED {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.payment-canonical-badge.CANCELLED_AND_REFUNDED {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border: 1px solid #ddd6fe;
+}
+
+.payment-canonical-badge.REFUND_ON_HOLD {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  animation: pulseAmber 2s infinite;
+}
+
+.payment-canonical-badge.BOOKING_FAILED_REFUND_PENDING {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #ffedd5;
+}
+
+.payment-canonical-badge.BOOKING_FAILED_REFUND_PROCESSING {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.payment-canonical-badge.BOOKING_FAILED_REFUNDED {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.payment-canonical-badge.CANCELLED_REFUND_PENDING {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #ffedd5;
+}
+
+.payment-canonical-badge.PAYMENT_PENDING {
+  background: #f0f9ff;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.payment-canonical-badge.PAYMENT_FAILED {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+@keyframes pulseAmber {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Lifecycle Stage Hierarchy Tree Visualizer */
+.lifecycle-hierarchy-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lifecycle-hierarchy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.lifecycle-hierarchy-header h4 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #A51C49;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lifecycle-next-action {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #ffedd5;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.lifecycle-stages-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.lifecycle-stage-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.lifecycle-stage-node.COMPLETED {
+  border-left: 4px solid #10b981;
+}
+
+.lifecycle-stage-node.IN_PROGRESS {
+  border-left: 4px solid #3b82f6;
+  background: #f0f9ff;
+}
+
+.lifecycle-stage-node.WARNING {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.lifecycle-stage-node.FAILED {
+  border-left: 4px solid #ef4444;
+  background: #fef2f2;
+}
+
+.lifecycle-stage-node.PENDING {
+  border-left: 4px solid #94a3b8;
+  opacity: 0.8;
+}
+
+.lifecycle-stage-node.SKIPPED {
+  border-left: 4px solid #cbd5e1;
+  background: #f8fafc;
+  opacity: 0.6;
+}
+
+.node-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lifecycle-stage-node.COMPLETED .node-icon-wrap { background: #d1fae5; color: #059669; }
+.lifecycle-stage-node.IN_PROGRESS .node-icon-wrap { background: #dbeafe; color: #2563eb; }
+.lifecycle-stage-node.WARNING .node-icon-wrap { background: #fef3c7; color: #d97706; }
+.lifecycle-stage-node.FAILED .node-icon-wrap { background: #fee2e2; color: #dc2626; }
+.lifecycle-stage-node.PENDING .node-icon-wrap { background: #f1f5f9; color: #64748b; }
+.lifecycle-stage-node.SKIPPED .node-icon-wrap { background: #e2e8f0; color: #94a3b8; }
+
+.node-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.node-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.node-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.node-time {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.node-summary {
+  font-size: 11px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.node-meta-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.node-meta-item {
+  font-size: 10.5px;
+  background: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #334155;
+  font-family: monospace;
+}
+
+/* Visual Flowchart Diagram Card */
+.lifecycle-flowchart-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lifecycle-flowchart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+}
+
+.lifecycle-flowchart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #A51C49;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Flowchart Nodes Container */
+.flowchart-nodes-wrapper {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 4px 14px;
+}
+
+.flowchart-node-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 110px;
+  position: relative;
+  z-index: 2;
+}
+
+.flowchart-node-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border: 2px solid transparent;
+}
+
+/* Green Color for Booked / Confirmed Stages */
+.flowchart-node-item.booked .flowchart-node-circle {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #059669;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.flowchart-node-item.completed .flowchart-node-circle {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.flowchart-node-item.in_progress .flowchart-node-circle {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
+  animation: pulseBlue 2s infinite;
+}
+
+.flowchart-node-item.cancelled .flowchart-node-circle {
+  background: #f97316;
+  color: #ffffff;
+  border-color: #ea580c;
+  animation: pulseOrange 2s infinite;
+}
+
+.flowchart-node-item.refund_completed .flowchart-node-circle {
+  background: #059669;
+  color: #ffffff;
+  border-color: #047857;
+  box-shadow: 0 0 14px rgba(5, 150, 105, 0.4);
+}
+
+.flowchart-node-item.failed .flowchart-node-circle {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.flowchart-node-item.pending .flowchart-node-circle {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #cbd5e1;
+}
+
+.flowchart-node-item.skipped .flowchart-node-circle {
+  background: #e2e8f0;
+  color: #94a3b8;
+  border-color: #cbd5e1;
+}
+
+@keyframes pulseBlue {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+}
+
+@keyframes pulseOrange {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+}
+
+.flowchart-node-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 8px;
+  line-height: 1.2;
+}
+
+.flowchart-node-status {
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.flowchart-connector-line {
+  position: absolute;
+  top: 21px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: #cbd5e1;
+  z-index: 1;
+}
+
+.flowchart-connector-line.active-green {
+  background: #10b981;
+}
+
+.flowchart-connector-line.active-orange {
+  background: #f97316;
+}
+
+.flowchart-connector-line.active-blue {
+  background: #2563eb;
+}
+
+/* Refund Successful Message Card */
+.refund-success-banner {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1.5px solid #34d399;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
+  margin-bottom: 4px;
+}
+
+.refund-success-icon {
+  width: 38px;
+  height: 38px;
+  background: #10b981;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.refund-success-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.refund-success-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #065f46;
+}
+
+.refund-success-desc {
+  font-size: 11.5px;
+  color: #047857;
+  font-weight: 500;
+}

@@ -31,6 +31,14 @@ function normalizeSuccess(value) {
   return String(value || "").trim().toLowerCase() === "true";
 }
 
+export function normalizeBookingType(value, fallback = "") {
+  const normalized = String(value || fallback || "").trim().toLowerCase();
+  if (normalized === "bus" || normalized === "flight" || normalized === "hotel") {
+    return normalized;
+  }
+  return String(fallback || "").trim().toLowerCase();
+}
+
 function toFareNumber(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : 0;
@@ -52,23 +60,11 @@ function normalizeFetchedTicket(ticket, request) {
   const bookingReference = String(
     pickFirst(ticket, ["bookingReference", "BookingReference", "pnr", "PNR", "reference", "Reference"], "") || ""
   ).trim();
-  const refUpper = bookingReference.toUpperCase();
-
   let rawType = String(
-    pickFirst(ticket, ["ticketType", "TicketType", "type", "Type"], "") || ""
+    pickFirst(ticket, ["bookingType", "BookingType", "ticketType", "TicketType", "type", "Type"], "") || ""
   ).trim().toLowerCase();
 
-  if (!rawType || rawType === "bus") {
-    if (refUpper.startsWith("FL") || refUpper.startsWith("FLIGHT")) {
-      rawType = "flight";
-    } else if (refUpper.startsWith("HTL") || refUpper.startsWith("HOTEL")) {
-      rawType = "hotel";
-    } else if (refUpper.startsWith("BUS") || refUpper.startsWith("PB")) {
-      rawType = "bus";
-    } else {
-      rawType = bookingType || "bus";
-    }
-  }
+  rawType = normalizeBookingType(rawType, bookingType || "bus");
 
   const departureTimeIst = pickFirst(ticket, ["departureTimeIst", "DepartureTimeIst"], "");
   const arrivalTimeIst = pickFirst(ticket, ["arrivalTimeIst", "ArrivalTimeIst"], "");
@@ -85,72 +81,61 @@ function normalizeFetchedTicket(ticket, request) {
       ? ticket.Passengers
       : [];
 
+  const normalizedPassengers = passengers.map(normalizePassenger);
+  const fallbackContact = {
+    ...(ticket.contact && typeof ticket.contact === "object" ? ticket.contact : {}),
+    ...(ticket.Contact && typeof ticket.Contact === "object" ? ticket.Contact : {}),
+    mobile: ticket.contact?.mobile ?? ticket.Contact?.mobile ?? request.mobile,
+    email: ticket.contact?.email ?? ticket.Contact?.email ?? request.email,
+  };
+  const normalizedFare = {
+    ...(ticket.fare && typeof ticket.fare === "object" ? ticket.fare : {}),
+    totalFare: pickFirst(ticket?.fare, ["totalFare", "TotalFare"], fareValue),
+  };
+
   return {
     ...ticket,
-    bookingReference,
-    pnr: bookingReference,
+    bookingReference: ticket.bookingReference ?? ticket.BookingReference ?? bookingReference,
+    pnr: ticket.pnr ?? ticket.PNR ?? bookingReference,
+    bookingType: rawType,
     ticketType: rawType,
-    providerName: String(
-      pickFirst(
-        ticket,
-        ["providerName", "ProviderName", "operatorName", "OperatorName", "operator", "Operator", "airline", "hotelName"],
-        rawType === "flight" ? "Flight Service" : rawType === "hotel" ? "Hotel Stay" : "Bus Service"
-      ) || ""
-    ).trim(),
-    tripNumber: String(
-      pickFirst(
-        ticket,
-        ["tripNumber", "TripNumber", "busNumber", "BusNumber", "busNo", "BusNo"],
-        "--"
-      ) || "--"
-    ).trim(),
-    fromCity: String(
-      pickFirst(ticket, ["fromCity", "FromCity", "source", "Source"], "--") || "--"
-    ).trim(),
-    toCity: String(
-      pickFirst(ticket, ["toCity", "ToCity", "destination", "Destination"], "--") || "--"
-    ).trim(),
-    departureTime: pickFirst(
+    normalizedBookingType: rawType,
+    providerName: ticket.providerName ?? ticket.ProviderName ?? pickFirst(
       ticket,
-      ["departureTimeIst", "DepartureTimeIst", "departureTime", "DepartureTime", "departureDateTime", "DepartureDateTime", "departureTimeUtc", "DepartureTimeUtc"],
+      ["operatorName", "OperatorName", "operator", "Operator", "airline", "Airline", "hotelName", "HotelName", "name", "Name"],
+      rawType === "flight" ? "Flight Service" : rawType === "hotel" ? "Hotel Stay" : "Bus Service"
+    ),
+    tripNumber: ticket.tripNumber ?? ticket.TripNumber ?? pickFirst(
+      ticket,
+      ["busNumber", "BusNumber", "busNo", "BusNo", "flightNumber", "FlightNumber", "flightNo", "FlightNo"],
+      "--"
+    ),
+    fromCity: ticket.fromCity ?? ticket.FromCity ?? pickFirst(ticket, ["source", "Source"], "--"),
+    toCity: ticket.toCity ?? ticket.ToCity ?? pickFirst(ticket, ["destination", "Destination"], "--"),
+    departureTime: ticket.departureTime ?? ticket.DepartureTime ?? pickFirst(
+      ticket,
+      ["departureTimeIst", "DepartureTimeIst", "departureDateTime", "DepartureDateTime", "departureTimeUtc", "DepartureTimeUtc"],
       ""
     ),
-    arrivalTime: pickFirst(
+    arrivalTime: ticket.arrivalTime ?? ticket.ArrivalTime ?? pickFirst(
       ticket,
-      ["arrivalTimeIst", "ArrivalTimeIst", "arrivalTime", "ArrivalTime", "arrivalDateTime", "ArrivalDateTime", "arrivalTimeUtc", "ArrivalTimeUtc"],
+      ["arrivalTimeIst", "ArrivalTimeIst", "arrivalDateTime", "ArrivalDateTime", "arrivalTimeUtc", "ArrivalTimeUtc"],
       ""
     ),
-    departureTimeIst,
-    arrivalTimeIst,
-    departureTimeUtc,
-    arrivalTimeUtc,
-    busType: String(
-      pickFirst(ticket, ["busType", "BusType", "travelClass", "TravelClass", "className", "ClassName"], "") || ""
-    ).trim(),
-    boardingPoint: pickFirst(
-      ticket,
-      ["boardingPoint", "BoardingPoint", "boarding", "Boarding"],
-      ticket?.boardingPoint
-    ),
-    droppingPoint: pickFirst(
-      ticket,
-      ["droppingPoint", "DroppingPoint", "arrivalPlace", "ArrivalPlace", "dropping", "Dropping"],
-      ticket?.droppingPoint
-    ),
-    status: String(pickFirst(ticket, ["status", "Status"], "Booked") || "Booked"),
-    passengers: passengers.map(normalizePassenger),
-    contact: {
-      ...(ticket.contact && typeof ticket.contact === "object" ? ticket.contact : {}),
-      ...(ticket.Contact && typeof ticket.Contact === "object" ? ticket.Contact : {}),
-      mobile: request.mobile,
-      email: request.email,
-    },
-    fare: {
-      ...(ticket.fare && typeof ticket.fare === "object" ? ticket.fare : {}),
-      totalFare: toFareNumber(fareValue),
-    },
-    totalFare: toFareNumber(fareValue),
-    totalPaid: toFareNumber(fareValue),
+    departureTimeIst: ticket.departureTimeIst ?? ticket.DepartureTimeIst ?? departureTimeIst,
+    arrivalTimeIst: ticket.arrivalTimeIst ?? ticket.ArrivalTimeIst ?? arrivalTimeIst,
+    departureTimeUtc: ticket.departureTimeUtc ?? ticket.DepartureTimeUtc ?? departureTimeUtc,
+    arrivalTimeUtc: ticket.arrivalTimeUtc ?? ticket.ArrivalTimeUtc ?? arrivalTimeUtc,
+    busType: ticket.busType ?? ticket.BusType ?? pickFirst(ticket, ["travelClass", "TravelClass", "className", "ClassName"], ""),
+    boardingPoint: ticket.boardingPoint ?? ticket.BoardingPoint ?? pickFirst(ticket, ["boarding", "Boarding"], ticket?.boardingPoint),
+    droppingPoint: ticket.droppingPoint ?? ticket.DroppingPoint ?? pickFirst(ticket, ["arrivalPlace", "ArrivalPlace", "dropping", "Dropping"], ticket?.droppingPoint),
+    status: ticket.status ?? ticket.Status ?? "Booked",
+    passengers: Array.isArray(ticket.passengers) ? ticket.passengers : normalizedPassengers,
+    normalizedPassengers,
+    contact: fallbackContact,
+    fare: normalizedFare,
+    totalFare: ticket.totalFare ?? ticket.TotalFare ?? toFareNumber(fareValue),
+    totalPaid: ticket.totalPaid ?? ticket.TotalPaid ?? toFareNumber(fareValue),
     fetchVerified: true,
   };
 }

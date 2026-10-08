@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter, Download, ChevronDown, Eye, Edit2 } from 'lucide-react';
 import depositApi, { getDepositRequests, cycleDepositStatus, updateAdminRemark } from "../../../services/depositService";
+import AdminPagination from "../../../components/AdminPagination";
 
 const toTitleCase = (str) => {
     if (!str) return '';
@@ -18,7 +19,7 @@ function DepositRequestList() {
     const [depositRequests, setDepositRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterOpen, setFilterOpen] = useState(false);
@@ -988,49 +989,23 @@ function DepositRequestList() {
                         </tbody>
                     </table>
 
-                    {/* Pagination */}
-                    <div style={styles.pagination}>
-                        <div style={styles.paginationInfo}>
-                            Showing {totalItems === 0 ? 0 : indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} deposit requests
-                        </div>
-                        <div style={styles.pageNumbers}>
-                            <button
-                                type="button"
-                                disabled={currentPage === 1 || totalPages <= 1}
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                style={{
-                                    ...styles.pageBtn,
-                                    ...((currentPage === 1 || totalPages <= 1) ? styles.pageBtnDisabled : {})
-                                }}
-                            >
-                                Previous
-                            </button>
-                            {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    type="button"
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    style={{
-                                        ...styles.pageNoBtn,
-                                        ...(currentPage === pageNum ? styles.pageNoActive : {})
-                                    }}
-                                >
-                                    {pageNum}
-                                </button>
-                            ))}
-                            <button
-                                type="button"
-                                disabled={currentPage === totalPages || totalPages <= 1}
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                style={{
-                                    ...styles.pageBtn,
-                                    ...((currentPage === totalPages || totalPages <= 1) ? styles.pageBtnDisabled : {})
-                                }}
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </div>
+                    {/* AdminPagination */}
+                    <AdminPagination
+                        currentPage={currentPage}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        pageSize={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={(newSize) => {
+                            setItemsPerPage(newSize);
+                            setCurrentPage(1);
+                        }}
+                        onPageSizeChange={(newSize) => {
+                            setItemsPerPage(newSize);
+                            setCurrentPage(1);
+                        }}
+                        itemName="deposit requests"
+                    />
                 </div>
 
                 {editPopupOpen && requestToEdit && createPortal(

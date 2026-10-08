@@ -1,5 +1,7 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
+import BookingStatusTabs from "../../components/booking/BookingStatusTabs";
+import { bookingStatusOptions, bookingStatusLabel, bookingStatusClass, bookingCategory } from "../../utils/bookingStatus";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Eye,
   Loader2,
@@ -17,8 +19,14 @@ import {
 import { getHotelVisuals } from "./hotelPresentation";
 import "../../STYLES/HotelBookings.css";
 import "../../STYLES/FlightOpsDashboard.css";
+import "../../STYLES/BookingTableRows.css";
 import CancellationModal from "./CancellationModal";
+import BookingPagination, { paginateBookings } from "../../components/booking/BookingPagination";
+import BookingLifecycle from "../../components/booking/BookingLifecycle";
+import { matchesHotelFilters } from "../../utils/hotelBookingFilters";
 import { formatDateTime } from "../../utils/apiDateFormat";
+
+const emptyHotelFilters = () => ({ status: "All", bookingReference: "", hotelName: "", guestName: "" });
 
 function formatCurrency(value) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -62,30 +70,11 @@ function formatHotelDate(dateStr, defaultTime = "14:00") {
   }
 }
 
-function getStatusClassName(status) {
-  const normalized = String(status || "").trim().toLowerCase();
-  if (normalized.includes("cancel")) {
-    return "danger";
-  }
-  if (
-    normalized.includes("confirm") ||
-    normalized.includes("success") ||
-    normalized.includes("complete") ||
-    normalized.includes("booked")
-  ) {
-    return "success";
-  }
-  return "default";
-}
-
 export default function HotelBookings() {
+  const [page, setPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    status: "All",
-    bookingReference: "",
-    hotelName: "",
-    guestName: "",
-  });
+  const [filters, setFilters] = useState(emptyHotelFilters);
+  const [appliedFilters, setAppliedFilters] = useState(emptyHotelFilters);
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -95,73 +84,41 @@ export default function HotelBookings() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
 
+  const bookingRequestId = useRef(0);
   const fetchBookings = async () => {
+    const requestId = ++bookingRequestId.current;
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      const result = await getMyHotelBookings();
+      const result = await getMyHotelBookings({ status: "all" });
+      if (requestId !== bookingRequestId.current) return;
       setBookings(Array.isArray(result) ? result : []);
     } catch (error) {
+      if (requestId !== bookingRequestId.current) return;
       setBookings([]);
       setErrorMessage(error.message || "Unable to load hotel bookings.");
     } finally {
-      setIsLoading(false);
+      if (requestId === bookingRequestId.current) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchBookings();
+    return () => { bookingRequestId.current += 1; };
   }, []);
 
-  const filteredBookings = useMemo(() => {
-    return bookings.filter((booking) => {
-      if (
-        filters.bookingReference &&
-        !String(booking.bookingReference || "")
-          .toLowerCase()
-          .includes(filters.bookingReference.toLowerCase())
-      ) {
-        return false;
-      }
+  const filteredBookings = useMemo(() => bookings.filter((booking) => matchesHotelFilters(booking, appliedFilters)), [bookings, appliedFilters]);
 
-      if (
-        filters.hotelName &&
-        !String(booking.hotelName || "")
-          .toLowerCase()
-          .includes(filters.hotelName.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filters.guestName &&
-        !String(booking.guestName || "")
-          .toLowerCase()
-          .includes(filters.guestName.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (filters.status !== "All") {
-        const statusLower = String(booking.status || "").toLowerCase();
-        const filterLower = filters.status.toLowerCase();
-        if (!statusLower.includes(filterLower)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [bookings, filters]);
+  const handleSearch = () => { setAppliedFilters({ ...filters }); setPage(1); };
+  const paginated = paginateBookings(filteredBookings, page);
+  useEffect(() => { setPage(1); }, [appliedFilters]);
+  useEffect(() => { if (page !== paginated.currentPage) setPage(paginated.currentPage); }, [page, paginated.currentPage]);
 
   const handleReset = () => {
-    setFilters({
-      status: "All",
-      bookingReference: "",
-      hotelName: "",
-      guestName: "",
-    });
+    setPage(1);
+    setFilters(emptyHotelFilters());
+    setAppliedFilters(emptyHotelFilters());
     setErrorMessage("");
     setActionMessage("");
   };
@@ -247,6 +204,8 @@ export default function HotelBookings() {
           </div>
         )}
 
+      <BookingStatusTabs className="booking-status-tabs--bus-aligned" value={appliedFilters.status} onChange={(status) => { setFilters(previous => ({ ...previous, status })); setAppliedFilters(previous => ({ ...previous, status })); setPage(1); }} />
+
         {isFilterOpen && (
           <section className="hotel-bookings-filters">
             <label>
@@ -254,12 +213,10 @@ export default function HotelBookings() {
               <select
                 value={filters.status}
                 onChange={(event) =>
-                  setFilters((previous) => ({ ...previous, status: event.target.value }))
+                  { const status = event.target.value; setFilters(previous => ({ ...previous, status })); setAppliedFilters(previous => ({ ...previous, status })); setPage(1); }
                 }
               >
-                <option value="All">All</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Cancelled">Cancelled</option>
+              {bookingStatusOptions.map(status => <option key={status} value={status}>{status}</option>)}
               </select>
             </label>
 
@@ -309,13 +266,13 @@ export default function HotelBookings() {
             </label>
 
             <div className="hotel-bookings-filters-actions">
-              <button type="button" className="hotel-bookings-btn hotel-bookings-btn--primary" onClick={fetchBookings}>
+              <button type="button" className="hotel-bookings-btn hotel-bookings-btn--primary" onClick={handleSearch}>
                 <Search size={14} />
-                <span>Search</span>
+                <span>SEARCH</span>
               </button>
               <button type="button" className="hotel-bookings-btn" onClick={handleReset}>
                 <X size={14} />
-                <span>Clear</span>
+                <span>CLEAR</span>
               </button>
             </div>
           </section>
@@ -334,7 +291,7 @@ export default function HotelBookings() {
             </div>
           ) : (
             <div className="ops-table-scroll">
-              <table className="ops-table">
+              <table className="ops-table booking-table-rows">
                 <thead>
                   <tr>
                     <th>BOOKING REF / DATE</th>
@@ -347,17 +304,15 @@ export default function HotelBookings() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBookings.map((booking) => {
+                  {paginated.rows.map((booking) => {
                     const bookingStatus = String(booking.status || "").trim();
-                    const isCancelled = bookingStatus.toLowerCase().includes("cancel");
-                    const isCompleted = bookingStatus.toLowerCase().includes("complete") ||
-                      bookingStatus.toLowerCase().includes("success") ||
-                      bookingStatus.toLowerCase() === "completed";
-                    const bookedAt = formatBookedAt(booking.createdAt || booking.bookingDate || booking.bookedAt);
+                    const isCancelled = ["cancelled", "payment failed"].includes(bookingCategory(booking));
+                    const isCompleted = bookingCategory(booking) === "past";
+                    const bookedAt = formatBookedAt(booking.bookingTime ?? booking.createdAt ?? booking.bookingDate ?? booking.bookedAt);
                     const checkIn = formatHotelDate(booking.checkInDate || booking.dates, booking.checkInTime || "14:00");
                     const checkOut = formatHotelDate(booking.checkOutDate, booking.checkOutTime || "11:00");
-                    const totalFormatted = Number(booking.amount || booking.totalPrice || booking.price || 0).toLocaleString("en-IN");
-                    const displayStatus = booking.status || "Confirmed";
+                    const totalFormatted = Number(booking.amount ?? booking.totalPrice ?? booking.price ?? 0).toLocaleString("en-IN");
+                    const displayStatus = bookingStatusLabel(booking);
 
                     return (
                       <tr key={booking.id || booking.bookingReference}>
@@ -367,11 +322,13 @@ export default function HotelBookings() {
                         </td>
                         <td>
                           <strong>{booking.hotelName}</strong>
-                          <small>{booking.city || booking.address || booking.destination || "Vijayawada"}</small>
+                          {(booking.city || booking.address || booking.destination) && (
+                            <small>{booking.city || booking.address || booking.destination}</small>
+                          )}
                         </td>
                         <td>
-                          <strong>{booking.guestName || "SURESH REDDY AVULA"}</strong>
-                          <small>{booking.guestPhone || booking.contactNumber || "+91 9876543210"}</small>
+                          <strong>{booking.guestName || "--"}</strong>
+                          <small>{booking.guestPhone || booking.contactNumber || "--"}</small>
                         </td>
                         <td>
                           <strong>{checkIn}</strong>
@@ -379,10 +336,12 @@ export default function HotelBookings() {
                         </td>
                         <td>
                           <strong>INR {totalFormatted}</strong>
-                          <small>{booking.roomType || booking.roomTypeName || booking.mealPlan || "Deluxe King Room"}</small>
+                          {(booking.roomType || booking.roomTypeName || booking.mealPlan) && (
+                            <small>{booking.roomType || booking.roomTypeName || booking.mealPlan}</small>
+                          )}
                         </td>
                         <td>
-                          <span className={`status-badge ${getStatusClassName(displayStatus)}`}>
+                          <span className={`status-badge ${bookingStatusClass(booking)}`}>
                             {displayStatus}
                           </span>
                         </td>
@@ -423,6 +382,7 @@ export default function HotelBookings() {
             </div>
           )}
         </section>
+        {!isLoading && filteredBookings.length > 0 && <BookingPagination page={paginated.currentPage} pageCount={paginated.pageCount} onChange={setPage} />}
 
         {selectedBooking && (
           <div className="hotel-modal-backdrop" onClick={() => setSelectedBooking(null)}>
@@ -434,13 +394,22 @@ export default function HotelBookings() {
                 </button>
               </header>
               <div className="hotel-modal-body">
+                <BookingLifecycle booking={selectedBooking} />
                 <div className="hotel-modal-field">
                   <label>Booking Reference</label>
                   <strong>{selectedBooking.bookingReference}</strong>
                 </div>
                 <div className="hotel-modal-field">
                   <label>Status</label>
-                  <strong>{selectedBooking.status}</strong>
+                  <strong>{bookingStatusLabel(selectedBooking)}</strong>
+                </div>
+                <div className="hotel-modal-field">
+                  <label>Booking ID</label>
+                  <strong>{selectedBooking.bookingId ?? selectedBooking.BookingId ?? "--"}</strong>
+                </div>
+                <div className="hotel-modal-field">
+                  <label>Booked At</label>
+                  <strong>{selectedBooking.createdAt ? formatDateTime(selectedBooking.createdAt) : "--"}</strong>
                 </div>
                 <div className="hotel-modal-field full-width">
                   <label>Guest Name</label>
@@ -456,15 +425,15 @@ export default function HotelBookings() {
                 </div>
                 <div className="hotel-modal-field">
                   <label>Provider booking ID</label>
-                  <strong>{selectedBooking.providerBookingId || "--"}</strong>
+                  <strong>{String(selectedBooking.providerBookingId ?? selectedBooking.ProviderBookingId ?? "").trim() || "--"}</strong>
                 </div>
                 <div className="hotel-modal-field">
                   <label>Total Amount Paid</label>
-                  <strong>{formatCurrency(selectedBooking.amount || selectedBooking.price)}</strong>
+                  <strong>{formatCurrency(selectedBooking.amount ?? selectedBooking.price)}</strong>
                 </div>
-                <div className="hotel-modal-field full-width">
-                  <label>Booked At</label>
-                  <strong>{selectedBooking.createdAt ? formatDateTime(selectedBooking.createdAt) : "--"}</strong>
+                <div className="hotel-modal-field">
+                  <label>Payment Transaction ID</label>
+                  <strong>{selectedBooking.paymentId ?? "--"}</strong>
                 </div>
                 {selectedBooking.cancellationReason && (
                   <div className="hotel-modal-field full-width">

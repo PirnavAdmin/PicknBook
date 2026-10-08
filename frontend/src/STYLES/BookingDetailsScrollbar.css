@@ -1,0 +1,64 @@
+/* Scrollbar colors shared by flight and bus booking details only. */
+.ops-modal-backdrop.booking-details-scrollbar {
+  overflow: hidden;
+}
+ 
+.booking-details-scrollbar > .ops-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  min-height: 0;
+  overflow: visible;
+}
+ 
+.booking-details-scrollbar > .ops-modal > header {
+  flex-shrink: 0;
+  border-radius: 14px 14px 0 0;
+}
+ 
+.booking-details-scrollbar .booking-details-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  border-radius: 0 0 14px 14px;
+}
+ 
+.booking-details-scrollbar .ops-table-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+ 
+.booking-details-scrollbar,
+.booking-details-scrollbar .booking-details-body,
+.booking-details-scrollbar .ops-modal,
+.booking-details-scrollbar .ops-table-scroll {
+  scrollbar-width: thin !important;
+  scrollbar-color: #475569 #f1f5f9 !important;
+}
+ 
+.booking-details-scrollbar::-webkit-scrollbar,
+.booking-details-scrollbar .booking-details-body::-webkit-scrollbar,
+.booking-details-scrollbar .ops-modal::-webkit-scrollbar,
+.booking-details-scrollbar .ops-table-scroll::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+  display: block !important;
+}
+ 
+.booking-details-scrollbar::-webkit-scrollbar-thumb,
+.booking-details-scrollbar .booking-details-body::-webkit-scrollbar-thumb,
+.booking-details-scrollbar .ops-modal::-webkit-scrollbar-thumb,
+.booking-details-scrollbar .ops-table-scroll::-webkit-scrollbar-thumb {
+  background: #475569 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+}
+ 
+.booking-details-scrollbar::-webkit-scrollbar-track,
+.booking-details-scrollbar .booking-details-body::-webkit-scrollbar-track,
+.booking-details-scrollbar .ops-modal::-webkit-scrollbar-track,
+.booking-details-scrollbar .ops-table-scroll::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+ 
+ 

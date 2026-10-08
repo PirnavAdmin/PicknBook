@@ -923,7 +923,7 @@
 }
 
 .dashboard-home .dashboard-header {
-  min-height: 173px;
+  min-height: 179px;
   border: 1.5px solid #ff0000;
   border-radius: 20px;
   background: linear-gradient(105deg, #fffbeb 0%, #ffedd5 45%, #e0f2fe 100%);
@@ -1801,9 +1801,9 @@
 }
 
 .dashboard-home .dashboard-header {
-  min-height: 118px;
+  min-height: 0;
   border-radius: 18px;
-  padding: 14px 18px;
+  padding: 8px 18px;
 }
 
 .dashboard-eyebrow {

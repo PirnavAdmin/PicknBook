@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "./FlightCancelRequestList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
-import { Filter, Download, Plus } from "lucide-react";
+import { Filter, Download, Plus, X } from "lucide-react";
 import { useAdminList } from "../../../utils/adminPortalStorage";
 import AdminPagination from "../../../components/AdminPagination";
 import {
@@ -1709,7 +1709,7 @@ export default function AdminFlightCancellationRequestListPage() {
                 title="Close"
                 aria-label="Close"
               >
-                ✕
+                Close
               </button>
             </div>
 
@@ -1977,8 +1977,10 @@ export default function AdminFlightCancellationRequestListPage() {
                 type="button"
                 className="admin-view-close-btn"
                 onClick={() => setIsCreateModalOpen(false)}
+                title="Close"
+                aria-label="Close"
               >
-                ✕
+                Close
               </button>
             </header>
 

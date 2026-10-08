@@ -2,9 +2,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Edit2, Trash2, X, ChevronDown, PlusCircle, RotateCcw, Wallet, User, Phone, Mail, ShieldAlert, Filter, Download } from 'lucide-react';
+import { Eye, Trash2, X, ChevronDown, PlusCircle, RotateCcw, Wallet, User, Phone, Mail, ShieldAlert, Filter, Download } from 'lucide-react';
 import { getCustomers, toggleCustomerStatus, toggleWalletStatus, addWalletBalance, resetWalletBalance, deleteCustomer } from "../../../services/customerService";
 import { setStoredValue } from '../../../utils/adminPortalStorage';
+import AdminPagination from "../../../components/AdminPagination";
 
 function CustomerList() {
     const navigate = useNavigate();
@@ -12,7 +13,7 @@ function CustomerList() {
     const [customers, setCustomers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +30,7 @@ function CustomerList() {
     const [addBalanceCustomer, setAddBalanceCustomer] = useState(null);
     const [balanceInput, setBalanceInput] = useState('');
     const [resetBalanceCustomer, setResetBalanceCustomer] = useState(null);
+    const [resetLoading, setResetLoading] = useState(false);
     const [deleteCustomerConfirm, setDeleteCustomerConfirm] = useState(null);
 
     const [openMenu, setOpenMenu] = useState({ id: null, type: null });
@@ -215,24 +217,34 @@ function CustomerList() {
     };
 
     const handleOpenResetBalanceModal = (customer) => {
+        if (Number(customer?.walletBalance || 0) <= 0) {
+            showToast('Wallet balance is already ₹0.00.', 'info');
+            closeMenu();
+            return;
+        }
         setResetBalanceCustomer(customer);
         closeMenu();
     };
 
     const handleConfirmResetBalance = async () => {
-        if (!resetBalanceCustomer) return;
+        if (!resetBalanceCustomer || resetLoading) return;
         try {
+            setResetLoading(true);
             const res = await resetWalletBalance(resetBalanceCustomer.id);
+            const newBalance = res?.walletBalance ?? 0;
             setCustomers(prev =>
-                prev.map(c => c.id === resetBalanceCustomer.id ? { ...c, walletBalance: res?.walletBalance ?? 0 } : c)
+                prev.map(c => c.id === resetBalanceCustomer.id ? { ...c, walletBalance: newBalance } : c)
             );
             showToast(res?.message || 'Wallet balance reset successfully.', 'success');
-            fetchCustomers();
             setResetBalanceCustomer(null);
         } catch (error) {
             console.error("Error resetting balance:", error);
-            const errDetail = error.response?.data?.message || (typeof error.response?.data === 'string' ? error.response.data : 'Failed to reset balance.');
+            const errDetail = error.response?.data?.message
+                || error.response?.data?.title
+                || (typeof error.response?.data === 'string' ? error.response.data : 'Failed to reset wallet balance.');
             showToast(errDetail, "error");
+        } finally {
+            setResetLoading(false);
         }
     };
 
@@ -1243,15 +1255,6 @@ function CustomerList() {
                                                             </button>
                                                             <button
                                                                 type="button"
-                                                                style={{ ...styles.menuItem, display: 'flex', alignItems: 'center', gap: '8px' }}
-                                                                onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-                                                                onClick={() => { closeMenu(); handleEditCustomer(customer.id); }}
-                                                            >
-                                                                <Edit2 size={14} /> Edit Customer
-                                                            </button>
-                                                            <button
-                                                                type="button"
                                                                 style={{ ...styles.menuItem, ...styles.menuItemDanger, display: 'flex', alignItems: 'center', gap: '8px' }}
                                                                 onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
                                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
@@ -1282,11 +1285,22 @@ function CustomerList() {
                                                                 onClick={() => handleOpenAddBalanceModal(customer)}
                                                             >
                                                                 <PlusCircle size={14} /> Add Balance
-                                                            </button>
-                                                            <button
+                                                            </button>                                                             <button
                                                                 type="button"
-                                                                style={{ ...styles.menuItem, display: 'flex', alignItems: 'center', gap: '8px' }}
-                                                                onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
+                                                                disabled={Number(customer.walletBalance || 0) <= 0}
+                                                                style={{
+                                                                    ...styles.menuItem,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px',
+                                                                    opacity: Number(customer.walletBalance || 0) <= 0 ? 0.5 : 1,
+                                                                    cursor: Number(customer.walletBalance || 0) <= 0 ? 'not-allowed' : 'pointer'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (Number(customer.walletBalance || 0) > 0) {
+                                                                        e.target.style.background = 'rgba(74, 15, 26, 0.08)';
+                                                                    }
+                                                                }}
                                                                 onMouseLeave={(e) => { e.target.style.background = 'transparent'; }}
                                                                 onClick={() => handleOpenResetBalanceModal(customer)}
                                                             >
@@ -1309,49 +1323,23 @@ function CustomerList() {
                         </tbody>
                     </table>
 
-                    {/* Pagination */}
-                    <div style={styles.pagination}>
-                        <div style={styles.paginationInfo}>
-                            Showing {totalItems === 0 ? 0 : indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} customers
-                        </div>
-                        <div style={styles.pageNumbers}>
-                            <button
-                                type="button"
-                                disabled={currentPage === 1 || totalPages <= 1}
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                style={{
-                                    ...styles.pageBtn,
-                                    ...((currentPage === 1 || totalPages <= 1) ? styles.pageBtnDisabled : {})
-                                }}
-                            >
-                                Previous
-                            </button>
-                            {totalPages > 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-                                <button
-                                    key={pageNum}
-                                    type="button"
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    style={{
-                                        ...styles.pageNoBtn,
-                                        ...(currentPage === pageNum ? styles.pageNoActive : {})
-                                    }}
-                                >
-                                    {pageNum}
-                                </button>
-                            ))}
-                            <button
-                                type="button"
-                                disabled={currentPage === totalPages || totalPages <= 1}
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                style={{
-                                    ...styles.pageBtn,
-                                    ...((currentPage === totalPages || totalPages <= 1) ? styles.pageBtnDisabled : {})
-                                }}
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </div>
+                    {/* AdminPagination */}
+                    <AdminPagination
+                        currentPage={currentPage}
+                        totalItems={totalItems}
+                        itemsPerPage={itemsPerPage}
+                        pageSize={itemsPerPage}
+                        onPageChange={setCurrentPage}
+                        onItemsPerPageChange={(newSize) => {
+                            setItemsPerPage(newSize);
+                            setCurrentPage(1);
+                        }}
+                        onPageSizeChange={(newSize) => {
+                            setItemsPerPage(newSize);
+                            setCurrentPage(1);
+                        }}
+                        itemName="customers"
+                    />
                 </div>
             </div>
 
@@ -1424,13 +1412,6 @@ function CustomerList() {
                             </div>
                         </div>
                         <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                            <button
-                                type="button"
-                                style={{ padding: '8px 16px', background: '#A51C49', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
-                                onClick={() => { setSelectedCustomer(null); handleEditCustomer(selectedCustomer.id); }}
-                            >
-                                Edit Customer
-                            </button>
                             <button
                                 type="button"
                                 style={{ padding: '8px 16px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
@@ -1542,14 +1523,14 @@ function CustomerList() {
                         justifyContent: 'center',
                         padding: '20px',
                     }}
-                    onClick={() => setResetBalanceCustomer(null)}
+                    onClick={() => !resetLoading && setResetBalanceCustomer(null)}
                 >
                     <div
                         style={{
                             background: '#ffffff',
                             borderRadius: '16px',
                             width: '100%',
-                            maxWidth: '440px',
+                            maxWidth: '460px',
                             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                             overflow: 'hidden',
                         }}
@@ -1562,29 +1543,43 @@ function CustomerList() {
                             </div>
                             <button
                                 type="button"
-                                style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer' }}
-                                onClick={() => setResetBalanceCustomer(null)}
+                                disabled={resetLoading}
+                                style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: resetLoading ? 'not-allowed' : 'pointer' }}
+                                onClick={() => !resetLoading && setResetBalanceCustomer(null)}
                             >
                                 <X size={18} />
                             </button>
                         </div>
                         <div style={{ padding: '24px' }}>
-                            <p style={{ margin: 0, fontSize: '0.95rem', color: '#334155', lineHeight: 1.5 }}>
-                                Are you sure you want to reset wallet balance to <strong>Rs. 0</strong> for customer <strong>{resetBalanceCustomer.customerName}</strong>?
+                            <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: '#334155', lineHeight: 1.5 }}>
+                                Are you sure you want to reset <strong>{resetBalanceCustomer.customerName}</strong>'s wallet balance of <strong>₹{(Number(resetBalanceCustomer.walletBalance) || 0).toFixed(2)}</strong> down to <strong>₹0.00</strong>?
                             </p>
+                            <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', fontSize: '0.82rem', lineHeight: 1.4 }}>
+                                <strong>Note:</strong> An automated Pick&amp;book transaction receipt email will be dispatched to <strong>{resetBalanceCustomer.emailId || 'the customer'}</strong>.
+                            </div>
                         </div>
                         <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                             <button
                                 type="button"
-                                style={{ padding: '8px 16px', background: '#d97706', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                                disabled={resetLoading}
+                                style={{
+                                    padding: '8px 16px',
+                                    background: resetLoading ? '#94a3b8' : '#d97706',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    fontWeight: 600,
+                                    cursor: resetLoading ? 'not-allowed' : 'pointer'
+                                }}
                                 onClick={handleConfirmResetBalance}
                             >
-                                Confirm Reset
+                                {resetLoading ? 'Resetting...' : 'Reset Wallet to ₹0.00'}
                             </button>
                             <button
                                 type="button"
-                                style={{ padding: '8px 16px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
-                                onClick={() => setResetBalanceCustomer(null)}
+                                disabled={resetLoading}
+                                style={{ padding: '8px 16px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: resetLoading ? 'not-allowed' : 'pointer' }}
+                                onClick={() => !resetLoading && setResetBalanceCustomer(null)}
                             >
                                 Cancel
                             </button>

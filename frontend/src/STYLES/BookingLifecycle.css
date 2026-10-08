@@ -1,0 +1,76 @@
+.booking-lifecycle {
+  grid-column: 1 / -1;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1f2a44;
+}
+
+.booking-lifecycle .booking-lifecycle-heading {
+  margin: 0 0 16px;
+  color: #ff0000;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.booking-lifecycle-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.booking-lifecycle-stage {
+  --lifecycle-color: #64748b;
+  --lifecycle-background: #f1f5f9;
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+
+.booking-lifecycle-stage:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 30px;
+  bottom: 0;
+  width: 2px;
+  background: #e5e7eb;
+}
+
+.booking-lifecycle-stage:last-child { padding-bottom: 0; }
+.booking-lifecycle-stage--completed { --lifecycle-color: #15803d; --lifecycle-background: #dcfce7; }
+.booking-lifecycle-stage--in-progress { --lifecycle-color: #2563eb; --lifecycle-background: #dbeafe; }
+.booking-lifecycle-stage--warning { --lifecycle-color: #b45309; --lifecycle-background: #fef3c7; }
+.booking-lifecycle-stage--failed { --lifecycle-color: #dc2626; --lifecycle-background: #fee2e2; }
+.booking-lifecycle-stage--skipped { opacity: 0.6; }
+
+.booking-lifecycle-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 50%;
+  background: var(--lifecycle-background);
+  color: var(--lifecycle-color);
+}
+
+.booking-lifecycle-content { flex: 1; min-width: 0; }
+.booking-lifecycle-stage-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.booking-lifecycle-stage-heading h5 { margin: 0; font-size: 0.82rem; font-weight: 600; overflow-wrap: anywhere; }
+.booking-lifecycle-status { padding: 3px 8px; border-radius: 6px; font-size: 0.68rem; font-weight: 600; color: var(--lifecycle-color); background: var(--lifecycle-background); }
+.booking-lifecycle-time, .booking-lifecycle-summary, .booking-lifecycle-empty { margin: 6px 0 0; font-size: 0.76rem; line-height: 1.5; overflow-wrap: anywhere; }
+.booking-lifecycle-time, .booking-lifecycle-empty { color: #64748b; }
+.booking-lifecycle-summary { white-space: pre-wrap; }
+.booking-lifecycle-meta { margin: 10px 0 0; padding: 10px; background: #f7f9fc; border-radius: 8px; font-size: 0.73rem; }
+.booking-lifecycle-meta > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px; padding: 3px 0; }
+.booking-lifecycle-meta dt { font-weight: 600; overflow-wrap: anywhere; }
+.booking-lifecycle-meta dd, .booking-lifecycle-meta pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; }
+.booking-lifecycle-loading { animation: booking-lifecycle-spin 1s linear infinite; }
+@keyframes booking-lifecycle-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .booking-lifecycle-loading { animation: none; } }
+@media (max-width: 480px) { .booking-lifecycle-meta > div { grid-template-columns: 1fr; gap: 2px; } }

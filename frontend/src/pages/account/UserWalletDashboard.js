@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Wallet,
   Coins,
@@ -52,12 +52,20 @@ export default function UserWalletDashboard() {
   const [globalError, setGlobalError] = useState("");
   const [adminOffers, setAdminOffers] = useState([]);
 
+  const latestWalletData = useRef({ summary, profile });
+  latestWalletData.current = { summary, profile };
+  const filteredTransactions = useMemo(() => transactions.filter((transaction) => {
+    const type = String(transaction.transactionType || transaction.type || "").trim().toLowerCase();
+    const selected = filterType.toLowerCase();
+    return !selected || (selected === "credit" ? type === "credit" || type === "deposit" : type === selected);
+  }), [transactions, filterType]);
+
   // 1. Fetch Summary & Profile (Live Backend Data)
   // Consolidated rate-limit safe refresh function
   const refreshAll = useCallback(
     async (isInitial = false) => {
       try {
-        if (isInitial && (!summary || transactions.length === 0)) {
+        if (isInitial) {
           setSummaryLoading(true);
           setTxLoading(true);
           setDepositsLoading(true);
@@ -66,18 +74,21 @@ export default function UserWalletDashboard() {
         const [summaryRes, profileRes, txRes, depRes, offersRes] = await Promise.allSettled([
           WalletApi.getSummary(),
           getAccountProfile(),
-          WalletApi.getTransactions(page, pageSize, filterType),
+          WalletApi.getTransactions(1, 10),
           WalletApi.getDeposits(),
           getPublicFeaturedOffers(),
         ]);
 
-        let summaryData = summary;
+        let summaryData = latestWalletData.current.summary;
         if (summaryRes.status === "fulfilled" && summaryRes.value) {
           summaryData = summaryRes.value;
           setSummary(summaryData);
+          setGlobalError("");
+        } else if (summaryRes.status === "rejected") {
+          setGlobalError(summaryRes.reason?.message || "Unable to load wallet summary.");
         }
 
-        let profileData = profile;
+        let profileData = latestWalletData.current.profile;
         if (profileRes.status === "fulfilled" && profileRes.value) {
           profileData = profileRes.value;
           setProfile(profileData);
@@ -211,70 +222,8 @@ export default function UserWalletDashboard() {
           return dateB - dateA;
         });
 
-        // --- BALANCE-DERIVED FALLBACK ---
-        // If the backend summary confirms a real positive balance but returned NO transaction records,
-        // show a single derived entry so the user knows where their balance came from.
-        const resolvedBalance =
-          summaryData?.availableBalance ??
-          summaryData?.walletBalance ??
-          summaryData?.balance ??
-          profileData?.walletBalance ??
-          profileData?.availableBalance ??
-          0;
-        const currentBal = Number(resolvedBalance) || 0;
-
-        if (merged.length === 0 && currentBal > 0) {
-          // Prefer any explicit credit timestamp or reference from summary
-          const creditRef =
-            summaryData?.lastCreditRef ||
-            summaryData?.referenceNumber ||
-            summaryData?.transactionId ||
-            summaryData?.walletId ||
-            summaryData?.id;
-
-          const creditDate =
-            summaryData?.lastCreditAt ||
-            summaryData?.lastTransactionAt ||
-            summaryData?.updatedAt ||
-            summaryData?.createdAt ||
-            profileData?.updatedAt ||
-            profileData?.createdAt;
-
-          const creditNote =
-            summaryData?.lastCreditNote ||
-            summaryData?.remark ||
-            summaryData?.description ||
-            "Admin Wallet Credit";
-
-          merged.push({
-            id: creditRef || `BAL-CREDIT-${currentBal}`,
-            refCode: creditRef || `WLT-ADD-${Math.round(currentBal)}`,
-            createdAt: creditDate || null,
-            transactionType: "Credit",
-            type: "Credit",
-            description: creditNote,
-            amount: currentBal,
-            runningBalance: currentBal,
-            status: "SUCCESS",
-            _derived: true, // internal marker (not displayed)
-          });
-        }
-
-        // Apply filter — strictly on real + derived-from-summary data
-        let filteredList = merged;
-        if (filterType) {
-          const target = filterType.toLowerCase();
-          filteredList = merged.filter((t) => {
-            const tType = (t.transactionType || t.type || "").toLowerCase();
-            if (target === "credit") return tType === "credit" || tType === "deposit";
-            if (target === "debit") return tType === "debit";
-            if (target === "refund") return tType === "refund";
-            return true;
-          });
-        }
-
-        setTransactions(filteredList);
-        setTxTotal(filteredList.length);
+        setTransactions(merged);
+        setTxTotal(merged.length);
       } catch (err) {
         console.error("Error loading wallet data:", err);
       } finally {
@@ -283,7 +232,7 @@ export default function UserWalletDashboard() {
         setDepositsLoading(false);
       }
     },
-    [page, pageSize, filterType]
+    []
   );
 
   // Initial Load & Rate-Limited Sync Polling
@@ -350,8 +299,6 @@ export default function UserWalletDashboard() {
 
   // Resolve Live Balance (Summary API primary, Profile fallback)
   const rawBalance =
-    summary?.availableBalance ??
-    summary?.walletBalance ??
     summary?.balance ??
     profile?.walletBalance ??
     profile?.availableBalance ??
@@ -556,14 +503,14 @@ export default function UserWalletDashboard() {
                       Loading transaction history...
                     </td>
                   </tr>
-                ) : transactions.length === 0 ? (
+                ) : filteredTransactions.length === 0 ? (
                   <tr>
                     <td colSpan="7" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
-                      No transactions found for current filter.
+                      No transactions found
                     </td>
                   </tr>
                 ) : (
-                  transactions.map((tx) => {
+                  filteredTransactions.map((tx) => {
                     const isCredit = tx.transactionType === "Credit" || tx.transactionType === "Refund" || tx.type === "Credit" || tx.type === "Refund";
                     const isRefund = tx.transactionType === "Refund" || tx.type === "Refund";
                     const amountVal = Number(tx.amount || 0);

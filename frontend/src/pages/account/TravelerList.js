@@ -1,15 +1,15 @@
 /* eslint-disable */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TravelerHeader from "../../components/tables/TravelerHeader";
 import TravelerFilter from "../../components/filters/TravelerFilter";
 import TravelerTable from "../../components/tables/TravelerTable";
 import AddTravelerForm from "../../components/forms/AddTravelerForm";
 import "../../STYLES/traveller.css";
+import { filterTravelers, emptyTravelerFilters } from "../../utils/travelerFilters";
 import {
   createTraveler,
   deleteTraveler,
   listTravelers,
-  normalizeTraveler,
   updateTraveler,
 } from "../../services/travelerService";
 
@@ -60,14 +60,30 @@ function mergeTravelers(apiList, localList) {
 const TravelerList = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
-  const [filters, setFilters] = useState({
-    id: "",
-    name: "",
-    email: "",
-    phone: "",
-  });
-  const [filteredData, setFilteredData] = useState([]);
+  const [filters, setFilters] = useState(emptyTravelerFilters);
+  const [appliedFilters, setAppliedFilters] = useState(emptyTravelerFilters);
   const [apiError, setApiError] = useState("");
+  const [addSuccess, setAddSuccess] = useState("");
+  const successTimeout = useRef(null);
+
+  useEffect(() => {
+    if (successTimeout.current !== null) {
+      clearTimeout(successTimeout.current);
+      successTimeout.current = null;
+    }
+    if (addSuccess) {
+      successTimeout.current = setTimeout(() => {
+        setAddSuccess("");
+        successTimeout.current = null;
+      }, 3000);
+    }
+    return () => {
+      if (successTimeout.current !== null) {
+        clearTimeout(successTimeout.current);
+        successTimeout.current = null;
+      }
+    };
+  }, [addSuccess]);
 
   // Seed from localStorage immediately — list is never blank on mount
   const [travelerData, setTravelerData] = useState(readLocal);
@@ -131,34 +147,20 @@ const TravelerList = () => {
   /* ─── CRUD ─────────────────────────────────────────────── */
 
   const handleAddTraveler = async (data) => {
-    const fallbackTraveler = normalizeTraveler({
-      id: Date.now(),
-      type: data.type,
-      title: data.title,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      name: `${data.title} ${data.firstName} ${data.lastName}`,
-      email: data.email,
-      mobile: data.phone,
-      gender: data.gender,
-      dob: data.dob,
-      passportNo: data.passportNo,
-      country: data.country,
-      age: new Date().getFullYear() - new Date(data.dob).getFullYear(),
-    });
-
+    const created = await createTraveler(data);
+    const createdList = Array.isArray(created) ? created : created ? [created] : [];
+    setTravelerData((prev) => mergeTravelers(createdList, prev));
+    setApiError("");
     try {
-      const created = await createTraveler(data);
-      setTravelerData((prev) => [...prev, created]);
-      setApiError("");
+      const refreshed = await listTravelers();
+      setTravelerData((prev) => mergeTravelers(refreshed, prev));
     } catch (error) {
-      setApiError(
-        error.message || "Could not save to server. Saved locally."
-      );
-      setTravelerData((prev) => [...prev, fallbackTraveler]);
-    } finally {
-      setShowAddForm(false);
+      setApiError("Travelers were saved, but the list could not refresh. Please reload to sync.");
     }
+    const count = Array.isArray(data) ? data.length : 1;
+    setAddSuccess(count === 1 ? "Traveler saved successfully." : `${count} travelers saved successfully.`);
+    handleClear();
+    setShowAddForm(false);
   };
 
   const handleUpdateTraveler = async (id, updatedRow) => {
@@ -200,40 +202,15 @@ const TravelerList = () => {
 
   /* ─── Filter / search ───────────────────────────────────── */
 
-  const handleSearch = () => {
-    const result = travelerData.filter((item) => {
-      if (
-        filters.name &&
-        !String(item.name || "")
-          .toLowerCase()
-          .includes(filters.name.toLowerCase())
-      )
-        return false;
-      if (
-        filters.email &&
-        !String(item.email || "")
-          .toLowerCase()
-          .includes(filters.email.toLowerCase())
-      )
-        return false;
-      if (
-        filters.phone &&
-        !String(item.mobile || "").includes(filters.phone)
-      )
-        return false;
-      return true;
-    });
-    setFilteredData(result);
+  const handleFilterChange = (nextFilters) => {
+    setFilters(nextFilters);
   };
-
+  const handleSearch = () => setAppliedFilters({ ...filters });
   const handleClear = () => {
-    setFilters({ id: "", name: "", email: "", phone: "" });
-    setFilteredData([]);
+    setFilters(emptyTravelerFilters());
+    setAppliedFilters(emptyTravelerFilters());
   };
-
-  const isFiltering = filters.name || filters.email || filters.phone;
-  const displayData =
-    isFiltering || filteredData.length > 0 ? filteredData : travelerData;
+  const displayData = filterTravelers(travelerData, appliedFilters);
 
   /* ─── render ────────────────────────────────────────────── */
 
@@ -242,18 +219,20 @@ const TravelerList = () => {
       {!showAddForm ? (
         <>
           <TravelerHeader
-            onAdd={() => setShowAddForm(true)}
+            onAdd={() => { setAddSuccess(""); setShowAddForm(true); }}
             onFilter={() => setShowFilter(!showFilter)}
+            filterOpen={showFilter}
           />
 
           {apiError && (
             <p className="traveler-api-error">{apiError}</p>
           )}
+          {addSuccess && <p className="traveler-add-success" role="status">{addSuccess}</p>}
 
           {showFilter && (
             <TravelerFilter
               filters={filters}
-              setFilters={setFilters}
+              setFilters={handleFilterChange}
               onSearch={handleSearch}
               onClear={handleClear}
             />

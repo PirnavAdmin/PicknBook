@@ -720,21 +720,22 @@ function normalizeFlightBookingRecord(record) {
     fromCity: String(pickFirst(record, ["fromCity", "FromCity", "source", "from"], "") || ""),
     toCity: String(pickFirst(record, ["toCity", "ToCity", "destination", "to"], "") || ""),
     providerName: String(
-      pickFirst(record, ["providerName", "ProviderName", "airline", "Airline"], "") || ""
+      pickFirst(record, ["airline", "providerName", "ProviderName", "Airline"], "") || ""
     ),
     departureTimeUtc: pickFirst(
       record,
-      ["departureTimeUtc", "DepartureTimeUtc", "departureDateTimeUtc", "DepartureDateTimeUtc", "departureTime", "date", "bookedAt"],
+      ["departureTime", "departureTimeUtc", "DepartureTimeUtc", "departureDateTimeUtc", "DepartureDateTimeUtc", "date"],
       null
     ),
     travelClass: String(
       pickFirst(record, ["travelClass", "TravelClass", "cabinClass"], "") || ""
     ),
-    seatsBooked: pickFirst(record, ["seatsBooked", "SeatsBooked"], null),
+    seatsBooked: pickFirst(record, ["seatsBooked", "SeatsBooked"], passengers.length),
+    arrivalTimeUtc: pickFirst(record, ["arrivalTime", "arrivalTimeUtc"], null),
     totalPriceInr:
-      Number(pickFirst(record, ["totalPriceInr", "TotalPriceInr", "totalFare", "TotalFare", "totalPaid"], 0)) || 0,
-    status: String(pickFirst(record, ["status", "Status"], "") || ""),
-    bookedAtUtc: pickFirst(record, ["bookedAtUtc", "BookedAtUtc", "bookedAt"], null),
+      Number(pickFirst(record, ["totalFare", "totalPriceInr", "TotalPriceInr", "TotalFare", "totalPaid"], 0)) || 0,
+    status: String(pickFirst(record, ["canonicalStatus", "bookingStatus", "tripState", "status", "Status"], "") || ""),
+    bookedAtUtc: pickFirst(record, ["bookingTime", "bookedAtUtc", "BookedAtUtc", "bookedAt"], null),
     cancelledAtUtc: pickFirst(record, ["cancelledAtUtc", "CancelledAtUtc"], null),
     cancellationReason: String(
       pickFirst(record, ["cancellationReason", "CancellationReason"], "") || ""
@@ -851,7 +852,7 @@ function normalizeFlightBookingRecord(record) {
           providerName: String(pickFirst(record, ["providerName", "ProviderName", "airline"], "") || ""),
           tripNumber: String(pickFirst(record, ["tripNumber", "TripNumber", "flightNumber"], "") || ""),
           departureTimeUtc: pickFirst(record, ["departureTimeUtc", "DepartureTimeUtc", "departureTime"], null),
-          status: String(pickFirst(record, ["status", "Status"], "") || ""),
+          status: String(pickFirst(record, ["canonicalStatus", "bookingStatus", "tripState", "status", "Status"], "") || ""),
         }
       ];
     })(),
@@ -3052,11 +3053,11 @@ export async function updateAdminAmendment(amendmentId, payload) {
   });
 }
 
-export async function listFlightBookings() {
+export async function listFlightBookings({ status = "all" } = {}) {
   try {
-    const data = await requestJson("/api/flight/srdv/my-bookings", { method: "GET" });
-    const records = data?.tickets || data?.Tickets || data || [];
-    return Array.isArray(records) ? records.map(normalizeFlightBookingRecord) : [];
+    const data = await requestJson(buildUrl("/api/flight/srdv/my-bookings", { status: String(status).trim().toLowerCase() }), { method: "GET" });
+    const records = data?.tickets;
+    return Array.isArray(records) ? records.filter(Boolean).map(normalizeFlightBookingRecord) : [];
   } catch (err) {
     console.error("[FlightService] Failed to load my-bookings from backend:", err);
     throw err;

@@ -403,7 +403,10 @@ const AdminDashboard = () => {
   }, []);
 
   const fetchB2cDashboardData = async () => {
+    const fetchStartTime = Date.now();
     setIsLoadingMetrics(true);
+    setIsLoadingFlights(true);
+    setIsLoadingBuses(true);
     try {
       const summaryResult = await getAdminDashboardSummary();
       const metricsResult = deriveAdminMetrics(summaryResult);
@@ -497,15 +500,12 @@ const AdminDashboard = () => {
           fromCity: translateCityCode(f.fromCity),
           toCity: translateCityCode(f.toCity)
         })));
-        setIsLoadingFlights(false);
       } else {
         try {
           const flights = await listHotFlightRoutes();
           setTopFlights(Array.isArray(flights) ? flights.slice(0, 5) : []);
         } catch (e) {
           console.error('Flights fetch error:', e);
-        } finally {
-          setIsLoadingFlights(false);
         }
       }
 
@@ -515,7 +515,6 @@ const AdminDashboard = () => {
           fromCity: translateCityCode(b.fromCity),
           toCity: translateCityCode(b.toCity)
         })));
-        setIsLoadingBuses(false);
       } else {
         try {
           const buses = await getPopularBusRoutesFromSearchHistory({ limit: 5 });
@@ -536,8 +535,6 @@ const AdminDashboard = () => {
             { fromCity: 'Delhi', toCity: 'Mumbai', bookingCount: 0 },
             { fromCity: 'Bengaluru', toCity: 'Chennai', bookingCount: 0 }
           ]);
-        } finally {
-          setIsLoadingBuses(false);
         }
       }
 
@@ -594,7 +591,13 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('B2C Dashboard fetch error:', err);
     } finally {
-      setIsLoadingMetrics(false);
+      const elapsed = Date.now() - fetchStartTime;
+      const minLoadingDuration = Math.max(0, 800 - elapsed);
+      setTimeout(() => {
+        setIsLoadingMetrics(false);
+        setIsLoadingFlights(false);
+        setIsLoadingBuses(false);
+      }, minLoadingDuration);
     }
   };
 
@@ -810,6 +813,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     let isMounted = true;
+    const revStartTime = Date.now();
     setIsLoadingRevenueOverview(true);
     const targetYear = revenueDate ? parseInt(revenueDate.split('-')[0], 10) : new Date().getFullYear();
 
@@ -830,7 +834,11 @@ const AdminDashboard = () => {
         }
       })
       .finally(() => {
-        if (isMounted) setIsLoadingRevenueOverview(false);
+        const elapsed = Date.now() - revStartTime;
+        const delay = Math.max(0, 600 - elapsed);
+        setTimeout(() => {
+          if (isMounted) setIsLoadingRevenueOverview(false);
+        }, delay);
       });
 
     return () => {
@@ -1068,44 +1076,69 @@ const AdminDashboard = () => {
     <div className="dash-page" style={{ padding: '18px 14px 28px' }}>
       <>
         {/* Top Admin Operations Header Banner */}
-        <div className="admin-operations-header-banner">
-          <div className="header-banner-left">
-            <div className="header-title-group">
-              <span className="header-title-text" style={{ color: '#0f172a', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0, display: 'block' }}>
-                Admin Operations Dashboard
-              </span>
-              <p className="header-subtitle-text" style={{ color: '#475569', fontSize: '0.84rem', margin: 0, fontWeight: 600 }}>
-                Real-time Travel Analytics & Monitoring (IST)
-              </p>
+        <div className={`admin-operations-header-banner ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
+          {isLoadingMetrics ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="dash-skeleton-box" style={{ width: '260px', height: '22px' }}></div>
+                <div className="dash-skeleton-box" style={{ width: '320px', height: '14px' }}></div>
+              </div>
+              <div className="dash-skeleton-box" style={{ width: '220px', height: '34px', borderRadius: '24px' }}></div>
             </div>
-          </div>
-          <div className="header-banner-right">
-            <div className="live-clock-capsule">
-              <span className="live-pulse-dot">●</span>
-              <span className="clock-date">📅 {headerDateStr}</span>
-              <span className="clock-sep">|</span>
-              <span className="clock-time">⏰ {headerTimeStr} IST</span>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="header-banner-left">
+                <div className="header-title-group">
+                  <span className="header-title-text" style={{ color: '#0f172a', fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.01em', margin: 0, display: 'block' }}>
+                    Admin Operations Dashboard
+                  </span>
+                  <p className="header-subtitle-text" style={{ color: '#475569', fontSize: '0.84rem', margin: 0, fontWeight: 600 }}>
+                    Real-time Travel Analytics & Monitoring (IST)
+                  </p>
+                </div>
+              </div>
+              <div className="header-banner-right">
+                <div className="live-clock-capsule">
+                  <span className="live-pulse-dot">●</span>
+                  <span className="clock-date">📅 {headerDateStr}</span>
+                  <span className="clock-sep">|</span>
+                  <span className="clock-time">⏰ {headerTimeStr} IST</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <section className="dashboard-metrics-grid">
           {/* Total Revenue */}
-          <div className="metric-card-premium" style={getCardStyle("Total Revenue", String(metrics.revenue))}>
+          <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Total Revenue", String(metrics.revenue))}>
             <div className="metric-card-header">
               <div className="metric-icon-circle revenue">
                 <span style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1 }}>₹</span>
               </div>
-              <span className="metric-title-text">Total Revenue</span>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '85px', height: '14px' }}></div>
+              ) : (
+                <span className="metric-title-text">Total Revenue</span>
+              )}
             </div>
             <div className="metric-card-body">
-              <span className="metric-value-huge">{formatCurrency(animatedRevenue)}</span>
-              {renderTrend(animatedTrendRevenue, "vs last month")}
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                  <div className="dash-skeleton-box" style={{ width: '80%', height: '22px' }}></div>
+                  <div className="dash-skeleton-box" style={{ width: '50%', height: '12px' }}></div>
+                </div>
+              ) : (
+                <>
+                  <span className="metric-value-huge">{formatCurrency(animatedRevenue)}</span>
+                  {renderTrend(animatedTrendRevenue, "vs last month")}
+                </>
+              )}
             </div>
           </div>
 
           {/* Total Bookings */}
-          <div className="metric-card-premium" style={getCardStyle("Total Bookings", String(metrics.bookings))}>
+          <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Total Bookings", String(metrics.bookings))}>
             <div className="metric-card-header">
               <div className="metric-icon-circle bookings">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1115,16 +1148,29 @@ const AdminDashboard = () => {
                   <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
               </div>
-              <span className="metric-title-text">Total Bookings</span>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '85px', height: '14px' }}></div>
+              ) : (
+                <span className="metric-title-text">Total Bookings</span>
+              )}
             </div>
             <div className="metric-card-body">
-              <span className="metric-value-huge">{formatNumber(animatedBookings)}</span>
-              {renderTrend(animatedTrendBookings, "vs last month")}
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                  <div className="dash-skeleton-box" style={{ width: '80%', height: '22px' }}></div>
+                  <div className="dash-skeleton-box" style={{ width: '50%', height: '12px' }}></div>
+                </div>
+              ) : (
+                <>
+                  <span className="metric-value-huge">{formatNumber(animatedBookings)}</span>
+                  {renderTrend(animatedTrendBookings, "vs last month")}
+                </>
+              )}
             </div>
           </div>
 
           {/* Total Users */}
-          <div className="metric-card-premium" style={getCardStyle("Total Users", String(metrics.users))}>
+          <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Total Users", String(metrics.users))}>
             <div className="metric-card-header">
               <div className="metric-icon-circle users">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1134,32 +1180,58 @@ const AdminDashboard = () => {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
               </div>
-              <span className="metric-title-text">Total Users</span>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '75px', height: '14px' }}></div>
+              ) : (
+                <span className="metric-title-text">Total Users</span>
+              )}
             </div>
             <div className="metric-card-body">
-              <span className="metric-value-huge">{formatNumber(animatedUsers)}</span>
-              {renderTrend(animatedTrendUsers, "vs last month")}
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                  <div className="dash-skeleton-box" style={{ width: '80%', height: '22px' }}></div>
+                  <div className="dash-skeleton-box" style={{ width: '50%', height: '12px' }}></div>
+                </div>
+              ) : (
+                <>
+                  <span className="metric-value-huge">{formatNumber(animatedUsers)}</span>
+                  {renderTrend(animatedTrendUsers, "vs last month")}
+                </>
+              )}
             </div>
           </div>
 
           {/* Active Bookings */}
-          <div className="metric-card-premium" style={getCardStyle("Active Bookings", String(metrics.activeBookings))}>
+          <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Active Bookings", String(metrics.activeBookings))}>
             <div className="metric-card-header">
               <div className="metric-icon-circle active">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
               </div>
-              <span className="metric-title-text">Active Bookings</span>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '90px', height: '14px' }}></div>
+              ) : (
+                <span className="metric-title-text">Active Bookings</span>
+              )}
             </div>
             <div className="metric-card-body">
-              <span className="metric-value-huge">{formatNumber(animatedActiveBookings)}</span>
-              {renderTrend(animatedTrendActiveBookings, "vs yesterday")}
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                  <div className="dash-skeleton-box" style={{ width: '80%', height: '22px' }}></div>
+                  <div className="dash-skeleton-box" style={{ width: '50%', height: '12px' }}></div>
+                </div>
+              ) : (
+                <>
+                  <span className="metric-value-huge">{formatNumber(animatedActiveBookings)}</span>
+                  {renderTrend(animatedTrendActiveBookings, "vs yesterday")}
+                </>
+              )}
             </div>
           </div>
 
           {/* Cancelled Bookings */}
-          <div className="metric-card-premium" style={getCardStyle("Cancelled Bookings", String(metrics.cancelledBookings))}>
+          <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Cancelled Bookings", String(metrics.cancelledBookings))}>
             <div className="metric-card-header">
               <div className="metric-icon-circle cancelled">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1168,16 +1240,29 @@ const AdminDashboard = () => {
                   <line x1="9" y1="9" x2="15" y2="15"></line>
                 </svg>
               </div>
-              <span className="metric-title-text">Cancelled Bookings</span>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '100px', height: '14px' }}></div>
+              ) : (
+                <span className="metric-title-text">Cancelled Bookings</span>
+              )}
             </div>
             <div className="metric-card-body">
-              <span className="metric-value-huge">{formatNumber(animatedCancelledBookings)}</span>
-              {renderTrend(animatedTrendCancelledBookings, "vs yesterday")}
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                  <div className="dash-skeleton-box" style={{ width: '80%', height: '22px' }}></div>
+                  <div className="dash-skeleton-box" style={{ width: '50%', height: '12px' }}></div>
+                </div>
+              ) : (
+                <>
+                  <span className="metric-value-huge">{formatNumber(animatedCancelledBookings)}</span>
+                  {renderTrend(animatedTrendCancelledBookings, "vs yesterday")}
+                </>
+              )}
             </div>
           </div>
 
           {/* Refund Requests */}
-          <div className="metric-card-premium" style={getCardStyle("Refund Requests", String(metrics.refundRequests))}>
+          <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Refund Requests", String(metrics.refundRequests))}>
             <div className="metric-card-header">
               <div className="metric-icon-circle refund">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1186,21 +1271,38 @@ const AdminDashboard = () => {
                   <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
               </div>
-              <span className="metric-title-text">Refund Requests</span>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '95px', height: '14px' }}></div>
+              ) : (
+                <span className="metric-title-text">Refund Requests</span>
+              )}
             </div>
             <div className="metric-card-body">
-              <span className="metric-value-huge">{formatNumber(animatedRefundRequests)}</span>
-              {renderTrend(animatedTrendRefundRequests, "vs yesterday")}
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                  <div className="dash-skeleton-box" style={{ width: '80%', height: '22px' }}></div>
+                  <div className="dash-skeleton-box" style={{ width: '50%', height: '12px' }}></div>
+                </div>
+              ) : (
+                <>
+                  <span className="metric-value-huge">{formatNumber(animatedRefundRequests)}</span>
+                  {renderTrend(animatedTrendRefundRequests, "vs yesterday")}
+                </>
+              )}
             </div>
           </div>
         </section>
 
         <section className="dashboard-row-layout">
           {/* Revenue Overview LINE CHART — with Tableau Style View Timeframe Dropdown */}
-          <div className="dashboard-card-shell revenue-box">
+          <div className={`dashboard-card-shell revenue-box ${isLoadingMetrics || isLoadingRevenueOverview ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '6px', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: '12px', flexWrap: 'wrap' }}>
-                <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Revenue Overview</h3>
+                {isLoadingMetrics || isLoadingRevenueOverview ? (
+                  <div className="dash-skeleton-box" style={{ width: '140px', height: '20px' }}></div>
+                ) : (
+                  <h3 style={{ margin: 0, whiteSpace: 'nowrap' }}>Revenue Overview</h3>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <select
                     className="card-title-select"
@@ -1287,306 +1389,310 @@ const AdminDashboard = () => {
                 )}
               </div>
             </div>
-            <div style={{ position: 'relative', height: '220px', width: '100%' }}>
-              <svg viewBox="0 0 350 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                <style>
-                  {`
-                      @keyframes drawPath {
-                        from { stroke-dashoffset: 1000; }
-                        to { stroke-dashoffset: 0; }
-                      }
-                      .draw-anim {
-                        stroke-dasharray: 1000;
-                        animation: drawPath 1.5s ease-out forwards;
-                      }
-                      .fade-anim {
-                        animation: fadeIn 1.5s ease-out forwards;
-                      }
-                      @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
-                      }
-                    `}
-                </style>
-                <defs>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#1e75ff" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#1e75ff" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
+            <div style={{ position: 'relative', height: '220px', width: '100%', marginTop: '8px' }}>
+              {isLoadingMetrics || isLoadingRevenueOverview ? (
+                <div className="dash-skeleton-box" style={{ width: '100%', height: '100%', borderRadius: '12px' }}></div>
+              ) : (
+                <svg viewBox="0 0 350 200" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                  <style>
+                    {`
+                        @keyframes drawPath {
+                          from { stroke-dashoffset: 1000; }
+                          to { stroke-dashoffset: 0; }
+                        }
+                        .draw-anim {
+                          stroke-dasharray: 1000;
+                          animation: drawPath 1.5s ease-out forwards;
+                        }
+                        .fade-anim {
+                          animation: fadeIn 1.5s ease-out forwards;
+                        }
+                        @keyframes fadeIn {
+                          from { opacity: 0; }
+                          to { opacity: 1; }
+                        }
+                      `}
+                  </style>
+                  <defs>
+                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#1e75ff" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#1e75ff" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
 
-                {/* Grid Lines */}
-                <line x1="45" y1="50" x2="340" y2="50" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="45" y1="90" x2="340" y2="90" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="45" y1="130" x2="340" y2="130" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="45" y1="170" x2="340" y2="170" stroke="var(--admin-border)" strokeWidth="1" />
+                  {/* Grid Lines */}
+                  <line x1="45" y1="50" x2="340" y2="50" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="45" y1="90" x2="340" y2="90" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="45" y1="130" x2="340" y2="130" stroke="var(--admin-border)" strokeWidth="1" strokeDasharray="3 3" />
+                  <line x1="45" y1="170" x2="340" y2="170" stroke="var(--admin-border)" strokeWidth="1" />
 
-                {/* Vertical Left Y-Axis Scale Line */}
-                <line x1="45" y1="30" x2="45" y2="170" stroke="var(--admin-border)" strokeWidth="1.5" />
+                  {/* Vertical Left Y-Axis Scale Line */}
+                  <line x1="45" y1="30" x2="45" y2="170" stroke="var(--admin-border)" strokeWidth="1.5" />
 
-                {/* Y-Axis Labels (Amount Scale) */}
-                <text x="40" y="54" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev)}</text>
-                <text x="40" y="94" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev * 0.66)}</text>
-                <text x="40" y="134" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev * 0.33)}</text>
-                <text x="40" y="173" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">₹0</text>
+                  {/* Y-Axis Labels (Amount Scale) */}
+                  <text x="40" y="54" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev)}</text>
+                  <text x="40" y="94" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev * 0.66)}</text>
+                  <text x="40" y="134" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">{formatRevCompact(maxRev * 0.33)}</text>
+                  <text x="40" y="173" fontSize="9" fill="var(--admin-muted)" fontWeight="600" textAnchor="end">₹0</text>
 
-                {/* Vertical dashed guide line on hover */}
-                {hoveredRevPoint && (
-                  <line
-                    x1={hoveredRevPoint.x}
-                    y1="30"
-                    x2={hoveredRevPoint.x}
-                    y2="170"
-                    stroke="#10b981"
-                    strokeWidth="1.5"
-                    strokeDasharray="4 4"
-                  />
-                )}
+                  {/* Vertical dashed guide line on hover */}
+                  {hoveredRevPoint && (
+                    <line
+                      x1={hoveredRevPoint.x}
+                      y1="30"
+                      x2={hoveredRevPoint.x}
+                      y2="170"
+                      stroke="#10b981"
+                      strokeWidth="1.5"
+                      strokeDasharray="4 4"
+                    />
+                  )}
 
-                {areaRevPath && <path d={areaRevPath} fill="url(#areaGrad)" className="fade-anim" />}
-                {smoothRevPath && <path d={smoothRevPath} fill="none" stroke="#1e75ff" strokeWidth="3.5" strokeLinecap="round" className="draw-anim" />}
+                  {areaRevPath && <path d={areaRevPath} fill="url(#areaGrad)" className="fade-anim" />}
+                  {smoothRevPath && <path d={smoothRevPath} fill="none" stroke="#1e75ff" strokeWidth="3.5" strokeLinecap="round" className="draw-anim" />}
 
-                {revPointsAll.map((p, i) => {
-                  const isHovered = hoveredRevPoint?.week === p.week;
-                  const textAnchorVal = i === 0 ? "start" : i === revPointsAll.length - 1 ? "end" : "middle";
-                  return (
-                    <g
-                      key={i}
-                      className="fade-anim"
-                      style={{ cursor: 'pointer' }}
-                      onMouseEnter={() => setHoveredRevPoint(p)}
-                      onMouseLeave={() => setHoveredRevPoint(null)}
-                    >
-                      {/* Larger hit target circle */}
-                      <circle cx={p.x} cy={p.y} r="14" fill="transparent" />
-                      <circle cx={p.x} cy={p.y} r={isHovered ? "7.5" : (p.isHighlighted ? "6.5" : "5")} fill={isHovered ? "#10b981" : (p.isHighlighted ? "#2563eb" : "#1e75ff")} stroke="#ffffff" strokeWidth="2.5" />
-                      {!isHovered && (
-                        <text x={p.x} y={p.y - (p.isHighlighted ? 15 : 12)} fontSize="10" fill={p.isHighlighted ? "#2563eb" : "var(--admin-text)"} fontWeight="bold" textAnchor={textAnchorVal}>{p.label}</text>
-                      )}
-                      <text x={p.x} y="190" fontSize="10" fill={isHovered ? "#10b981" : "var(--admin-muted)"} fontWeight={isHovered || p.isHighlighted ? "bold" : "600"} textAnchor="middle">{p.week}</text>
-                    </g>
-                  );
-                })}
-
-                {/* Clean SVG Native Hover Tooltip Box */}
-                {hoveredRevPoint && (() => {
-                  const boxWidth = 124;
-                  const boxHeight = 36;
-                  let boxX = hoveredRevPoint.x - boxWidth / 2;
-                  if (boxX < 46) boxX = 46;
-                  if (boxX + boxWidth > 340) boxX = 340 - boxWidth;
-                  const boxY = Math.max(5, hoveredRevPoint.y - 44);
-
-                  return (
-                    <g className="fade-anim" style={{ pointerEvents: 'none' }}>
-                      <rect
-                        x={boxX}
-                        y={boxY}
-                        width={boxWidth}
-                        height={boxHeight}
-                        rx="6"
-                        fill="#0f172a"
-                        opacity="0.95"
-                        stroke="#38bdf8"
-                        strokeWidth="1"
-                      />
-                      <text
-                        x={boxX + boxWidth / 2}
-                        y={boxY + 14}
-                        fontSize="9"
-                        fontWeight="bold"
-                        fill="#38bdf8"
-                        textAnchor="middle"
+                  {revPointsAll.map((p, i) => {
+                    const isHovered = hoveredRevPoint?.week === p.week;
+                    const textAnchorVal = i === 0 ? "start" : i === revPointsAll.length - 1 ? "end" : "middle";
+                    return (
+                      <g
+                        key={i}
+                        className="fade-anim"
+                        style={{ cursor: 'pointer' }}
+                        onMouseEnter={() => setHoveredRevPoint(p)}
+                        onMouseLeave={() => setHoveredRevPoint(null)}
                       >
-                        {hoveredRevPoint.week} Revenue Data
-                      </text>
-                      <text
-                        x={boxX + boxWidth / 2}
-                        y={boxY + 28}
-                        fontSize="10"
-                        fontWeight="bold"
-                        fill="#ffffff"
-                        textAnchor="middle"
-                      >
-                        Amount: {formatCurrency(hoveredRevPoint.value)}
-                      </text>
-                    </g>
-                  );
-                })()}
-              </svg>
+                        {/* Larger hit target circle */}
+                        <circle cx={p.x} cy={p.y} r="14" fill="transparent" />
+                        <circle cx={p.x} cy={p.y} r={isHovered ? "7.5" : (p.isHighlighted ? "6.5" : "5")} fill={isHovered ? "#10b981" : (p.isHighlighted ? "#2563eb" : "#1e75ff")} stroke="#ffffff" strokeWidth="2.5" />
+                        {!isHovered && (
+                          <text x={p.x} y={p.y - (p.isHighlighted ? 15 : 12)} fontSize="10" fill={p.isHighlighted ? "#2563eb" : "var(--admin-text)"} fontWeight="bold" textAnchor={textAnchorVal}>{p.label}</text>
+                        )}
+                        <text x={p.x} y="190" fontSize="10" fill={isHovered ? "#10b981" : "var(--admin-muted)"} fontWeight={isHovered || p.isHighlighted ? "bold" : "600"} textAnchor="middle">{p.week}</text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Clean SVG Native Hover Tooltip Box */}
+                  {hoveredRevPoint && (() => {
+                    const boxWidth = 124;
+                    const boxHeight = 36;
+                    let boxX = hoveredRevPoint.x - boxWidth / 2;
+                    if (boxX < 46) boxX = 46;
+                    if (boxX + boxWidth > 340) boxX = 340 - boxWidth;
+                    const boxY = Math.max(5, hoveredRevPoint.y - 44);
+
+                    return (
+                      <g className="fade-anim" style={{ pointerEvents: 'none' }}>
+                        <rect
+                          x={boxX}
+                          y={boxY}
+                          width={boxWidth}
+                          height={boxHeight}
+                          rx="6"
+                          fill="#0f172a"
+                          opacity="0.95"
+                          stroke="#38bdf8"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={boxX + boxWidth / 2}
+                          y={boxY + 14}
+                          fontSize="9"
+                          fontWeight="bold"
+                          fill="#38bdf8"
+                          textAnchor="middle"
+                        >
+                          {hoveredRevPoint.week} Revenue Data
+                        </text>
+                        <text
+                          x={boxX + boxWidth / 2}
+                          y={boxY + 28}
+                          fontSize="10"
+                          fontWeight="bold"
+                          fill="#ffffff"
+                          textAnchor="middle"
+                        >
+                          Amount: {formatCurrency(hoveredRevPoint.value)}
+                        </text>
+                      </g>
+                    );
+                  })()}
+                </svg>
+              )}
             </div>
           </div>
 
           {/* Booking Funnel */}
-          <div className="dashboard-card-shell funnel-box">
+          <div className={`dashboard-card-shell funnel-box ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar">
-              <h3>Booking Funnel</h3>
-              <input
-                type="date"
-                className="card-title-select"
-                style={{
-                  height: '30px',
-                  width: '120px',
-                  padding: '2px 8px',
-                  fontSize: '0.78rem',
-                  fontFamily: 'inherit',
-                  borderRadius: '6px',
-                  border: '1px solid var(--admin-border)',
-                  boxSizing: 'border-box'
-                }}
-                value={funnelDate}
-                max={todayStr}
-                onChange={handleDateChange(setFunnelDate)}
-              />
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '120px', height: '20px' }}></div>
+              ) : (
+                <h3>Booking Funnel</h3>
+              )}
             </div>
-            <div className="funnel-container" key={funnelDate} style={{ gap: '4px' }}>
-              <div className="funnel-stage s1">
-                <span>Searches</span>
-                <strong>{formatNumber(animatedFunnelS1)}</strong>
+            {isLoadingMetrics ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px 0' }}>
+                {[1, 2, 3, 4, 5].map((_, idx) => (
+                  <div className="dash-skeleton-box" key={idx} style={{ width: `${100 - idx * 12}%`, height: '26px' }}></div>
+                ))}
               </div>
-              <div className="funnel-stage s2">
-                <span>Selected ({funnelS1 > 0 ? ((funnelS2 / funnelS1) * 100).toFixed(1) : '0.0'}%)</span>
-                <strong>{formatNumber(animatedFunnelS2)}</strong>
+            ) : (
+              <div className="funnel-container" key={funnelDate} style={{ gap: '4px' }}>
+                <div className="funnel-stage s1">
+                  <span>Searches</span>
+                  <strong>{formatNumber(animatedFunnelS1)}</strong>
+                </div>
+                <div className="funnel-stage s2">
+                  <span>Selected ({funnelS1 > 0 ? ((funnelS2 / funnelS1) * 100).toFixed(1) : '0.0'}%)</span>
+                  <strong>{formatNumber(animatedFunnelS2)}</strong>
+                </div>
+                <div className="funnel-stage s3">
+                  <span>Passenger ({funnelS2 > 0 ? ((funnelS3 / funnelS2) * 100).toFixed(1) : '0.0'}%)</span>
+                  <strong>{formatNumber(animatedFunnelS3)}</strong>
+                </div>
+                <div className="funnel-stage s4">
+                  <span>Payment ({funnelS3 > 0 ? ((funnelS4 / funnelS3) * 100).toFixed(1) : '0.0'}%)</span>
+                  <strong>{formatNumber(animatedFunnelS4)}</strong>
+                </div>
+                <div className="funnel-stage s5">
+                  <span>Completed ({funnelS4 > 0 ? ((funnelS5 / funnelS4) * 100).toFixed(1) : '0.0'}%)</span>
+                  <strong>{formatNumber(animatedFunnelS5)}</strong>
+                </div>
               </div>
-              <div className="funnel-stage s3">
-                <span>Passenger ({funnelS2 > 0 ? ((funnelS3 / funnelS2) * 100).toFixed(1) : '0.0'}%)</span>
-                <strong>{formatNumber(animatedFunnelS3)}</strong>
-              </div>
-              <div className="funnel-stage s4">
-                <span>Payment ({funnelS3 > 0 ? ((funnelS4 / funnelS3) * 100).toFixed(1) : '0.0'}%)</span>
-                <strong>{formatNumber(animatedFunnelS4)}</strong>
-              </div>
-              <div className="funnel-stage s5">
-                <span>Completed ({funnelS4 > 0 ? ((funnelS5 / funnelS4) * 100).toFixed(1) : '0.0'}%)</span>
-                <strong>{formatNumber(animatedFunnelS5)}</strong>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Today's Status & Granular Payment Breakdown Card */}
-          <div className="dashboard-card-shell today-status-box">
+          <div className={`dashboard-card-shell today-status-box ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Today's Status</h3>
-                <span style={{ fontSize: '0.66rem', color: 'var(--admin-muted)', fontWeight: 600 }}>Payment Breakdown (UTC)</span>
-              </div>
-              <span style={{ fontSize: '0.68rem', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                Live API
-              </span>
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <div className="dash-skeleton-box" style={{ width: '110px', height: '20px' }}></div>
+                </div>
+              ) : (
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Today's Status</h3>
+                  <span style={{ fontSize: '0.66rem', color: 'var(--admin-muted)', fontWeight: 600 }}>Payment Breakdown (UTC)</span>
+                </div>
+              )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between', height: '100%' }}>
-              {/* Revenue & Bookings Top Capsule */}
-              <div style={{ background: 'var(--admin-soft)', padding: '8px 10px', borderRadius: '10px', border: '1px solid var(--admin-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--admin-muted)', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Revenue Today</span>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#10b981', lineHeight: 1.2 }}>
-                    {formatCurrency(todayStatusData.revenueInr)}
-                  </div>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--admin-muted)' }}>
-                    Expected: {formatCurrency(todayStatusData.expectedRevenueInr)}
-                  </span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--admin-muted)', fontWeight: 600 }}>
-                    Bookings: <strong style={{ color: 'var(--admin-text)' }}>{todayStatusData.totalBookings}</strong>
-                  </div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--admin-muted)', fontWeight: 600, marginTop: '2px' }}>
-                    Attempts: <strong style={{ color: '#1e75ff' }}>{todayStatusData.totalPayments}</strong>
-                  </div>
+            {isLoadingMetrics ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
+                <div className="dash-skeleton-box" style={{ width: '100%', height: '48px' }}></div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px' }}>
+                  {[1, 2, 3, 4, 5, 6].map((_, idx) => (
+                    <div className="dash-skeleton-box" key={idx} style={{ height: '24px' }}></div>
+                  ))}
                 </div>
               </div>
-
-              {/* Payment Breakdown Granular List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--admin-text)', marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Payment Breakdown</span>
-                  <span style={{ color: '#1e75ff', fontWeight: 800 }}>Total Attempts: {todayStatusData.totalPayments}</span>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px' }}>
-                  {/* Success */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#ecfdf5', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#047857', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>✅</span> Success
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'space-between', height: '100%' }}>
+                {/* Revenue & Bookings Top Capsule */}
+                <div style={{ background: 'var(--admin-soft)', padding: '8px 10px', borderRadius: '10px', border: '1px solid var(--admin-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--admin-muted)', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Revenue Today</span>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#10b981', lineHeight: 1.2 }}>
+                      {formatCurrency(todayStatusData.revenueInr)}
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: 'var(--admin-muted)' }}>
+                      Expected: {formatCurrency(todayStatusData.expectedRevenueInr)}
                     </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#065f46' }}>{todayStatusData.paymentBreakdown.success}</strong>
                   </div>
-
-                  {/* Failed */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#b91c1c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>❌</span> Failed
-                    </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#991b1b' }}>{todayStatusData.paymentBreakdown.failed}</strong>
-                  </div>
-
-                  {/* Pending */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fffbe6', borderRadius: '6px', border: '1px solid #ffe58f' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#d48806', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>⏳</span> Pending
-                    </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#ad6800' }}>{todayStatusData.paymentBreakdown.pending}</strong>
-                  </div>
-
-                  {/* Created */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#1d4ed8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>🆕</span> Created
-                    </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#1e40af' }}>{todayStatusData.paymentBreakdown.created}</strong>
-                  </div>
-
-                  {/* Cancelled */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#f3e8ff', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#7e22ce', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>🚫</span> Cancelled
-                    </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#6b21a8' }}>{todayStatusData.paymentBreakdown.cancelled}</strong>
-                  </div>
-
-                  {/* Expired */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fff7ed', borderRadius: '6px', border: '1px solid #fed7aa' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#c2410c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>⌛</span> Expired
-                    </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#9a3412' }}>{todayStatusData.paymentBreakdown.expired}</strong>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--admin-muted)', fontWeight: 600 }}>
+                      Bookings: <strong style={{ color: 'var(--admin-text)' }}>{todayStatusData.totalBookings}</strong>
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--admin-muted)', fontWeight: 600, marginTop: '2px' }}>
+                      Attempts: <strong style={{ color: '#1e75ff' }}>{todayStatusData.totalPayments}</strong>
+                    </div>
                   </div>
                 </div>
 
-                {/* Unknown / Safety Net */}
-                {todayStatusData.paymentBreakdown.unknown > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '2px' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>❓</span> Unknown
-                    </span>
-                    <strong style={{ fontSize: '0.82rem', color: '#334155' }}>{todayStatusData.paymentBreakdown.unknown}</strong>
+                {/* Payment Breakdown Granular List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--admin-text)', marginBottom: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Payment Breakdown</span>
+                    <span style={{ color: '#1e75ff', fontWeight: 800 }}>Total Attempts: {todayStatusData.totalPayments}</span>
                   </div>
-                )}
 
-                {/* Data Integrity Verification Badge */}
-                <div style={{ marginTop: '2px', textAlign: 'center' }}>
-                  {todayStatusData.isIntegrityValid ? (
-                    <span style={{ fontSize: '0.62rem', color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '1px 6px', borderRadius: '4px', fontWeight: 600, display: 'inline-block' }}>
-                      ✓ Integrity Verified ({todayStatusData.breakdownSum} = {todayStatusData.totalPayments})
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: '0.62rem', color: '#b91c1c', background: '#fef2f2', border: '1px solid #fca5a5', padding: '1px 6px', borderRadius: '4px', fontWeight: 600, display: 'inline-block' }}>
-                      ⚠️ Mismatch: Sum ({todayStatusData.breakdownSum}) ≠ Attempts ({todayStatusData.totalPayments})
-                    </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px' }}>
+                    {/* Success */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#ecfdf5', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
+                      <span style={{ fontSize: '0.66rem', color: '#047857', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>✅</span> Success
+                      </span>
+                      <strong style={{ fontSize: '0.82rem', color: '#065f46' }}>{todayStatusData.paymentBreakdown.success}</strong>
+                    </div>
+
+                    {/* Failed */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fef2f2', borderRadius: '6px', border: '1px solid #fecaca' }}>
+                      <span style={{ fontSize: '0.66rem', color: '#b91c1c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>❌</span> Failed
+                      </span>
+                      <strong style={{ fontSize: '0.82rem', color: '#991b1b' }}>{todayStatusData.paymentBreakdown.failed}</strong>
+                    </div>
+
+                    {/* Pending */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fffbe6', borderRadius: '6px', border: '1px solid #ffe58f' }}>
+                      <span style={{ fontSize: '0.66rem', color: '#d48806', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>⏳</span> Pending
+                      </span>
+                      <strong style={{ fontSize: '0.82rem', color: '#ad6800' }}>{todayStatusData.paymentBreakdown.pending}</strong>
+                    </div>
+
+                    {/* Created */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#eff6ff', borderRadius: '6px', border: '1px solid #bfdbfe' }}>
+                      <span style={{ fontSize: '0.66rem', color: '#1d4ed8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🆕</span> Created
+                      </span>
+                      <strong style={{ fontSize: '0.82rem', color: '#1e40af' }}>{todayStatusData.paymentBreakdown.created}</strong>
+                    </div>
+
+                    {/* Cancelled */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#f3e8ff', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                      <span style={{ fontSize: '0.66rem', color: '#7e22ce', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🚫</span> Cancelled
+                      </span>
+                      <strong style={{ fontSize: '0.82rem', color: '#6b21a8' }}>{todayStatusData.paymentBreakdown.cancelled}</strong>
+                    </div>
+
+                    {/* Expired */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#fff7ed', borderRadius: '6px', border: '1px solid #fed7aa' }}>
+                      <span style={{ fontSize: '0.66rem', color: '#c2410c', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>⌛</span> Expired
+                      </span>
+                      <strong style={{ fontSize: '0.82rem', color: '#9a3412' }}>{todayStatusData.paymentBreakdown.expired}</strong>
+                    </div>
+                  </div>
+
+                  {/* Unknown / Safety Net */}
+                  {todayStatusData.paymentBreakdown.unknown > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', background: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1', marginTop: '2px' }}>
+                      <span style={{ fontSize: '0.66rem', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>❓</span> Unknown
+                      </span>
+                      <strong style={{ fontSize: '0.82rem', color: '#334155' }}>{todayStatusData.paymentBreakdown.unknown}</strong>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
         <section className="dashboard-four-cols">
           {/* Top Selling Flights */}
 
-          <div className="dashboard-card-shell">
+          <div className={`dashboard-card-shell ${isLoadingFlights || isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar">
-              <h3>Top Selling Routes (Flights)</h3>
+              {isLoadingFlights || isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '180px', height: '20px' }}></div>
+              ) : (
+                <h3>Top Selling Routes (Flights)</h3>
+              )}
               {topFlights.length > 5 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
@@ -1607,8 +1713,16 @@ const AdminDashboard = () => {
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {isLoadingFlights ? (
-                <div style={{ padding: '10px 0', fontSize: '0.8rem', color: 'var(--admin-muted)' }}>Loading data...</div>
+              {isLoadingFlights || isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
+                  {[1, 2, 3, 4, 5].map((_, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="dash-skeleton-box" style={{ flex: '0 0 45%', height: '14px' }}></div>
+                      <div className="dash-skeleton-box" style={{ flex: '1', height: '10px' }}></div>
+                      <div className="dash-skeleton-box" style={{ flex: '0 0 15%', height: '14px' }}></div>
+                    </div>
+                  ))}
+                </div>
               ) : topFlights.length > 0 ? topFlights.slice(flightsPage * 5, (flightsPage + 1) * 5).map((route, i) => {
                 const count = route.bookingCount || route.searches || 0;
                 const maxBookings = Math.max(...topFlights.map(r => r.bookingCount || r.searches || 1));
@@ -1627,9 +1741,13 @@ const AdminDashboard = () => {
           </div>
 
           {/* Top Selling Buses */}
-          <div className="dashboard-card-shell">
+          <div className={`dashboard-card-shell ${isLoadingBuses || isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar">
-              <h3>Top Selling Routes (Buses)</h3>
+              {isLoadingBuses || isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '170px', height: '20px' }}></div>
+              ) : (
+                <h3>Top Selling Routes (Buses)</h3>
+              )}
               {topBuses.length > 5 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
@@ -1650,8 +1768,16 @@ const AdminDashboard = () => {
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {isLoadingBuses ? (
-                <div style={{ padding: '10px 0', fontSize: '0.8rem', color: 'var(--admin-muted)' }}>Loading data...</div>
+              {isLoadingBuses || isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
+                  {[1, 2, 3, 4, 5].map((_, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="dash-skeleton-box" style={{ flex: '0 0 45%', height: '14px' }}></div>
+                      <div className="dash-skeleton-box" style={{ flex: '1', height: '10px' }}></div>
+                      <div className="dash-skeleton-box" style={{ flex: '0 0 15%', height: '14px' }}></div>
+                    </div>
+                  ))}
+                </div>
               ) : topBuses.length > 0 ? topBuses.slice(busesPage * 5, (busesPage + 1) * 5).map((route, i) => {
                 const count = route.bookingCount || route.searches || 0;
                 const maxBookings = Math.max(...topBuses.map(r => r.bookingCount || r.searches || 1));
@@ -1670,9 +1796,13 @@ const AdminDashboard = () => {
           </div>
 
           {/* Top Hotels */}
-          <div className="dashboard-card-shell">
+          <div className={`dashboard-card-shell ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar">
-              <h3>Top Hotels by Bookings</h3>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '160px', height: '20px' }}></div>
+              ) : (
+                <h3>Top Hotels by Bookings</h3>
+              )}
               {topHotels.length > 5 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
@@ -1693,7 +1823,17 @@ const AdminDashboard = () => {
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {topHotels.length > 0 ? topHotels.slice(hotelsPage * 5, (hotelsPage + 1) * 5).map((hotel, index) => (
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
+                  {[1, 2, 3, 4, 5].map((_, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="dash-skeleton-box" style={{ flex: '0 0 45%', height: '14px' }}></div>
+                      <div className="dash-skeleton-box" style={{ flex: '1', height: '10px' }}></div>
+                      <div className="dash-skeleton-box" style={{ flex: '0 0 15%', height: '14px' }}></div>
+                    </div>
+                  ))}
+                </div>
+              ) : topHotels.length > 0 ? topHotels.slice(hotelsPage * 5, (hotelsPage + 1) * 5).map((hotel, index) => (
                 <div className="route-list-item" key={index}>
                   <span className="route-label-bold" style={{ flex: '0 0 50%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: '10px' }}>{hotel.name}</span>
                   <div className="route-progress-bar" style={{ flex: '1', width: 'auto' }}><div className="route-progress-fill" style={{ width: `${hotel.width}%`, background: '#10b981' }}></div></div>
@@ -1706,9 +1846,13 @@ const AdminDashboard = () => {
           </div>
 
           {/* Live Activity Feed */}
-          <div className="dashboard-card-shell">
+          <div className={`dashboard-card-shell ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar">
-              <h3>Live Activity Feed</h3>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '140px', height: '20px' }}></div>
+              ) : (
+                <h3>Live Activity Feed</h3>
+              )}
               {recentActivities.length > 5 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
@@ -1731,7 +1875,19 @@ const AdminDashboard = () => {
               )}
             </div>
             <div className="activity-feed-container">
-              {recentActivities.length > 0 ? recentActivities.slice(activityPage * 5, (activityPage + 1) * 5).map((activity, index) => {
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '8px 0' }}>
+                  {[1, 2, 3, 4, 5].map((_, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div className="dash-skeleton-box" style={{ width: '12px', height: '12px', borderRadius: '50%' }}></div>
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div className="dash-skeleton-box" style={{ width: '85%', height: '14px' }}></div>
+                        <div className="dash-skeleton-box" style={{ width: '35%', height: '10px' }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : recentActivities.length > 0 ? recentActivities.slice(activityPage * 5, (activityPage + 1) * 5).map((activity, index) => {
                 const norm = (activity.type || '').toLowerCase().replace(/[^a-z]/g, '');
                 const colorMap = {
                   booking: '#10b981',

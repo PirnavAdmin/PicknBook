@@ -1,0 +1,7 @@
+.booking-table-rows > tbody > tr:nth-child(odd):not(:hover) > td {
+  background-color: #ffffff;
+}
+
+.booking-table-rows > tbody > tr:nth-child(even):not(:hover) > td {
+  background-color: #f7f9fc;
+}

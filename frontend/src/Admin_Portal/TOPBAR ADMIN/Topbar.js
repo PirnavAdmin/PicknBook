@@ -231,6 +231,7 @@ function getAdminProfile() {
 const SEARCHABLE_PAGES = [
     { label: 'Dashboard', category: 'General', path: '/admin/dashbord' },
     { label: 'Customer List', category: 'Customer Management', path: '/admin/customer-management/customer-list' },
+    { label: 'Customer Security', category: 'Customer Management', path: '/admin/customer-management/security' },
     { label: 'Deposit Request List', category: 'Customer Management', path: '/admin/customer-management/deposit-request-list' },
     { label: 'Contact Queries List', category: 'Query Management', path: '/admin/query-management/query-list' },
     { label: 'IP Management', category: 'Security Management', path: '/admin/security-management/ip-management' },
