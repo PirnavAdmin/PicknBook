@@ -47,7 +47,8 @@ async function handleResponse(response) {
         errorPayload?.title ||
         response.statusText ||
         "An error occurred";
-    } catch {
+    } catch (adminRequestError) {
+      if (adminRequestError?.name === 'AbortError' || adminRequestError?.code === 'ERR_CANCELED') throw adminRequestError;
       errorMessage = response.statusText;
     }
     throw new Error(errorMessage);
@@ -211,6 +212,7 @@ export async function listAdminBusCoupons(params = {}) {
       return await handleResponse(response);
     }
   } catch (err) {
+    if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') throw err;
     console.warn("listAdminBusCoupons error:", err);
   }
   return [];
@@ -256,6 +258,7 @@ export async function createCondition(couponId, data, serviceType = "bus") {
     }
     return await handleResponse(response);
   } catch (err) {
+    if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') throw err;
     throw err;
   }
 }
@@ -286,6 +289,7 @@ export async function getConditions(couponId, serviceType = "bus") {
     }
     return await handleResponse(response);
   } catch (err) {
+    if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') throw err;
     console.warn("Error fetching conditions:", err);
     return [];
   }
@@ -356,12 +360,13 @@ export async function getCancellationReports() {
   return handleResponse(response);
 }
 
-export async function listAdminBusBookings({ passengerPhone, status } = {}) {
+export async function listAdminBusBookings({ passengerPhone, status } = {}, options = {}) {
   const params = new URLSearchParams();
   if (passengerPhone) params.append("passengerPhone", passengerPhone);
   if (status) params.append("status", status);
   const path = `/api/admin/bus/bookings/all${params.toString() ? `?${params.toString()}` : ""}`;
   const response = await fetch(toApiUrl(path), {
+    ...options,
     method: "GET",
     headers: getAdminAuthHeaders(),
   });

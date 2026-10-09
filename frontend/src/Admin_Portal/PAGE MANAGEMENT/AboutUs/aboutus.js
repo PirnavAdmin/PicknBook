@@ -212,7 +212,7 @@ export default function AdminAboutUsPage() {
           <div className="form-section">
             <div className="section-header" style={{ marginTop: 0 }}>
               <h3><span className="title-tab">Count Section</span></h3>
-              <button type="button" className="add-row-btn" onClick={addCountRow} disabled={loading}>
+              <button data-admin-action="primary" type="button" className="add-row-btn" onClick={addCountRow} disabled={loading}>
                 + Add Row
               </button>
             </div>
@@ -306,7 +306,7 @@ export default function AdminAboutUsPage() {
           <div className="form-section">
             <div className="section-header" style={{ marginTop: 0 }}>
               <h3><span className="title-tab">Team Members</span></h3>
-              <button type="button" className="add-row-btn" onClick={addTeamRow} disabled={loading}>
+              <button data-admin-action="primary" type="button" className="add-row-btn" onClick={addTeamRow} disabled={loading}>
                 + Add Member
               </button>
             </div>
@@ -390,7 +390,7 @@ export default function AdminAboutUsPage() {
           {saved && <p className="success-msg" style={{ marginTop: '16px' }}>About Us page updated successfully.</p>}
 
           <div className="submit-area">
-            <button type="submit" className="submit-btn" disabled={loading}>
+            <button data-admin-action="primary" type="submit" className="submit-btn" disabled={loading}>
               {loading ? "SAVING..." : "SAVE ABOUT US DATA"}
             </button>
           </div>

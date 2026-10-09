@@ -295,7 +295,7 @@ export default function B2CHomeTheme() {
         <div className="home-panel-card">
           <div className="panel-header-row">
             <h2 className="panel-title-large">Available Home Page Themes</h2>
-            <button
+            <button data-admin-action="primary"
               type="button"
               className="primary-btn"
               onClick={handleAddNewThemeClick}
@@ -378,7 +378,7 @@ export default function B2CHomeTheme() {
                             Applied
                           </button>
                         ) : (
-                          <button
+                          <button data-admin-action="primary"
                             type="button"
                             className="action-btn-small apply-btn"
                             onClick={() => handleApplyTheme(theme)}
@@ -588,10 +588,10 @@ export default function B2CHomeTheme() {
               </div>
 
               <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
-                <button type="submit" className="primary-btn" style={{ flex: 1, border: "none", padding: "10px", borderRadius: "6px", fontWeight: "700" }}>
+                <button data-admin-action="primary" type="submit" className="primary-btn" style={{ flex: 1, border: "none", padding: "10px", borderRadius: "6px", fontWeight: "700" }}>
                   Save Changes
                 </button>
-                <button type="button" className="action-btn-small" style={{ flex: 1 }} onClick={handleResetSidebar}>
+                <button data-admin-action="reset" type="button" className="action-btn-small" style={{ flex: 1 }} onClick={handleResetSidebar}>
                   Reset
                 </button>
               </div>
@@ -736,7 +736,7 @@ export default function B2CHomeTheme() {
                 >
                   Upload New Image
                 </button>
-                <button
+                <button data-admin-action="primary"
                   type="button"
                   className="primary-btn"
                   style={{ flex: 1, border: "none", padding: "10px", borderRadius: "6px", fontWeight: "700" }}
@@ -808,7 +808,7 @@ export default function B2CHomeTheme() {
                 </select>
               </div>
 
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 className="save-seo-btn"
                 onClick={() => {
@@ -946,7 +946,7 @@ export default function B2CHomeTheme() {
               </div>
             </div>
             <div className="theme-modal-footer">
-              <button type="button" onClick={() => setShowPreviewModal(null)} className="primary-btn" style={{ padding: "8px 20px", border: "none", borderRadius: "4px" }}>Close Preview</button>
+              <button data-admin-close type="button" onClick={() => setShowPreviewModal(null)} className="primary-btn" style={{ padding: "8px 20px", border: "none", borderRadius: "4px" }}>Close Preview</button>
             </div>
           </div>
         </div>

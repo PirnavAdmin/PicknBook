@@ -526,15 +526,11 @@
   gap: 16px;
   margin-bottom: 16px;
   overflow-x: auto;
+  overflow-y: hidden;
   white-space: nowrap;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
   padding-bottom: 2px;
-}
-
-.bus-details-tabs-header::-webkit-scrollbar {
-  display: none;
 }
 
 .bus-details-tab-btn {
@@ -1113,13 +1109,15 @@
   box-shadow: 0 12px 24px rgba(96, 36, 18, 0.1);
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 76px;
+  height: calc(100vh - 76px);
+  max-height: calc(100vh - 76px);
+  overflow: hidden;
 }
 
 .bus-filters-rail {
-  position: sticky;
-  top: 76px;
-  height: calc(100vh - 76px); /* Full viewport height minus navbar */
-  max-height: calc(100vh - 76px);
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -1782,7 +1780,7 @@
   color: var(--theme-navy, #1f2a44);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
   font-size: 0.88rem;
   font-weight: 800;
   cursor: pointer;
@@ -1806,14 +1804,17 @@
   flex-shrink: 0;
 }
 
-/* Arrow: pushed to right end of button */
+/* Keep the direction arrow adjacent to its sort label */
 .bus-sort-col button.sort-btn .sort-direction-arrow {
   color: rgba(31, 42, 68, 0.36);
   font-size: 1.1rem;
   font-weight: 900;
   line-height: 1;
-  margin-left: auto;
   transform: translateY(-1px);
+}
+
+.bus-sort-col button.sort-btn .sort-direction-arrow.descending {
+  transform: translateY(-1px) rotate(180deg);
 }
 
 .bus-sort-col button.sort-btn.active .sort-direction-arrow {
@@ -1859,9 +1860,6 @@
   }
   .bus-sort-col button.sort-btn {
     width: auto;
-  }
-  .bus-sort-col button.sort-btn .sort-direction-arrow {
-    margin-left: 1px;
   }
 }
 
@@ -2092,15 +2090,16 @@
   position: relative;
 }
 
-.duration-dash i {
+.duration-dash .duration-bus-icon {
   position: absolute;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #98a9bf;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  box-sizing: content-box;
+  padding: 2px;
+  color: #98a9bf;
+  background: #ffffff;
+  z-index: 1;
 }
 
 .bus-fare-cell,
@@ -2126,6 +2125,24 @@
   font-size: 1.8rem;
   line-height: 1;
   font-family: var(--app-font-family) !important;
+}
+
+.bus-fare-cell .bus-fare-amount {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.bus-fare-cell .bus-fare-amount svg {
+  flex: 0 0 auto;
+}
+
+.bus-fare-cell .bus-fare-amount span {
+  margin: 0;
+  color: inherit;
+  font-size: inherit !important;
+  font-weight: inherit;
+  line-height: inherit;
 }
 
 .bus-seat-cell strong {
@@ -2896,12 +2913,6 @@
   }
 }
 
-/* Themed compact filter rail handled by .bus-filters-sidebar now */
-.bus-filters-rail {
-  border: none;
-  background: transparent;
-  box-shadow: none;
-}
 
 .bus-filters-header {
   min-height: 38px;
@@ -3640,6 +3651,27 @@
 .bus-duration-cell>span {
   font-size: 0.74rem !important;
   font-weight: 600 !important;
+  flex: 0 0 auto;
+  line-height: 1.2;
+  white-space: nowrap;
+  position: relative;
+  z-index: 2;
+  padding: 0 3px;
+  background: #ffffff;
+}
+
+.bus-duration-cell .duration-dash {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 24px;
+  margin-top: 2px;
+}
+
+.bus-duration-cell .duration-dash .duration-bus-icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.2;
 }
 
 /* --- Fare cell: compact price --- */
@@ -3758,6 +3790,36 @@
   margin-top: 4px !important;
 }
 
+.bus-seat-availability {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bus-seat-availability strong {
+  margin: 0;
+}
+
+.bus-seat-availability-icon {
+  flex: 0 0 auto;
+}
+
+.bus-seat-availability--available {
+  color: #15803d;
+}
+
+.bus-seat-availability--limited {
+  color: #b45309;
+}
+
+.bus-seat-availability--low {
+  color: #dc2626;
+}
+
+.bus-seat-availability--none {
+  color: #64748b;
+}
+
 /* --- Inline search cells: symmetric vertical breathing room --- */
 .bus-discover-searchcell {
   padding-top: 3px !important;
@@ -3808,10 +3870,9 @@
   border-bottom: none !important;
 }
 
-/* First filter card: no top border, 1px top gap */
+/* First filter card: no top border, normal top gap */
 .bus-filter-card:first-of-type {
   border-top: none !important;
-  padding-top: 1px !important;
 }
 
 /* Last filter card: 1px bottom gap */
@@ -3848,6 +3909,235 @@
 .bus-collapse-card .point-row {
   min-height: 24px !important;
   padding: 2px 0 !important;
+}
+
+@media (min-width: 1251px) {
+  .bus-sort-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 12px;
+    overflow: visible;
+    padding: 4px 12px !important;
+  }
+
+  .bus-sort-strip .bus-sort-col-1 {
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .bus-sort-strip .bus-route-cell {
+    display: contents;
+  }
+
+  .bus-sort-strip > .bus-sort-col,
+  .bus-sort-strip .bus-route-cell .bus-sort-col {
+    flex: 1 1 0;
+    min-width: max-content;
+    justify-content: center;
+    overflow: visible;
+  }
+
+  .bus-sort-strip .bus-sort-col button.sort-btn {
+    min-width: max-content;
+    width: max-content;
+  }
+}
+
+.bus-sort-strip .bus-found-count,
+.bus-sort-strip .bus-found-count strong,
+.bus-sort-strip .sort-by-label,
+.bus-sort-strip .sort-btn {
+  font-family: var(--app-font-family) !important;
+  font-size: 0.94rem !important;
+  font-weight: 600 !important;
+}
+
+.bus-offer-ticket {
+  position: relative;
+  min-width: 0;
+  min-height: 132px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  clip-path: polygon(
+    0 0, 100% 0, 100% 25%, 98% 29%, 98% 34%, 100% 38%,
+    100% 42%, 96% 50%, 100% 58%, 100% 62%, 98% 66%, 98% 71%,
+    100% 75%, 100% 100%, 0 100%, 0 75%, 2% 71%, 2% 66%,
+    0 62%, 0 58%, 4% 50%, 0 42%, 0 38%, 2% 34%, 2% 29%, 0 25%
+  );
+  filter: drop-shadow(0 3px 7px rgba(15, 23, 42, 0.16));
+}
+
+.bus-offer-ticket-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+.bus-offer-coupon-code {
+  max-width: 100%;
+  overflow: hidden;
+  color: #62676d;
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bus-offer-ticket-subtitle {
+  max-width: 100%;
+  overflow: hidden;
+  color: #62676d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bus-offer-info-button,
+.bus-offer-info-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.bus-offer-info-button {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 14px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.bus-offer-info-button span {
+  font-family: Georgia, serif;
+  font-size: 0.95rem;
+  font-style: italic;
+  font-weight: 700;
+}
+
+.bus-offer-info-button:hover,
+.bus-offer-info-close:hover {
+  border-color: var(--bus-primary, #ff0000);
+  color: var(--bus-primary, #ff0000);
+}
+
+.bus-offer-copy-button {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #62676d;
+  font-size: 0.66rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bus-offer-info-backdrop {
+  position: fixed;
+  z-index: 1000000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.bus-offer-info-dialog {
+  width: min(100%, 480px);
+  max-height: min(80vh, 600px);
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.bus-offer-info-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bus-offer-info-header h3 {
+  margin: 4px 0 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.bus-offer-info-close {
+  width: 32px;
+  height: 32px;
+}
+
+.bus-offer-info-content {
+  padding: 16px 20px 20px;
+  color: #334155;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.bus-offer-info-content p {
+  margin: 0 0 12px;
+}
+
+.bus-offer-info-content h4 {
+  margin: 16px 0 8px;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.bus-offer-info-content ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.bus-offer-info-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 11px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.bus-offer-info-code span {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.bus-offer-info-code strong {
+  color: #334155;
+  letter-spacing: 0.06em;
 }
 
 /* ── Datepicker visibility: ensure calendar popup is never clipped ── */

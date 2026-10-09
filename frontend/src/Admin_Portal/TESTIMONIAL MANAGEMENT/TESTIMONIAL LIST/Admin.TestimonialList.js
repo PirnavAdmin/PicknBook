@@ -376,7 +376,7 @@ export default function AdminTestimonialList() {
 
   return (
     <>
-      <div style={styles.container}>
+      <div data-admin-surface style={styles.container}>
         {toast && (
           <div
             style={{
@@ -434,7 +434,7 @@ export default function AdminTestimonialList() {
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
-            <button
+            <button data-admin-action="export"
               type="button"
               style={{ ...styles.button, ...styles.exportBtn }}
               onClick={handleExport}
@@ -442,7 +442,7 @@ export default function AdminTestimonialList() {
               <Download size={15} strokeWidth={2.2} />
               Export
             </button>
-            <button
+            <button data-admin-action="primary"
               type="button"
               style={{ ...styles.button, ...styles.addBtn }}
               onClick={() => navigate("/admin/testimonial-management/add-testimonial")}
@@ -454,10 +454,10 @@ export default function AdminTestimonialList() {
         </div>
 
         {selectedTestimonial && (
-          <div style={styles.detailCard}>
-            <div style={styles.detailHeader}>
+          <div data-admin-surface style={styles.detailCard}>
+            <div data-admin-surface style={styles.detailHeader}>
               <div style={styles.detailTitle}>Testimonial Details</div>
-              <button
+              <button data-admin-close
                 type="button"
                 style={styles.secondaryBtn}
                 onClick={() => setSelectedTestimonial(null)}
@@ -490,7 +490,7 @@ export default function AdminTestimonialList() {
           </div>
         )}
 
-        <div style={styles.tableWrapper}>
+        <div data-admin-surface style={styles.tableWrapper}>
           <table style={styles.table}>
             <thead style={styles.thead}>
               <tr>
@@ -592,7 +592,7 @@ export default function AdminTestimonialList() {
                               }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button
+                              <button className="admin-view-button"
                                 type="button"
                                 onClick={() => {
                                   setSelectedTestimonial(t);

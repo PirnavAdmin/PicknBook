@@ -538,7 +538,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
           <h1 className="sd-page-title">User ID Security Rules & Restrictions</h1>
         </div>
         <div className="sd-header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
+          <button data-admin-action="primary"
             type="button"
             className={`sd-filter-toggle-btn ${showFilterPanel ? 'active' : ''}`}
             onClick={() => setShowFilterPanel(!showFilterPanel)}
@@ -564,7 +564,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
             <Filter size={16} /> Filter
           </button>
 
-          <button
+          <button data-admin-action="export"
             type="button"
             onClick={() => showToast('Exporting IP list CSV...')}
             style={{
@@ -589,7 +589,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
             <Download size={16} /> Export
           </button>
 
-          <button
+          <button data-admin-action="primary"
             type="button"
             onClick={handleOpenAddDrawer}
             style={{
@@ -842,10 +842,10 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
 
             {/* Buttons Field */}
             <div className="sd-filter-buttons">
-              <button className="sd-btn-reset" onClick={handleResetFilters}>
+              <button data-admin-action="reset" className="sd-btn-reset" onClick={handleResetFilters}>
                 🔄 Reset
               </button>
-              <button className="sd-btn-filter" onClick={handleApplyFilters}>
+              <button data-admin-action="primary" className="sd-btn-filter" onClick={handleApplyFilters}>
                 🔍 Filter
               </button>
             </div>
@@ -962,7 +962,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
                       <td className="cell-created">{rule.createdBy}</td>
                       <td style={{ textAlign: 'right' }}>
                         <div className="table-actions">
-                          <button className="btn-act-icon" title="View Details" onClick={() => handleOpenViewDrawer(rule)}>👁️</button>
+                          <button className="btn-act-icon admin-view-button" title="View Details" onClick={() => handleOpenViewDrawer(rule)}>👁️</button>
                           <button className="btn-act-icon" title="Edit" onClick={() => handleOpenEditDrawer(rule)}>📝</button>
                           <button className="btn-act-icon delete" title="Delete" onClick={() => handleOpenDeleteModal(rule)}>🗑️</button>
                         </div>
@@ -1013,7 +1013,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
               <div className="sec-drawer-body">
                 <div className="drawer-grid-row">
                   <div className="drawer-field">
-                    <label>IP Address / CIDR <span className="req">*</span></label>
+                    <label>IP Address / CIDR <span data-admin-required className="req">*</span></label>
                     <input
                       type="text"
                       required
@@ -1024,7 +1024,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
                   </div>
 
                   <div className="drawer-field">
-                    <label>Scope <span className="req">*</span></label>
+                    <label>Scope <span data-admin-required className="req">*</span></label>
                     <select value={formScope} onChange={(e) => setFormScope(e.target.value)}>
                       <option>User</option>
                       <option>Admin</option>
@@ -1035,7 +1035,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
 
                 <div className="drawer-grid-row">
                   <div className="drawer-field">
-                    <label>Action <span className="req">*</span></label>
+                    <label>Action <span data-admin-required className="req">*</span></label>
                     <select value={formAction} onChange={(e) => {
                       setFormAction(e.target.value);
                       if (e.target.value === 'Whitelisted') {
@@ -1052,7 +1052,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
                   </div>
 
                   <div className="drawer-field">
-                    <label>Rule Type <span className="req">*</span></label>
+                    <label>Rule Type <span data-admin-required className="req">*</span></label>
                     <select value={formRuleType} onChange={(e) => setFormRuleType(e.target.value)}>
                       <option>IP Rule</option>
                       <option>IP Range</option>
@@ -1063,7 +1063,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
 
                 <div className="drawer-grid-row">
                   <div className="drawer-field">
-                    <label>Block Type <span className="req">*</span></label>
+                    <label>Block Type <span data-admin-required className="req">*</span></label>
                     <select value={formBlockType} onChange={(e) => setFormBlockType(e.target.value)} disabled={formAction === 'Whitelisted'}>
                       <option>Temporary</option>
                       <option>Permanent</option>
@@ -1072,7 +1072,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
 
                   {formBlockType === 'Temporary' && (
                     <div className="drawer-field">
-                      <label>Duration <span className="req">*</span></label>
+                      <label>Duration <span data-admin-required className="req">*</span></label>
                       <div className="duration-input-grp">
                         <input
                           type="number"
@@ -1088,7 +1088,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
 
                 <div className="drawer-grid-row">
                   <div className="drawer-field">
-                    <label>Reason <span className="req">*</span></label>
+                    <label>Reason <span data-admin-required className="req">*</span></label>
                     <input
                       type="text"
                       required
@@ -1110,7 +1110,7 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
                   </div>
 
                   <div className="drawer-field">
-                    <label>Source <span className="req">*</span></label>
+                    <label>Source <span data-admin-required className="req">*</span></label>
                     <select value={formSource} onChange={(e) => setFormSource(e.target.value)}>
                       <option>Manual</option>
                       <option>Automatic</option>
@@ -1214,10 +1214,10 @@ export default function IpManagement({ defaultSubTab = 'all' }) {
                   <button type="button" className="btn-drawer-cancel" onClick={() => setActiveDrawer(null)}>
                     Cancel
                   </button>
-                  <button type="button" className="btn-drawer-draft" onClick={() => { showToast('Saved draft rule successfully.'); setActiveDrawer(null); }}>
+                  <button data-admin-action="primary" type="button" className="btn-drawer-draft" onClick={() => { showToast('Saved draft rule successfully.'); setActiveDrawer(null); }}>
                     Save as Draft
                   </button>
-                  <button type="submit" className="btn-drawer-save">
+                  <button data-admin-action="primary" type="submit" className="btn-drawer-save">
                     {activeDrawer === 'add' ? 'Save Rule' : 'Update Rule'}
                   </button>
                 </div>

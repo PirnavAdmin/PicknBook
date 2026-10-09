@@ -339,7 +339,7 @@ function AddBlogSubCategory() {
 
     return (
         <>
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {toast && (
                     <div
                         style={{
@@ -390,7 +390,7 @@ function AddBlogSubCategory() {
                             <tbody>
                                 <tr>
                                     <td style={styles.tableLabelCell}>
-                                        Sub Category Name<span style={styles.requiredMark}>*</span>
+                                        Sub Category Name<span data-admin-required style={styles.requiredMark}>*</span>
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <input
@@ -521,7 +521,7 @@ function AddBlogSubCategory() {
                                         </div>
                                     </td>
                                     <td style={styles.tableLabelCell}>
-                                        Category<span style={styles.requiredMark}>*</span>
+                                        Category<span data-admin-required style={styles.requiredMark}>*</span>
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <select
@@ -611,7 +611,7 @@ function AddBlogSubCategory() {
                         </table>
 
                         <div style={styles.buttonGroup}>
-                            <button
+                            <button data-admin-action="reset"
                                 type="button"
                                 style={styles.cancelBtn}
                                 onMouseEnter={(e) => {
@@ -626,7 +626,7 @@ function AddBlogSubCategory() {
                             >
                                 Reset
                             </button>
-                            <button
+                            <button data-admin-action="primary"
                                 type="submit"
                                 style={styles.submitBtn}
                                 onMouseEnter={(e) => {

@@ -282,18 +282,21 @@ export default function AdminLogin() {
 
       if (rawToken) {
         const adminUserObj = { email: email.trim(), name: rawName, role: rawRole, userId: "admin-" + Date.now() };
-
         localStorage.setItem("adminToken", rawToken);
         localStorage.setItem("adminRole", rawRole);
         localStorage.setItem("adminName", rawName);
         localStorage.setItem("adminEmail", email.trim());
-        localStorage.setItem("adminUser", JSON.stringify(adminUserObj));
+        localStorage.setItem("role", rawRole);
+        localStorage.setItem("token", rawToken);
+        localStorage.setItem("user", JSON.stringify(adminUserObj));
 
         sessionStorage.setItem("adminToken", rawToken);
         sessionStorage.setItem("adminRole", rawRole);
         sessionStorage.setItem("adminName", rawName);
         sessionStorage.setItem("adminEmail", email.trim());
-        sessionStorage.setItem("adminUser", JSON.stringify(adminUserObj));
+        sessionStorage.setItem("role", rawRole);
+        sessionStorage.setItem("token", rawToken);
+        sessionStorage.setItem("user", JSON.stringify(adminUserObj));
 
         setSuccessMessage("Admin login successful. Redirecting...");
         setTimeout(() => {
@@ -377,10 +380,13 @@ export default function AdminLogin() {
       localStorage.setItem("adminToken", authToken);
       localStorage.setItem("adminRole", "admin");
       localStorage.setItem("adminEmail", email);
-      localStorage.setItem("adminUser", JSON.stringify(adminUserData));
       sessionStorage.setItem("adminToken", authToken);
       sessionStorage.setItem("adminRole", "admin");
       sessionStorage.setItem("adminUser", JSON.stringify(adminUserData));
+
+      localStorage.setItem("token", authToken);
+      localStorage.setItem("role", "admin");
+      localStorage.setItem("user", JSON.stringify(adminUserData));
 
       setSuccessMessage("Verification successful! Redirecting...");
       setTimeout(() => {
@@ -710,7 +716,7 @@ export default function AdminLogin() {
         {/* MODE 1: ADMIN LOGIN FORM */}
         {/* ============================================================== */}
         {mode === "LOGIN" && (
-          <form onSubmit={handleSendOtpLogin} className="admin-form-body" autoComplete="on">
+          <form onSubmit={handleSendOtpLogin} className="admin-form-body">
             <div className="form-header-group">
               <div className="icon-header-badge">
                 <User size={18} className="badge-icon" />
@@ -735,8 +741,6 @@ export default function AdminLogin() {
                 </div>
                 <input
                   type="email"
-                  name="adminLoginEmail"
-                  autoComplete="section-admin-login username"
                   className="form-control-input"
                   placeholder="Enter your email address"
                   value={email}
@@ -755,8 +759,6 @@ export default function AdminLogin() {
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  name="adminLoginPassword"
-                  autoComplete="section-admin-login current-password"
                   className="form-control-input"
                   placeholder="Enter your password"
                   value={password}

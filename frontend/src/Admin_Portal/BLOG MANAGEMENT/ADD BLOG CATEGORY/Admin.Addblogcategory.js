@@ -296,7 +296,7 @@ function AddBlogCategory() {
 
     return (
         <>
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {toast && (
                     <div
                         style={{
@@ -347,7 +347,7 @@ function AddBlogCategory() {
                             <tbody>
                                 <tr>
                                     <td style={styles.tableLabelCell}>
-                                        Category Name<span style={styles.requiredMark}>*</span>
+                                        Category Name<span data-admin-required style={styles.requiredMark}>*</span>
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <input
@@ -546,7 +546,7 @@ function AddBlogCategory() {
                         </table>
 
                         <div style={styles.buttonGroup}>
-                            <button
+                            <button data-admin-action="reset"
                                 type="button"
                                 style={styles.cancelBtn}
                                 onMouseEnter={(e) => {
@@ -561,7 +561,7 @@ function AddBlogCategory() {
                             >
                                 Reset
                             </button>
-                            <button
+                            <button data-admin-action="primary"
                                 type="submit"
                                 style={styles.submitBtn}
                                 onMouseEnter={(e) => {

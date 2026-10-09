@@ -504,7 +504,7 @@ export default function BusCancellationList() {
         </div>
 
         <div className="admin-actions-row" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <button
+          <button data-admin-action="primary"
             type="button"
             onClick={() => setIsFiltersOpen((curr) => !curr)}
             style={{
@@ -529,7 +529,7 @@ export default function BusCancellationList() {
             <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
-          <button
+          <button data-admin-action="export"
             type="button"
             onClick={handleExport}
             style={{
@@ -625,10 +625,10 @@ export default function BusCancellationList() {
           </label>
 
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Clear Filter
             </button>
           </div>
@@ -796,8 +796,8 @@ export default function BusCancellationList() {
 
             {/* GENERAL & JOURNEY DETAILS TABLE */}
             <div style={{ marginTop: "16px" }}>
-              <h4 style={{ color: "#A51C49", fontSize: "0.88rem", fontWeight: "700", margin: "12px 0 8px 0" }}>
-                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> GENERAL & JOURNEY DETAILS
+              <h4 className="admin-view-section-title" >
+                 GENERAL & JOURNEY DETAILS
               </h4>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                 <tbody>
@@ -856,8 +856,8 @@ export default function BusCancellationList() {
 
             {/* FINANCIAL & FARE BREAKDOWN TABLE */}
             <div style={{ marginTop: "16px" }}>
-              <h4 style={{ color: "#A51C49", fontSize: "0.88rem", fontWeight: "700", margin: "12px 0 8px 0" }}>
-                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> FINANCIAL & FARE BREAKDOWN
+              <h4 className="admin-view-section-title" >
+                 FINANCIAL & FARE BREAKDOWN
               </h4>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                 <thead>
@@ -898,114 +898,7 @@ export default function BusCancellationList() {
                 </tbody>
               </table>
             </div>
-
-            {/* REFUND & FEE MANAGEMENT FORM */}
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px", marginTop: "16px", background: "#ffffff" }}>
-              <h4 style={{ margin: "0 0 10px 0", fontSize: "0.88rem", color: "#A51C49", fontWeight: "700" }}>
-                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> REFUND & FEE MANAGEMENT FORM
-              </h4>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "10px" }}>
-                <div>
-                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Cancellation Status</label>
-                  <select
-                    value={editForm.cancellationStatus}
-                    onChange={(e) => setEditForm(p => ({ ...p, cancellationStatus: e.target.value }))}
-                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Refund Status</label>
-                  <select
-                    value={editForm.customerRefundStatus}
-                    onChange={(e) => setEditForm(p => ({ ...p, customerRefundStatus: e.target.value }))}
-                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Processing">Processing</option>
-                    <option value="Refunded">Refunded</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Failed">Failed</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Refund Status</label>
-                  <select
-                    value={editForm.adminRefundStatus}
-                    onChange={(e) => setEditForm(p => ({ ...p, adminRefundStatus: e.target.value }))}
-                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Claimed">Claimed</option>
-                    <option value="Refunded">Refunded</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "10px" }}>
-                <div>
-                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Refund Amt (₹)</label>
-                  <input
-                    type="number"
-                    value={editForm.customerRefundAmountInr}
-                    onChange={(e) => setEditForm(p => ({ ...p, customerRefundAmountInr: e.target.value }))}
-                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Cancel Fee (₹)</label>
-                  <input
-                    type="number"
-                    value={editForm.customerCancellationChargeInr}
-                    onChange={(e) => setEditForm(p => ({ ...p, customerCancellationChargeInr: e.target.value }))}
-                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Refund Amt (₹)</label>
-                  <input
-                    type="number"
-                    value={editForm.adminRefundAmountInr}
-                    onChange={(e) => setEditForm(p => ({ ...p, adminRefundAmountInr: e.target.value }))}
-                    style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: "10px" }}>
-                <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Remark</label>
-                <input
-                  type="text"
-                  placeholder="Enter admin remarks..."
-                  value={editForm.adminRemark}
-                  onChange={(e) => setEditForm(p => ({ ...p, adminRemark: e.target.value }))}
-                  style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                />
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
-                <button
-                  type="button"
-                  onClick={() => setShowRawJsonModal(true)}
-                  style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontSize: "11px", fontWeight: "600" }}
-                >
-                  View Raw JSON Payload
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveRefundUpdate}
-                  disabled={isSaving}
-                  style={{ padding: "6px 16px", borderRadius: "6px", border: "none", background: "#10b981", color: "#fff", fontWeight: "600", cursor: "pointer", fontSize: "12px" }}
-                >
-                  {isSaving ? "Saving..." : "Save Refund Update"}
-                </button>
-              </div>
-            </div>
-          </div>
+</div>
         </div>
       )}
 

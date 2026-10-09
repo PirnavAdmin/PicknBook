@@ -128,8 +128,13 @@ function BlogSubCategoryList() {
     };
 
     useEffect(() => {
-        loadSubCategories();
-        loadCategories();
+        let active = true;
+        const load = async () => {
+            await loadSubCategories();
+            if (active) await loadCategories();
+        };
+        load();
+        return () => { active = false; };
     }, []);
 
     // Close actions dropdown on clicking outside
@@ -725,7 +730,7 @@ function BlogSubCategoryList() {
                     box-shadow: 0 0 0 2px rgba(74, 15, 26, 0.15) !important;
                 }
             `}</style>
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {toast && (
                     <div
                         style={{
@@ -788,7 +793,7 @@ function BlogSubCategoryList() {
                         >
                             <FileText size={14} /> <span>Blog List</span>
                         </button>
-                        <button
+                        <button data-admin-action="primary"
                             type="button"
                             style={{ ...styles.button, ...styles.addBtn, display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
                             onMouseEnter={(e) => {
@@ -805,7 +810,7 @@ function BlogSubCategoryList() {
                         >
                             <Plus size={14} /> <span>Add Sub Category</span>
                         </button>
-                        <button
+                        <button data-admin-action="export"
                             type="button"
                             style={{ ...styles.button, ...styles.exportBtn, display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}
                             onMouseEnter={(e) => {
@@ -852,7 +857,7 @@ function BlogSubCategoryList() {
                                     <FileText size={20} style={{ color: "#A51C49" }} />
                                     <span style={{ color: "#A51C49" }}>Sub Category</span> Details
                                 </h2>
-                                <button
+                                <button data-admin-close
                                     type="button"
                                     onClick={() => setSelectedSubCategory(null)}
                                     style={{
@@ -941,7 +946,7 @@ function BlogSubCategoryList() {
                                     setActivePopupImage(null);
                                 }}
                             />
-                            <button
+                            <button data-admin-close
                                 type="button"
                                 onClick={() => setActivePopupImage(null)}
                                 style={{
@@ -988,7 +993,7 @@ function BlogSubCategoryList() {
                         onClick={() => setActivePopupImage(null)}
                     >
                         <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
-                            <button
+                            <button data-admin-close
                                 type="button"
                                 onClick={() => setActivePopupImage(null)}
                                 style={{
@@ -1029,7 +1034,7 @@ function BlogSubCategoryList() {
                     document.body
                 )}
 
-                <div style={styles.tableWrapper}>
+                <div data-admin-surface style={styles.tableWrapper}>
                     <table style={styles.table}>
                         <thead style={styles.thead}>
                             <tr>
@@ -1136,7 +1141,7 @@ function BlogSubCategoryList() {
                                                     </button>
                                                     {activeDropdownId === item.id && (
                                                         <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: '#ffffff', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 10px 25px rgba(0,0,0,0.12)', zIndex: 1000, minWidth: '170px', overflow: 'hidden' }}>
-                                                            <button type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(item); setActiveDropdownId(null); }}
+                                                            <button className="admin-view-button" type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(item); setActiveDropdownId(null); }}
                                                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155' }}
                                                                 onMouseEnter={(e) => e.currentTarget.style.background='#f1f5f9'} onMouseLeave={(e) => e.currentTarget.style.background='none'}>
                                                                 <Eye size={14} /> <span>View Details</span>
@@ -1207,7 +1212,7 @@ function BlogSubCategoryList() {
                             
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Sub Category Name *</label>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Sub Category Name <span data-admin-required className="admin-required-indicator">*</span></label>
                                     <input 
                                         type="text" 
                                         value={editFormData.name} 
@@ -1217,7 +1222,7 @@ function BlogSubCategoryList() {
                                     />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Category *</label>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Category <span data-admin-required className="admin-required-indicator">*</span></label>
                                     <select 
                                         value={editFormData.category} 
                                         onChange={(e) => setEditFormData(prev => ({ ...prev, category: e.target.value }))}
@@ -1239,7 +1244,7 @@ function BlogSubCategoryList() {
                                             onChange={(e) => setEditFormData(prev => ({ ...prev, slug: e.target.value }))}
                                             style={{ flex: 1, boxSizing: 'border-box', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', outline: 'none', background: 'var(--panel)', color: 'var(--text-primary)' }}
                                         />
-                                        <button
+                                        <button data-admin-action="primary"
                                             type="button"
                                             onClick={handleGenerateSlug}
                                             style={{ padding: '8px 14px', background: 'var(--surface-soft)', border: '1px solid var(--border)', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
@@ -1349,7 +1354,7 @@ function BlogSubCategoryList() {
                                 >
                                     Cancel
                                 </button>
-                                <button 
+                                <button data-admin-action="primary" 
                                     type="submit" 
                                     style={{ padding: '8px 28px', background: '#A51C49', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
                                 >

@@ -282,7 +282,7 @@ export default function AdminAddTestimonial() {
 
   return (
     <>
-      <div style={styles.container}>
+      <div data-admin-surface style={styles.container}>
         {toast && (
           <div
             style={{
@@ -305,10 +305,10 @@ export default function AdminAddTestimonial() {
           </div>
         </div>
 
-        <div style={styles.card}>
+        <div data-admin-surface style={styles.card}>
           <form onSubmit={handleSubmit}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Name *</label>
+              <label style={styles.label}>Name <span data-admin-required className="admin-required-indicator">*</span></label>
               <input
                 type="text"
                 name="name"
@@ -320,7 +320,7 @@ export default function AdminAddTestimonial() {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Designation *</label>
+              <label style={styles.label}>Designation <span data-admin-required className="admin-required-indicator">*</span></label>
               <input
                 type="text"
                 name="designation"
@@ -335,7 +335,7 @@ export default function AdminAddTestimonial() {
             {/* Rating and Category Status Button Chips in same row */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
               <div style={{ ...styles.formGroup, marginBottom: 0 }}>
-                <label style={styles.label}>Rating (1 - 5) *</label>
+                <label style={styles.label}>Rating (1 - 5) <span data-admin-required className="admin-required-indicator">*</span></label>
                 <select
                   name="rating"
                   value={formData.rating}
@@ -351,7 +351,7 @@ export default function AdminAddTestimonial() {
               </div>
 
               <div style={{ ...styles.formGroup, marginBottom: 0 }}>
-                <label style={styles.label}>Category Status *</label>
+                <label style={styles.label}>Category Status <span data-admin-required className="admin-required-indicator">*</span></label>
                 <div style={{ display: "flex", gap: "8px", marginTop: "6px" }}>
                   <button
                     type="button"
@@ -406,7 +406,7 @@ export default function AdminAddTestimonial() {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Comment / Message *</label>
+              <label style={styles.label}>Comment / Message <span data-admin-required className="admin-required-indicator">*</span></label>
               <textarea
                 name="comment"
                 value={formData.comment}
@@ -417,7 +417,7 @@ export default function AdminAddTestimonial() {
             </div>
 
             <div style={styles.formGroup}>
-              <label style={styles.label}>Main Testimonial Status *</label>
+              <label style={styles.label}>Main Testimonial Status <span data-admin-required className="admin-required-indicator">*</span></label>
               <select
                 name="status"
                 value={formData.status}
@@ -466,7 +466,7 @@ export default function AdminAddTestimonial() {
               >
                 Cancel
               </button>
-              <button type="submit" disabled={loading} style={styles.submitBtn}>
+              <button data-admin-action="primary" type="submit" disabled={loading} style={styles.submitBtn}>
                 {loading ? "Saving..." : "Save Testimonial"}
               </button>
             </div>

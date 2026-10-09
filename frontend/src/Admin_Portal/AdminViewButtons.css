@@ -1,0 +1,71 @@
+/* First important layer wins over legacy component and design-system rules.
+   Explicit opt-in keeps Edit/Delete and other action buttons unchanged. */
+@layer admin-view-buttons {
+  :root:has(.admin-shell) body .admin-view-button {
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    gap: 6px !important;
+    width: auto !important;
+    min-width: 66px !important;
+    max-width: none !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 0 12px !important;
+    margin-block: 0 !important;
+    margin-inline: auto !important;
+    border: 1px solid #a51c49 !important;
+    border-radius: 6px !important;
+    background: #a51c49 !important;
+    color: #ffffff !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: background-color 150ms ease, border-color 150ms ease !important;
+  }
+
+  :root:has(.admin-shell) body .admin-view-button:hover,
+  :root:has(.admin-shell) body .admin-view-button:active {
+    background: #851237 !important;
+    border-color: #851237 !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  :root:has(.admin-shell) body .admin-view-button:focus-visible {
+    outline: 2px solid #a51c49 !important;
+    outline-offset: 2px !important;
+  }
+
+  :root:has(.admin-shell) body .admin-view-button :is(span, svg) {
+    color: inherit !important;
+    cursor: inherit !important;
+  }
+
+  :root:has(.admin-shell) body .admin-view-button svg {
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0 !important;
+  }
+
+  :root:has(.admin-shell) body td:has(> .admin-view-button) {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  :root:has(.admin-shell) body .admin-view-button:disabled {
+    opacity: 0.65 !important;
+    cursor: not-allowed !important;
+  }
+}

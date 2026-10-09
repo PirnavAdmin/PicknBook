@@ -1,22 +1,38 @@
 /* eslint-disable */
-import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import React, { useState, Suspense, useEffect, useMemo } from 'react';
+import { Outlet } from 'react-router-dom';
 import AdminSidebar from './SIDEBAR ADMIN/sidebar_admin.js';
 import AdminTopbar from './TOPBAR ADMIN/Topbar';
 import './adminlayout.css';
+import './AdminScrollbars.css';
+import './AdminCloseControls.css';
+import './AdminRequiredIndicators.css';
+import './AdminViewButtons.css';
+import './AdminDesignSystem.css';
+import './AdminDetailSections.css';
+
+function ScreenReady({ children }) {
+  useEffect(() => { window.dispatchEvent(new Event('admin:screen-ready')); }, []);
+  return children;
+}
 
 function AdminLayout() {
+  useEffect(() => {
+    // Load the existing Inter font once, without making lazy page stylesheets
+    // depend on an external @import finishing successfully.
+    if (!document.querySelector('link[data-admin-font]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+      link.dataset.adminFont = 'inter';
+      document.head.appendChild(link);
+    }
+  }, []);
   const [sidebarOpen, setSidebarOpen] = useState(false); // hidden by default
   const [searchQuery, setSearchQuery] = useState('');
-  const [pageLoading, setPageLoading] = useState(false);
-  const location = useLocation();
   const theme = 'light';
+  const outletContext = useMemo(() => ({ searchQuery, setSearchQuery, theme }), [searchQuery, theme]);
 
-  useEffect(() => {
-    setPageLoading(true);
-    const timer = setTimeout(() => setPageLoading(false), 450);
-    return () => clearTimeout(timer);
-  }, [location.pathname]);
 
   return (
     <div className={`admin-shell ${theme}-theme`} style={{ height: '100vh', overflow: 'hidden', position: 'relative' }}>
@@ -64,12 +80,9 @@ function AdminLayout() {
 
       {/* Main content — always full width */}
       <main className="main-area" style={{ height: 'calc(100vh - 62px)', overflowY: 'auto' }}>
-        {pageLoading && (
-          <div className="admin-page-top-loader">
-            <div className="admin-page-top-loader-bar" />
-          </div>
-        )}
-        <Outlet context={{ searchQuery, setSearchQuery, theme }} />
+        <Suspense fallback={<div className="admin-page-top-loader" role="status" aria-label="Loading page"><div className="admin-page-top-loader-bar" /></div>}>
+          <ScreenReady><Outlet context={outletContext} /></ScreenReady>
+        </Suspense>
       </main>
 
       {/* Sidebar overlay — slides in from left on top of content */}

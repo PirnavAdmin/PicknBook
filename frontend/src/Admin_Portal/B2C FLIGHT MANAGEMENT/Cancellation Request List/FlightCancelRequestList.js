@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import "./FlightCancelRequestList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
 import { Filter, Download, Plus, X } from "lucide-react";
@@ -834,7 +834,11 @@ export default function AdminFlightCancellationRequestListPage() {
     }
   };
 
+  const cancellationRequestRef = useRef(null);
   const loadCancellationRequests = useCallback(async (activeFilters) => {
+    cancellationRequestRef.current?.abort();
+    const controller = new AbortController();
+    cancellationRequestRef.current = controller;
     setIsLoading(true);
     setErrorMessage("");
 
@@ -843,7 +847,8 @@ export default function AdminFlightCancellationRequestListPage() {
     try {
       const flightResults = await listAdminCancellations({
         passengerPhone,
-      });
+      }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
 
       const recordsToProcess = Array.isArray(flightResults)
         ? flightResults
@@ -1040,18 +1045,20 @@ export default function AdminFlightCancellationRequestListPage() {
       setCancellationRequests(mapped);
       setErrorMessage("");
     } catch (error) {
+      if (controller.signal.aborted) return;
       console.warn("Backend fetch failed or server off:", error);
       setCancellationRequests([]);
       setErrorMessage(
         error?.message || "Server is offline or unreachable. Failed to fetch flight cancellations."
       );
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) setIsLoading(false);
     }
   }, [setCancellationRequests]);
 
   useEffect(() => {
     loadCancellationRequests(filters);
+    return () => cancellationRequestRef.current?.abort();
   }, [filters, loadCancellationRequests]);
 
   const [showRawJsonModal, setShowRawJsonModal] = useState(false);
@@ -1393,7 +1400,7 @@ export default function AdminFlightCancellationRequestListPage() {
         </div>
 
         <div className="admin-actions-row admin-flight-cancel-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
+          <button data-admin-action="primary"
             type="button"
             onClick={() => setIsFiltersOpen((current) => !current)}
             style={{
@@ -1418,7 +1425,7 @@ export default function AdminFlightCancellationRequestListPage() {
             <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
-          <button
+          <button data-admin-action="export"
             type="button"
             onClick={handleExport}
             style={{
@@ -1503,10 +1510,10 @@ export default function AdminFlightCancellationRequestListPage() {
           </label>
 
           <div className="filters-actions admin-cancel-filter-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Reset
             </button>
           </div>
@@ -1715,8 +1722,8 @@ export default function AdminFlightCancellationRequestListPage() {
 
             {/* GENERAL & JOURNEY DETAILS TABLE */}
             <div style={{ marginTop: "16px" }}>
-              <h4 style={{ color: "#A51C49", fontSize: "0.88rem", fontWeight: "700", margin: "12px 0 8px 0" }}>
-                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> GENERAL & JOURNEY DETAILS
+              <h4 className="admin-view-section-title" >
+                 GENERAL & JOURNEY DETAILS
               </h4>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                 <tbody>
@@ -1775,8 +1782,8 @@ export default function AdminFlightCancellationRequestListPage() {
 
             {/* FINANCIAL & FARE BREAKDOWN TABLE */}
             <div style={{ marginTop: "16px" }}>
-              <h4 style={{ color: "#A51C49", fontSize: "0.88rem", fontWeight: "700", margin: "12px 0 8px 0" }}>
-                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> FINANCIAL & FARE BREAKDOWN
+              <h4 className="admin-view-section-title" >
+                 FINANCIAL & FARE BREAKDOWN
               </h4>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                 <thead>
@@ -1817,134 +1824,7 @@ export default function AdminFlightCancellationRequestListPage() {
                 </tbody>
               </table>
             </div>
-
-            {/* REFUND & FEE MANAGEMENT FORM */}
-            <div style={{ border: "1px solid #e2e8f0", borderRadius: "10px", padding: "14px", marginTop: "16px", background: "#ffffff" }}>
-              <h4 style={{ margin: "0 0 10px 0", fontSize: "0.88rem", color: "#A51C49", fontWeight: "700" }}>
-                <span style={{ color: "#A51C49", marginRight: "6px" }}>||</span> REFUND & FEE MANAGEMENT FORM
-              </h4>
-
-              {saveSuccessMsg && (
-                <div style={{ background: "#dcfce7", color: "#15803d", padding: "8px 12px", borderRadius: "6px", fontSize: "0.80rem", fontWeight: "600", marginBottom: "10px" }}>
-                  ✓ {saveSuccessMsg}
-                </div>
-              )}
-              {saveErrorMsg && (
-                <div style={{ background: "#fee2e2", color: "#b91c1c", padding: "8px 12px", borderRadius: "6px", fontSize: "0.80rem", fontWeight: "600", marginBottom: "10px" }}>
-                  ⚠️ {saveErrorMsg}
-                </div>
-              )}
-
-              {editForm && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Cancellation Status</label>
-                    <select
-                      value={editForm.cancellationStatus}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, cancellationStatus: e.target.value }))}
-                      style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Cancelled">Cancelled</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Refund Status</label>
-                    <select
-                      value={editForm.customerRefundStatus}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, customerRefundStatus: e.target.value }))}
-                      style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Refunded">Refunded</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Failed">Failed</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Refund Status</label>
-                    <select
-                      value={editForm.adminRefundStatus}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, adminRefundStatus: e.target.value }))}
-                      style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Refunded">Refunded</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Refund Amt (₹)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editForm.customerRefundAmountInr}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, customerRefundAmountInr: e.target.value }))}
-                      style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Customer Cancel Fee (₹)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editForm.customerCancellationChargeInr}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, customerCancellationChargeInr: e.target.value }))}
-                      style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Refund Amt (₹)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editForm.adminRefundAmountInr}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, adminRefundAmountInr: e.target.value }))}
-                      style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                    />
-                  </div>
-
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={{ fontSize: "11px", fontWeight: "600", display: "block", marginBottom: "4px" }}>Admin Remark</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Processed refund to customer"
-                      value={editForm.adminRemark}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, adminRemark: e.target.value }))}
-                      style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid #cbd5e1", fontSize: "12px" }}
-                    />
-                  </div>
-
-                  <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
-                    <button
-                      type="button"
-                      onClick={() => setShowRawJsonModal(prev => !prev)}
-                      style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "#f8fafc", cursor: "pointer", fontSize: "11px", fontWeight: "600" }}
-                    >
-                      {showRawJsonModal ? "Hide Raw JSON" : "View Raw JSON"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isSaving}
-                      onClick={handleSaveRefundUpdate}
-                      style={{ padding: "6px 16px", borderRadius: "6px", border: "none", background: "#10b981", color: "#fff", fontWeight: "600", cursor: "pointer", fontSize: "12px" }}
-                    >
-                      {isSaving ? "Saving..." : "Save Refund Update"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {showRawJsonModal && (
+{showRawJsonModal && (
               <div style={{ marginTop: "12px", padding: "12px", background: "#0f172a", color: "#38bdf8", borderRadius: "6px", fontSize: "0.78rem", maxHeight: "200px", overflowY: "auto" }}>
                 <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{JSON.stringify(selectedCancellation.raw || selectedCancellation, null, 2)}</pre>
               </div>
@@ -1999,7 +1879,7 @@ export default function AdminFlightCancellationRequestListPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "0.8rem", fontWeight: "600", color: "#334155", marginBottom: "4px" }}>
-                    Flight Reservation ID <span style={{ color: "#ef4444" }}>*</span>
+                    Flight Reservation ID <span data-admin-required style={{ color: "#ef4444" }}>*</span>
                   </label>
                   <input
                     type="number"
@@ -2063,7 +1943,7 @@ export default function AdminFlightCancellationRequestListPage() {
               {/* Financial Charges & Amounts */}
               <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "0.85rem", color: "#0f172a", fontWeight: "700" }}>
-                  Financial Breakdown (INR ₹)
+                  Financial Breakdown (₹)
                 </h4>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
                   <div>
@@ -2172,7 +2052,7 @@ export default function AdminFlightCancellationRequestListPage() {
                 >
                   Cancel
                 </button>
-                <button
+                <button data-admin-action="primary"
                   type="submit"
                   disabled={isCreating}
                   style={{ padding: "8px 20px", borderRadius: "6px", border: "none", background: "#2563eb", color: "#ffffff", fontWeight: "600", cursor: isCreating ? "wait" : "pointer" }}

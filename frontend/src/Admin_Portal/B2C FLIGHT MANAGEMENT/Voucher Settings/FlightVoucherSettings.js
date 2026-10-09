@@ -96,7 +96,7 @@ export default function FlightVoucherSettings() {
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="primary-btn save-voucher-btn" disabled={saving}>
+              <button data-admin-action="primary" type="submit" className="primary-btn save-voucher-btn" disabled={saving}>
                 {saving ? (
                   <>
                     <RefreshCw className="spinner" size={16} />

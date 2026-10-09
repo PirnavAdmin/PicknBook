@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Search, Eye } from "lucide-react";
 import "./FlightSearchHistory.css";
@@ -668,16 +668,21 @@ const CANDIDATE_ENDPOINTS = [
   `${FLIGHT_BOOKINGS_ROOT}/flight-search-history`,
 ];
 
+let resolvedSearchEndpoint = null;
+
 async function listAdminFlightSearchHistory({
   query,
   customerName,
   fromDate,
   toDate,
   limit = 500,
-} = {}) {
+} = {}, options = {}) {
   let lastError = null;
 
-  for (const endpoint of CANDIDATE_ENDPOINTS) {
+  const endpoints = resolvedSearchEndpoint
+    ? [resolvedSearchEndpoint, ...CANDIDATE_ENDPOINTS.filter(endpoint => endpoint !== resolvedSearchEndpoint)]
+    : CANDIDATE_ENDPOINTS;
+  for (const endpoint of endpoints) {
     for (const baseUrl of CANDIDATE_BASE_URLS) {
       const fullPath = baseUrl
         ? `${baseUrl.replace(/\/+$/, "")}${endpoint}`
@@ -692,21 +697,21 @@ async function listAdminFlightSearchHistory({
       });
 
       try {
-        const payload = await requestJson(url, { method: "GET" });
+        const payload = await requestJson(url, { ...options, method: "GET" });
         if (isLikelyHtmlResponse(payload)) {
           throw new Error("Received HTML response page");
         }
         const records = extractArrayPayload(payload);
         if (Array.isArray(records)) {
+          resolvedSearchEndpoint = endpoint;
           return records.map((record, index) =>
             normalizeFlightSearchHistoryRecord(record, index)
           );
         }
       } catch (error) {
+        if (options.signal?.aborted || error?.name === 'AbortError') throw error;
         lastError = error;
-        if (!shouldTryNextSearchHistoryEndpoint(error)) {
-          // Fallback to next url/endpoint candidate
-        }
+        if (!shouldTryNextSearchHistoryEndpoint(error)) throw error;
       }
     }
   }
@@ -862,7 +867,11 @@ export default function AdminFlightSearchHistoryPage() {
   const [activePage, setActivePage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const historyRequestRef = useRef(null);
   const loadSearchHistory = useCallback(async (activeFilters) => {
+    historyRequestRef.current?.abort();
+    const controller = new AbortController();
+    historyRequestRef.current = controller;
     setIsLoading(true);
     setErrorMessage("");
     setInfoMessage("");
@@ -877,8 +886,10 @@ export default function AdminFlightSearchHistoryPage() {
         fromDate: activeFilters.fromDate,
         toDate: activeFilters.toDate,
         limit: 500,
-      });
+      }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
     } catch (error) {
+      if (controller.signal.aborted) return;
       apiError = normalizeText(error?.message, "Unable to load flight search history.");
     }
 
@@ -901,6 +912,7 @@ export default function AdminFlightSearchHistoryPage() {
 
   useEffect(() => {
     loadSearchHistory(filters);
+    return () => historyRequestRef.current?.abort();
   }, [filters, loadSearchHistory]);
 
   const location = useLocation();
@@ -1095,10 +1107,10 @@ export default function AdminFlightSearchHistoryPage() {
         </div>
 
         <div className="admin-actions-row">
-          <button type="button" className="admin-search-history-filter-btn" onClick={() => setIsFiltersOpen((current) => !current)}>
+          <button data-admin-action="primary" type="button" className="admin-search-history-filter-btn" onClick={() => setIsFiltersOpen((current) => !current)}>
             {isFiltersOpen ? "Close Filter" : "Filter"}
           </button>
-          <button type="button" className="admin-search-history-export-btn" onClick={handleExport}>
+          <button data-admin-action="export" type="button" className="admin-search-history-export-btn" onClick={handleExport}>
             Export
           </button>
           <button
@@ -1172,10 +1184,10 @@ export default function AdminFlightSearchHistoryPage() {
           </label>
 
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Reset
             </button>
           </div>
@@ -1286,7 +1298,7 @@ export default function AdminFlightSearchHistoryPage() {
                   <div className="admin-search-history-cell admin-cell-centered">
                     <button
                       type="button"
-                      className="admin-search-history-view-btn"
+                      className="admin-search-history-view-btn admin-view-button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedRecord(row);
@@ -1331,7 +1343,7 @@ export default function AdminFlightSearchHistoryPage() {
                   Search ID: #{normalizeText(selectedRecord.id, "--")} | {selectedRecord.userOrGuestId}
                 </p>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)}>
+              <button data-admin-close type="button" onClick={() => setSelectedRecord(null)}>
                 Close
               </button>
             </header>

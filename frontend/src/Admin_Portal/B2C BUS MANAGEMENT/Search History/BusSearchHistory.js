@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import adminFeaturedOffersService from "../../../services/adminFeaturedOffersService";
 import "./BusSearchHistory.css";
@@ -615,13 +615,15 @@ const CANDIDATE_ENDPOINTS = [
   `${BUS_BOOKINGS_ROOT}/bus-search-history`,
 ];
 
+let resolvedSearchEndpoint = null;
+
 async function listAdminBusSearchHistory({
   query,
   customerName,
   fromDate,
   toDate,
   limit = 200,
-} = {}) {
+} = {}, options = {}) {
   const queryParams = {};
   if (limit) queryParams.limit = limit;
   if (query && String(query).trim()) queryParams.query = String(query).trim();
@@ -631,7 +633,10 @@ async function listAdminBusSearchHistory({
 
   let lastError = null;
 
-  for (const endpoint of CANDIDATE_ENDPOINTS) {
+  const endpoints = resolvedSearchEndpoint
+    ? [resolvedSearchEndpoint, ...CANDIDATE_ENDPOINTS.filter(endpoint => endpoint !== resolvedSearchEndpoint)]
+    : CANDIDATE_ENDPOINTS;
+  for (const endpoint of endpoints) {
     for (const baseUrl of CANDIDATE_BASE_URLS) {
       const fullPath = baseUrl
         ? `${baseUrl.replace(/\/+$/, "")}${endpoint}`
@@ -640,24 +645,21 @@ async function listAdminBusSearchHistory({
       const url = buildUrl(fullPath, queryParams);
 
       try {
-        const payload = await requestJson(url, { method: "GET" });
+        const payload = await requestJson(url, { ...options, method: "GET" });
         if (isLikelyHtmlResponse(payload)) {
           throw new Error("Received HTML response page");
         }
         const records = extractArrayPayload(payload);
-        if (Array.isArray(records) && records.length > 0) {
+        if (Array.isArray(records)) {
+          resolvedSearchEndpoint = endpoint;
           return records.map((record, index) =>
             normalizeBusSearchHistoryRecord(record, index)
           );
         }
-        if (Array.isArray(records)) {
-          return [];
-        }
       } catch (error) {
+        if (options.signal?.aborted || error?.name === 'AbortError') throw error;
         lastError = error;
-        if (!shouldTryNextSearchHistoryEndpoint(error)) {
-          // Fall through candidate loop
-        }
+        if (!shouldTryNextSearchHistoryEndpoint(error)) throw error;
       }
     }
   }
@@ -817,7 +819,11 @@ export default function AdminBusSearchHistoryPage() {
   const [activePage, setActivePage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const historyRequestRef = useRef(null);
   const loadSearchHistory = useCallback(async (activeFilters) => {
+    historyRequestRef.current?.abort();
+    const controller = new AbortController();
+    historyRequestRef.current = controller;
     setIsLoading(true);
     setErrorMessage("");
     setInfoMessage("");
@@ -832,8 +838,10 @@ export default function AdminBusSearchHistoryPage() {
         fromDate: activeFilters.fromDate,
         toDate: activeFilters.toDate,
         limit: 500,
-      });
+      }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
     } catch (error) {
+      if (controller.signal.aborted) return;
       apiError = normalizeText(error?.message, "Unable to load bus search history.");
     }
 
@@ -856,6 +864,7 @@ export default function AdminBusSearchHistoryPage() {
 
   useEffect(() => {
     loadSearchHistory(filters);
+    return () => historyRequestRef.current?.abort();
   }, [filters, loadSearchHistory]);
 
   const location = useLocation();
@@ -1020,10 +1029,10 @@ export default function AdminBusSearchHistoryPage() {
         </div>
 
         <div className="admin-actions-row">
-          <button type="button" className="admin-search-history-filter-btn" onClick={() => setIsFiltersOpen((current) => !current)}>
+          <button data-admin-action="primary" type="button" className="admin-search-history-filter-btn" onClick={() => setIsFiltersOpen((current) => !current)}>
             {isFiltersOpen ? "Close Filter" : "Filter"}
           </button>
-          <button type="button" className="admin-search-history-export-btn" onClick={handleExport}>
+          <button data-admin-action="export" type="button" className="admin-search-history-export-btn" onClick={handleExport}>
             Export
           </button>
           <button type="button" className="admin-search-history-delete" onClick={handleDeleteAll}>
@@ -1093,10 +1102,10 @@ export default function AdminBusSearchHistoryPage() {
           </label>
 
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Reset
             </button>
           </div>
@@ -1162,7 +1171,7 @@ export default function AdminBusSearchHistoryPage() {
                 <div className="admin-search-history-cell admin-cell-centered">
                   <button
                     type="button"
-                    className="admin-search-history-view-btn"
+                    className="admin-search-history-view-btn admin-view-button"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedRecord(row);
@@ -1229,7 +1238,7 @@ export default function AdminBusSearchHistoryPage() {
                   Record ID: #{selectedRecord.id}
                 </small>
               </div>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setSelectedRecord(null)}
                 style={{

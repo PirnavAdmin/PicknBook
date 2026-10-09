@@ -152,9 +152,9 @@ function buildContactFromPassenger(passenger, fallback = {}) {
 function isValidEmail(email) {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const trimmedEmail = String(email || "").trim().toLowerCase();
-  if (!emailRegex.test(trimmedEmail)) return false;
+  if (!emailRegex.test(trimmedEmail) || trimmedEmail.includes('..') || trimmedEmail.length > 254) return false;
 
-  const invalidDomains = ['gmil.com', 'gmal.com', 'gamil.com', 'gmaill.com', 'yaho.com', 'yahoot.com', 'hotmal.com', 'gmail.co', 'yahoo.co'];
+  const invalidDomains = ['gmil.com', 'gmeil.com', 'gmal.com', 'gail.com', 'gmial.com', 'gamil.com', 'gmai.com', 'gmail.co', 'gmaill.com', 'gmail.cpm', 'gmail.con', 'gmaik.com', 'yaho.com', 'yahooo.com', 'yaho.co.in', 'yahoo.co', 'hotmial.com', 'hotmale.com', 'hotmai.com', 'outlok.com', 'outloo.com', 'outlokk.com', 'redifmail.com', 'rediff.com', 'redif.com', 'iclud.com', 'icoud.com', 'mailinator.com', '10minutemail.com', 'tempmail.com', 'temp-mail.org', 'guerrillamail.com', 'throwawaymail.com', 'trashmail.com', 'sharklasers.com', 'yopmail.com'];
   const domain = trimmedEmail.split('@')[1];
   if (invalidDomains.includes(domain)) return false;
 
@@ -163,9 +163,15 @@ function isValidEmail(email) {
 
 function isValidMobile(mobile) {
   let digits = String(mobile || "").replace(/\D/g, "");
-  if (digits.length > 10 && digits.startsWith("91")) {
-    digits = digits.slice(-10);
+  if (digits.length === 12 && digits.startsWith("91")) {
+    digits = digits.substring(2);
+  } else if (digits.length === 11 && digits.startsWith("0")) {
+    digits = digits.substring(1);
   }
+  
+  const dummyNumbers = ['0000000000', '1111111111', '2222222222', '3333333333', '4444444444', '5555555555', '6666666666', '7777777777', '8888888888', '9999999999', '1234567890', '9876543210'];
+  if (dummyNumbers.includes(digits)) return false;
+
   return /^[6-9]\d{9}$/.test(digits);
 }
 
@@ -715,6 +721,7 @@ export default function BusPassengerDetailsPage() {
     Boolean(flowState.agreedToFare)
   );
   const [formError, setFormError] = useState("");
+  const [fatalSeatError, setFatalSeatError] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checkoutPayload, setCheckoutPayload] = useState(null);
   const [walletSummary, setWalletSummary] = useState(null);
@@ -728,6 +735,7 @@ export default function BusPassengerDetailsPage() {
   const [formErrorList, setFormErrorList] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
+  const [isWalletExpanded, setIsWalletExpanded] = useState(false);
   const featuredOffersScrollerRef = useRef(null);
   const couponScrollerRef = useRef(null);
   const scrollPromotionCards = (scrollerRef, direction) => {
@@ -1241,6 +1249,12 @@ export default function BusPassengerDetailsPage() {
     const newErrors = {};
     const errorDetails = [];
 
+    // Validate Boarding & Dropping Points
+    if (!flowState.boardingPoint || !flowState.droppingPoint) {
+      newErrors.general = "Boarding and Dropping points are missing.";
+      errorDetails.push("Selection Error: Boarding and Dropping points are missing. Please return to the seat layout to select them.");
+    }
+
     // Validate passengers
     passengers.forEach((passenger, index) => {
       const seat = selectedSeats[index] || {};
@@ -1259,21 +1273,27 @@ export default function BusPassengerDetailsPage() {
       }
 
       const firstName = String(passenger.firstName || "").trim();
+      const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/;
       if (!firstName) {
         newErrors[`${prefix}firstName`] = "Please enter the passenger's first name.";
         errorDetails.push(`${seatLabel}: First name is required.`);
-      } else if (!/^[A-Za-z\s]+$/.test(firstName)) {
-        newErrors[`${prefix}firstName`] = "Letters only";
-        errorDetails.push(`${seatLabel}: First name must contain only alphabetical letters.`);
+      } else if (firstName.length > 50) {
+        newErrors[`${prefix}firstName`] = "Max 50 characters";
+        errorDetails.push(`${seatLabel}: First name must be 1 to 50 characters.`);
+      } else if (!nameRegex.test(firstName)) {
+        newErrors[`${prefix}firstName`] = "Letters only (spaces/hyphens allowed)";
+        errorDetails.push(`${seatLabel}: First name must contain letters only (spaces, hyphens, and apostrophes allowed).`);
       }
 
       const lastName = String(passenger.lastName || "").trim();
-      if (!lastName) {
-        newErrors[`${prefix}lastName`] = "Please enter the passenger's last name.";
-        errorDetails.push(`${seatLabel}: Last name is required.`);
-      } else if (!/^[A-Za-z\s]+$/.test(lastName)) {
-        newErrors[`${prefix}lastName`] = "Letters only";
-        errorDetails.push(`${seatLabel}: Last name must contain only alphabetical letters.`);
+      if (lastName) {
+        if (lastName.length > 50) {
+          newErrors[`${prefix}lastName`] = "Max 50 characters";
+          errorDetails.push(`${seatLabel}: Last name must be 1 to 50 characters.`);
+        } else if (!nameRegex.test(lastName)) {
+          newErrors[`${prefix}lastName`] = "Letters only (spaces/hyphens allowed)";
+          errorDetails.push(`${seatLabel}: Last name must contain letters only (spaces, hyphens, and apostrophes allowed).`);
+        }
       }
 
       const ageVal = passenger.age;
@@ -1291,6 +1311,19 @@ export default function BusPassengerDetailsPage() {
       if (!passenger.gender) {
         newErrors[`${prefix}gender`] = "Please select the passenger's gender.";
         errorDetails.push(`${seatLabel}: Gender selection is required.`);
+      }
+
+      if (passenger.title && passenger.gender) {
+        const maleTitles = ["Mr", "Mstr", "Master"];
+        const femaleTitles = ["Mrs", "Ms", "Miss"];
+        const normGen = normalizeGender(passenger.gender);
+        if (normGen === "Male" && femaleTitles.includes(passenger.title)) {
+          newErrors[`${prefix}title`] = "Title doesn't match gender";
+          errorDetails.push(`${seatLabel}: Title '${passenger.title}' does not match Male gender.`);
+        } else if (normGen === "Female" && maleTitles.includes(passenger.title)) {
+          newErrors[`${prefix}title`] = "Title doesn't match gender";
+          errorDetails.push(`${seatLabel}: Title '${passenger.title}' does not match Female gender.`);
+        }
       }
 
       if (isIdProofRequired) {
@@ -1332,6 +1365,28 @@ export default function BusPassengerDetailsPage() {
               ? `${seatLabel}: Seat is strictly reserved for males.`
               : `${seatLabel}: Seat is adjacent to a male-only booking. Female passengers cannot book this adjacent seat.`
           );
+        }
+      }
+    });
+
+    // Duplicate Passenger Check
+    const uniquePassengers = new Set();
+    passengers.forEach((passenger, index) => {
+      const seat = selectedSeats[index] || {};
+      const seatLabel = passenger.seatNumber || seat.label || `Seat ${index + 1}`;
+      
+      const firstName = String(passenger.firstName || "").trim().toLowerCase();
+      const lastName = String(passenger.lastName || "").trim().toLowerCase();
+      const age = String(passenger.age || "").trim();
+      const gender = String(passenger.gender || "").trim().toLowerCase();
+
+      if (firstName && age && gender) {
+        const key = `${firstName}|${lastName}|${age}|${gender}`;
+        if (uniquePassengers.has(key)) {
+          newErrors[`passenger_${index}_firstName`] = "Duplicate passenger";
+          errorDetails.push(`${seatLabel}: Duplicate passenger details. Operators do not allow multiple seats with the exact same name, age, and gender.`);
+        } else {
+          uniquePassengers.add(key);
         }
       }
     });
@@ -1884,17 +1939,8 @@ export default function BusPassengerDetailsPage() {
           // 7019 = Payload mismatch on block retry (seats/boarding point changed on already-held traceId)
           setIsCalculatingPrice(false);
           clearBlockKey();
-          setFormError(
-            "Your seat or boarding selection has changed. Redirecting to refresh available seats..."
-          );
-          setTimeout(() => {
-            navigate("/search/buses", {
-              state: {
-                ...flowState.searchContext,
-                forceRefresh: true
-              }
-            });
-          }, 1800);
+          setFormError("Your seat or boarding selection has changed, and your previous hold is invalid. Please select your seats again.");
+          setFatalSeatError(true);
           return;
         } else if (srdvErrorCode === 7023) {
           // 7023 = these seats are already on hold.
@@ -1908,17 +1954,8 @@ export default function BusPassengerDetailsPage() {
             // No cached key — seats are held by a prior session that we can't recover.
             setIsCalculatingPrice(false);
             clearBlockKey();
-            setFormError(
-              "Your booking session has expired or seats are already held. Redirecting to fetch fresh availability..."
-            );
-            setTimeout(() => {
-              navigate("/search/buses", {
-                state: {
-                  ...flowState.searchContext,
-                  forceRefresh: true
-                }
-              });
-            }, 1800);
+            setFormError("We're sorry, but the seats you selected were just booked or held by another user. Please choose different seats.");
+            setFatalSeatError(true);
             return;
           }
         } else if (srdvErrorCode === 7040 || srdvErrorMsg.toLowerCase().includes("passenger gender is not allowed") || srdvErrorMsg.toLowerCase().includes("ladies seat") || srdvErrorMsg.toLowerCase().includes("gender")) {
@@ -1930,7 +1967,20 @@ export default function BusPassengerDetailsPage() {
           return;
         } else if (srdvErrorCode !== 0 && srdvErrorMsg) {
           setIsCalculatingPrice(false);
-          setFormError("Unable to hold your seats: " + srdvErrorMsg);
+          let friendlyMsg = srdvErrorMsg;
+          
+          const isTimeout = srdvErrorMsg.toLowerCase().includes("previous block outcome is unknown") || 
+                            srdvErrorMsg.toLowerCase().includes("run a new search") ||
+                            srdvErrorMsg.toLowerCase().includes("expired search");
+
+          if (isTimeout) {
+            clearBlockKey();
+            setFormError("Your search session has expired. Please return to the seat selection to refresh the bus availability.");
+            setFatalSeatError(true);
+            return;
+          }
+
+          setFormError("Seat reservation failed: " + friendlyMsg);
           return;
         } else {
           blockKey = blockResponse?.BlockKey || blockResponse?.blockKey || null;
@@ -1943,7 +1993,15 @@ export default function BusPassengerDetailsPage() {
         }
       } catch (err) {
         setIsCalculatingPrice(false);
-        setFormError("Failed to hold your seats: " + (err.message || "Unknown error"));
+        const errMsg = (err.message || "").toLowerCase();
+        
+        if (errMsg.includes("expired search workflow") || errMsg.includes("session expired") || errMsg.includes("traceid")) {
+          clearBlockKey();
+          setFormError("Your search session has expired. Please return to the search page to refresh the available buses.");
+          setFatalSeatError(true);
+        } else {
+          setFormError("Failed to hold your seats: " + (err.message || "Unknown error"));
+        }
         return;
       }
     }
@@ -2056,10 +2114,10 @@ export default function BusPassengerDetailsPage() {
         </label>
 
         <label className="passenger-field">
-          <span>Last Name *</span>
+          <span>Last Name (Optional)</span>
           <input
             type="text"
-            placeholder="Last Name *"
+            placeholder="Last Name"
             value={passenger.lastName}
             onChange={(e) => updatePassenger(index, "lastName", e.target.value)}
             className={errors[`passenger_${index}_lastName`] ? "field-has-error" : ""}
@@ -2426,7 +2484,7 @@ export default function BusPassengerDetailsPage() {
                   <span className="field-error-text" style={{ marginTop: '2px' }}>{errors.agreedToFare}</span>
                 )}
 
-                {formError && typeof formError === 'string' && (
+                {formError && typeof formError === 'string' && !fatalSeatError && (
                   <div className="form-error-summary-box">
                     <div className="error-summary-header">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none">
@@ -2442,13 +2500,54 @@ export default function BusPassengerDetailsPage() {
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  className="flow-continue-btn align-right"
-                  onClick={handleOpenConfirmation}
-                >
-                  Continue
-                </button>
+                {fatalSeatError ? (
+                  <div className="fatal-seat-error-box" style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '16px', marginBottom: '20px', textAlign: 'center' }}>
+                    <div style={{ color: '#b91c1c', fontSize: '1rem', fontWeight: '600', marginBottom: '16px' }}>
+                      {formError}
+                    </div>
+                    <button
+                      type="button"
+                      className="flow-continue-btn"
+                      style={{ background: '#1e293b', width: '100%', maxWidth: '300px' }}
+                      onClick={() => {
+                        navigate("/search/buses", {
+                          state: {
+                            ...flowState.searchContext,
+                            forceRefresh: true
+                          }
+                        });
+                      }}
+                    >
+                      Return to Seat Selection
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={`flow-continue-btn align-right ${isCalculatingPrice ? "processing" : ""}`}
+                    onClick={handleOpenConfirmation}
+                    disabled={isCalculatingPrice}
+                    style={{ opacity: isCalculatingPrice ? 0.7 : 1, cursor: isCalculatingPrice ? 'not-allowed' : 'pointer' }}
+                  >
+                    {isCalculatingPrice ? (
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <svg className="spinner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                          <line x1="12" y1="2" x2="12" y2="6"></line>
+                          <line x1="12" y1="18" x2="12" y2="22"></line>
+                          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+                          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                          <line x1="2" y1="12" x2="6" y2="12"></line>
+                          <line x1="18" y1="12" x2="22" y2="12"></line>
+                          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+                          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      "Continue"
+                    )}
+                  </button>
+                )}
               </div>
             </article>
           </div>
@@ -2533,17 +2632,42 @@ export default function BusPassengerDetailsPage() {
                       <strong>{formatCurrency(fareSummary.grandTotal)}</strong>
                     </div>
                     <section className="wallet-payment-box">
-                      <div className="wallet-payment-heading">
-                        <span className="wallet-payment-icon" aria-hidden="true">₹</span>
-                        <span>Wallet payment</span>
+                      <div 
+                        className="wallet-payment-heading" 
+                        onClick={() => setIsWalletExpanded(!isWalletExpanded)}
+                        style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span className="wallet-payment-icon" aria-hidden="true">₹</span>
+                          <span>Wallet payment</span>
+                        </div>
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            transform: isWalletExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 0.2s ease"
+                          }}
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                       </div>
-                      <div className="wallet-payment-divider" />
-                      <div className="wallet-payment-entry-row">
-                        <label className="wallet-amount-field">
-                          <span>Amount to use</span>
-                          <div className={`wallet-amount-input ${walletValidationMessage ? "field-has-error" : ""}`}>
-                            <b aria-hidden="true">₹</b>
-                            <input
+                      
+                      {isWalletExpanded && (
+                        <>
+                          <div className="wallet-payment-divider" />
+                          <div className="wallet-payment-entry-row">
+                            <label className="wallet-amount-field">
+                              <span>Amount to use</span>
+                              <div className={`wallet-amount-input ${walletValidationMessage ? "field-has-error" : ""}`}>
+                                <b aria-hidden="true">₹</b>
+                                <input
                               type="text"
                               inputMode="decimal"
                               value={walletAmountInput}
@@ -2590,7 +2714,9 @@ export default function BusPassengerDetailsPage() {
                             : formatCurrency(balanceAfterBooking)}
                         </strong>
                       </div>
-                    </section>
+                    </>
+                  )}
+                </section>
                   </>
                 )}
               </div>
@@ -2693,13 +2819,13 @@ export default function BusPassengerDetailsPage() {
                                   <span className="voucher-code-badge">{code}</span>
                                   <button
                                     type="button"
-                                    className="voucher-copy-btn"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigator.clipboard.writeText(code);
                                       setCopiedCode(code);
                                       setTimeout(() => setCopiedCode(null), 2000);
                                     }}
+                                    className="voucher-copy-btn"
                                     title="Copy Coupon Code"
                                   >
                                     {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
@@ -2768,13 +2894,13 @@ export default function BusPassengerDetailsPage() {
                                   <span className="voucher-code-badge">{code}</span>
                                   <button
                                     type="button"
-                                    className="voucher-copy-btn"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigator.clipboard.writeText(code);
                                       setCopiedCode(code);
                                       setTimeout(() => setCopiedCode(null), 2000);
                                     }}
+                                    className="voucher-copy-btn"
                                     title="Copy Coupon Code"
                                   >
                                     {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}

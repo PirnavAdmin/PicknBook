@@ -1,0 +1,79 @@
+/* Document scope also covers React portals mounted outside .admin-shell.
+   :has() releases these styles automatically when the Admin layout unmounts.
+   Do not set overflow here: each container keeps its existing scroll behavior.
+   Specificity and !important override shared/component scrollbar styles,
+   including stylesheets loaded after this one. */
+:root:has(.admin-shell) {
+  --admin-scrollbar-size: 6px;
+  --admin-scrollbar-track: #f1f5f9;
+  --admin-scrollbar-thumb: #64748b;
+  --admin-scrollbar-thumb-hover: #475569;
+  --admin-scrollbar-thumb-active: #a51c49;
+}
+
+:root:has(.admin-shell.dark-theme) {
+  --admin-scrollbar-track: #1e293b;
+  --admin-scrollbar-thumb: #94a3b8;
+  --admin-scrollbar-thumb-hover: #cbd5e1;
+  --admin-scrollbar-thumb-active: #f8fafc;
+}
+
+:root:has(.admin-shell),
+:root:has(.admin-shell) body,
+:root:has(.admin-shell) body * {
+  /* Chromium uses the explicit WebKit dimensions below. Non-auto standard
+     properties would take precedence and restore OS overlay scrollbars. */
+  scrollbar-width: auto !important;
+  scrollbar-color: auto !important;
+  -ms-overflow-style: auto !important;
+}
+
+:root:has(.admin-shell)::-webkit-scrollbar,
+:root:has(.admin-shell) body::-webkit-scrollbar,
+:root:has(.admin-shell) body *::-webkit-scrollbar {
+  display: block !important;
+  width: var(--admin-scrollbar-size) !important;
+  height: var(--admin-scrollbar-size) !important;
+}
+
+:root:has(.admin-shell)::-webkit-scrollbar-track,
+:root:has(.admin-shell) body::-webkit-scrollbar-track,
+:root:has(.admin-shell) body *::-webkit-scrollbar-track,
+:root:has(.admin-shell)::-webkit-scrollbar-corner,
+:root:has(.admin-shell) body::-webkit-scrollbar-corner,
+:root:has(.admin-shell) body *::-webkit-scrollbar-corner {
+  background: var(--admin-scrollbar-track) !important;
+}
+
+:root:has(.admin-shell)::-webkit-scrollbar-thumb,
+:root:has(.admin-shell) body::-webkit-scrollbar-thumb,
+:root:has(.admin-shell) body *::-webkit-scrollbar-thumb {
+  background: var(--admin-scrollbar-thumb) !important;
+  border: 1px solid var(--admin-scrollbar-track) !important;
+  border-radius: 999px !important;
+  background-clip: padding-box !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+}
+
+:root:has(.admin-shell)::-webkit-scrollbar-thumb:hover,
+:root:has(.admin-shell) body::-webkit-scrollbar-thumb:hover,
+:root:has(.admin-shell) body *::-webkit-scrollbar-thumb:hover {
+  background-color: var(--admin-scrollbar-thumb-hover) !important;
+}
+
+:root:has(.admin-shell)::-webkit-scrollbar-thumb:active,
+:root:has(.admin-shell) body::-webkit-scrollbar-thumb:active,
+:root:has(.admin-shell) body *::-webkit-scrollbar-thumb:active {
+  background-color: var(--admin-scrollbar-thumb-active) !important;
+}
+
+/* Firefox and other engines without WebKit scrollbar styling. */
+@supports not selector(::-webkit-scrollbar) {
+  :root:has(.admin-shell),
+  :root:has(.admin-shell) body,
+  :root:has(.admin-shell) body * {
+    scrollbar-width: thin !important;
+    scrollbar-color: var(--admin-scrollbar-thumb) var(--admin-scrollbar-track) !important;
+  }
+}

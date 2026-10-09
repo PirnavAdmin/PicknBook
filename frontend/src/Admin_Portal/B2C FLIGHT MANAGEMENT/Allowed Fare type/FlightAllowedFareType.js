@@ -307,7 +307,7 @@ export default function AdminFlightAllowedFareTypePage() {
         </div>
 
         <div className="admin-flight-fare-type-actions">
-          <button type="button" className="admin-flight-fare-type-update-btn" onClick={handleUpdate}>
+          <button data-admin-action="primary" type="button" className="admin-flight-fare-type-update-btn" onClick={handleUpdate}>
             UPDATE
           </button>
         </div>

@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   Download,
@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  DollarSign,
+  IndianRupee,
   RotateCcw,
   PlusCircle,
   Info,
@@ -208,13 +208,17 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
     return () => document.removeEventListener("click", handleOutsideClick);
   }, []);
 
+  const [primaryLoadedFor, setPrimaryLoadedFor] = useState(null);
+
   // Fetch metrics
   useEffect(() => {
+    if (primaryLoadedFor !== refreshTrigger) return;
+    const controller = new AbortController();
     let isMounted = true;
     const fetchMetrics = async () => {
       setIsLoadingMetrics(true);
       try {
-        const res = await getAdminPaymentMetrics();
+        const res = await getAdminPaymentMetrics({ signal: controller.signal });
         const data = res?.data || res || {};
         if (isMounted) {
           setMetrics({
@@ -230,7 +234,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
           });
         }
       } catch (err) {
-        console.warn("Failed to fetch payment metrics:", err.message);
+        if (!controller.signal.aborted) console.warn("Failed to fetch payment metrics:", err.message);
       } finally {
         if (isMounted) setIsLoadingMetrics(false);
       }
@@ -239,11 +243,13 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
     fetchMetrics();
     return () => {
       isMounted = false;
+      controller.abort();
     };
-  }, [refreshTrigger]);
+  }, [primaryLoadedFor, refreshTrigger]);
 
   // Fetch payments list
   useEffect(() => {
+    const controller = new AbortController();
     let isMounted = true;
     const loadPayments = async () => {
       setIsLoadingPayments(true);
@@ -257,7 +263,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
           search: searchQuery,
           fromDate,
           toDate,
-        });
+        }, { signal: controller.signal });
 
         if (isMounted) {
           const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
@@ -276,13 +282,17 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
           setPaymentError("");
         }
       } finally {
-        if (isMounted) setIsLoadingPayments(false);
+        if (isMounted) {
+          setIsLoadingPayments(false);
+          setPrimaryLoadedFor(refreshTrigger);
+        }
       }
     };
 
     loadPayments();
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [currentPage, pageSize, statusFilter, bookingTypeFilter, searchQuery, fromDate, toDate, refreshTrigger]);
 
@@ -302,19 +312,27 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
     setCurrentPage(1);
   };
 
+  const detailRequestRef = useRef(null);
+  useEffect(() => () => detailRequestRef.current?.abort(), []);
+  useEffect(() => { if (!viewingPayment) detailRequestRef.current?.abort(); }, [viewingPayment]);
+
   const handleViewDetails = async (payment) => {
+    detailRequestRef.current?.abort();
+    const controller = new AbortController();
+    detailRequestRef.current = controller;
     setViewingPayment(payment);
     setIsLoadingDetail(true);
     try {
-      const res = await getAdminPaymentById(payment.id);
+      const res = await getAdminPaymentById(payment.id, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       const detail = res?.data || res;
       if (detail && typeof detail === "object" && !Array.isArray(detail)) {
-        setViewingPayment((prev) => ({ ...prev, ...detail }));
+        setViewingPayment((prev) => prev?.id === payment.id ? ({ ...prev, ...detail }) : prev);
       }
     } catch (err) {
-      console.warn("Failed to load payment detail breakdown:", err.message);
+      if (!controller.signal.aborted) console.warn("Failed to load payment detail breakdown:", err.message);
     } finally {
-      setIsLoadingDetail(false);
+      if (!controller.signal.aborted) setIsLoadingDetail(false);
     }
   };
 
@@ -503,7 +521,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
         </div>
 
         <div className="admin-markup-coupon-actions">
-          <button
+          <button data-admin-action="primary"
             type="button"
             className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
             onClick={() => setIsFilterPanelOpen((prev) => !prev)}
@@ -522,7 +540,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
             <span>Refresh</span>
           </button>
 
-          <button
+          <button data-admin-action="export"
             type="button"
             className="admin-markup-coupon-btn export"
             onClick={handleExportCSV}
@@ -539,7 +557,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
       <div className="admin-payments-metrics-grid">
         <div className="payment-metric-card revenue">
           <div className="metric-icon">
-            <DollarSign size={16} />
+            <IndianRupee size={16} />
           </div>
           <div className="metric-info">
             <span className="metric-label">Total Revenue</span>
@@ -675,7 +693,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
             {/* Action Buttons: Apply Filter (Blue) & Reset Filter (Gray) */}
             <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "35px" }}>
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 onClick={handleApplyFilters}
                 style={{
@@ -704,7 +722,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                 Apply Filter
               </button>
 
-              <button
+              <button data-admin-action="reset"
                 type="button"
                 onClick={handleResetFilters}
                 style={{
@@ -943,7 +961,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                             <div className="actions-dropdown-menu">
                               <button
                                 type="button"
-                                className="dropdown-item view"
+                                className="dropdown-item view admin-view-button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleViewDetails(p);
@@ -1002,7 +1020,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
       {viewingPayment && (
         <div className="discount-modal-overlay">
           <div className="discount-modal-container view-modal" style={{ maxWidth: "780px", width: "95%", maxHeight: "90vh", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: "12px", padding: 0 }}>
-            <div
+            <div data-admin-tone="primary"
               className="modal-header"
               style={{
                 background: "linear-gradient(135deg, #A51C49 0%, #800b28 100%)",
@@ -1025,7 +1043,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                   ID #{viewingPayment.id}
                 </span>
               </div>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setViewingPayment(null)}
                 style={{
@@ -1330,7 +1348,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                   {/* Financial Breakdown Section */}
                   <div style={{ background: "#ffffff", padding: "14px", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
                     <h4 style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#A51C49", fontWeight: "700", marginTop: 0, marginBottom: "12px", borderBottom: "1px solid #e2e8f0", borderLeft: "3px solid #A51C49", paddingLeft: "8px", paddingBottom: "4px" }}>
-                      Financial Breakdown ({viewingPayment.currency || "INR"})
+                      Financial Breakdown (₹)
                     </h4>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "12px" }}>
                       <div>
@@ -1530,7 +1548,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
       {refundPayment && (
         <div className="discount-modal-overlay">
           <div className="discount-modal-container edit-modal" style={{ maxWidth: "500px", overflow: "hidden", borderRadius: "12px", padding: 0 }}>
-            <div
+            <div data-admin-tone="primary"
               className="modal-header"
               style={{
                 background: "linear-gradient(135deg, #A51C49 0%, #800b28 100%)",
@@ -1566,7 +1584,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                 </div>
 
                 <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>
-                  <span>Refund Amount (₹) *</span>
+                  <span>Refund Amount (₹) <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     min="1"
@@ -1579,7 +1597,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                 </label>
 
                 <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>
-                  <span>Refund Reason *</span>
+                  <span>Refund Reason <span data-admin-required className="admin-required-indicator">*</span></span>
                   <textarea
                     value={refundReason}
                     onChange={(e) => setRefundReason(e.target.value)}

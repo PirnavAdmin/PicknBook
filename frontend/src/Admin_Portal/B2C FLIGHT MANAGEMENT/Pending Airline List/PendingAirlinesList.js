@@ -196,7 +196,7 @@ export default function AdminFlightPendingAirlineListPage() {
         </header>
 
         <div className="admin-actions-row admin-flight-pending-actions-row">
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="admin-flight-pending-btn"
             onClick={() => navigate("/admin/b2c-flight/pending-airline-edit-list")}
@@ -204,7 +204,7 @@ export default function AdminFlightPendingAirlineListPage() {
             <PlusCircle size={15} />
             Add Pending Airline
           </button>
-          <button type="button" className="admin-flight-pending-btn secondary" onClick={handleExport}>
+          <button data-admin-action="export" type="button" className="admin-flight-pending-btn secondary" onClick={handleExport}>
             <Download size={15} />
             Export
           </button>
@@ -267,7 +267,7 @@ export default function AdminFlightPendingAirlineListPage() {
                 <div className="admin-cancel-cell admin-cell-centered admin-flight-pending-action-cell">
                   <button
                     type="button"
-                    className="admin-flight-pending-icon-btn view"
+                    className="admin-flight-pending-icon-btn view admin-view-button"
                     aria-label={`View pending airline ${record.id}`}
                     onClick={() => setSelectedRecord(record)}
                   >
@@ -329,7 +329,7 @@ export default function AdminFlightPendingAirlineListPage() {
                   ID {safeValue(selectedRecord.id)} | {safeValue(selectedRecord.updatedBy)}
                 </p>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)}>
+              <button data-admin-close type="button" onClick={() => setSelectedRecord(null)}>
                 Close
               </button>
             </header>

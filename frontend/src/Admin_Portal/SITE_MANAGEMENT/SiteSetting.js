@@ -112,7 +112,7 @@ function SiteSetting() {
             >
               Cancel
             </button>
-            <button
+            <button data-admin-action="primary"
               type="button"
               onClick={handleSave}
               style={{
@@ -169,7 +169,7 @@ function SiteSetting() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 32px" }}>
               {/* Site Name */}
               <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Site Name <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Site Name <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <input
                   type="text"
                   required
@@ -181,7 +181,7 @@ function SiteSetting() {
 
               {/* Currency */}
               <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Currency <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Currency <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <select
                   value={editForm.currency}
                   onChange={e => setEditForm(prev => ({ ...prev, currency: e.target.value }))}
@@ -195,7 +195,7 @@ function SiteSetting() {
 
               {/* Site Logo */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Site Logo <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Site Logo <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
                   <div style={{
                     border: "1px solid #cbd5e1",
@@ -224,7 +224,7 @@ function SiteSetting() {
 
               {/* Favicon */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Favicon <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Favicon <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
                   <div style={{
                     border: "1px solid #cbd5e1",
@@ -254,7 +254,7 @@ function SiteSetting() {
 
               {/* Contact Email */}
               <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Contact Email <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Contact Email <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <input
                   type="email"
                   required
@@ -266,7 +266,7 @@ function SiteSetting() {
 
               {/* Contact Phone */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Contact Phone <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Contact Phone <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <div style={{ display: "flex" }}>
                   <select
                     value={editForm.contactPhoneCode}
@@ -306,7 +306,7 @@ function SiteSetting() {
 
               {/* Address */}
               <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Address <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Address <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <input
                   type="text"
                   required
@@ -318,7 +318,7 @@ function SiteSetting() {
 
               {/* Time Zone */}
               <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Time Zone <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Time Zone <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <select
                   value={editForm.timeZone}
                   onChange={e => setEditForm(prev => ({ ...prev, timeZone: e.target.value }))}
@@ -341,7 +341,7 @@ function SiteSetting() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px 32px", marginBottom: "20px" }}>
               {/* Website Status */}
               <label style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 700 }}>
-                <span>Website Status <span style={{ color: "#ef4444" }}>*</span></span>
+                <span>Website Status <span data-admin-required style={{ color: "#ef4444" }}>*</span></span>
                 <select
                   value={editForm.websiteStatus}
                   onChange={e => setEditForm(prev => ({ ...prev, websiteStatus: e.target.value }))}
@@ -432,7 +432,7 @@ function SiteSetting() {
             >
               Cancel
             </button>
-            <button
+            <button data-admin-action="primary"
               type="submit"
               style={{
                 background: "#A51C49",
@@ -475,7 +475,7 @@ function SiteSetting() {
               <span style={{ fontSize: "0.74rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Site Logo</span>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <span style={{ fontSize: "0.95rem", color: "#0f172a", fontWeight: 500 }}>{settings.siteLogo}</span>
-                <button type="button" style={{ background: "none", border: "none", color: "#2563eb", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", padding: 0 }}>View</button>
+                <button className="admin-view-button" type="button" style={{ background: "none", border: "none", color: "#2563eb", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", padding: 0 }}>View</button>
               </div>
             </div>
 
@@ -488,7 +488,7 @@ function SiteSetting() {
               <span style={{ fontSize: "0.74rem", color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Favicon</span>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <span style={{ fontSize: "0.95rem", color: "#0f172a", fontWeight: 500 }}>{settings.favicon}</span>
-                <button type="button" style={{ background: "none", border: "none", color: "#2563eb", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", padding: 0 }}>View</button>
+                <button className="admin-view-button" type="button" style={{ background: "none", border: "none", color: "#2563eb", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", padding: 0 }}>View</button>
               </div>
             </div>
 

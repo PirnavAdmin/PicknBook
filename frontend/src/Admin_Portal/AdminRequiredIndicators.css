@@ -1,0 +1,13 @@
+/* Shared required-marker styling includes dialogs rendered outside the shell.
+   Mark only the asterisk, never the label or an optional field. */
+:root:has(.admin-shell) body [data-admin-required] {
+  color: #dc2626 !important;
+}
+
+/* Newly isolated text markers inherit the original label's typography.
+   Existing standalone markers keep their font and spacing styles. */
+:root:has(.admin-shell) body .admin-required-indicator {
+  font: inherit !important;
+  letter-spacing: inherit !important;
+  text-transform: inherit !important;
+}

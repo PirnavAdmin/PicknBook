@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import "./BookingList.css";
 import { Filter, Download, CreditCard, RefreshCw, CheckCircle } from "lucide-react";
 import { useAdminList, getAdminItemsPerPage } from "../../../utils/adminPortalStorage";
@@ -1079,7 +1079,11 @@ export default function AdminB2CBookingListPage() {
 
   const todayDate = new Date().toISOString().slice(0, 10);
 
+  const bookingRequestRef = useRef(null);
   const loadAdminBookings = useCallback(async (activeFilters) => {
+    bookingRequestRef.current?.abort();
+    const controller = new AbortController();
+    bookingRequestRef.current = controller;
     setIsLoading(true);
     setErrorMessage("");
 
@@ -1095,7 +1099,8 @@ export default function AdminB2CBookingListPage() {
           pnr: String(activeFilters.bookingReference || activeFilters.pnr || "").trim() || undefined,
           journeyDate: String(activeFilters.fromDate || activeFilters.journeyDate || "").trim() || undefined,
           limit: 200,
-        });
+        }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       } catch (apiError) {
         throw apiError;
       }
@@ -1126,14 +1131,16 @@ export default function AdminB2CBookingListPage() {
 
       setBookings(unifiedBookings);
     } catch (error) {
+      if (controller.signal.aborted) return;
       setErrorMessage(error?.message || "Unable to load admin bookings.");
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) setIsLoading(false);
     }
   }, [setBookings]);
 
   useEffect(() => {
     loadAdminBookings(filters);
+    return () => bookingRequestRef.current?.abort();
   }, [filters, loadAdminBookings]);
 
   const filteredBookings = useMemo(() => {
@@ -1352,7 +1359,7 @@ export default function AdminB2CBookingListPage() {
         </div>
 
         <div className="admin-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button 
+          <button data-admin-action="primary" 
             type="button" 
             onClick={() => setIsFiltersOpen((current) => !current)}
             style={{
@@ -1377,7 +1384,7 @@ export default function AdminB2CBookingListPage() {
             <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
-          <button 
+          <button data-admin-action="export" 
             type="button" 
             onClick={handleExport}
             style={{
@@ -1508,10 +1515,10 @@ export default function AdminB2CBookingListPage() {
           </label>
 
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Clear Filter
             </button>
           </div>
@@ -1616,7 +1623,7 @@ export default function AdminB2CBookingListPage() {
                 <div className="admin-table-cell admin-cell-centered">
                   <button
                     type="button"
-                    className="admin-action-btn"
+                    className="admin-action-btn admin-view-button"
                     onClick={() => setSelectedBooking(booking)}
                   >
                     View
@@ -1671,7 +1678,7 @@ export default function AdminB2CBookingListPage() {
                   </span>
                 </div>
               </div>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setSelectedBooking(null)}
                 style={{
@@ -1879,7 +1886,7 @@ export default function AdminB2CBookingListPage() {
             {/* Section 5: Cancellation & Refund Breakdown */}
             {selectedBooking.status === "Cancelled" || selectedBooking.cancelledAtUtc ? (
               <div className="admin-view-section">
-                <h3 className="admin-view-section-title" style={{ color: "#ef4444" }}>Cancellation & Refund Breakdown</h3>
+                <h3 className="admin-view-section-title" >Cancellation & Refund Breakdown</h3>
                 <table className="admin-view-table">
                   <tbody>
                     <tr>

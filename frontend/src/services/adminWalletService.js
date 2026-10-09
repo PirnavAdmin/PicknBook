@@ -36,13 +36,14 @@ async function adminWalletRequest(path, options = {}) {
 
     return null;
   } catch (err) {
+    if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') throw err;
     return null;
   }
 }
 
 export const adminWalletService = {
   // 1. Global Wallet Ledger Endpoint (GET /api/admin/wallet/ledger)
-  getAdminLedger: async (params = {}) => {
+  getAdminLedger: async (params = {}, options = {}) => {
     const query = new URLSearchParams();
     if (params.page) query.append("page", String(params.page));
     if (params.pageSize) query.append("pageSize", String(params.pageSize));
@@ -61,7 +62,7 @@ export const adminWalletService = {
     ];
 
     for (const ep of endpoints) {
-      const res = await adminWalletRequest(ep);
+      const res = await adminWalletRequest(ep, options);
       if (res) return res;
     }
     return null;
@@ -78,6 +79,7 @@ export const adminWalletService = {
         const res = await adminWalletRequest(ep);
         if (res) return res;
       } catch (err) {
+        if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') throw err;
         if (ep === endpoints[endpoints.length - 1]) throw err;
       }
     }

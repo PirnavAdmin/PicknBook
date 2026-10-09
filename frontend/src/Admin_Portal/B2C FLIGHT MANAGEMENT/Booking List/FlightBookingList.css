@@ -456,17 +456,6 @@
   }
 }
 
-.admin-view-section-title {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--admin-primary);
-  margin: 14px 0 6px;
-  padding-bottom: 6px;
-  border-bottom: 2px solid var(--admin-border);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 /* Passengers List Style */
 .admin-view-passengers-section {
   margin-top: 8px;
@@ -584,11 +573,6 @@
 .admin-shell.dark-theme .admin-view-card {
   background: #0f172a !important;
   border-color: #1e293b !important;
-}
-
-.admin-shell.dark-theme .admin-view-section-title {
-  border-bottom-color: #1e293b !important;
-  color: #3b82f6 !important;
 }
 
 .admin-shell.dark-theme .admin-view-passenger-row {

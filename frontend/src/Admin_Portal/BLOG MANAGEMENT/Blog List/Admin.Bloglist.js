@@ -119,6 +119,7 @@ function BlogList() {
     const [activeDropdownId, setActiveDropdownId] = useState(null);
     const [deleteBlog, setDeleteBlog] = useState(null);
     const [editModalOpen, setEditModalOpen] = useState(false);
+    const metadataLoadedRef = useRef(false);
     const [editingBlog, setEditingBlog] = useState(null);
     const [editFormData, setEditFormData] = useState({
         title: '',
@@ -209,18 +210,24 @@ function BlogList() {
     }, []);
 
     useEffect(() => {
+        if (!editModalOpen || metadataLoadedRef.current) return;
+        let active = true;
         const loadMetadata = async () => {
             try {
                 const cats = await getBlogCategories();
+                if (!active) return;
                 const subs = await getBlogSubCategories();
+                if (!active) return;
                 setCategories(cats || []);
                 setSubCategories(subs || []);
+                metadataLoadedRef.current = true;
             } catch (error) {
                 console.error("Failed to load category/subcategory metadata:", error);
             }
         };
         loadMetadata();
-    }, []);
+        return () => { active = false; };
+    }, [editModalOpen]);
 
     const categoryOptions = ['All', ...new Set(blogs.map((blog) => blog.category))];
     const subCategoryOptions = ['All', ...new Set(blogs.map((blog) => blog.subCategory))];
@@ -1057,7 +1064,7 @@ function BlogList() {
         }
       `}</style>
 
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {toast && (
                     <div style={getToastStyle()}>
                         {getToastIcon()}
@@ -1114,7 +1121,7 @@ function BlogList() {
                             <Tag size={18} />
                             Category
                         </button>
-                        <button
+                        <button data-admin-action="primary"
                             type="button"
                             style={{ ...styles.button, ...styles.addBtn }}
                             onMouseEnter={(e) => {
@@ -1132,7 +1139,7 @@ function BlogList() {
                             <Plus size={20} strokeWidth={3} />
                             Add Blog
                         </button>
-                        <button
+                        <button data-admin-action="export"
                             type="button"
                             style={{ ...styles.button, ...styles.exportBtn }}
                             onMouseEnter={(e) => {
@@ -1286,7 +1293,7 @@ function BlogList() {
                         onClick={() => setActivePopupImage(null)}
                     >
                         <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
-                            <button
+                            <button data-admin-close
                                 type="button"
                                 onClick={() => setActivePopupImage(null)}
                                 style={{
@@ -1327,7 +1334,7 @@ function BlogList() {
                     document.body
                 )}
 
-                <div style={styles.tableWrapper}>
+                <div data-admin-surface style={styles.tableWrapper}>
                     <table style={styles.table}>
                         <thead style={styles.thead}>
                             <tr>
@@ -1465,7 +1472,7 @@ function BlogList() {
                                                             minWidth: '160px', overflow: 'hidden'
                                                         }}>
                                                             <button type="button" onClick={(e) => { e.stopPropagation(); handleViewDetails(blog); setActiveDropdownId(null); }}
-                                                                className="admin-view-action-btn"
+                                                                className="admin-view-action-btn admin-view-button"
                                                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '10px 14px', border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#334155', transition: 'all 0.15s ease' }}
                                                                 onMouseEnter={(e) => {
                                                                     e.currentTarget.style.background = '#2563eb';
@@ -1583,7 +1590,7 @@ function BlogList() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                        Title <span style={{ color: 'var(--danger)' }}>*</span>
+                                        Title <span data-admin-required style={{ color: 'var(--danger)' }}>*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -1604,7 +1611,7 @@ function BlogList() {
                                             onChange={handleEditChange}
                                             style={{ flex: 1, boxSizing: 'border-box', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '6px', fontSize: '0.9rem', outline: 'none', background: 'var(--panel)', color: 'var(--text-primary)' }}
                                         />
-                                        <button
+                                        <button data-admin-action="primary"
                                             type="button"
                                             onClick={handleEditGenerateSlug}
                                             style={{ padding: '8px 14px', background: 'var(--surface-soft)', border: '1px solid var(--border)', borderRadius: '6px', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap' }}
@@ -1615,7 +1622,7 @@ function BlogList() {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                        Category <span style={{ color: 'var(--danger)' }}>*</span>
+                                        Category <span data-admin-required style={{ color: 'var(--danger)' }}>*</span>
                                     </label>
                                     <select
                                         name="category"
@@ -1638,7 +1645,7 @@ function BlogList() {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                        Sub Category <span style={{ color: 'var(--danger)' }}>*</span>
+                                        Sub Category <span data-admin-required style={{ color: 'var(--danger)' }}>*</span>
                                     </label>
                                     <select
                                         name="subCategory"
@@ -1917,7 +1924,7 @@ function BlogList() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                        Short Description <span style={{ color: 'var(--danger)' }}>*</span>
+                                        Short Description <span data-admin-required style={{ color: 'var(--danger)' }}>*</span>
                                     </label>
                                     <textarea
                                         name="shortDescription"
@@ -1929,7 +1936,7 @@ function BlogList() {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                        Long Description <span style={{ color: 'var(--danger)' }}>*</span>
+                                        Long Description <span data-admin-required style={{ color: 'var(--danger)' }}>*</span>
                                     </label>
                                     <textarea
                                         name="longDescription"
@@ -1960,7 +1967,7 @@ function BlogList() {
                                 >
                                     Cancel
                                 </button>
-                                <button
+                                <button data-admin-action="primary"
                                     type="submit"
                                     disabled={editIsSubmitting}
                                     style={{ padding: '8px 28px', background: '#A51C49', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', opacity: editIsSubmitting ? 0.6 : 1 }}

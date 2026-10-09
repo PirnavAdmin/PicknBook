@@ -1167,7 +1167,7 @@ export default function B2CHeaderTheme() {
           <h1>Header Theme Management</h1>
           <p>Theme Management &gt; Header Management</p>
         </div>
-        <button type="button" className="btn-add-new" onClick={handleAddNewHeader}>
+        <button data-admin-action="primary" type="button" className="btn-add-new" onClick={handleAddNewHeader}>
           + Add New Header
         </button>
       </div>
@@ -1243,7 +1243,7 @@ export default function B2CHeaderTheme() {
                         Applied
                       </button>
                     ) : (
-                      <button type="button" className="btn-card-action apply-btn" onClick={(e) => { e.stopPropagation(); handleApplyTheme(t.id); }}>Apply</button>
+                      <button data-admin-action="primary" type="button" className="btn-card-action apply-btn" onClick={(e) => { e.stopPropagation(); handleApplyTheme(t.id); }}>Apply</button>
                     )}
                   </div>
                 </div>
@@ -1390,7 +1390,7 @@ export default function B2CHeaderTheme() {
                         ) : (
                           <input type="file" accept="image/*" onChange={handleLogoChange} className="config-textbox" />
                         )}
-                        <button type="button" className="btn-reset-settings" style={{ padding: "8px 12px" }}>Change Logo</button>
+                        <button data-admin-action="reset" type="button" className="btn-reset-settings" style={{ padding: "8px 12px" }}>Change Logo</button>
                       </div>
                     </div>
 
@@ -1799,10 +1799,10 @@ export default function B2CHeaderTheme() {
 
               {/* Action buttons */}
               <div className="bottom-actions-container">
-                <button type="button" className="btn-reset-settings" onClick={() => { setIsEditing(false); setIsAdding(false); setNewHeaderDraft(null); }}>
+                <button data-admin-action="reset" type="button" className="btn-reset-settings" onClick={() => { setIsEditing(false); setIsAdding(false); setNewHeaderDraft(null); }}>
                   Cancel
                 </button>
-                <button type="button" className="btn-save-settings" onClick={handleSave} disabled={saving}>
+                <button data-admin-action="primary" type="button" className="btn-save-settings" onClick={handleSave} disabled={saving}>
                   {saving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
@@ -1843,10 +1843,10 @@ export default function B2CHeaderTheme() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button type="button" className="btn-reset-settings" style={{ padding: "6px 12px" }} onClick={() => setShowAddMenuModal(false)}>
+                <button data-admin-action="reset" type="button" className="btn-reset-settings" style={{ padding: "6px 12px" }} onClick={() => setShowAddMenuModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-save-settings" style={{ padding: "6px 16px" }}>
+                <button data-admin-action="primary" type="submit" className="btn-save-settings" style={{ padding: "6px 16px" }}>
                   {editingMenuId ? "Save" : "Add Item"}
                 </button>
               </div>

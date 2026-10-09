@@ -477,11 +477,11 @@ export default function AdminBusGstSettingsPage() {
                   ))}
                 </select>
               </label>
-              <button type="button" className="markup-primary-btn" onClick={openAddModal}>
+              <button data-admin-action="primary" type="button" className="markup-primary-btn" onClick={openAddModal}>
                 <Plus size={14} aria-hidden="true" />
                 Add GST Setting
               </button>
-              <button type="button" className="markup-export-btn" onClick={handleExport} disabled={visibleRows.length === 0}>
+              <button data-admin-action="export" type="button" className="markup-export-btn" onClick={handleExport} disabled={visibleRows.length === 0}>
                 <Download size={14} aria-hidden="true" />
                 Export
               </button>
@@ -573,7 +573,7 @@ export default function AdminBusGstSettingsPage() {
                               <div className="actions-dropdown-menu">
                                 <button
                                   type="button"
-                                  className="dropdown-item view"
+                                  className="dropdown-item view admin-view-button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setViewRow(row);
@@ -737,7 +737,7 @@ export default function AdminBusGstSettingsPage() {
               <button type="button" className="secondary" onClick={() => setEditRow(null)} disabled={isSaving}>
                 Cancel
               </button>
-              <button type="button" className="primary" onClick={handleEditSave} disabled={isSaving}>
+              <button data-admin-action="primary" type="button" className="primary" onClick={handleEditSave} disabled={isSaving}>
                 {isSaving ? "Saving..." : "Save Changes"}
               </button>
             </div>

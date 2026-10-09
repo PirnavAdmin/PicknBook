@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import {
@@ -47,6 +47,7 @@ import {
 } from "../../services/testimonialService";
 import { toApiUrl, toApiAssetUrl } from "../../services/apiClient";
 import './TestimonialManagement.css';
+import '../AdminDetailModals.css';
 
 // AvatarImage helper component for resolving asset URLs and providing fallback initials
 function AvatarImage({ src, name, size = 36, className = "", fallback = null }) {
@@ -91,14 +92,22 @@ export default function TestimonialManagement() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const dataRequestRef = useRef(null);
+  const listLoadedRef = useRef(false);
+  useEffect(() => () => dataRequestRef.current?.abort(), []);
+
   // Active View State
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveView] = useState(() => {
+    const path = location.pathname.toLowerCase();
+    return path.includes('settings') ? 'settings' : path.includes('testimonial-list') ? 'testimonial_list' : path.includes('category-list') ? 'category_list' : path.includes('add-testimonial') ? 'add_testimonial' : path.includes('review') ? 'review' : 'dashboard';
+  });
   const [toast, setToast] = useState(null);
 
   // Data States (empty by default)
   const [categories, setCategories] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
+  const [primaryReady, setPrimaryReady] = useState(false);
 
   // Selected item states for Edit / Detail view
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -315,17 +324,36 @@ export default function TestimonialManagement() {
   };
 
   const loadData = async (start = pickerStartDate, end = pickerEndDate) => {
+    dataRequestRef.current?.abort();
+    const controller = new AbortController();
+    dataRequestRef.current = controller;
     try {
+      if (activeView === 'settings') {
+        const settings = await getTestimonialSettings();
+        if (!controller.signal.aborted) setGlobalSettings(prev => ({ ...prev, ...settings }));
+        return;
+      }
       const queryParams = {};
       if (start) queryParams.startDate = start;
       if (end) queryParams.endDate = end;
 
-      const [cats, tests, stats, settingsRes] = await Promise.allSettled([
-        getAdminTestimonialCategories(),
-        getAdminTestimonials(),
-        getTestimonialDashboardStats(queryParams),
-        getTestimonialSettings(),
-      ]);
+      const settle = async (load) => {
+        try { return { status: 'fulfilled', value: await load() }; }
+        catch (reason) { return { status: 'rejected', reason }; }
+      };
+      const tests = await settle(() => getAdminTestimonials({}, { signal: controller.signal }));
+      if (controller.signal.aborted) return;
+      listLoadedRef.current = true;
+      // Publish the primary list before loading secondary statistics.
+      if (tests.status === 'fulfilled') {
+        setTestimonials(extractArrayPayload(tests.value, 'testimonials').map(normalizeTestimonial));
+      }
+      setPrimaryReady(prev => prev + 1);
+      const cats = await settle(() => getAdminTestimonialCategories());
+      const stats = { status: 'skipped' };
+      const settingsRes = activeView === 'settings'
+        ? await settle(() => getTestimonialSettings())
+        : { status: 'skipped' };
 
       let unifiedCategories = null;
       let unifiedTestimonials = null;
@@ -391,6 +419,18 @@ export default function TestimonialManagement() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    if (primaryReady && activeView === 'dashboard') {
+      getTestimonialDashboardStats({ startDate: pickerStartDate, endDate: pickerEndDate }, { signal: controller.signal }).then(data => {
+        const normalized = normalizeDashboardStats(data);
+        if (active && normalized) setDashboardStats(normalized);
+      }).catch(() => {});
+    }
+    return () => { active = false; controller.abort(); };
+  }, [activeView, primaryReady]);
 
   const resetTestForm = () => {
     setSelectedTestimonial(null);
@@ -1053,7 +1093,7 @@ export default function TestimonialManagement() {
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <button
+              <button data-admin-action="reset"
                 type="button"
                 className="tm-btn tm-btn-secondary tm-btn-sm"
                 onClick={() => {
@@ -1064,7 +1104,7 @@ export default function TestimonialManagement() {
               >
                 Reset
               </button>
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 onClick={() => applyCalendarRange()}
                 style={{ padding: '5px 14px', borderRadius: '6px', border: 'none', background: '#A51C49', color: '#ffffff', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 6px rgba(165, 28, 73, 0.25)' }}
@@ -1405,7 +1445,7 @@ export default function TestimonialManagement() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              <button
+              <button data-admin-action="export"
                 type="button"
                 className="tm-btn"
                 style={{ background: '#10b981', color: '#ffffff', borderColor: '#059669', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600, flexShrink: 0 }}
@@ -1414,7 +1454,7 @@ export default function TestimonialManagement() {
                 <Download size={14} /> Export
               </button>
 
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 className="tm-btn"
                 style={{ background: '#A51C49', color: '#ffffff', borderColor: '#A51C49', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600, flexShrink: 0 }}
@@ -1525,7 +1565,7 @@ export default function TestimonialManagement() {
                               }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button
+                              <button className="admin-view-button"
                                 type="button"
                                 onClick={() => {
                                   setActiveDropdownId(null);
@@ -1655,7 +1695,7 @@ export default function TestimonialManagement() {
             <form onSubmit={handleSaveCategory}>
               <div className="tm-form-grid">
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Category Name <span className="req">*</span></label>
+                  <label className="tm-form-label">Category Name <span data-admin-required className="req">*</span></label>
                   <input
                     type="text"
                     className="tm-form-input"
@@ -1678,7 +1718,7 @@ export default function TestimonialManagement() {
                 </div>
 
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Category Slug <span className="req">*</span></label>
+                  <label className="tm-form-label">Category Slug <span data-admin-required className="req">*</span></label>
                   <input
                     type="text"
                     className="tm-form-input"
@@ -1690,7 +1730,7 @@ export default function TestimonialManagement() {
                 </div>
 
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Status <span className="req">*</span></label>
+                  <label className="tm-form-label">Status <span data-admin-required className="req">*</span></label>
                   <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '8px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85rem' }}>
                       <input
@@ -1741,7 +1781,7 @@ export default function TestimonialManagement() {
                     Deactivate Category
                   </button>
                 )}
-                <button type="submit" className="tm-btn tm-btn-primary">
+                <button data-admin-action="primary" type="submit" className="tm-btn tm-btn-primary">
                   {activeView === 'edit_category' ? 'Update Category' : 'Save Category'}
                 </button>
               </div>
@@ -1799,7 +1839,7 @@ export default function TestimonialManagement() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              <button
+              <button data-admin-action="export"
                 type="button"
                 className="tm-btn"
                 style={{ background: '#10b981', color: '#ffffff', borderColor: '#059669', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600, flexShrink: 0 }}
@@ -1808,7 +1848,7 @@ export default function TestimonialManagement() {
                 <Download size={14} /> Export
               </button>
 
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 className="tm-btn"
                 style={{ background: '#A51C49', color: '#ffffff', borderColor: '#A51C49', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600, flexShrink: 0 }}
@@ -1937,7 +1977,7 @@ export default function TestimonialManagement() {
                               }}
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button
+                              <button className="admin-view-button"
                                 type="button"
                                 onClick={() => {
                                   setActiveDropdownId(null);
@@ -2068,7 +2108,7 @@ export default function TestimonialManagement() {
               </h3>
               <div className="tm-form-grid">
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Customer Name <span className="req">*</span></label>
+                  <label className="tm-form-label">Customer Name <span data-admin-required className="req">*</span></label>
                   <input
                     type="text"
                     className="tm-form-input"
@@ -2194,7 +2234,7 @@ export default function TestimonialManagement() {
               </h3>
               <div className="tm-form-grid">
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Category <span className="req">*</span></label>
+                  <label className="tm-form-label">Category <span data-admin-required className="req">*</span></label>
                   <select
                     className="tm-form-select"
                     value={testFormData.categoryId != null ? testFormData.categoryId : (testFormData.category || '')}
@@ -2216,7 +2256,7 @@ export default function TestimonialManagement() {
                 </div>
 
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Rating & Category Status <span className="req">*</span></label>
+                  <label className="tm-form-label">Rating & Category Status <span data-admin-required className="req">*</span></label>
                   <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       {[1, 2, 3, 4, 5].map(star => (
@@ -2285,7 +2325,7 @@ export default function TestimonialManagement() {
                 </div>
 
                 <div className="tm-form-group full-width">
-                  <label className="tm-form-label">Testimonial Content <span className="req">*</span></label>
+                  <label className="tm-form-label">Testimonial Content <span data-admin-required className="req">*</span></label>
                   <textarea
                     className="tm-form-textarea"
                     placeholder="Write testimonial..."
@@ -2314,7 +2354,7 @@ export default function TestimonialManagement() {
                 </div>
 
                 <div className="tm-form-group">
-                  <label className="tm-form-label">Main Testimonial Status <span className="req">*</span></label>
+                  <label className="tm-form-label">Main Testimonial Status <span data-admin-required className="req">*</span></label>
                   <select
                     className="tm-form-select"
                     value={testFormData.status}
@@ -2355,13 +2395,13 @@ export default function TestimonialManagement() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '28px' }}>
-                <button type="button" className="tm-btn tm-btn-secondary" onClick={() => changeView('testimonial_list')}>
+                <button data-admin-action="reset" type="button" className="tm-btn tm-btn-secondary" onClick={() => changeView('testimonial_list')}>
                   Reset
                 </button>
-                <button type="button" className="tm-btn tm-btn-secondary" onClick={e => handleSaveTestimonial(e, 'Draft')}>
+                <button data-admin-action="primary" type="button" className="tm-btn tm-btn-secondary" onClick={e => handleSaveTestimonial(e, 'Draft')}>
                   Save Draft
                 </button>
-                <button type="submit" className="tm-btn tm-btn-primary">
+                <button data-admin-action="primary" type="submit" className="tm-btn tm-btn-primary">
                   {activeView === 'edit_testimonial' ? 'Update Testimonial' : 'Submit for Review'}
                 </button>
               </div>
@@ -2538,7 +2578,7 @@ export default function TestimonialManagement() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
-              <button
+              <button data-admin-action="reset"
                 type="button"
                 className="tm-btn tm-btn-secondary"
                 onClick={() => {
@@ -2557,7 +2597,7 @@ export default function TestimonialManagement() {
               >
                 Reset
               </button>
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 className="tm-btn tm-btn-primary"
                 onClick={async () => {
@@ -2578,31 +2618,22 @@ export default function TestimonialManagement() {
 
       {/* ── VIEW DETAILS POPUP MODAL (Matching Blog Management) ── */}
       {viewModalItem && createPortal(
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)',
-          display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 100000,
-          padding: '20px'
-        }} onClick={() => setViewModalItem(null)}>
-          <div className="tm-glass-modal" style={{
-            borderRadius: '12px', padding: '0',
-            width: '520px', maxWidth: '90%',
-            overflow: 'hidden'
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '14px 20px', background: '#fdf2f4', borderBottom: '1px solid #fbcfe8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#A51C49', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="admin-detail-backdrop" onClick={() => setViewModalItem(null)}>
+          <div className="admin-detail-modal testimonial-detail-modal" role="dialog" aria-modal="true" aria-labelledby="testimonial-detail-title" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-detail-header">
+              <h3 className="admin-detail-title" id="testimonial-detail-title">
                 <Eye size={18} color="#A51C49" />
                 <span>{viewModalItem.type === 'category' ? 'Category Details' : 'Testimonial Details'}</span>
               </h3>
-              <button type="button" onClick={() => setViewModalItem(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#64748b' }}>
+              <button type="button" className="admin-detail-close admin-detail-close-icon" aria-label="Close testimonial details" onClick={() => setViewModalItem(null)}>
                 <X size={18} />
               </button>
             </div>
 
-            <div style={{ padding: '20px', fontSize: '0.85rem', color: '#334155', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="admin-detail-body">
               {viewModalItem.type === 'category' ? (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="admin-detail-grid">
                     <div>
                       <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Category Name</span>
                       <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', marginTop: '2px' }}>{viewModalItem.data.name}</div>
@@ -2612,7 +2643,7 @@ export default function TestimonialManagement() {
                       <div style={{ marginTop: '2px' }}><code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>{viewModalItem.data.slug}</code></div>
                     </div>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="admin-detail-grid">
                     <div>
                       <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Display Order</span>
                       <div style={{ fontWeight: 700, marginTop: '2px' }}>{viewModalItem.data.order}</div>
@@ -2628,7 +2659,7 @@ export default function TestimonialManagement() {
                   </div>
                   <div>
                     <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Description</span>
-                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', marginTop: '4px', border: '1px solid #e2e8f0', color: '#475569' }}>
+                    <div className="admin-detail-message">
                       {viewModalItem.data.description || 'No description provided.'}
                     </div>
                   </div>
@@ -2639,7 +2670,7 @@ export default function TestimonialManagement() {
                 </>
               ) : (
                 <>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div className="admin-detail-profile">
                     <AvatarImage src={viewModalItem.data.image || viewModalItem.data.imageUrl} name={viewModalItem.data.name} size={48} />
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a' }}>{viewModalItem.data.name}</div>
@@ -2647,7 +2678,7 @@ export default function TestimonialManagement() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="admin-detail-grid">
                     <div>
                       <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Category</span>
                       <div style={{ marginTop: '2px' }}>
@@ -2662,7 +2693,7 @@ export default function TestimonialManagement() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="admin-detail-grid">
                     <div>
                       <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Status</span>
                       <div style={{ marginTop: '2px' }}>
@@ -2676,7 +2707,7 @@ export default function TestimonialManagement() {
 
                   <div>
                     <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Testimonial Preview</span>
-                    <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '6px', marginTop: '4px', border: '1px solid #e2e8f0', color: '#334155', fontStyle: 'italic' }}>
+                    <div className="admin-detail-message">
                       "{viewModalItem.data.preview || viewModalItem.data.comment || viewModalItem.data.message}"
                     </div>
                   </div>
@@ -2684,8 +2715,8 @@ export default function TestimonialManagement() {
               )}
             </div>
 
-            <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(226, 232, 240, 0.6)', display: 'flex', justifyContent: 'flex-end', background: 'rgba(248, 250, 252, 0.5)' }}>
-              <button type="button" className="tm-btn tm-btn-secondary" onClick={() => setViewModalItem(null)}>
+            <div className="admin-detail-footer">
+              <button data-admin-close type="button" className="admin-detail-close" onClick={() => setViewModalItem(null)}>
                 Close
               </button>
             </div>

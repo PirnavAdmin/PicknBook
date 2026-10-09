@@ -295,7 +295,7 @@ export default function AdminFlightPendingAirlineEditPage() {
         </div>
 
         <div className="admin-flight-pending-edit-actions">
-          <button type="button" className="admin-flight-pending-submit-btn" onClick={handleSubmit}>
+          <button data-admin-action="primary" type="button" className="admin-flight-pending-submit-btn" onClick={handleSubmit}>
             Submit
           </button>
         </div>

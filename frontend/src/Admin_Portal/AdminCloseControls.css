@@ -1,0 +1,29 @@
+/* Document scope includes Admin dialogs rendered through React portals.
+   Only the cursor changes; existing component styles and handlers stay intact.
+   Text-only Close controls can opt in with data-admin-close. */
+:root:has(.admin-shell) body :is(
+  [data-admin-close],
+  [aria-label^="close" i],
+  [title^="close" i],
+  :is(button, span, a, svg, [role="button"]):is(
+    [class^="close"],
+    [class*="-close"],
+    [class*=" close"]
+  ),
+  button:has(.lucide-x),
+  [role="button"]:has(.lucide-x)
+),
+:root:has(.admin-shell) body :is(
+  [data-admin-close],
+  [aria-label^="close" i],
+  [title^="close" i],
+  :is(button, span, a, svg, [role="button"]):is(
+    [class^="close"],
+    [class*="-close"],
+    [class*=" close"]
+  ),
+  button:has(.lucide-x),
+  [role="button"]:has(.lucide-x)
+) * {
+  cursor: pointer !important;
+}

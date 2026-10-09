@@ -1,0 +1,27 @@
+/* Shared section headings for Admin detail popups, including body portals.
+   Module styles must use this class instead of inline heading decorations. */
+:root:has(.admin-shell) .admin-view-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #a51c49;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: normal;
+}
+
+:root:has(.admin-shell) .admin-view-section-title::before {
+  content: "";
+  flex: 0 0 3px;
+  width: 3px;
+  height: 14px;
+  border-left: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  box-sizing: content-box;
+  background: none;
+  border-radius: 0;
+}

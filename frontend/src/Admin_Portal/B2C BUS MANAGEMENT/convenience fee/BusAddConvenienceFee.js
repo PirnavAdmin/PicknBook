@@ -134,7 +134,7 @@ export default function AdminAddConvenienceFeePage() {
         </div>
 
         <div className="admin-convenience-edit-actions">
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="admin-convenience-update-btn"
             onClick={handleSave}

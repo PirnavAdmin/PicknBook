@@ -1,0 +1,61 @@
+/* Consistent header geometry; each page retains its button colors. */
+.booking-page-header.booking-page-header {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+ 
+.traveller-container .booking-page-header.booking-page-header {
+  padding: 16px;
+  border: 1px solid var(--trav-border);
+  border-radius: 16px;
+  background: #ffffff !important;
+  box-shadow: var(--trav-shadow-sm) !important;
+}
+ 
+.booking-page-header.booking-page-header > :is(h1, h2) {
+  min-width: 0;
+  margin: 0;
+  font-family: var(--app-font-family) !important;
+  font-size: 1.400rem;
+  font-weight: 900;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: #000000 !important;
+}
+ 
+.booking-page-header .booking-page-header-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+  width: auto;
+  gap: 8px;
+  margin-left: auto;
+}
+ 
+.booking-page-header .booking-page-header-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+ 
+ 

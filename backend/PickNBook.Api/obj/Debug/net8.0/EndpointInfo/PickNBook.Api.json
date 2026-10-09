@@ -12967,6 +12967,15 @@
         "tags": [
           "SecurityAdmin"
         ],
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success"
@@ -13006,6 +13015,28 @@
       }
     },
     "/api/v1/admin/security/locked-accounts/{id}/unlock": {
+      "post": {
+        "tags": [
+          "SecurityAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/security/unlock-account/{id}": {
       "post": {
         "tags": [
           "SecurityAdmin"

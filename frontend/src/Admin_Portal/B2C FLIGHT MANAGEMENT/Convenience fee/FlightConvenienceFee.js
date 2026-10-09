@@ -302,7 +302,7 @@ export default function AdminFlightConvenienceFeePage() {
         </header>
 
         <div className="admin-flight-fee-head-right">
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="admin-flight-fee-add-btn"
             onClick={() => navigate("/admin/b2c-flight/add-convenience-fee")}
@@ -363,7 +363,7 @@ export default function AdminFlightConvenienceFeePage() {
                 <div className="admin-flight-fee-cell admin-flight-fee-actions">
                   <button
                     type="button"
-                    className="admin-flight-fee-icon-btn view"
+                    className="admin-flight-fee-icon-btn view admin-view-button"
                     aria-label={`View convenience fee ${item.id}`}
                     onClick={() => setSelectedFee(item)}
                   >
@@ -508,7 +508,7 @@ export default function AdminFlightConvenienceFeePage() {
                 >
                   Cancel
                 </button>
-                <button
+                <button data-admin-action="primary"
                   className="primary"
                   onClick={handleSaveEdit}
                   disabled={isSaving}

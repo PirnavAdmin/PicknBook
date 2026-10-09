@@ -1,6 +1,7 @@
 
 /* eslint-disable */
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeftRight,
@@ -297,6 +298,24 @@ function applyTimeToDate(baseDate, timeDate) {
   );
 }
 
+function getTimestampDurationInMinutes(departureDate, arrivalDate) {
+  if (!departureDate || !arrivalDate) {
+    return null;
+  }
+
+  const duration = Math.round((arrivalDate.getTime() - departureDate.getTime()) / 60000);
+  if (duration >= 0) {
+    return duration;
+  }
+
+  const sameDate =
+    departureDate.getFullYear() === arrivalDate.getFullYear() &&
+    departureDate.getMonth() === arrivalDate.getMonth() &&
+    departureDate.getDate() === arrivalDate.getDate();
+
+  return sameDate ? duration + 24 * 60 : null;
+}
+
 function resolveArrivalDate(departureDate, arrivalTimeDate, durationMinutes) {
   if (departureDate && Number.isFinite(durationMinutes) && durationMinutes >= 0) {
     return new Date(departureDate.getTime() + durationMinutes * 60000);
@@ -350,16 +369,28 @@ function formatDuration(totalMinutes) {
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return `${hours}h : ${minutes}m`;
+  return `${hours}h ${minutes}m`;
 }
 
 function formatCurrency(value) {
+  return `INR ${formatCurrencyAmount(value)}`;
+}
+
+function formatCurrencyAmount(value) {
   const numeric = Number(value) || 0;
 
-  return `INR ${new Intl.NumberFormat("en-IN", {
-    minimumFractionDigits: Number.isInteger(numeric) ? 0 : 2,
-    maximumFractionDigits: Number.isInteger(numeric) ? 0 : 2,
-  }).format(numeric)}`;
+  return new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(numeric);
+}
+
+function formatAvailableSeats(value) {
+  const count = Math.max(0, Number(value) || 0);
+  if (count === 0) {
+    return "Sold Out";
+  }
+  return `${count} Seat${count === 1 ? "" : "s"} Available`;
 }
 
 function hourInWindow(hour, window) {
@@ -639,26 +670,7 @@ export default function BusSearchResults() {
     tripType: initialTripType,
   });
 
-  const cachedFilters = useMemo(() => {
-    try {
-      const saved = sessionStorage.getItem("bus_search_filters");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (
-          parsed &&
-          parsed.version === 2 &&
-          parsed.source === initialSourceName &&
-          parsed.destination === initialDestinationName &&
-          parsed.departureDate === initialDepartureDateInput
-        ) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-    return null;
-  }, [initialSourceName, initialDestinationName, initialDepartureDateInput]);
+  const cachedFilters = null;
 
   const [selectedDate, setSelectedDate] = useState(() =>
     parseDateInput(initialDepartureDateInput)
@@ -698,6 +710,7 @@ export default function BusSearchResults() {
   const [detailsOffersData, setDetailsOffersData] = useState([]);
   const [loadingOffersData, setLoadingOffersData] = useState(false);
   const [copiedCoupon, setCopiedCoupon] = useState("");
+  const [offerInfo, setOfferInfo] = useState(null);
 
   useEffect(() => {
     if (expandedCard?.panel === "details" && expandedCard?.busId) {
@@ -731,6 +744,17 @@ export default function BusSearchResults() {
     }
   }, [expandedCard?.busId, expandedCard?.panel, apiBuses]);
 
+  useEffect(() => {
+    if (!offerInfo) return undefined;
+
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOfferInfo(null);
+    };
+
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [offerInfo]);
+
   const didRestoreFiltersRef = useRef(false);
   useEffect(() => {
     if (cachedFilters) {
@@ -740,59 +764,7 @@ export default function BusSearchResults() {
     }
   }, [cachedFilters]);
 
-  // Save filter state to sessionStorage whenever it changes
-  useEffect(() => {
-    const filterState = {
-      version: 2,
-      source: sourceName,
-      destination: destinationName,
-      departureDate: formatDateInput(selectedDate),
-      sortBy,
-      sortDirection,
-      priceMin,
-      priceMax,
-      busTypeFilters,
-      departureWindows,
-      arrivalWindows,
-      amenitiesFilters,
-      boardingFilters,
-      droppingFilters,
-      travelFilters,
-      boardingSearchText,
-      droppingSearchText,
-      travelSearchText,
-      // A supplier seat layout is a one-time workflow result, not filter state.
-      // Persisting an open seat modal can re-trigger the supplier request after a
-      // refresh, so only restore non-seat detail panels.
-      expandedCard: expandedCard?.panel === "seats" ? null : expandedCard,
-      expandedOperatorGroups,
-    };
-    try {
-      sessionStorage.setItem("bus_search_filters", JSON.stringify(filterState));
-    } catch (e) {
-      // ignore
-    }
-  }, [
-    sourceName,
-    destinationName,
-    selectedDate,
-    sortBy,
-    sortDirection,
-    priceMin,
-    priceMax,
-    busTypeFilters,
-    departureWindows,
-    arrivalWindows,
-    amenitiesFilters,
-    boardingFilters,
-    droppingFilters,
-    travelFilters,
-    boardingSearchText,
-    droppingSearchText,
-    travelSearchText,
-    expandedCard,
-    expandedOperatorGroups,
-  ]);
+
   const seatLayoutLoadRef = useRef(null);
 
   const lastSearchKeyRef = useRef("");
@@ -959,12 +931,20 @@ export default function BusSearchResults() {
           parseTimeValue(bus.arrivalTimeIst) ||
           parseTimeValue(bus.arrivalTime) ||
           parseTimeValue(bus.ArrivalTime);
-        const durationMinutes = getDurationInMinutes(bus);
+        const timestampDurationMinutes = getTimestampDurationInMinutes(
+          rawDepartureDate,
+          rawArrivalDate
+        );
+        const durationMinutes =
+          timestampDurationMinutes ?? getDurationInMinutes(bus);
         const departureDate =
           applyTimeToDate(selectedDate, rawDepartureDate) || selectedDate;
         const arrivalDate =
           resolveArrivalDate(departureDate, rawArrivalDate, durationMinutes) ||
           selectedDate;
+        const tripDurationMinutes =
+          getTimestampDurationInMinutes(departureDate, arrivalDate) ??
+          durationMinutes;
 
         const b2cFare = Number(
           bus.b2cDisplayFare ||
@@ -1006,8 +986,8 @@ export default function BusSearchResults() {
           arrivalSortValue: arrivalDate ? arrivalDate.getTime() : 0,
           departureTime: formatTime(departureDate),
           arrivalTime: formatTime(arrivalDate),
-          durationMinutes: durationMinutes ?? 0,
-          duration: formatDuration(durationMinutes),
+          durationMinutes: tripDurationMinutes ?? 0,
+          duration: formatDuration(tripDurationMinutes),
           fare: b2cFare,
           b2cDisplayFare: b2cFare,
           availableSeats,
@@ -1404,7 +1384,7 @@ export default function BusSearchResults() {
       );
     } else {
       setSortBy(nextSortBy);
-      setSortDirection(nextSortBy === "seats" ? "desc" : "asc");
+      setSortDirection("asc");
     }
   };
 
@@ -1717,7 +1697,7 @@ export default function BusSearchResults() {
           ))}
         </div>
 
-        <div className="bus-details-tabs-body" style={{ minHeight: "120px" }}>
+        <div className="bus-details-tabs-body" style={{ minHeight: "120px", maxHeight: "400px", overflowY: "auto", overflowX: "hidden" }}>
           {tab === "boarding" && (
             <div className="bus-details-grid-2col">
               <div>
@@ -1955,8 +1935,10 @@ export default function BusSearchResults() {
               const conds = [];
 
               // Discount value & type
-              const dVal = offer.discountValue || offer.DiscountValue;
-              const dType = offer.discountType || offer.DiscountType;
+              const dVal =
+                offer.discountValue ?? offer.DiscountValue ?? offer.value ?? offer.Value;
+              const dType =
+                offer.discountType || offer.DiscountType || offer.cpnType || offer.CpnType;
               const maxDiscount = offer.maxDiscountAmount || offer.MaxDiscountAmount;
               if (dVal) {
                 if (String(dType).toLowerCase() === "percentage") {
@@ -1967,7 +1949,8 @@ export default function BusSearchResults() {
               }
 
               // Min booking amount
-              const minAmt = offer.minBookingAmount || offer.MinBookingAmount;
+              const minAmt =
+                offer.minBookingAmount ?? offer.MinBookingAmount ?? offer.minimumBookingAmount;
               if (minAmt && Number(minAmt) > 0) {
                 conds.push(`Minimum booking amount: â‚¹${minAmt}`);
               }
@@ -2011,7 +1994,23 @@ export default function BusSearchResults() {
               }
 
               // End date
-              const endDate = offer.endDateUtc || offer.EndDateUtc || offer.validTill;
+              const startDate = offer.startDate || offer.StartDate;
+              const endDate =
+                offer.endDateUtc ||
+                offer.EndDateUtc ||
+                offer.expiryDate ||
+                offer.ExpiryDate ||
+                offer.validTill;
+              if (startDate) {
+                const formattedDate = new Date(startDate).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                });
+                if (formattedDate !== "Invalid Date") {
+                  conds.push(`Offer valid from: ${formattedDate}`);
+                }
+              }
               if (endDate) {
                 try {
                   const formattedDate = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -2039,49 +2038,113 @@ export default function BusSearchResults() {
                       const couponCode = offer.code || offer.couponCode || offer.promoCode || offer.title || offer.Title;
                       const conditionsList = formatConditions(offer);
                       const isCopied = copiedCoupon === couponCode;
+                      const discountValue =
+                        offer.discountValue ?? offer.DiscountValue ?? offer.value ?? offer.Value;
+                      const discountType = String(
+                        offer.discountType ||
+                          offer.DiscountType ||
+                          offer.cpnType ||
+                          offer.CpnType ||
+                          ""
+                      ).toLowerCase();
+                      const discountLabel = discountValue
+                        ? discountType === "percentage"
+                          ? `${discountValue}% OFF`
+                          : `FLAT ${discountValue} OFF`
+                        : "SPECIAL OFFER";
+                      const offerTitle = offer.title || offer.offerTitle || offer.Title || "Discount Offer";
+                      const offerDescription =
+                        offer.subtitle ||
+                        offer.description ||
+                        offer.offerDescription ||
+                        offer.Description ||
+                        offer.remark ||
+                        offer.Remark;
 
                       return (
-                        <div key={idx} style={{ border: "1.5px dashed #16a34a", borderRadius: "10px", padding: "14px", background: "#f0fdf4", display: "flex", flexDirection: "column", gap: "10px" }}>
-                          <div>
-                            <strong style={{ color: "#0f172a", fontSize: "15px", display: "block" }}>{offer.title || offer.offerTitle || "Discount Offer"}</strong>
-                            {(offer.subtitle || offer.description || offer.offerDescription) && (
-                              <span style={{ fontSize: "12.5px", color: "#475569", lineHeight: "1.4", display: "block", marginTop: "2px" }}>
-                                {offer.subtitle || offer.description || offer.offerDescription}
-                              </span>
-                            )}
-                          </div>
-
-                          {couponCode && (
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ffffff", border: "1px dashed #16a34a", padding: "8px 12px", borderRadius: "6px" }}>
-                              <div>
-                                <small style={{ color: "#64748b", fontSize: "10px", display: "block", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px" }}>COUPON CODE</small>
-                                <strong style={{ fontSize: "14px", letterSpacing: "1px", color: "#15803d" }}>{couponCode}</strong>
-                              </div>
+                        <article className="bus-offer-ticket" key={idx}>
+                          <button
+                            type="button"
+                            className="bus-offer-info-button"
+                            aria-label={`More information about ${offerTitle}`}
+                            onClick={() => setOfferInfo({ offer, conditionsList })}
+                          >
+                            <span aria-hidden="true">i</span>
+                          </button>
+                          <div className="bus-offer-ticket-content">
+                            <strong className="bus-offer-coupon-code">
+                              {couponCode || discountLabel}
+                            </strong>
+                            <span className="bus-offer-ticket-subtitle">
+                              {offerTitle} · {discountLabel}
+                            </span>
+                            {couponCode && (
                               <button
                                 type="button"
+                                className="bus-offer-copy-button"
                                 onClick={() => handleCopyCoupon(couponCode)}
-                                style={{ background: isCopied ? "#15803d" : "#16a34a", color: "#fff", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: "800", cursor: "pointer", transition: "all 0.2s ease" }}
+                                aria-label={
+                                  isCopied
+                                    ? `Copied coupon code ${couponCode}`
+                                    : `Copy coupon code ${couponCode}`
+                                }
                               >
-                                {isCopied ? "COPIED âœ“" : "COPY CODE"}
+                                {isCopied ? "Copied" : "Copy code"}
                               </button>
-                            </div>
-                          )}
-
-                          <div style={{ paddingTop: "8px", borderTop: "1px solid #dcfce7", fontSize: "12px" }}>
-                            <strong style={{ display: "block", color: "#0f172a", fontSize: "12px", marginBottom: "4px" }}>Offer Conditions & Eligibility:</strong>
-                            {conditionsList.length > 0 ? (
-                              <ul style={{ margin: 0, paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "3px", color: "#334155" }}>
-                                {conditionsList.map((cond, cIdx) => (
-                                  <li key={cIdx}>{cond}</li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <div style={{ color: "#16a34a", fontSize: "11.5px", fontWeight: "600" }}>
-                                âœ“ Valid on all routes, seat types & operators. No minimum booking amount required.
-                              </div>
                             )}
                           </div>
-                        </div>
+
+                          {offerInfo?.offer === offer && createPortal(
+                            <div
+                              className="bus-offer-info-backdrop"
+                              onClick={(event) => {
+                                if (event.target === event.currentTarget) setOfferInfo(null);
+                              }}
+                            >
+                              <section
+                                className="bus-offer-info-dialog"
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby={`bus-offer-info-title-${idx}`}
+                              >
+                                <header className="bus-offer-info-header">
+                                  <div>
+                                    <span className="bus-offer-discount">{discountLabel}</span>
+                                    <h3 id={`bus-offer-info-title-${idx}`}>{offerTitle}</h3>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="bus-offer-info-close"
+                                    onClick={() => setOfferInfo(null)}
+                                    aria-label="Close offer information"
+                                  >
+                                    <X size={18} />
+                                  </button>
+                                </header>
+                                <div className="bus-offer-info-content">
+                                  {offerDescription && <p>{offerDescription}</p>}
+                                  {couponCode && (
+                                    <div className="bus-offer-info-code">
+                                      <span>Coupon code</span>
+                                      <strong>{couponCode}</strong>
+                                    </div>
+                                  )}
+                                  <h4>Offer conditions &amp; eligibility</h4>
+                                  {conditionsList.length > 0 ? (
+                                    <ul>
+                                      {conditionsList.map((condition, conditionIndex) => (
+                                        <li key={conditionIndex}>{condition}</li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p>No additional eligibility conditions provided.</p>
+                                  )}
+                                </div>
+                              </section>
+                            </div>,
+                            document.body
+                          )}
+                        </article>
                       );
                     })}
                   </div>
@@ -2107,7 +2170,7 @@ export default function BusSearchResults() {
           <small style={{ display: "block", marginTop: "2px", color: "#64748b" }}>Bus No: {bus.busNumber}</small>
           
           <div style={{ display: "flex", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}>
-            {bus.isAC && (
+            {bus.isAC && !/\bA\/C\b|\bAC\b/i.test(String(bus.busType || "")) && (
               <span style={{ fontSize: "10px", background: "#f8fafc", color: "#475569", padding: "2px 6px", borderRadius: "4px", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "4px", border: "1px solid #e2e8f0" }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20"></path><path d="m8 10 4-4 4 4"></path><path d="m16 14-4 4-4-4"></path></svg> A/C
               </span>
@@ -2135,7 +2198,9 @@ export default function BusSearchResults() {
         </div>
         <div className="bus-duration-cell">
           <span>{bus.duration}</span>
-          <div className="duration-dash"><i /></div>
+          <div className="duration-dash">
+            <BusFront className="duration-bus-icon" size={16} aria-hidden="true" />
+          </div>
         </div>
         <div className="bus-arrive-cell">
           <strong>{bus.arrivalTime}</strong>
@@ -2146,12 +2211,32 @@ export default function BusSearchResults() {
 
       <div className="bus-fare-cell">
         <span>Starts from</span>
-        <strong>{formatCurrency(bus.fare)}</strong>
+        <strong className="bus-fare-amount">
+          <IndianRupee size={18} aria-hidden="true" />
+          <span>{formatCurrencyAmount(bus.fare)}</span>
+        </strong>
       </div>
 
-      <div className="bus-seat-cell">
-        <strong>{bus.availableSeats} Seats Available</strong>
-        <span>Total {bus.totalSeats}</span>
+      <div
+        className="bus-seat-cell"
+        data-low-seats={
+          bus.availableSeats >= 1 && bus.availableSeats <= 5 ? "true" : undefined
+        }
+      >
+        <div
+          className={`bus-seat-availability ${
+            bus.availableSeats <= 0
+              ? "bus-seat-availability--none"
+              : bus.availableSeats <= 5
+                ? "bus-seat-availability--low"
+                : bus.availableSeats <= 10
+                  ? "bus-seat-availability--limited"
+                  : "bus-seat-availability--available"
+          }`}
+        >
+          <Armchair className="bus-seat-availability-icon" size={20} aria-hidden="true" />
+          <strong>{formatAvailableSeats(bus.availableSeats)}</strong>
+        </div>
       </div>
 
       <div className="bus-action-cell">
@@ -2605,17 +2690,17 @@ export default function BusSearchResults() {
         ) : (
           <div className="bus-results-layout">
             <div className="bus-filters-sidebar">
+              <header className="bus-filters-header">
+                <div>
+                  <Filter size={14} />
+                  <span>Filters</span>
+                </div>
+                <button type="button" onClick={resetFilters}>
+                  <RotateCw size={13} />
+                  Reset
+                </button>
+              </header>
               <aside className="bus-filters-rail">
-                <header className="bus-filters-header">
-                  <div>
-                    <Filter size={14} />
-                    <span>Filters</span>
-                  </div>
-                  <button type="button" onClick={resetFilters}>
-                    <RotateCw size={13} />
-                    Reset
-                  </button>
-                </header>
 
               <section className="bus-filter-card">
                 <h3 className="bus-price-title">
@@ -2885,11 +2970,26 @@ export default function BusSearchResults() {
                               : `Sort by ${option.label} descending`
                             : `Sort by ${option.label}`
                         }
+                        aria-sort={
+                          sortBy === option.key
+                            ? sortDirection === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                        aria-pressed={sortBy === option.key}
                       >
                         <span className="sort-label-text">{option.label}</span>
                         <option.icon size={15} className="sort-label-icon" />
-                        <span className="sort-direction-arrow" aria-hidden="true">
-                          {sortBy === option.key && sortDirection === "desc" ? "\u2193" : "\u2191"}
+                        <span
+                          className={`sort-direction-arrow ${
+                            sortBy === option.key && sortDirection === "desc"
+                              ? "descending"
+                              : ""
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {"\u2191"}
                         </span>
                       </button>
                     </div>
@@ -2908,11 +3008,26 @@ export default function BusSearchResults() {
                               : `Sort by ${option.label} descending`
                             : `Sort by ${option.label}`
                         }
+                        aria-sort={
+                          sortBy === option.key
+                            ? sortDirection === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                        aria-pressed={sortBy === option.key}
                       >
                         <span className="sort-label-text">{option.label}</span>
                         <option.icon size={15} className="sort-label-icon" />
-                        <span className="sort-direction-arrow" aria-hidden="true">
-                          {sortBy === option.key && sortDirection === "desc" ? "\u2193" : "\u2191"}
+                        <span
+                          className={`sort-direction-arrow ${
+                            sortBy === option.key && sortDirection === "desc"
+                              ? "descending"
+                              : ""
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {"\u2191"}
                         </span>
                       </button>
                   </div>

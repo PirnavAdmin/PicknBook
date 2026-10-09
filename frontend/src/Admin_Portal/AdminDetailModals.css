@@ -1,0 +1,155 @@
+/* Opt-in styles for the Query and Testimonial detail portals only. */
+.admin-detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.38);
+}
+
+.admin-detail-modal {
+  width: 640px;
+  max-width: 100%;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.16), 0 4px 16px rgba(15, 23, 42, 0.06);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.admin-detail-modal.testimonial-detail-modal { width: 560px; }
+
+.admin-detail-modal .admin-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.admin-detail-modal .admin-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  color: #a51c49;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.admin-detail-title > svg { flex-shrink: 0; }
+
+.admin-detail-modal .admin-detail-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid #f1cad7;
+  border-radius: 8px;
+  background: #fdf2f6;
+  color: #a51c49;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.admin-detail-modal .admin-detail-close-icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.admin-detail-modal .admin-detail-close:hover { background: #fce7ef; }
+.admin-detail-modal .admin-detail-close:focus-visible {
+  outline: 2px solid #a51c49 !important;
+  outline-offset: 2px !important;
+}
+
+.admin-detail-modal .admin-detail-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.testimonial-detail-modal .admin-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-detail-modal .admin-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+}
+
+.admin-detail-grid > div { min-width: 0; }
+.admin-detail-modal .admin-detail-label {
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.admin-detail-modal .admin-detail-value { color: #0f172a; font-size: 0.9rem; }
+.admin-detail-modal .admin-detail-wide { grid-column: 1 / -1; }
+
+.admin-detail-modal .admin-detail-message {
+  margin-top: 6px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-detail-modal .admin-detail-reply { border-color: #f1cad7; background: #fdf2f6; }
+.admin-detail-modal .admin-detail-profile { display: flex; align-items: center; gap: 14px; }
+.admin-detail-profile > :first-child { flex-shrink: 0; }
+.admin-detail-profile > :last-child { min-width: 0; }
+.testimonial-detail-modal .tm-stars { align-items: center; justify-content: flex-start !important; gap: 4px; }
+.testimonial-detail-modal .tm-stars svg { flex-shrink: 0; }
+
+.admin-detail-modal .admin-detail-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+@media (max-width: 480px) {
+  .admin-detail-modal .admin-detail-header,
+  .admin-detail-modal .admin-detail-footer { padding: 16px; }
+  .admin-detail-modal .admin-detail-body { padding: 16px; }
+  .admin-detail-modal .admin-detail-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .admin-detail-modal .admin-detail-header { gap: 10px; }
+}

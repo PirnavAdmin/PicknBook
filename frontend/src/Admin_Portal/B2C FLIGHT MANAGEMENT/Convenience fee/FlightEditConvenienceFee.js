@@ -324,7 +324,7 @@ export default function AdminFlightEditConvenienceFeePage() {
         </div>
 
         <div className="admin-flight-fee-edit-actions">
-          <button type="button" className="admin-flight-fee-update-btn" onClick={handleUpdate}>
+          <button data-admin-action="primary" type="button" className="admin-flight-fee-update-btn" onClick={handleUpdate}>
             {isEditing ? "Update" : "Submit"}
           </button>
         </div>

@@ -1,0 +1,147 @@
+/* Shared Admin chrome, scoped to the mounted layout and its body portals.
+   Component grid, flex, dimensions, gaps, and overflow rules remain local.
+   Important rules in this layer outrank legacy unlayered important rules,
+   including component CSS loaded later, without increasing specificity. */
+@layer admin-design-system {
+:root:has(.admin-shell),
+:root:has(.admin-shell) body .admin-shell {
+  --admin-primary: #a51c49 !important;
+  --admin-primary-strong: #851237 !important;
+  --admin-success: #10b981 !important;
+  --admin-warning: #f97316;
+  --admin-border: #e2e8f0 !important;
+  --admin-surface: #ffffff !important;
+  --admin-soft: #f8fafc !important;
+  --admin-text: #0f172a;
+  --admin-muted: #64748b;
+  --primary: var(--admin-primary) !important;
+  --primary-strong: var(--admin-primary-strong) !important;
+  --success: var(--admin-success) !important;
+  --warning: var(--admin-warning);
+  --panel: #ffffff !important;
+  --surface-soft: #f8fafc !important;
+  --page-bg: #f8fafc !important;
+  --border: #e2e8f0 !important;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-muted: #64748b;
+  --text: #0f172a;
+  --muted: #64748b;
+}
+
+:root:has(.admin-shell) body .admin-shell,
+:root:has(.admin-shell) body .admin-shell::before,
+:root:has(.admin-shell) body .main-area,
+:root:has(.admin-shell) body .main-area > div,
+:root:has(.admin-shell) body :is([class$="-page"], [class*="-page "], .tm-container, .dash-page) {
+  background: #f8fafc !important;
+}
+
+/* The skyline is a fixed decorative layer, so hiding it changes no spacing. */
+:root:has(.admin-shell) body .admin-skyline-bg { visibility: hidden; }
+
+:root:has(.admin-shell) body :is(
+  [data-admin-surface],
+  [class$="-card"], [class*="-card "],
+  [class$="-panel"], [class*="-panel "],
+  [class$="-filters"], [class$="-filter-panel"],
+  [class$="-table-wrap"], [class$="-table-scroll"],
+  [class$="-modal"], [class*="-modal "],
+  .admin-table-shell, .table-wrapper, .admin-view-card,
+  .tm-glass-card, .tm-glass-modal, .tm-glass-popover,
+  .tm-nav-tabs, .tm-quote-box, .dashboard-card-shell,
+  .metric-card-premium, .hsh-top-cities, .admin-operations-header-banner,
+  .live-bookings-map-container,
+  .email-right-pane, .admin-placeholder, .admin-detail-modal
+):where(:not([class*="backdrop"]):not([class*="overlay"]):not([class*="preview"])) {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+:root:has(.admin-shell) body :is(
+  [class$="-card"], [class*="-card "], [class$="-panel"],
+  .metric-card-premium, .dashboard-card-shell, .admin-operations-header-banner
+) {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+/* This heading uses white text, so retain a solid primary surface. */
+:root:has(.admin-shell) body .anp-header-card {
+  background: #a51c49 !important;
+  color: #ffffff !important;
+}
+
+:root:has(.admin-shell) body :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="hidden"]):not([type="submit"]):not([type="button"]),
+  select, textarea
+) {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+:root:has(.admin-shell) body :is(input, select, textarea):focus {
+  border-color: #a51c49 !important;
+  box-shadow: none !important;
+}
+
+/* Explicit action roles resolve ambiguous shared classes and inline styles. */
+:root:has(.admin-shell) body button[data-admin-action] {
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 14px !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  color: #ffffff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  cursor: pointer;
+}
+
+:root:has(.admin-shell) body button[data-admin-action="primary"] {
+  background: #a51c49 !important;
+}
+:root:has(.admin-shell) body button[data-admin-action="primary"]:hover {
+  background: #851237 !important;
+}
+:root:has(.admin-shell) body button[data-admin-action="export"] {
+  background: #10b981 !important;
+}
+:root:has(.admin-shell) body button[data-admin-action="reset"] {
+  background: #f97316 !important;
+}
+:root:has(.admin-shell) body button[data-admin-action="reset"]:hover {
+  background: #ea580c !important;
+}
+:root:has(.admin-shell) body button[data-admin-action] :is(span, svg) {
+  color: inherit !important;
+}
+:root:has(.admin-shell) body button[data-admin-action] svg { flex-shrink: 0; }
+:root:has(.admin-shell) body button[data-admin-action]:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Solid headings replace decorative gradients while retaining theme contrast. */
+:root:has(.admin-shell) body :is(.admin-table-head, .admin-table-shell thead) {
+  background: #a51c49 !important;
+  color: #ffffff !important;
+}
+:root:has(.admin-shell) body [data-admin-tone="primary"] {
+  background: #a51c49 !important;
+  color: #ffffff !important;
+  backdrop-filter: none !important;
+}
+}

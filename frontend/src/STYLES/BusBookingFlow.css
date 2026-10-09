@@ -1208,11 +1208,18 @@
   font-family: var(--app-font-family) !important;
 }
 
+.bus-flow-point-item > div {
+  min-width: 0;
+}
+
 .bus-flow-point-item span {
   display: block;
   margin-top: 2px;
   color: #577091;
   font-size: 0.756rem;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.3;
 }
 
 .bus-flow-point-item small {
@@ -5015,9 +5022,9 @@
   grid-column: span 2 !important;
 }
 
-/* Hide input label spans */
-.bus-flow-page .passenger-field span,
-.bus-flow-page .contact-grid label span {
+/* Hide input label spans but keep error text visible */
+.bus-flow-page .passenger-field > span:not(.field-error-text),
+.bus-flow-page .contact-grid label > span:not(.field-error-text) {
   display: none !important;
 }
 
@@ -5130,11 +5137,13 @@
 
 .bus-flow-page .fare-list > div span {
   font-weight: 500 !important;
+  font-size: 0.8rem !important;
 }
 
 .bus-flow-page .fare-list > div strong {
   color: #162126 !important;
   font-weight: 600 !important;
+  font-size: 0.8rem !important;
 }
 
 /* Override 64px height and margins of grand total block */
@@ -5151,11 +5160,13 @@
 .bus-flow-page .fare-list .grand-total span {
   color: var(--theme-primary, #ff0000) !important;
   font-weight: 700 !important;
+  font-size: 0.95rem !important;
 }
 
 .bus-flow-page .fare-list .grand-total strong {
   color: var(--theme-primary, #ff0000) !important;
   font-weight: 700 !important;
+  font-size: 0.95rem !important;
 }
 
 /* 7. Apply Coupon Box */
@@ -5605,6 +5616,7 @@
   .bus-flow-page .hotel-guest-fields {
     grid-template-columns: 1fr !important;
   }
+
 }
 
 /* Custom layout fixes for seat selection top cards and spacing */
@@ -5774,48 +5786,48 @@
 
 /* Wallet Payment Box UI */
 .wallet-payment-box {
-  margin-top: 12px;
+  margin-top: 10px;
   border: 1px solid #f1c4c4;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #fffafa;
   overflow: hidden;
 }
 
 .wallet-payment-heading {
   background: transparent;
-  padding: 14px 18px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-weight: 700;
   color: #111827;
-  font-size: 1rem;
+  font-size: 0.85rem;
 }
 
 .wallet-payment-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
   background: #ffe0dc;
   color: #e31b23;
-  border-radius: 10px;
-  font-size: 1.15rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
 }
 
 .wallet-payment-divider {
   height: 1px;
-  margin: 0 18px;
+  margin: 0 12px;
   background: #eadfe0;
 }
 
 .wallet-payment-entry-row {
-  padding: 16px 18px 14px;
+  padding: 10px 12px 10px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(100px, auto);
-  gap: 14px;
+  gap: 12px;
   align-items: end;
 }
 
@@ -5826,20 +5838,20 @@
   min-width: 0;
 }
 
-.wallet-amount-field > span {
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 400;
+.bus-flow-page .fare-list .wallet-amount-field > span {
+  font-size: 0.8rem !important;
+  color: #17242d !important;
+  font-weight: 500 !important;
 }
 
 .wallet-amount-input {
   display: flex;
   align-items: center;
   border: 1px solid #dbe2ed;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fff;
-  padding: 0 15px;
-  height: 46px;
+  padding: 0 10px;
+  height: 36px;
   transition: all 0.2s ease;
 }
 
@@ -5848,21 +5860,33 @@
   box-shadow: 0 0 0 3px rgba(227, 27, 35, 0.1);
 }
 
-.wallet-amount-input b {
-  color: #111827;
-  margin-right: 10px;
-  font-size: 1rem;
+.bus-flow-page .fare-list .wallet-amount-input b {
+  color: #162126 !important;
+  margin-right: 6px;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
 }
 
-.wallet-amount-input input {
+.bus-flow-page .fare-list .wallet-amount-input input {
   flex: 1;
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 1rem;
-  color: #0f172a;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+  font-size: 0.8rem !important;
+  color: #162126 !important;
+  font-weight: 600 !important;
   width: 100%;
   min-width: 0;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.bus-flow-page .fare-list .wallet-amount-input input:focus,
+.bus-flow-page .fare-list .wallet-amount-input input:focus-visible {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .wallet-amount-input input::placeholder {
@@ -5883,54 +5907,59 @@
   justify-content: center;
 }
 
-.wallet-balance-summary > span {
-  font-size: 0.875rem;
-  color: #64748b;
+.bus-flow-page .fare-list .wallet-balance-summary > span {
+  font-size: 0.8rem !important;
+  color: #17242d !important;
+  font-weight: 500 !important;
 }
 
-.wallet-balance-summary strong {
-  font-size: 1rem;
-  color: #111827;
-  font-weight: 600;
+.bus-flow-page .fare-list .wallet-balance-summary strong {
+  font-size: 0.8rem !important;
+  color: #162126 !important;
+  font-weight: 600 !important;
 }
 
 .wallet-payment-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 25px;
-  font-size: 0.9rem;
+  padding: 4px 12px;
+  font-size: 0.8rem !important;
 }
 
-.wallet-payment-row span {
-  color: #64748b;
+.bus-flow-page .fare-list .wallet-payment-row span {
+  color: #17242d !important;
+  font-weight: 500 !important;
 }
 
-.wallet-payment-row strong {
-  color: #1e293b;
-  font-weight: 600;
+.bus-flow-page .fare-list .wallet-payment-row strong {
+  color: #162126 !important;
+  font-weight: 600 !important;
 }
 
 .wallet-payment-row.muted strong {
   color: #ef4444;
 }
 
-.wallet-balance-after-row {
+.bus-flow-page .fare-list .wallet-balance-after-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 18px;
+  padding: 8px 12px;
   background: transparent;
-  font-size: 0.875rem;
-  font-weight: 400;
-  color: #64748b;
   border-top: 0;
 }
 
-.wallet-balance-after-row strong {
-  color: #111827;
-  font-size: 1rem;
-  font-weight: 600;
+.bus-flow-page .fare-list .wallet-balance-after-row span {
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  color: #17242d !important;
+}
+
+.bus-flow-page .fare-list .wallet-balance-after-row strong {
+  color: #162126 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
 }
 
 .wallet-amount-input.field-has-error {
@@ -5939,10 +5968,10 @@
 
 #bus-wallet-amount-error {
   display: block;
-  padding: 0 18px 10px;
+  padding: 0 12px 6px;
   color: #ef4444;
   font-size: 0.8rem;
-  margin-top: -8px;
+  margin-top: -6px;
 }
 
 @media (max-width: 480px) {

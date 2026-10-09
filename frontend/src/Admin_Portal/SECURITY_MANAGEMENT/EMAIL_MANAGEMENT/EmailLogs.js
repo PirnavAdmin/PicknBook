@@ -161,7 +161,7 @@ export default function EmailLogs() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
+          <button data-admin-action="export"
             type="button"
             className="btn-create-template"
             style={{ height: '34px', padding: '0 14px', fontSize: '11.5px', background: '#22c55e', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -169,7 +169,7 @@ export default function EmailLogs() {
           >
             📤 Export Logs
           </button>
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="btn-create-template"
             style={{ height: '34px', padding: '0 14px', fontSize: '11.5px', background: '#901335', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -238,7 +238,7 @@ export default function EmailLogs() {
             />
           </div>
 
-          <button
+          <button data-admin-action="reset"
             type="button"
             className="btn-reset-filters-white"
             onClick={() => {
@@ -289,7 +289,7 @@ export default function EmailLogs() {
                       </span>
                     </td>
                     <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
-                      <button
+                      <button className="admin-view-button"
                         type="button"
                         onClick={() => setSelectedLog(log)}
                         style={{
@@ -389,7 +389,7 @@ export default function EmailLogs() {
             </div>
 
             <div className="email-form-footer">
-              <button type="button" className="btn-form-cancel" onClick={() => setSelectedLog(null)}>Close Details</button>
+              <button data-admin-close type="button" className="btn-form-cancel" onClick={() => setSelectedLog(null)}>Close Details</button>
             </div>
           </div>
         </div>,
@@ -408,7 +408,7 @@ export default function EmailLogs() {
             <form onSubmit={handleSendManual} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
               <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div className="email-form-field">
-                  <label style={{ fontSize: '10px' }}>Recipient Email (To) <span className="req">*</span></label>
+                  <label style={{ fontSize: '10px' }}>Recipient Email (To) <span data-admin-required className="req">*</span></label>
                   <input
                     type="email"
                     required
@@ -419,7 +419,7 @@ export default function EmailLogs() {
                 </div>
 
                 <div className="email-form-field">
-                  <label style={{ fontSize: '10px' }}>Email Subject <span className="req">*</span></label>
+                  <label style={{ fontSize: '10px' }}>Email Subject <span data-admin-required className="req">*</span></label>
                   <input
                     type="text"
                     required
@@ -430,7 +430,7 @@ export default function EmailLogs() {
                 </div>
 
                 <div className="email-form-field">
-                  <label style={{ fontSize: '10px' }}>Email Body <span className="req">*</span></label>
+                  <label style={{ fontSize: '10px' }}>Email Body <span data-admin-required className="req">*</span></label>
                   <textarea
                     required
                     style={{ minHeight: '150px' }}
@@ -467,7 +467,7 @@ export default function EmailLogs() {
 
               <div className="email-form-footer">
                 <button type="button" className="btn-form-cancel" onClick={() => setIsManualModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-form-save" style={{ background: '#22c55e', color: '#ffffff' }}>Send Email</button>
+                <button data-admin-action="primary" type="submit" className="btn-form-save" style={{ background: '#22c55e', color: '#ffffff' }}>Send Email</button>
               </div>
             </form>
           </div>

@@ -233,7 +233,7 @@ export default function HotelEditMarkup() {
         </div>
 
         <div className="hml-edit-actions">
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="hml-edit-submit-btn"
             onClick={handleSubmit}

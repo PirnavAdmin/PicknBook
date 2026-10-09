@@ -1000,61 +1000,6 @@ body .admin-shell {
   color: inherit;
 }
 
-/* Hide all scrollbars in admin portal (scroll still works, bar is invisible) */
-.admin-shell,
-.admin-shell *:not(.ds-nav):not(.ds-nav *) {
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-.admin-shell::-webkit-scrollbar,
-.admin-shell *:not(.ds-nav):not(.ds-nav *)::-webkit-scrollbar {
-  width: 0 !important;
-  height: 0 !important;
-  display: none !important;
-}
-
-/* Show clean custom scrollbars for scrollable tables so users can scroll horizontally when they overflow */
-.admin-table-shell,
-.admin-markup-coupon-table-scroll,
-.admin-markup-used-table-scroll,
-.flight-markup-table-scroll {
-  scrollbar-width: thin !important;
-  -ms-overflow-style: auto !important;
-}
-
-.admin-table-shell::-webkit-scrollbar,
-.admin-markup-coupon-table-scroll::-webkit-scrollbar,
-.admin-markup-used-table-scroll::-webkit-scrollbar,
-.flight-markup-table-scroll::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
-  display: block !important;
-}
-
-.admin-table-shell::-webkit-scrollbar-thumb,
-.admin-markup-coupon-table-scroll::-webkit-scrollbar-thumb,
-.admin-markup-used-table-scroll::-webkit-scrollbar-thumb,
-.flight-markup-table-scroll::-webkit-scrollbar-thumb {
-  background: rgba(239, 68, 68, 0.4) !important;
-  border-radius: 10px !important;
-  transition: background 0.2s ease;
-}
-
-.admin-table-shell::-webkit-scrollbar-thumb:hover,
-.admin-markup-coupon-table-scroll::-webkit-scrollbar-thumb:hover,
-.admin-markup-used-table-scroll::-webkit-scrollbar-thumb:hover,
-.flight-markup-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(239, 68, 68, 0.7) !important;
-}
-
-.admin-table-shell::-webkit-scrollbar-track,
-.admin-markup-coupon-table-scroll::-webkit-scrollbar-track,
-.admin-markup-used-table-scroll::-webkit-scrollbar-track,
-.flight-markup-table-scroll::-webkit-scrollbar-track {
-  background: transparent !important;
-}
-
 /* Global Dark Theme overrides for admin list filter panels and action row buttons */
 .admin-shell.dark-theme .admin-ops-filters,
 .admin-shell.dark-theme .flight-ops-filters {
@@ -1159,7 +1104,6 @@ body .primary-btn,
 body .btn.add,
 body .btn.back,
 body .btn.filter,
-body .btn.export,
 body .submit-btn,
 body .menu-list-add-btn {
   background: #A51C49 !important;
@@ -1171,7 +1115,6 @@ body .primary-btn:hover,
 body .btn.add:hover,
 body .btn.back:hover,
 body .btn.filter:hover,
-body .btn.export:hover,
 body .submit-btn:hover,
 body .menu-list-add-btn:hover {
   background: #851237 !important;

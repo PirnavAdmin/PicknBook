@@ -419,7 +419,7 @@ export default function ThemesList() {
       
       <div className="theme-list-header">
         <span className="theme-list-title">Theme List</span>
-        <button type="button" className="btn-clear-filter" onClick={handleClearFilter}>
+        <button data-admin-action="reset" type="button" className="btn-clear-filter" onClick={handleClearFilter}>
           &times; Clear Filter
         </button>
       </div>
@@ -542,7 +542,7 @@ export default function ThemesList() {
               </div>
             </div>
 
-            <button type="submit" className="btn-theme-submit" disabled={saving}>
+            <button data-admin-action="primary" type="submit" className="btn-theme-submit" disabled={saving}>
               {saving ? "Saving Palette..." : "Add Theme Palette"}
             </button>
           </form>

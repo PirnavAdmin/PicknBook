@@ -116,22 +116,7 @@ export default function AuthSecurity() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Fetch security settings and user security rules on mount to trigger network requests
-  const fetchAuthSecurityData = async () => {
-    try {
-      // 1. Hit GET /api/admin/security/settings
-      const settings = await securityService.getSettings();
-      // 2. Hit GET /api/SecurityAdmin/user-rules
-      const rules = await securityService.getUserSecurityRules({ page: 1, pageSize: 20 });
-      console.log('Fetched backend security settings:', settings, rules);
-    } catch (err) {
-      console.warn('Backend fetch info:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchAuthSecurityData();
-  }, [activeTab]);
+  // These tabs use their existing local state; no unused API probes on tab changes.
 
   // Terminate/Revoke Session Action
   const handleTerminateSession = (sessId) => {
@@ -431,8 +416,8 @@ export default function AuthSecurity() {
                 </div>
 
                 <div className="sd-filter-buttons" style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
-                  <button className="sd-btn-reset" onClick={() => { setFilterType('All'); setFilterStatus('All'); setFilterAppliesTo('All'); setFilterSearch(''); }}>Reset</button>
-                  <button className="sd-btn-filter" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>Apply Filters</button>
+                  <button data-admin-action="reset" className="sd-btn-reset" onClick={() => { setFilterType('All'); setFilterStatus('All'); setFilterAppliesTo('All'); setFilterSearch(''); }}>Reset</button>
+                  <button data-admin-action="primary" className="sd-btn-filter" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>Apply Filters</button>
                 </div>
               </div>
             </div>
@@ -732,11 +717,11 @@ export default function AuthSecurity() {
                   <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Policy Information</h4>
                   <div className="drawer-grid-row">
                     <div className="drawer-field">
-                      <label>Policy Name <span className="req">*</span></label>
+                      <label>Policy Name <span data-admin-required className="req">*</span></label>
                       <input type="text" required placeholder="Enter policy name" value={policyName} onChange={(e) => setPolicyName(e.target.value)} />
                     </div>
                     <div className="drawer-field">
-                      <label>Policy Type <span className="req">*</span></label>
+                      <label>Policy Type <span data-admin-required className="req">*</span></label>
                       <select value={policyType} onChange={(e) => setPolicyType(e.target.value)}>
                         <option>Login</option>
                         <option>MFA</option>
@@ -749,7 +734,7 @@ export default function AuthSecurity() {
 
                   <div className="drawer-grid-row">
                     <div className="drawer-field">
-                      <label>Applies To <span className="req">*</span></label>
+                      <label>Applies To <span data-admin-required className="req">*</span></label>
                       <select value={policyAppliesTo} onChange={(e) => setPolicyAppliesTo(e.target.value)}>
                         <option>Admin, User</option>
                         <option>Admin</option>
@@ -757,7 +742,7 @@ export default function AuthSecurity() {
                       </select>
                     </div>
                     <div className="drawer-field">
-                      <label>Status <span className="req">*</span></label>
+                      <label>Status <span data-admin-required className="req">*</span></label>
                       <select value={policyStatus} onChange={(e) => setPolicyStatus(e.target.value)}>
                         <option>Active</option>
                         <option>Inactive</option>
@@ -777,25 +762,25 @@ export default function AuthSecurity() {
                   <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Policy Configuration</h4>
                   <div className="drawer-grid-row">
                     <div className="drawer-field">
-                      <label>MFA Required <span className="req">*</span></label>
+                      <label>MFA Required <span data-admin-required className="req">*</span></label>
                       <select value={policyMfa} onChange={(e) => setPolicyMfa(e.target.value)}>
                         <option>Yes</option>
                         <option>No</option>
                       </select>
                     </div>
                     <div className="drawer-field">
-                      <label>Session Timeout (Minutes) <span className="req">*</span></label>
+                      <label>Session Timeout (Minutes) <span data-admin-required className="req">*</span></label>
                       <input type="number" required value={policyTimeout} onChange={(e) => setPolicyTimeout(e.target.value)} />
                     </div>
                   </div>
 
                   <div className="drawer-grid-row">
                     <div className="drawer-field">
-                      <label>Max Login Attempts <span className="req">*</span></label>
+                      <label>Max Login Attempts <span data-admin-required className="req">*</span></label>
                       <input type="number" required value={policyAttempts} onChange={(e) => setPolicyAttempts(e.target.value)} />
                     </div>
                     <div className="drawer-field">
-                      <label>Lockout Duration (Minutes) <span className="req">*</span></label>
+                      <label>Lockout Duration (Minutes) <span data-admin-required className="req">*</span></label>
                       <input type="number" required value={policyLockout} onChange={(e) => setPolicyLockout(e.target.value)} />
                     </div>
                   </div>
@@ -828,8 +813,8 @@ export default function AuthSecurity() {
               <div className="sec-drawer-footer">
                 <div className="footer-button-group">
                   <button type="button" className="btn-drawer-cancel" onClick={() => setActiveDrawer(null)}>Cancel</button>
-                  <button type="button" className="btn-drawer-draft" onClick={() => showToast('✓ Saved as Draft.')}>Save as Draft</button>
-                  <button type="submit" className="btn-drawer-save" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>
+                  <button data-admin-action="primary" type="button" className="btn-drawer-draft" onClick={() => showToast('✓ Saved as Draft.')}>Save as Draft</button>
+                  <button data-admin-action="primary" type="submit" className="btn-drawer-save" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>
                     {activeDrawer === 'policy-add' ? 'Save Policy' : 'Update Policy'}
                   </button>
                 </div>
@@ -856,7 +841,7 @@ export default function AuthSecurity() {
                 <div style={{ marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
                   <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Policy Information</h4>
                   <div className="drawer-field">
-                    <label>Policy Name <span className="req">*</span></label>
+                    <label>Policy Name <span data-admin-required className="req">*</span></label>
                     <input type="text" required placeholder="Enter password policy name" value={pwdPolicyName} onChange={(e) => setPwdPolicyName(e.target.value)} />
                   </div>
                   <div className="drawer-field" style={{ marginTop: '8px' }}>
@@ -869,11 +854,11 @@ export default function AuthSecurity() {
                   <h4 style={{ fontSize: '11px', fontWeight: 'bold', color: '#475569', textTransform: 'uppercase', marginBottom: '8px' }}>Password Rules</h4>
                   <div className="drawer-grid-row">
                     <div className="drawer-field">
-                      <label>Minimum Length <span className="req">*</span></label>
+                      <label>Minimum Length <span data-admin-required className="req">*</span></label>
                       <input type="number" required value={pwdMinLength} onChange={(e) => setPwdMinLength(e.target.value)} />
                     </div>
                     <div className="drawer-field">
-                      <label>Expiry (Days) <span className="req">*</span></label>
+                      <label>Expiry (Days) <span data-admin-required className="req">*</span></label>
                       <input type="number" required value={pwdExpiryDays} onChange={(e) => setPwdExpiryDays(e.target.value)} />
                     </div>
                   </div>
@@ -898,7 +883,7 @@ export default function AuthSecurity() {
                   </div>
 
                   <div className="drawer-field" style={{ marginTop: '12px' }}>
-                    <label>Status <span className="req">*</span></label>
+                    <label>Status <span data-admin-required className="req">*</span></label>
                     <select value={pwdStatus} onChange={(e) => setPwdStatus(e.target.value)}>
                       <option>Active</option>
                       <option>Inactive</option>
@@ -910,7 +895,7 @@ export default function AuthSecurity() {
               <div className="sec-drawer-footer">
                 <div className="footer-button-group">
                   <button type="button" className="btn-drawer-cancel" onClick={() => setActiveDrawer(null)}>Cancel</button>
-                  <button type="submit" className="btn-drawer-save" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>
+                  <button data-admin-action="primary" type="submit" className="btn-drawer-save" style={{ background: '#901335', color: '#fff', border: '1px solid #901335' }}>
                     Save Policy
                   </button>
                 </div>

@@ -178,6 +178,7 @@ function getSortValue(row, sortBy) {
 
 export default function AdminFlightMarkupListPage() {
   const [flightRows, setFlightRows] = useState([]);
+  const [serverRows, setServerRows] = useState([]);
   const [localRows, setLocalRows] = useAdminList("flight-markup", INITIAL_FLIGHT_MARKUP_ROWS);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -210,23 +211,20 @@ export default function AdminFlightMarkupListPage() {
   const loadMarkups = async () => {
     try {
       const data = await listFlightMarkups();
-      let merged = [];
-      if (Array.isArray(data)) {
-        merged = mergeMarkupRows(data, localRows);
-      } else {
-        merged = normalizeMarkupCollection(localRows);
-      }
-      setFlightRows(merged);
+      setServerRows(Array.isArray(data) ? data : []);
     } catch (error) {
       console.warn("Failed to load markups from backend, falling back to local storage", error);
-      const fallback = normalizeMarkupCollection(localRows);
-      setFlightRows(fallback);
+      setServerRows([]);
     }
   };
 
   useEffect(() => {
     loadMarkups();
-  }, [localRows]);
+  }, []);
+
+  useEffect(() => {
+    setFlightRows(mergeMarkupRows(serverRows, localRows));
+  }, [serverRows, localRows]);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -541,15 +539,15 @@ export default function AdminFlightMarkupListPage() {
         </div>
 
         <div className="markup-toolbar-actions">
-          <button type="button" className="markup-primary-btn" onClick={() => { setIsAddOpen(true); setAddError(""); setFormValues(DEFAULT_MARKUP_FORM); }}>
+          <button data-admin-action="primary" type="button" className="markup-primary-btn" onClick={() => { setIsAddOpen(true); setAddError(""); setFormValues(DEFAULT_MARKUP_FORM); }}>
             <Plus size={14} />
             Add New
           </button>
-          <button type="button" className="markup-filter-btn" onClick={openFilterModal}>
+          <button data-admin-action="primary" type="button" className="markup-filter-btn" onClick={openFilterModal}>
             <Filter size={14} />
             Filter
           </button>
-          <button
+          <button data-admin-action="export"
             type="button"
             className="markup-export-btn"
             onClick={handleExport}
@@ -622,10 +620,10 @@ export default function AdminFlightMarkupListPage() {
             </label>
 
             <div className="markup-filter-actions-inline">
-              <button type="button" className="markup-btn-reset" onClick={handleResetFilter}>
+              <button data-admin-action="reset" type="button" className="markup-btn-reset" onClick={handleResetFilter}>
                 Reset
               </button>
-              <button type="button" className="markup-btn-apply" onClick={handleApplyFilter}>
+              <button data-admin-action="primary" type="button" className="markup-btn-apply" onClick={handleApplyFilter}>
                 Apply Filter
               </button>
             </div>
@@ -715,7 +713,7 @@ export default function AdminFlightMarkupListPage() {
                         <div className="actions-dropdown-menu">
                           <button
                             type="button"
-                            className="dropdown-item view"
+                            className="dropdown-item view admin-view-button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setViewRow(row);
@@ -842,7 +840,7 @@ export default function AdminFlightMarkupListPage() {
                 </label>
 
                 <label className="markup-filter-field">
-                  <span>MARKUP VALUE *</span>
+                  <span>MARKUP VALUE <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     min="0"
@@ -903,10 +901,10 @@ export default function AdminFlightMarkupListPage() {
               </div>
 
               <div className="admin-markup-filter-footer">
-                <button type="button" className="markup-btn-reset" onClick={() => setIsAddOpen(false)}>
+                <button data-admin-action="reset" type="button" className="markup-btn-reset" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="markup-btn-apply" style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
+                <button data-admin-action="primary" type="submit" className="markup-btn-apply" style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
                   Save Markup
                 </button>
               </div>
@@ -984,7 +982,7 @@ export default function AdminFlightMarkupListPage() {
                 </label>
 
                 <label className="markup-filter-field">
-                  <span>MARKUP VALUE *</span>
+                  <span>MARKUP VALUE <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     min="0"
@@ -1044,10 +1042,10 @@ export default function AdminFlightMarkupListPage() {
               </div>
 
               <div className="admin-markup-filter-footer">
-                <button type="button" className="markup-btn-reset" onClick={() => setEditRow(null)}>
+                <button data-admin-action="reset" type="button" className="markup-btn-reset" onClick={() => setEditRow(null)}>
                   Cancel
                 </button>
-                <button type="submit" className="markup-btn-apply" style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
+                <button data-admin-action="primary" type="submit" className="markup-btn-apply" style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
                   Save Changes
                 </button>
               </div>
@@ -1076,7 +1074,7 @@ export default function AdminFlightMarkupListPage() {
               <h3 style={{ color: "#1e293b", fontWeight: "700", fontSize: "18px", margin: 0 }}>
                 Flight Markup Detail View
               </h3>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setViewRow(null)}
                 style={{

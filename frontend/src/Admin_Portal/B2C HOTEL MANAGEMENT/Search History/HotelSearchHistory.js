@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import {
   listHotelSearchHistory,
@@ -57,14 +57,19 @@ export default function HotelSearchHistory() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const logsRequestRef = useRef(null);
   const fetchLogs = async () => {
+    logsRequestRef.current?.abort();
+    const controller = new AbortController();
+    logsRequestRef.current = controller;
     setLoading(true);
     setError("");
     try {
       const activeSearch = filters.query.trim() || filters.customerName.trim() || undefined;
       const responseData = await listHotelSearchHistory({
         searchTerm: activeSearch,
-      });
+      }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
 
       const dataList = Array.isArray(responseData)
         ? responseData
@@ -87,15 +92,17 @@ export default function HotelSearchHistory() {
       setLogs(normalizedList);
       setCurrentPage(1);
     } catch (err) {
+      if (controller.signal.aborted) return;
       setError(err.message || "Failed to load hotel search logs.");
       setLogs([]);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchLogs();
+    return () => logsRequestRef.current?.abort();
   }, [filters]);
 
   const applyFilters = () => {
@@ -408,14 +415,14 @@ export default function HotelSearchHistory() {
         </div>
 
         <div className="admin-actions-row">
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="search-history-filter-btn"
             onClick={() => setIsFiltersOpen((current) => !current)}
           >
             {isFiltersOpen ? "Close Filter" : "Filter"}
           </button>
-          <button
+          <button data-admin-action="export"
             type="button"
             className="search-history-export-btn"
             onClick={handleExport}
@@ -471,10 +478,10 @@ export default function HotelSearchHistory() {
           </label>
 
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Reset
             </button>
           </div>
@@ -561,7 +568,7 @@ export default function HotelSearchHistory() {
                   Record ID: #{selectedRecord.searchId || "--"}
                 </small>
               </div>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setSelectedRecord(null)}
                 style={{
@@ -832,7 +839,7 @@ export const HotelSearchHistoryRow = ({ item, index, onView }) => {
       <div className="admin-search-history-cell admin-cell-centered">
         <button
           type="button"
-          className="admin-search-history-view-btn"
+          className="admin-search-history-view-btn admin-view-button"
           onClick={(e) => {
             e.stopPropagation();
             onView && onView(item);

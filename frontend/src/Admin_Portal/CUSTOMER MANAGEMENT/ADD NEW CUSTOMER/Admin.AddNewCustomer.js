@@ -373,7 +373,7 @@ function AddNewCustomer() {
 
     return (
         <>
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {toast && (
                     <div
                         style={{
@@ -429,7 +429,7 @@ function AddNewCustomer() {
                             <div style={styles.formGrid}>
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        First Name<span style={styles.requiredMark}>*</span>
+                                        First Name<span data-admin-required style={styles.requiredMark}>*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -458,7 +458,7 @@ function AddNewCustomer() {
 
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        Email<span style={styles.requiredMark}>*</span>
+                                        Email<span data-admin-required style={styles.requiredMark}>*</span>
                                     </label>
                                     <input
                                         type="email"
@@ -476,7 +476,7 @@ function AddNewCustomer() {
                             <div style={styles.formGrid}>
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        Mobile<span style={styles.requiredMark}>*</span>
+                                        Mobile<span data-admin-required style={styles.requiredMark}>*</span>
                                     </label>
                                     <input
                                         type="tel"
@@ -506,7 +506,7 @@ function AddNewCustomer() {
 
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        ALT. Mobile<span style={styles.requiredMark}>*</span>
+                                        ALT. Mobile<span data-admin-required style={styles.requiredMark}>*</span>
                                     </label>
                                     <input
                                         type="tel"
@@ -579,7 +579,7 @@ function AddNewCustomer() {
 
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        Password{!isEditMode && <span style={styles.requiredMark}>*</span>}
+                                        Password{!isEditMode && <span data-admin-required style={styles.requiredMark}>*</span>}
                                     </label>
                                     <input
                                         type="password"
@@ -595,7 +595,7 @@ function AddNewCustomer() {
 
                                 <div style={styles.formGroup}>
                                     <label style={styles.label}>
-                                        Confirm Password{!isEditMode && <span style={styles.requiredMark}>*</span>}
+                                        Confirm Password{!isEditMode && <span data-admin-required style={styles.requiredMark}>*</span>}
                                     </label>
                                     <input
                                         type="password"
@@ -766,10 +766,10 @@ function AddNewCustomer() {
                         </div>
 
                         <div style={styles.buttonGroup}>
-                            <button type="button" style={styles.resetBtn} onClick={handleReset}>
+                            <button data-admin-action="reset" type="button" style={styles.resetBtn} onClick={handleReset}>
                                 Reset
                             </button>
-                            <button type="submit" style={styles.submitBtn} disabled={isSubmitting}>
+                            <button data-admin-action="primary" type="submit" style={styles.submitBtn} disabled={isSubmitting}>
                                 {isSubmitting ? "Saving..." : (isEditMode ? "Update Customer" : "Save Customer")}
                             </button>
                         </div>

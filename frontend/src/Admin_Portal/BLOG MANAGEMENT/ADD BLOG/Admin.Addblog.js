@@ -576,7 +576,7 @@ const AddBlogForm = () => {
                     box-shadow: 0 0 0 2px rgba(74, 15, 26, 0.15) !important;
                 }
             `}</style>
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {toast && (
                     <div
                         style={{
@@ -591,7 +591,7 @@ const AddBlogForm = () => {
                         {toast.message}
                     </div>
                 )}
-                <div style={styles.card}>
+                <div data-admin-surface style={styles.card}>
                     <div style={{ ...styles.header, marginBottom: '20px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
                         <div style={styles.titleWrapper}>
                             <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={styles.titleMain}>{isEditing ? 'Edit' : 'Add'}</h1>
@@ -618,7 +618,7 @@ const AddBlogForm = () => {
                             <tbody>
                                 <tr>
                                     <td style={styles.tableLabelCell}>
-                                        Title <span style={styles.requiredMark}>*</span>
+                                        Title <span data-admin-required style={styles.requiredMark}>*</span>
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <input
@@ -737,7 +737,7 @@ const AddBlogForm = () => {
                                 </tr>
                                 <tr>
                                     <td style={styles.tableLabelCell}>
-                                        Category <span style={styles.requiredMark}>*</span>
+                                        Category <span data-admin-required style={styles.requiredMark}>*</span>
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <select
@@ -760,7 +760,7 @@ const AddBlogForm = () => {
                                         </select>
                                     </td>
                                     <td style={styles.tableLabelCell}>
-                                        Sub Category <span style={styles.requiredMark}>*</span>
+                                        Sub Category <span data-admin-required style={styles.requiredMark}>*</span>
                                     </td>
                                     <td style={styles.tableInputCell}>
                                         <select
@@ -1003,7 +1003,7 @@ const AddBlogForm = () => {
                         </table>
 
                         <div style={styles.buttonGroup}>
-                            <button
+                            <button data-admin-action="reset"
                                 type="button"
                                 style={styles.cancelBtn}
                                 onMouseEnter={(e) => {
@@ -1016,7 +1016,7 @@ const AddBlogForm = () => {
                             >
                                 Reset
                             </button>
-                            <button
+                            <button data-admin-action="primary"
                                 type="submit"
                                 style={styles.submitBtn}
                                 disabled={isSubmitting}

@@ -1,25 +1,26 @@
 /* eslint-disable */
 import React from "react";
-import "../../STYLES/traveller.css";
+import { SlidersHorizontal, Plus } from "lucide-react";
+import "../../STYLES/FlightOpsDashboard.css";
 
-const TravelerHeader = ({ onAdd, onFilter }) => {
+const TravelerHeader = ({ onAdd, onFilter, filterOpen }) => {
   return (
-    <div className="flex-between">
-      <div className="section-heading-block">
-        <span className="section-kicker">TRAVELER DIRECTORY</span>
-        <h2 className="title-text">Traveler List</h2>
-        <p className="section-subtitle">
-          Manage passenger profiles, contact details, and reusable traveler records.
-        </p>
-      </div>
-      <div className="header-actions">
-        <button onClick={onFilter} className="btn btn-filter" type="button">
-          Filter
-        </button>
-        <button onClick={onAdd} className="btn btn-add-traveler" type="button">
-          + Add Traveler
-        </button>
-      </div>
+    <div className="customer-flight-bookings" style={{ padding: 0 }}>
+      <header className="flight-ops-header" style={{ marginBottom: 12 }}>
+        <div>
+          <h1>Traveler List</h1>
+        </div>
+        <div className="flight-ops-header-actions">
+          <button onClick={onFilter} className="ops-icon-btn" type="button">
+            <SlidersHorizontal size={15} />
+            <span>{filterOpen ? "Hide Filters" : "Filter"}</span>
+          </button>
+          <button onClick={onAdd} className="ops-icon-btn" type="button">
+            <Plus size={15} />
+            <span>Add Traveler</span>
+          </button>
+        </div>
+      </header>
     </div>
   );
 };

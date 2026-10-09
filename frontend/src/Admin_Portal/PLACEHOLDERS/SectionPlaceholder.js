@@ -371,7 +371,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
                   style={{ padding: "10px", borderRadius: "8px", border: "1px solid #cbd5e1", outline: "none", fontSize: "0.9rem" }}
                 >
                   <option value="INR">INR (₹) - Indian Rupee</option>
-                  <option value="USD">USD ($) - US Dollar</option>
+                  <option value="USD">USD - US Dollar</option>
                   <option value="EUR">EUR (€) - Euro</option>
                   <option value="AED">AED (د.إ) - UAE Dirham</option>
                 </select>
@@ -445,7 +445,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
           )}
 
           <div style={{ marginTop: "28px", display: "flex", justifyContent: "flex-end" }}>
-            <button
+            <button data-admin-action="primary"
               type="button"
               onClick={handleSaveSettings}
               disabled={savingSettings}
@@ -493,7 +493,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
 
         {/* Access Metrics */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", margin: "20px 0" }}>
-          <div style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
+          <div data-admin-surface style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
             <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.08)", display: "grid", placeItems: "center", color: "#ef4444" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
             </div>
@@ -502,7 +502,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               <strong style={{ fontSize: "1.3rem", color: "#0f172a" }}>{ipRules.filter(r => r.type === "Blacklist").length} Nodes</strong>
             </div>
           </div>
-          <div style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
+          <div data-admin-surface style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
             <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: "rgba(30, 117, 255, 0.08)", display: "grid", placeItems: "center", color: "#1e75ff" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
@@ -511,7 +511,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               <strong style={{ fontSize: "1.3rem", color: "#0f172a" }}>{ipRules.filter(r => r.type === "Whitelist").length} Safe</strong>
             </div>
           </div>
-          <div style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
+          <div data-admin-surface style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
             <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.08)", display: "grid", placeItems: "center", color: "#10b981" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
@@ -548,7 +548,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
             </select>
           </div>
 
-          <button
+          <button data-admin-action="primary"
             type="button"
             onClick={() => setShowAddIpModal(true)}
             style={{
@@ -572,7 +572,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
 
         {/* Security Table Grid */}
         <div style={{ border: "1px solid #cbd5e1", borderRadius: "12px", background: "#fff", overflow: "hidden" }}>
-          <div style={{
+          <div data-admin-tone="primary" style={{
             display: "grid",
             gridTemplateColumns: "1.2fr 0.8fr 0.8fr 1.8fr 1.2fr 0.8fr",
             gap: "12px",
@@ -745,7 +745,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
 
         {/* Dynamic financial statistics cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", margin: "20px 0" }}>
-          <div style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
+          <div data-admin-surface style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
             <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.08)", display: "grid", placeItems: "center", color: "#10b981" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             </div>
@@ -754,7 +754,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               <strong style={{ fontSize: "1.3rem", color: "#10b981" }}>₹ {totalInflow.toLocaleString("en-IN")}</strong>
             </div>
           </div>
-          <div style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
+          <div data-admin-surface style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
             <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.08)", display: "grid", placeItems: "center", color: "#ef4444" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
             </div>
@@ -763,7 +763,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               <strong style={{ fontSize: "1.3rem", color: "#ef4444" }}>₹ {totalOutflow.toLocaleString("en-IN")}</strong>
             </div>
           </div>
-          <div style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
+          <div data-admin-surface style={{ padding: "20px", borderRadius: "14px", border: "1px solid #eef2f6", background: "linear-gradient(135deg, #ffffff, #f8fafc)", display: "flex", gap: "16px", alignItems: "center" }}>
             <div style={{ width: "48px", height: "48px", borderRadius: "10px", background: "rgba(30, 117, 255, 0.08)", display: "grid", placeItems: "center", color: "#1e75ff" }}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </div>
@@ -836,7 +836,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
 
         {/* Ledger Table Grid */}
         <div style={{ border: "1px solid #cbd5e1", borderRadius: "12px", background: "#fff", overflow: "hidden" }}>
-          <div style={{
+          <div data-admin-tone="primary" style={{
             display: "grid",
             gridTemplateColumns: "1fr 1.2fr 1.5fr 1fr 1.2fr 1fr 0.8fr",
             gap: "12px",
@@ -1043,7 +1043,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               onChange={(e) => setFormValues(prev => ({ ...prev, note: e.target.value }))}
             />
           </label>
-          <button type="button" className="primary" onClick={handleCrudAdd}>
+          <button data-admin-action="primary" type="button" className="primary" onClick={handleCrudAdd}>
             <Check size={16} />
             Add Entry
           </button>
@@ -1137,7 +1137,7 @@ function SectionPlaceholder({ title, description, kicker = "Admin Portal" }) {
               <button type="button" className="secondary" onClick={() => setEditItem(null)}>
                 Cancel
               </button>
-              <button type="button" className="primary" onClick={handleCrudEditSave}>
+              <button data-admin-action="primary" type="button" className="primary" onClick={handleCrudEditSave}>
                 Save
               </button>
             </div>

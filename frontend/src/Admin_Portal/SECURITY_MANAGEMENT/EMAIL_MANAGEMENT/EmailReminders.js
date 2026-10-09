@@ -198,7 +198,7 @@ export default function EmailReminders() {
             />
           </div>
 
-          <button
+          <button data-admin-action="reset"
             className="btn-reset-filters-white"
             onClick={() => {
               setStatusFilter('All Status');
@@ -286,7 +286,7 @@ export default function EmailReminders() {
               <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 
                 <div className="email-form-field">
-                  <label style={{ fontSize: '10px' }}>Reminder Name <span className="req">*</span></label>
+                  <label style={{ fontSize: '10px' }}>Reminder Name <span data-admin-required className="req">*</span></label>
                   <input
                     type="text"
                     required
@@ -296,7 +296,7 @@ export default function EmailReminders() {
                 </div>
 
                 <div className="email-form-field">
-                  <label style={{ fontSize: '10px' }}>Recipient Email <span className="req">*</span></label>
+                  <label style={{ fontSize: '10px' }}>Recipient Email <span data-admin-required className="req">*</span></label>
                   <input
                     type="email"
                     required
@@ -306,7 +306,7 @@ export default function EmailReminders() {
                 </div>
 
                 <div className="email-form-field">
-                  <label style={{ fontSize: '10px' }}>Scheduled Date & Time <span className="req">*</span></label>
+                  <label style={{ fontSize: '10px' }}>Scheduled Date & Time <span data-admin-required className="req">*</span></label>
                   <input
                     type="datetime-local"
                     required
@@ -326,7 +326,7 @@ export default function EmailReminders() {
                 {!templateId && (
                   <>
                     <div className="email-form-field">
-                      <label style={{ fontSize: '10px' }}>Custom Email Subject <span className="req">*</span></label>
+                      <label style={{ fontSize: '10px' }}>Custom Email Subject <span data-admin-required className="req">*</span></label>
                       <input
                         type="text"
                         required
@@ -336,7 +336,7 @@ export default function EmailReminders() {
                     </div>
 
                     <div className="email-form-field">
-                      <label style={{ fontSize: '10px' }}>Custom Email Message <span className="req">*</span></label>
+                      <label style={{ fontSize: '10px' }}>Custom Email Message <span data-admin-required className="req">*</span></label>
                       <textarea
                         required
                         style={{ minHeight: '100px' }}
@@ -363,7 +363,7 @@ export default function EmailReminders() {
 
               <div className="email-form-footer">
                 <button type="button" className="btn-form-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-form-save" style={{ background: '#901335', color: '#ffffff' }}>
+                <button data-admin-action="primary" type="submit" className="btn-form-save" style={{ background: '#901335', color: '#ffffff' }}>
                   {editingReminder ? 'Update Reminder' : 'Schedule Reminder'}
                 </button>
               </div>

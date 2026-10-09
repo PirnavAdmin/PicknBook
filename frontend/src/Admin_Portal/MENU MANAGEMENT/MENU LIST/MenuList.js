@@ -175,7 +175,7 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
         {/* ── Header outside table container ── */}
         <div className="menu-list-header">
           <h1 className="menu-list-heading">Menu List</h1>
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="menu-list-add-btn"
             onClick={onAddMenu}
@@ -281,7 +281,7 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
                                 gap: '2px'
                               }}
                             >
-                              <button
+                              <button className="admin-view-button"
                                 type="button"
                                 style={{
                                   border: 'none',
@@ -420,7 +420,7 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
             </div>
 
             <div className="admin-markup-modal-actions">
-              <button type="button" className="secondary" onClick={() => setViewItem(null)}>
+              <button data-admin-close type="button" className="secondary" onClick={() => setViewItem(null)}>
                 Close
               </button>
               <button
@@ -547,7 +547,7 @@ export default function AdminMenuListPage({ onAddMenu, onEditMenu }) {
               <button type="button" className="secondary" onClick={() => setEditItem(null)}>
                 Cancel
               </button>
-              <button type="button" className="primary" onClick={handleEditSave}>
+              <button data-admin-action="primary" type="button" className="primary" onClick={handleEditSave}>
                 Save Changes
               </button>
             </div>

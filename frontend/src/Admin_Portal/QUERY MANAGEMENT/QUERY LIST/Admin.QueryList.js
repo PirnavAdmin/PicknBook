@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import "../../AdminDetailModals.css";
 import { getAdminQueries, updateQueryStatus, deleteAdminQuery } from "../../../services/queryService";
 import { Eye, Edit2, Trash2, X, Search, ChevronDown, Filter, Download, Mail, Send } from "lucide-react";
 
@@ -35,6 +36,27 @@ export default function AdminQueryList() {
   const [newStatus, setNewStatus] = useState("");
   const [toast, setToast] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const actionsMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (openMenuId === null) return;
+
+    const handleOutsideMouseDown = (event) => {
+      if (!actionsMenuRef.current?.contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setOpenMenuId(null);
+    };
+
+    document.addEventListener("mousedown", handleOutsideMouseDown, true);
+    document.addEventListener("keydown", handleEscape, true);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideMouseDown, true);
+      document.removeEventListener("keydown", handleEscape, true);
+    };
+  }, [openMenuId]);
 
   // Email Format Reply Modal states
   const [emailModalQuery, setEmailModalQuery] = useState(null);
@@ -601,7 +623,7 @@ export default function AdminQueryList() {
           color: #ffffff !important;
         }
       `}</style>
-      <div style={styles.container}>
+      <div data-admin-surface style={styles.container}>
         {toast && (
           <div
             style={{
@@ -629,7 +651,7 @@ export default function AdminQueryList() {
               onChange={(e) => setSearchQuery(e.target.value)}
               style={styles.searchBox}
             />
-            <button
+            <button data-admin-action="primary"
               style={{ ...styles.button, ...styles.filterBtn, display: "inline-flex", alignItems: "center", gap: "6px" }}
               onClick={() => setFilterOpen(!filterOpen)}
             >
@@ -650,7 +672,7 @@ export default function AdminQueryList() {
             >
               Total Records : {filteredQueries.length}
             </div>
-            <button
+            <button data-admin-action="export"
               type="button"
               style={{ ...styles.button, ...styles.exportBtn, display: "inline-flex", alignItems: "center", gap: "6px" }}
               onClick={handleExport}
@@ -743,7 +765,7 @@ export default function AdminQueryList() {
               </div>
 
               <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "38px" }}>
-                <button
+                <button data-admin-action="primary"
                   type="button"
                   onClick={() => {
                     setPage(1);
@@ -767,7 +789,7 @@ export default function AdminQueryList() {
                   Apply Filter
                 </button>
 
-                <button
+                <button data-admin-action="reset"
                   type="button"
                   onClick={handleClearFilters}
                   style={{
@@ -792,7 +814,7 @@ export default function AdminQueryList() {
           </div>
         )}
 
-        <div style={styles.tableWrapper}>
+        <div data-admin-surface style={styles.tableWrapper}>
           <table style={styles.table}>
               <thead style={styles.thead}>
                 <tr>
@@ -843,11 +865,11 @@ export default function AdminQueryList() {
                         </span>
                       </td>
                       <td style={styles.td}>
-                        <div style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
+                        <div ref={openMenuId === q.id ? actionsMenuRef : null} style={{ position: 'relative', display: 'inline-block', verticalAlign: 'middle' }}>
                           <button
                             type="button"
                             className={`actions-trigger-btn ${openMenuId === q.id ? "active" : ""}`}
-                            onClick={() => setOpenMenuId(openMenuId === q.id ? null : q.id)}
+                            onClick={() => setOpenMenuId((currentId) => currentId === q.id ? null : q.id)}
                           >
                             <span>Actions</span> <ChevronDown size={14} />
                           </button>
@@ -873,7 +895,7 @@ export default function AdminQueryList() {
                                 gap: '2px'
                               }}
                             >
-                              <button
+                              <button className="admin-view-button"
                                 type="button"
                                 style={{
                                   border: 'none', background: 'transparent', textAlign: 'left', padding: '9px 12px',
@@ -956,49 +978,50 @@ export default function AdminQueryList() {
         </div>
 
         {viewQuery && createPortal(
-          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100vw", height: "100vh", backgroundColor: "rgba(0,0,0,0.65)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999999, backdropFilter: "blur(4px)", padding: "20px", boxSizing: "border-box" }} onClick={() => setViewQuery(null)}>
-            <div style={{ background: "var(--panel)", padding: "24px", borderRadius: "14px", width: "600px", maxWidth: "95%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }} onClick={(e) => e.stopPropagation()}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0, color: "var(--text-primary)" }}>Query Details</h3>
-                <button type="button" onClick={() => setViewQuery(null)} style={{ padding: "6px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", cursor: "pointer", color: "var(--text-primary)" }}>
+          <div className="admin-detail-backdrop" onClick={() => setViewQuery(null)}>
+            <div className="admin-detail-modal query-detail-modal" role="dialog" aria-modal="true" aria-labelledby="query-detail-title" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-detail-header">
+                <h3 className="admin-detail-title" id="query-detail-title">Query Details</h3>
+                <button data-admin-close type="button" className="admin-detail-close" onClick={() => setViewQuery(null)}>
                   Close
                 </button>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+              <div className="admin-detail-body"><div className="admin-detail-grid">
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Name</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.name}</div>
+                  <div className="admin-detail-label">Name</div>
+                  <div className="admin-detail-value">{viewQuery.name}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Email</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.email}</div>
+                  <div className="admin-detail-label">Email</div>
+                  <div className="admin-detail-value">{viewQuery.email}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Mobile</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.phoneNo || "-"}</div>
+                  <div className="admin-detail-label">Mobile</div>
+                  <div className="admin-detail-value">{viewQuery.phoneNo || "-"}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Query Type</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.subject || "ContactUs"}</div>
+                  <div className="admin-detail-label">Query Type</div>
+                  <div className="admin-detail-value">{viewQuery.subject || "ContactUs"}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Status</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{viewQuery.status}</div>
+                  <div className="admin-detail-label">Status</div>
+                  <div className="admin-detail-value">{viewQuery.status}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Entry Date</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)" }}>{formatDate(viewQuery.createdAtUtc || viewQuery.entryDate)}</div>
+                  <div className="admin-detail-label">Entry Date</div>
+                  <div className="admin-detail-value">{formatDate(viewQuery.createdAtUtc || viewQuery.entryDate)}</div>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 700 }}>Message</div>
-                  <div style={{ fontSize: "0.9rem", color: "var(--text-primary)", background: "var(--surface-soft)", padding: "12px", borderRadius: "8px", marginTop: "4px", wordBreak: "break-all" }}>{viewQuery.message}</div>
+                <div className="admin-detail-wide">
+                  <div className="admin-detail-label">Message</div>
+                  <div className="admin-detail-message">{viewQuery.message}</div>
                 </div>
                 {viewQuery.replyMessage && (
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <div style={{ fontSize: "0.75rem", color: "#007bff", fontWeight: 700 }}>Admin Reply Message</div>
-                    <div style={{ fontSize: "0.9rem", color: "#1e293b", background: "rgba(0, 123, 255, 0.08)", border: "1px solid rgba(0, 123, 255, 0.2)", padding: "12px", borderRadius: "8px", marginTop: "4px", wordBreak: "break-all", whiteSpace: "pre-wrap" }}>{viewQuery.replyMessage}</div>
+                  <div className="admin-detail-wide">
+                    <div className="admin-detail-label">Admin Reply Message</div>
+                    <div className="admin-detail-message admin-detail-reply">{viewQuery.replyMessage}</div>
                   </div>
                 )}
+              </div>
               </div>
             </div>
           </div>,
@@ -1094,7 +1117,7 @@ export default function AdminQueryList() {
                   <label style={{ fontSize: "12px", fontWeight: "600", color: "#4b5563" }}>Message</label>
                   <textarea rows="3" value={editStatusQuery.message || ""} disabled style={{ padding: "10px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px", background: "#f9fafb", color: "#111827", resize: "none" }} />
                 </div>
-                <button type="submit" style={{ background: "#A51C49", color: "#ffffff", padding: "10px 16px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: "600", cursor: "pointer", marginTop: "8px" }}>
+                <button data-admin-action="primary" type="submit" style={{ background: "#A51C49", color: "#ffffff", padding: "10px 16px", border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: "600", cursor: "pointer", marginTop: "8px" }}>
                   {(newStatus === "Replied" || newStatus === "Resolved") ? "Continue to Compose Reply Email →" : "Save Changes"}
                 </button>
               </form>
@@ -1137,7 +1160,7 @@ export default function AdminQueryList() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div
+              <div data-admin-tone="primary"
                 style={{
                   background: "linear-gradient(135deg, #A51C49 0%, #7A1234 100%)",
                   padding: "16px 22px",
@@ -1255,7 +1278,7 @@ export default function AdminQueryList() {
                     Cancel
                   </button>
 
-                  <button
+                  <button data-admin-action="primary"
                     type="submit"
                     disabled={sendingEmail}
                     style={{

@@ -163,10 +163,10 @@ function AirlineBrands() {
               <span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Flight</span> Airline Brand List
             </h2>
             <div className="actions">
-              <button className="btn add" onClick={goToAdd}>
+              <button data-admin-action="primary" className="btn add" onClick={goToAdd}>
                 + Add Airline Brand
               </button>
-              <button className="btn export" onClick={handleExport}>
+              <button data-admin-action="export" className="btn export" onClick={handleExport}>
                 Export
               </button>
             </div>
@@ -194,7 +194,7 @@ function AirlineBrands() {
                     <td>{item.code}</td>
                     <td>
                       {item.image ? (
-                        <button className="view-btn" onClick={() => handleViewImage(item)}>
+                        <button className="view-btn admin-view-button" onClick={() => handleViewImage(item)}>
                           View
                         </button>
                       ) : (
@@ -214,7 +214,7 @@ function AirlineBrands() {
                     </td>
                     <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
                       <button
-                        className="icon-btn view"
+                        className="icon-btn view admin-view-button"
                         title="View Image"
                         onClick={() => handleViewImage(item)}
                         disabled={!item.image}
@@ -317,7 +317,7 @@ function AirlineBrands() {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
-              <button className="submit-btn" style={{ marginTop: 0 }} onClick={handleSubmit}>
+              <button data-admin-action="primary" className="submit-btn" style={{ marginTop: 0 }} onClick={handleSubmit}>
                 {isEditing ? "UPDATE" : "SUBMIT"}
               </button>
             </div>

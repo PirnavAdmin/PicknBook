@@ -477,15 +477,15 @@ export default function HotelMarkupList() {
         </div>
 
         <div className="markup-toolbar-actions">
-          <button type="button" className="markup-primary-btn" onClick={openAddModal}>
+          <button data-admin-action="primary" type="button" className="markup-primary-btn" onClick={openAddModal}>
             <Plus size={14} />
             Add New
           </button>
-          <button type="button" className="markup-filter-btn" onClick={openFilterModal}>
+          <button data-admin-action="primary" type="button" className="markup-filter-btn" onClick={openFilterModal}>
             <Filter size={14} />
             Filter
           </button>
-          <button
+          <button data-admin-action="export"
             type="button"
             className="markup-export-btn"
             onClick={handleExport}
@@ -548,10 +548,10 @@ export default function HotelMarkupList() {
             </label>
 
             <div className="markup-filter-actions-inline">
-              <button type="button" className="markup-btn-reset" onClick={handleResetFilter}>
+              <button data-admin-action="reset" type="button" className="markup-btn-reset" onClick={handleResetFilter}>
                 Reset
               </button>
-              <button type="button" className="markup-btn-apply" onClick={handleApplyFilter}>
+              <button data-admin-action="primary" type="button" className="markup-btn-apply" onClick={handleApplyFilter}>
                 Apply Filter
               </button>
             </div>
@@ -643,7 +643,7 @@ export default function HotelMarkupList() {
                           <div className="actions-dropdown-menu">
                             <button
                               type="button"
-                              className="dropdown-item view"
+                              className="dropdown-item view admin-view-button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setViewingRule(rule);
@@ -724,7 +724,7 @@ export default function HotelMarkupList() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", margin: "16px 0" }}>
               <label className="markup-filter-field">
-                <span>MARKUP TYPE *</span>
+                <span>MARKUP TYPE <span data-admin-required className="admin-required-indicator">*</span></span>
                 <select
                   value={form.markupType}
                   onChange={(e) => setForm((prev) => ({ ...prev, markupType: e.target.value }))}
@@ -735,7 +735,7 @@ export default function HotelMarkupList() {
               </label>
 
               <label className="markup-filter-field">
-                <span>MARKUP VALUE *</span>
+                <span>MARKUP VALUE <span data-admin-required className="admin-required-indicator">*</span></span>
                 <input
                   type="number"
                   min="0"
@@ -795,14 +795,14 @@ export default function HotelMarkupList() {
             </div>
 
             <div className="admin-markup-filter-footer">
-              <button
+              <button data-admin-action="reset"
                 type="button"
                 className="markup-btn-reset"
                 onClick={() => setIsModalOpen(false)}
               >
                 Cancel
               </button>
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 className="markup-btn-apply"
                 onClick={handleSave}
@@ -835,7 +835,7 @@ export default function HotelMarkupList() {
               <h3 style={{ color: "#1e293b", fontWeight: "700", fontSize: "18px", margin: 0 }}>
                 Hotel Markup Detail View
               </h3>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setViewingRule(null)}
                 style={{

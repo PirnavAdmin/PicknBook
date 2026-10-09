@@ -722,7 +722,7 @@ export default function SecurityManagement() {
               </div>
             )}
           </div>
-          <button className="sd-export-btn" onClick={() => showToast('Exporting security report...')}>
+          <button data-admin-action="export" className="sd-export-btn" onClick={() => showToast('Exporting security report...')}>
             📥 Export Report
           </button>
         </div>

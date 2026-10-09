@@ -168,14 +168,15 @@ function getAdminAuthHeaders() {
 
 // ================= OVERVIEW API CALL (/api/Dashboard/overview) =================
 
-export async function getAdminDashboardOverview() {
+export async function getAdminDashboardOverview(options = {}) {
   const url = buildUrl("/api/Dashboard/overview");
   try {
-    const data = await requestJson(url, { headers: getAdminAuthHeaders() });
+    const data = await requestJson(url, { ...options, headers: getAdminAuthHeaders() });
     if (data && typeof data === "object") {
       return data;
     }
   } catch (error) {
+    if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') throw error;
     console.warn("GET /api/Dashboard/overview endpoint error; falling back.", error);
   }
   return null;
@@ -184,27 +185,38 @@ export async function getAdminDashboardOverview() {
 // ================= API CALL =================
 
 let pendingSummaryPromise = null;
+let summaryOwner = null;
 let cachedSummary = null;
 let cachedSummaryTime = 0;
 const SUMMARY_CACHE_TTL_MS = 2500;
 
-export async function getAdminDashboardSummary({ force = false } = {}) {
+export async function getAdminDashboardSummary({ force = false, signal } = {}) {
+  if (signal?.aborted) throw new DOMException('Request cancelled', 'AbortError');
+  const owner = JSON.stringify(getAdminAuthHeaders());
+  if (owner !== summaryOwner) {
+    summaryOwner = owner;
+    cachedSummary = null;
+    pendingSummaryPromise = null;
+    cachedSummaryTime = 0;
+  }
   const now = Date.now();
   if (!force && cachedSummary && now - cachedSummaryTime < SUMMARY_CACHE_TTL_MS) {
     return cachedSummary;
   }
 
-  if (!force && pendingSummaryPromise) {
+  if (!force && !signal && pendingSummaryPromise) {
     return pendingSummaryPromise;
   }
 
-  pendingSummaryPromise = (async () => {
+  const summaryPromise = (async () => {
     try {
       // 1. Try GET /api/Dashboard/overview
-      const overviewData = await getAdminDashboardOverview();
+      const overviewData = await getAdminDashboardOverview({ signal });
       if (overviewData && (overviewData.todayStatus || overviewData.metrics || overviewData.bookingFunnel || overviewData.revenueToday || overviewData.bookings)) {
-        cachedSummary = overviewData;
-        cachedSummaryTime = Date.now();
+        if (owner === summaryOwner) {
+          cachedSummary = overviewData;
+          cachedSummaryTime = Date.now();
+        }
         return overviewData;
       }
 
@@ -213,20 +225,23 @@ export async function getAdminDashboardSummary({ force = false } = {}) {
         recentLimit: 10,
         travelerPendingDays: 7,
       });
-      const summary = await requestJson(url, { headers: getAdminAuthHeaders() });
+      const summary = await requestJson(url, { signal, headers: getAdminAuthHeaders() });
       const result = summary && typeof summary === "object" ? summary : createEmptyAdminSummary();
-      cachedSummary = result;
-      cachedSummaryTime = Date.now();
+      if (owner === summaryOwner) {
+        cachedSummary = result;
+        cachedSummaryTime = Date.now();
+      }
       return result;
     } catch (error) {
+      if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') throw error;
       console.warn("Admin dashboard summary unavailable; using empty dashboard.", error);
       return createEmptyAdminSummary();
     } finally {
-      pendingSummaryPromise = null;
+      if (pendingSummaryPromise === summaryPromise) pendingSummaryPromise = null;
     }
   })();
-
-  return pendingSummaryPromise;
+  if (!signal) pendingSummaryPromise = summaryPromise;
+  return summaryPromise;
 }
 
 // ================= DERIVED DATA =================
@@ -437,7 +452,8 @@ export async function getAdminDashboardRecentActivity(providedSummary) {
   if (!summary) {
     try {
       summary = await getAdminDashboardSummary();
-    } catch {
+    } catch (adminRequestError) {
+      if (adminRequestError?.name === 'AbortError' || adminRequestError?.code === 'ERR_CANCELED') throw adminRequestError;
       return [];
     }
   }
@@ -509,9 +525,9 @@ export async function getAdminDashboardBookingStats() {
   );
 }
 
-export async function getAdminDashboardRevenueOverview(params = {}) {
+export async function getAdminDashboardRevenueOverview(params = {}, options = {}) {
   return requestJson(
     buildUrl(`/api/admin/dashboard/revenue-overview`, params),
-    { headers: getAdminAuthHeaders() }
+    { ...options, headers: getAdminAuthHeaders() }
   );
 }

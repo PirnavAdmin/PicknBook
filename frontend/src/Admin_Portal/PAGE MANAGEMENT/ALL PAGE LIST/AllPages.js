@@ -410,7 +410,7 @@ const AllPages = () => {
           <h1 ref={(el) => { if (el) el.style.setProperty('color', '#A51C49', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#A51C49', margin: 0, letterSpacing: '-0.5px' }}>Page</h1>
           <h2 ref={(el) => { if (el) el.style.setProperty('color', '#000000', 'important'); }} style={{ fontSize: '1.6rem', fontWeight: 600, color: '#000000', margin: 0 }}>Management</h2>
         </div>
-        <button className="add-btn" onClick={() => navigate(pageCreatePath)}>
+        <button data-admin-action="primary" className="add-btn" onClick={() => navigate(pageCreatePath)}>
           + Add New Page
         </button>
       </div>
@@ -538,7 +538,7 @@ const AllPages = () => {
                               overflow: "hidden"
                             }}
                           >
-                            <button
+                            <button className="admin-view-button"
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -746,7 +746,7 @@ const AllPages = () => {
                 <FileText size={20} color="#A51C49" />
                 <span>Page Details: <span style={{ color: "#A51C49" }}>{selectedPage.title}</span></span>
               </h3>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setSelectedPage(null)}
                 style={{
@@ -951,7 +951,7 @@ const AllPages = () => {
             <form onSubmit={handleSaveEditSubmit}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "20px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>Page Title *</label>
+                  <label style={{ fontSize: "0.85rem", fontWeight: 700, color: "#334155" }}>Page Title <span data-admin-required className="admin-required-indicator">*</span></label>
                   <input
                     type="text"
                     required
@@ -1145,7 +1145,7 @@ const AllPages = () => {
                 >
                   Cancel
                 </button>
-                <button
+                <button data-admin-action="primary"
                   type="submit"
                   disabled={editLoading}
                   style={{ padding: "8px 20px", background: "#A51C49", color: "#ffffff", border: "none", borderRadius: "6px", fontWeight: 600, cursor: "pointer", fontSize: "0.85rem", opacity: editLoading ? 0.7 : 1 }}

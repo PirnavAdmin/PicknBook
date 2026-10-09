@@ -242,7 +242,7 @@ export default function AdminFlightRemarkListPage() {
         </header>
 
         <div className="admin-actions-row admin-flight-remark-actions-row">
-          <button
+          <button data-admin-action="primary"
             type="button"
             className="admin-flight-remark-btn"
             onClick={() => navigate("/admin/b2c-flight/remark-edit-list")}
@@ -250,7 +250,7 @@ export default function AdminFlightRemarkListPage() {
             <PlusCircle size={15} />
             Add Remark
           </button>
-          <button type="button" className="admin-flight-remark-btn secondary" onClick={handleExport}>
+          <button data-admin-action="export" type="button" className="admin-flight-remark-btn secondary" onClick={handleExport}>
             <Download size={15} />
             Export
           </button>
@@ -302,7 +302,7 @@ export default function AdminFlightRemarkListPage() {
                 <div className="admin-cancel-cell admin-cell-centered admin-flight-remark-action-cell">
                   <button
                     type="button"
-                    className="admin-flight-remark-icon-btn view"
+                    className="admin-flight-remark-icon-btn view admin-view-button"
                     aria-label={`View remark ${record.id}`}
                     onClick={() => setViewRecord(record)}
                   >
@@ -387,7 +387,7 @@ export default function AdminFlightRemarkListPage() {
               </div>
             </div>
             <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end" }}>
-              <button className="admin-flight-remark-btn" onClick={() => setViewRecord(null)}>Close</button>
+              <button data-admin-close className="admin-flight-remark-btn" onClick={() => setViewRecord(null)}>Close</button>
             </div>
           </div>
         </div>

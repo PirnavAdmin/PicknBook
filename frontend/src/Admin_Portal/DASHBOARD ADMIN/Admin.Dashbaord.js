@@ -398,8 +398,13 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchB2cDashboardData();
-    fetchB2bDashboardData();
+    let active = true;
+    const load = async () => {
+      await fetchB2cDashboardData();
+      if (active) await fetchB2bDashboardData();
+    };
+    load();
+    return () => { active = false; };
   }, []);
 
   const fetchB2cDashboardData = async () => {
@@ -410,6 +415,7 @@ const AdminDashboard = () => {
     try {
       const summaryResult = await getAdminDashboardSummary();
       const metricsResult = deriveAdminMetrics(summaryResult);
+      setIsLoadingMetrics(false);
 
       if (summaryResult?.bookingFunnel) {
         setApiFunnel(summaryResult.bookingFunnel);
@@ -591,13 +597,9 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('B2C Dashboard fetch error:', err);
     } finally {
-      const elapsed = Date.now() - fetchStartTime;
-      const minLoadingDuration = Math.max(0, 800 - elapsed);
-      setTimeout(() => {
-        setIsLoadingMetrics(false);
-        setIsLoadingFlights(false);
-        setIsLoadingBuses(false);
-      }, minLoadingDuration);
+      setIsLoadingMetrics(false);
+      setIsLoadingFlights(false);
+      setIsLoadingBuses(false);
     }
   };
 
@@ -811,13 +813,16 @@ const AdminDashboard = () => {
   const [apiRevenueOverview, setApiRevenueOverview] = useState(null);
   const [isLoadingRevenueOverview, setIsLoadingRevenueOverview] = useState(false);
 
+  const revenueYear = revenueDate ? parseInt(revenueDate.split('-')[0], 10) : new Date().getFullYear();
   useEffect(() => {
+    if (isLoadingMetrics || viewMode !== 'b2c') return;
+    const controller = new AbortController();
     let isMounted = true;
     const revStartTime = Date.now();
     setIsLoadingRevenueOverview(true);
     const targetYear = revenueDate ? parseInt(revenueDate.split('-')[0], 10) : new Date().getFullYear();
 
-    getAdminDashboardRevenueOverview({ year: targetYear, timeframe: revenueTimeframe })
+    getAdminDashboardRevenueOverview({ year: targetYear, timeframe: revenueTimeframe }, { signal: controller.signal })
       .then((res) => {
         if (isMounted) {
           if (res && (Array.isArray(res.chartData) || res.hasRecords === false)) {
@@ -834,17 +839,14 @@ const AdminDashboard = () => {
         }
       })
       .finally(() => {
-        const elapsed = Date.now() - revStartTime;
-        const delay = Math.max(0, 600 - elapsed);
-        setTimeout(() => {
-          if (isMounted) setIsLoadingRevenueOverview(false);
-        }, delay);
+        if (isMounted) setIsLoadingRevenueOverview(false);
       });
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
-  }, [revenueDate, revenueTimeframe]);
+  }, [revenueYear, revenueTimeframe, isLoadingMetrics, viewMode]);
 
   const dynamicSystemStartDate = useMemo(() => {
     if (!apiRevenueOverview?.systemStartDate) return null;

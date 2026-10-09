@@ -1,5 +1,6 @@
+import useDebouncedValue from '../../../hooks/useDebouncedValue';
 /* eslint-disable */
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Wallet,
@@ -31,6 +32,8 @@ export default function WalletTransactionList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebouncedValue(searchTerm);
+  const requestRef = useRef(null);
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedTxn, setSelectedTxn] = useState(null);
@@ -43,16 +46,20 @@ export default function WalletTransactionList() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchTransactions = useCallback(async () => {
+    requestRef.current?.abort();
+    const controller = new AbortController();
+    requestRef.current = controller;
     setLoading(true);
     setError(null);
     try {
       const rawList = await adminWalletService.getAdminLedger({
         page: 1,
         pageSize: 100,
-        search: searchTerm || undefined,
+        search: debouncedSearch || undefined,
         transactionType: typeFilter !== 'ALL' ? typeFilter : undefined,
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
-      });
+      }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
 
       const list = Array.isArray(rawList)
         ? rawList
@@ -145,16 +152,18 @@ export default function WalletTransactionList() {
         setTransactions([]);
       }
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.warn("[WalletTransactionList] Error loading wallet ledger:", err);
       setError(null);
       setTransactions([]);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
-  }, [searchTerm, typeFilter, statusFilter]);
+  }, [debouncedSearch, typeFilter, statusFilter]);
 
   useEffect(() => {
     fetchTransactions();
+    return () => requestRef.current?.abort();
   }, [fetchTransactions]);
 
   const handleOpenCustomerSummary = async (rawUserId, fallbackName) => {
@@ -291,7 +300,7 @@ export default function WalletTransactionList() {
           <button className="wt-btn-outline" onClick={fetchTransactions} title="Refresh Transactions">
             <RefreshCw size={15} /> Refresh
           </button>
-          <button className="wt-btn-export" onClick={exportCSV} title="Export Transactions">
+          <button data-admin-action="export" className="wt-btn-export" onClick={exportCSV} title="Export Transactions">
             <Download size={15} /> Export
           </button>
         </div>
@@ -463,7 +472,7 @@ export default function WalletTransactionList() {
                     </span>
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <button className="wt-icon-btn" title="View Details" onClick={() => setSelectedTxn(t)}>
+                    <button className="wt-icon-btn admin-view-button" title="View Details" onClick={() => setSelectedTxn(t)}>
                       <Eye size={16} />
                     </button>
                   </td>
@@ -537,7 +546,7 @@ export default function WalletTransactionList() {
               </div>
             </div>
             <div className="wt-modal-footer">
-              <button className="wt-btn-outline" onClick={() => setSelectedTxn(null)}>
+              <button data-admin-close className="wt-btn-outline" onClick={() => setSelectedTxn(null)}>
                 Close
               </button>
             </div>
@@ -621,7 +630,7 @@ export default function WalletTransactionList() {
               )}
             </div>
             <div className="wt-modal-footer">
-              <button className="wt-btn-outline" onClick={() => setIsCustomerModalOpen(false)}>
+              <button data-admin-close className="wt-btn-outline" onClick={() => setIsCustomerModalOpen(false)}>
                 Close
               </button>
             </div>

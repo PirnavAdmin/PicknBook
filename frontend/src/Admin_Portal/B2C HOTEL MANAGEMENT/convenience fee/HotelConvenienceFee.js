@@ -142,7 +142,7 @@ export default function HotelConvenienceFee() {
           </h1>
         </header>
 
-        <button
+        <button data-admin-action="primary"
           type="button"
           className="admin-convenience-icon-btn edit"
           style={{ width: 'auto', padding: '8px 16px', gap: '6px', fontSize: '0.88rem', fontWeight: 700, borderRadius: '9px', height: 'auto' }}
@@ -198,7 +198,7 @@ export default function HotelConvenienceFee() {
                   <div className="admin-convenience-cell admin-convenience-action-cell">
                     <button
                       type="button"
-                      className="admin-convenience-action-btn view"
+                      className="admin-convenience-action-btn view admin-view-button"
                       title="View Details"
                       onClick={handleOpenView}
                     >

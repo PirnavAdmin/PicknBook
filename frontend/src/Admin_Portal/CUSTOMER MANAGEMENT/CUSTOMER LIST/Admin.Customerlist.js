@@ -1,11 +1,13 @@
 /* eslint-disable */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Eye, Trash2, X, ChevronDown, PlusCircle, RotateCcw, Wallet, User, Phone, Mail, ShieldAlert, Filter, Download } from 'lucide-react';
 import { getCustomers, toggleCustomerStatus, toggleWalletStatus, addWalletBalance, resetWalletBalance, deleteCustomer } from "../../../services/customerService";
 import { setStoredValue } from '../../../utils/adminPortalStorage';
 import AdminPagination from "../../../components/AdminPagination";
+
+import useDebouncedValue from '../../../hooks/useDebouncedValue';
 
 function CustomerList() {
     const navigate = useNavigate();
@@ -17,6 +19,9 @@ function CustomerList() {
 
 
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebouncedValue(searchQuery);
+    const listRequestRef = useRef(null);
+    useEffect(() => () => { listRequestRef.current?.abort(); clearTimeout(toastTimerRef.current); }, []);
     const [filterOpen, setFilterOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState('All');
     const [walletFilter, setWalletFilter] = useState('All');
@@ -25,6 +30,8 @@ function CustomerList() {
     const [filterName, setFilterName] = useState('');
     const [filterEmail, setFilterEmail] = useState('');
     const [filterMobile, setFilterMobile] = useState('');
+    const [appliedFilters, setAppliedFilters] = useState({ statusFilter: 'All', walletFilter: 'All', minBalance: '', maxBalance: '', filterName: '', filterEmail: '', filterMobile: '' });
+    const commitFilters = () => setAppliedFilters({ statusFilter, walletFilter, minBalance, maxBalance, filterName, filterEmail, filterMobile });
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [addBalanceCustomer, setAddBalanceCustomer] = useState(null);
@@ -45,27 +52,32 @@ function CustomerList() {
     };
 
     const fetchCustomers = async () => {
+        listRequestRef.current?.abort();
+        const controller = new AbortController();
+        listRequestRef.current = controller;
         setLoading(true);
         try {
             const data = await getCustomers({
-                status: statusFilter,
-                walletStatus: walletFilter,
-                search: searchQuery,
-                minBalance: minBalance === '' ? "" : Number(minBalance),
-                maxBalance: maxBalance === '' ? "" : Number(maxBalance),
-            });
+                status: appliedFilters.statusFilter,
+                walletStatus: appliedFilters.walletFilter,
+                search: debouncedSearch,
+                minBalance: appliedFilters.minBalance === '' ? "" : Number(appliedFilters.minBalance),
+                maxBalance: appliedFilters.maxBalance === '' ? "" : Number(appliedFilters.maxBalance),
+            }, { signal: controller.signal });
+            if (controller.signal.aborted) return;
             setCustomers(data || []);
-            if (statusFilter === 'All' && walletFilter === 'All' && !searchQuery && minBalance === '' && maxBalance === '') {
+            if (appliedFilters.statusFilter === 'All' && appliedFilters.walletFilter === 'All' && !searchQuery && appliedFilters.minBalance === '' && appliedFilters.maxBalance === '') {
                 setStoredValue('customers', data || []);
             }
         } catch (error) {
+            if (controller.signal.aborted) return;
             console.error("Error fetching customers:", error);
             const detailedError = error.response?.data 
                 ? (typeof error.response.data === 'string' ? error.response.data : JSON.stringify(error.response.data))
                 : "Failed to load customers from API.";
             showToast(detailedError.slice(0, 150), "error");
         } finally {
-            setLoading(false);
+            if (!controller.signal.aborted) setLoading(false);
         }
     };
 
@@ -73,20 +85,21 @@ function CustomerList() {
         fetchCustomers();
         setCurrentPage(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [statusFilter, walletFilter, minBalance, maxBalance, searchQuery]);
+        return () => listRequestRef.current?.abort();
+    }, [appliedFilters.statusFilter, appliedFilters.walletFilter, appliedFilters.minBalance, appliedFilters.maxBalance, debouncedSearch]);
 
-    const filteredCustomers = customers.filter(c => {
-        if (filterName.trim() && !(c.customerName || '').toLowerCase().includes(filterName.trim().toLowerCase())) {
+    const filteredCustomers = useMemo(() => customers.filter(c => {
+        if (appliedFilters.filterName.trim() && !(c.customerName || '').toLowerCase().includes(appliedFilters.filterName.trim().toLowerCase())) {
             return false;
         }
-        if (filterEmail.trim() && !(c.emailId || '').toLowerCase().includes(filterEmail.trim().toLowerCase())) {
+        if (appliedFilters.filterEmail.trim() && !(c.emailId || '').toLowerCase().includes(appliedFilters.filterEmail.trim().toLowerCase())) {
             return false;
         }
-        if (filterMobile.trim() && !(c.mobile || '').toLowerCase().includes(filterMobile.trim().toLowerCase())) {
+        if (appliedFilters.filterMobile.trim() && !(c.mobile || '').toLowerCase().includes(appliedFilters.filterMobile.trim().toLowerCase())) {
             return false;
         }
         return true;
-    });
+    }), [customers, appliedFilters]);
 
     const totalItems = filteredCustomers.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -95,10 +108,10 @@ function CustomerList() {
     const currentItems = filteredCustomers.slice(indexOfFirstItem, indexOfLastItem);
 
 
-    const activeCount = customers.filter(c => c.status === 'Active').length;
-    const inactiveCount = customers.filter(c => c.status !== 'Active').length;
+    const activeCount = useMemo(() => customers.filter(c => c.status === 'Active').length, [customers]);
+    const inactiveCount = customers.length - activeCount;
     const totalRecords = customers.length;
-    const totalWalletBalance = customers.reduce((sum, c) => sum + Number(c.walletBalance || 0), 0);
+    const totalWalletBalance = useMemo(() => customers.reduce((sum, c) => sum + Number(c.walletBalance || 0), 0), [customers]);
 
     const applyQuickFilter = (message, options = {}) => {
         const {
@@ -109,6 +122,7 @@ function CustomerList() {
             clearSearch = false,
         } = options;
 
+        setAppliedFilters({ ...appliedFilters, statusFilter: status, walletFilter: wallet, minBalance: min, maxBalance: max });
         setStatusFilter(status);
         setWalletFilter(wallet);
         setMinBalance(min);
@@ -139,6 +153,7 @@ function CustomerList() {
         applyQuickFilter('Showing customers with active wallets.', { wallet: 'Active' });
 
     const handleClearFilters = () => {
+        setAppliedFilters({ statusFilter: 'All', walletFilter: 'All', minBalance: '', maxBalance: '', filterName: '', filterEmail: '', filterMobile: '' });
         setSearchQuery('');
         setFilterName('');
         setFilterEmail('');
@@ -768,7 +783,7 @@ function CustomerList() {
 
     return (
         <>
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {toast && (
                     <div
                         style={{
@@ -790,7 +805,7 @@ function CustomerList() {
                             <h1 style={styles.titleMain}>Customer</h1>
                             <h2 style={styles.titleSub}>List</h2>
                         </div>
-                        <button
+                        <button data-admin-action="primary"
                             type="button"
                             style={styles.addBtn}
                             onClick={() => navigate('/admin/customer-management/add-new-customer')}
@@ -815,7 +830,7 @@ function CustomerList() {
 
 
                     {/* Stats Bar */}
-                    <div style={styles.statsBar}>
+                    <div data-admin-surface style={styles.statsBar}>
                         <button
                             type="button"
                             style={{ ...styles.statBadge, ...styles.statActive }}
@@ -868,7 +883,7 @@ function CustomerList() {
                                 e.currentTarget.style.transform = 'translateY(0)';
                             }}
                         >
-                            Rs. {totalWalletBalance} Total Wallet
+                            ₹ {totalWalletBalance} Total Wallet
                         </button>
 
                         {/* Action Buttons */}
@@ -888,7 +903,7 @@ function CustomerList() {
                                     e.target.style.boxShadow = 'none';
                                 }}
                             />
-                            <button
+                            <button data-admin-action="primary"
                                 style={{ ...styles.button, ...styles.filterBtn, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                                 onMouseEnter={(e) => {
                                     e.target.style.background = 'var(--primary-strong)';
@@ -902,7 +917,7 @@ function CustomerList() {
                             >
                                 <Filter size={16} /> Filter
                             </button>
-                            <button
+                            <button data-admin-action="export"
                                 style={{ ...styles.button, ...styles.exportBtn, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                                 onMouseEnter={(e) => {
                                     e.target.style.background = 'rgba(30, 142, 62, 0.85)';
@@ -1043,9 +1058,10 @@ function CustomerList() {
 
                             {/* Action Buttons in single line: Apply Filter (Blue) and Reset (Gray) */}
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', height: '34px' }}>
-                                <button
+                                <button data-admin-action="primary"
                                     type="button"
                                     onClick={() => {
+                                        commitFilters();
                                         setCurrentPage(1);
                                         setFilterOpen(false);
                                     }}
@@ -1077,7 +1093,7 @@ function CustomerList() {
                                     Apply Filter
                                 </button>
 
-                                <button
+                                <button data-admin-action="reset"
                                     type="button"
                                     onClick={handleClearFilters}
                                     style={{
@@ -1113,10 +1129,10 @@ function CustomerList() {
                 )}
 
                 {selectedCustomer && (
-                    <div style={styles.detailCard}>
-                        <div style={styles.detailHeader}>
+                    <div data-admin-surface style={styles.detailCard}>
+                        <div data-admin-surface style={styles.detailHeader}>
                             <div style={styles.detailTitle}>Customer Details</div>
-                            <button
+                            <button data-admin-close
                                 type="button"
                                 style={styles.secondaryBtn}
                                 onClick={() => setSelectedCustomer(null)}
@@ -1147,14 +1163,14 @@ function CustomerList() {
                             </div>
                             <div>
                                 <div style={styles.detailLabel}>Wallet Balance</div>
-                                <div style={styles.detailValue}>Rs. {selectedCustomer.walletBalance}</div>
+                                <div style={styles.detailValue}>₹ {selectedCustomer.walletBalance}</div>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {/* Table */}
-                <div style={styles.tableWrapper}>
+                <div data-admin-surface style={styles.tableWrapper}>
                     <table style={styles.table}>
                         <thead style={styles.thead}>
                             <tr>
@@ -1232,7 +1248,7 @@ function CustomerList() {
                                                     {customer.walletStatus}
                                                 </button>
                                             </td>
-                                            <td style={styles.td}>Rs. {customer.walletBalance}</td>
+                                            <td style={styles.td}>₹ {customer.walletBalance}</td>
                                             <td style={styles.td}>
                                                 <div style={{ ...styles.menuWrapper, verticalAlign: 'middle' }}>
                                                     <button
@@ -1244,7 +1260,7 @@ function CustomerList() {
                                                     </button>
                                                     {openMenu.id === customer.id && openMenu.type === 'action' && (
                                                         <div style={dropdownStyle}>
-                                                            <button
+                                                            <button className="admin-view-button"
                                                                 type="button"
                                                                 style={{ ...styles.menuItem, display: 'flex', alignItems: 'center', gap: '8px' }}
                                                                 onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
@@ -1277,7 +1293,7 @@ function CustomerList() {
                                                     </button>
                                                     {openMenu.id === customer.id && openMenu.type === 'finance' && (
                                                         <div style={dropdownStyle}>
-                                                            <button
+                                                            <button data-admin-action="primary"
                                                                 type="button"
                                                                 style={{ ...styles.menuItem, display: 'flex', alignItems: 'center', gap: '8px' }}
                                                                 onMouseEnter={(e) => { e.target.style.background = 'rgba(74, 15, 26, 0.08)'; }}
@@ -1285,7 +1301,7 @@ function CustomerList() {
                                                                 onClick={() => handleOpenAddBalanceModal(customer)}
                                                             >
                                                                 <PlusCircle size={14} /> Add Balance
-                                                            </button>                                                             <button
+                                                            </button>                                                             <button data-admin-action="reset"
                                                                 type="button"
                                                                 disabled={Number(customer.walletBalance || 0) <= 0}
                                                                 style={{
@@ -1408,11 +1424,11 @@ function CustomerList() {
                             </div>
                             <div>
                                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>Wallet Balance</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#A51C49' }}>Rs. {selectedCustomer.walletBalance}</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#A51C49' }}>₹ {selectedCustomer.walletBalance}</div>
                             </div>
                         </div>
                         <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                            <button
+                            <button data-admin-close
                                 type="button"
                                 style={{ padding: '8px 16px', background: '#e2e8f0', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
                                 onClick={() => setSelectedCustomer(null)}
@@ -1559,7 +1575,7 @@ function CustomerList() {
                             </div>
                         </div>
                         <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                            <button
+                            <button data-admin-action="reset"
                                 type="button"
                                 disabled={resetLoading}
                                 style={{

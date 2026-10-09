@@ -344,13 +344,13 @@ export default function AdminFlightAmendmentsListPage() {
         </div>
 
         <div className="admin-actions-row">
-          <button type="button" onClick={() => setIsFiltersOpen((current) => !current)}>
+          <button data-admin-action="primary" type="button" onClick={() => setIsFiltersOpen((current) => !current)}>
             {isFiltersOpen ? "Close Filter" : "Filter"}
           </button>
-          <button type="button" onClick={clearFilters}>
+          <button data-admin-action="reset" type="button" onClick={clearFilters}>
             Clear Filter
           </button>
-          <button type="button" className="admin-flight-btn-export" onClick={handleExport}>
+          <button data-admin-action="export" type="button" className="admin-flight-btn-export" onClick={handleExport}>
             Export
           </button>
         </div>
@@ -410,10 +410,10 @@ export default function AdminFlightAmendmentsListPage() {
           </label>
 
           <div className="filters-actions admin-flight-amend-filter-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Reset
             </button>
           </div>
@@ -464,7 +464,7 @@ export default function AdminFlightAmendmentsListPage() {
                 <div className="admin-cancel-cell admin-cell-centered">
                   <button
                     type="button"
-                    className="admin-action-btn"
+                    className="admin-action-btn admin-view-button"
                     onClick={() => setSelectedRecord(record)}
                   >
                     View
@@ -508,7 +508,7 @@ export default function AdminFlightAmendmentsListPage() {
                   <span className="admin-view-meta-chip">{buildSegment(selectedRecord)}</span>
                 </div>
               </div>
-              <button type="button" onClick={() => setSelectedRecord(null)}>
+              <button data-admin-close type="button" onClick={() => setSelectedRecord(null)}>
                 Close
               </button>
             </header>

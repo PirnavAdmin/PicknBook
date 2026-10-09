@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import "./FlightBookingList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
 import { Filter, Download } from "lucide-react";
@@ -636,7 +636,7 @@ async function requestJson(urlOrPath, options = {}) {
   return payload;
 }
 
-async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDate, limit = 200 } = {}) {
+async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDate, limit = 200 } = {}, options = {}) {
   const candidateEndpoints = [
     "/api/admin/flight/bookings",
     "/api/SrdvFlightApi/bookings",
@@ -658,15 +658,16 @@ async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDat
     });
 
     try {
-      const data = await requestJson(url, { method: "GET" });
+      const data = await requestJson(url, { ...options, method: "GET" });
       const rawList = Array.isArray(data)
         ? data
         : (data?.data || data?.results || data?.result || data?.items || data?.bookings || data?.$values || data?.value || []);
-      if (Array.isArray(rawList) && rawList.length > 0) {
+      if (Array.isArray(rawList)) {
         fetchedList = rawList.map((record) => normalizeFlightBookingRecord(record));
         break;
       }
     } catch (error) {
+      if (options.signal?.aborted || error?.name === 'AbortError') throw error;
       // try next candidate endpoint
     }
   }
@@ -1034,7 +1035,11 @@ export default function AdminFlightBookingListPage() {
 
   const todayDate = new Date().toISOString().slice(0, 10);
 
+  const bookingRequestRef = useRef(null);
   const loadAdminBookings = useCallback(async (activeFilters) => {
+    bookingRequestRef.current?.abort();
+    const controller = new AbortController();
+    bookingRequestRef.current = controller;
     setIsLoading(true);
     setErrorMessage("");
 
@@ -1049,7 +1054,8 @@ export default function AdminFlightBookingListPage() {
         pnr: String(activeFilters.bookingReference || activeFilters.pnr || "").trim() || undefined,
         journeyDate: String(activeFilters.fromDate || activeFilters.journeyDate || "").trim() || undefined,
         limit: 200,
-      });
+      }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
 
       const unifiedBookings = flightResults
         .filter((record) => {
@@ -1065,14 +1071,16 @@ export default function AdminFlightBookingListPage() {
 
       setBookings(unifiedBookings);
     } catch (error) {
+      if (controller.signal.aborted) return;
       setErrorMessage(error?.message || "Unable to load flight bookings.");
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     loadAdminBookings(filters);
+    return () => bookingRequestRef.current?.abort();
   }, [filters, loadAdminBookings]);
 
   const filteredBookings = useMemo(() => {
@@ -1317,7 +1325,7 @@ export default function AdminFlightBookingListPage() {
         </div>
 
         <div className="admin-actions-row admin-flight-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
+          <button data-admin-action="primary"
             type="button"
             onClick={() => setIsFiltersOpen((current) => !current)}
             style={{
@@ -1342,7 +1350,7 @@ export default function AdminFlightBookingListPage() {
             <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
-          <button
+          <button data-admin-action="export"
             type="button"
             onClick={handleExport}
             style={{
@@ -1472,10 +1480,10 @@ export default function AdminFlightBookingListPage() {
           </label>
 
           <div className="filters-actions">
-            <button type="button" className="primary" onClick={applyFilters}>
+            <button data-admin-action="primary" type="button" className="primary" onClick={applyFilters}>
               Apply Filter
             </button>
-            <button type="button" className="secondary" onClick={clearFilters}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={clearFilters}>
               Clear Filter
             </button>
           </div>
@@ -1607,7 +1615,7 @@ export default function AdminFlightBookingListPage() {
                   <div className="admin-table-cell admin-cell-centered">
                     <button
                       type="button"
-                      className="admin-action-btn"
+                      className="admin-action-btn admin-view-button"
                       onClick={() => setSelectedBooking(booking)}
                     >
                       View
@@ -1664,7 +1672,7 @@ export default function AdminFlightBookingListPage() {
                   </span>
                 </div>
               </div>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setSelectedBooking(null)}
                 style={{
@@ -1685,8 +1693,8 @@ export default function AdminFlightBookingListPage() {
 
             <div style={{ maxHeight: "72vh", overflowY: "auto", paddingRight: "4px" }}>
               {/* SECTION 1: GENERAL & JOURNEY DETAILS */}
-              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+              <div className="admin-view-section-title" >
+                
                 GENERAL & JOURNEY DETAILS
               </div>
               <table className="admin-view-table">
@@ -1755,8 +1763,8 @@ export default function AdminFlightBookingListPage() {
               </table>
 
               {/* SECTION 2: FINANCIAL & FARE BREAKDOWN */}
-              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+              <div className="admin-view-section-title" >
+                
                 FINANCIAL & FARE BREAKDOWN
               </div>
               <table className="admin-view-table">
@@ -1825,8 +1833,8 @@ export default function AdminFlightBookingListPage() {
               {/* SECTION 3: FLIGHT SEGMENTS / LEGS (IF MULTICITY / ROUND TRIP) */}
               {((selectedBooking.segments && selectedBooking.segments.length > 0) || (selectedBooking.raw?.segments && selectedBooking.raw.segments.length > 0)) && (
                 <div style={{ marginTop: "16px" }}>
-                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                  <div className="admin-view-section-title" >
+                    
                     FLIGHT ROUTE SEGMENTS ({(selectedBooking.segments || selectedBooking.raw?.segments).length} LEGS)
                   </div>
                   <table className="admin-view-table">
@@ -1863,8 +1871,8 @@ export default function AdminFlightBookingListPage() {
               )}
 
               {/* SECTION 4: PAYMENT INFORMATION */}
-              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+              <div className="admin-view-section-title" >
+                
                 PAYMENT INFORMATION
               </div>
               <table className="admin-view-table">
@@ -1897,8 +1905,8 @@ export default function AdminFlightBookingListPage() {
               {/* SECTION 5: CANCELLATION DETAILS IF CANCELLED */}
               {(selectedBooking.status === "Cancelled" || selectedBooking.raw?.cancellationReason || selectedBooking.raw?.cancelledAtUtc) && (
                 <div style={{ marginTop: "16px" }}>
-                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#ef4444", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#ef4444", borderRadius: "2px" }}></span>
+                  <div className="admin-view-section-title" >
+                    
                     CANCELLATION & REFUND BREAKDOWN
                   </div>
                   <table className="admin-view-table">
@@ -1927,8 +1935,8 @@ export default function AdminFlightBookingListPage() {
               {/* SECTION 6: PASSENGER DETAILS */}
               {selectedBooking.passengers && selectedBooking.passengers.length > 0 && (
                 <div style={{ marginTop: "16px" }}>
-                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+                  <div className="admin-view-section-title" >
+                    
                     PASSENGER DETAILS ({selectedBooking.passengers.length})
                   </div>
                   <table className="admin-view-table">

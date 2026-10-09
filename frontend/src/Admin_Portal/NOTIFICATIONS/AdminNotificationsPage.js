@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell,
@@ -92,15 +92,16 @@ export default function AdminNotificationsPage() {
   });
 
   // Fetch real notifications from Backend API & map payload structure
+  const notificationsRequestRef = useRef(null);
   const fetchNotifications = useCallback(async () => {
+    notificationsRequestRef.current?.abort();
+    const controller = new AbortController();
+    notificationsRequestRef.current = controller;
     setLoading(true);
     try {
-      // 1. Fetch unread count from backend
-      const count = await adminNotificationService.getUnreadCount();
-      setUnreadCount(typeof count === 'number' ? count : 0);
-
-      // 2. Fetch notifications list from backend (GET /api/admin/notifications)
-      const res = await adminNotificationService.getNotifications({ pageSize: 100 });
+      // Load the primary list before the secondary unread count. (GET /api/admin/notifications)
+      const res = await adminNotificationService.getNotifications({ pageSize: 100 }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       const rawItems = Array.isArray(res) ? res : (res?.data || res?.items || []);
 
       if (rawItems && rawItems.length > 0) {
@@ -143,15 +144,20 @@ export default function AdminNotificationsPage() {
         if (wallet.length > 0) setWalletNotifications(wallet);
         if (promo.length > 0) setPromoNotifications(promo);
       }
+      setLoading(false);
+      const count = await adminNotificationService.getUnreadCount({ signal: controller.signal });
+      if (!controller.signal.aborted) setUnreadCount(typeof count === 'number' ? count : 0);
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.warn("Using mock fallbacks for Admin Notifications:", err);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchNotifications();
+    return () => notificationsRequestRef.current?.abort();
   }, [fetchNotifications]);
 
   const toggleExpand = (categoryKey) => {

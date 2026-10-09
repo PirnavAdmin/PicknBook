@@ -157,7 +157,7 @@ export default function AdminMenuAddPage({ onBack }) {
 
           <div className="menu-form-grid">
             <label>
-              <span>Menu Name <span className="compulsory-star">*</span></span>
+              <span>Menu Name <span data-admin-required className="compulsory-star">*</span></span>
               <input 
                 type="text" 
                 placeholder="Enter menu name" 
@@ -167,7 +167,7 @@ export default function AdminMenuAddPage({ onBack }) {
               />
             </label>
             <label>
-              <span>Menu Title <span className="compulsory-star">*</span></span>
+              <span>Menu Title <span data-admin-required className="compulsory-star">*</span></span>
               <input
                 type="text"
                 placeholder="Enter menu title"
@@ -177,7 +177,7 @@ export default function AdminMenuAddPage({ onBack }) {
               />
             </label>
             <label>
-              <span>Menu Slug <span className="compulsory-star">*</span></span>
+              <span>Menu Slug <span data-admin-required className="compulsory-star">*</span></span>
               <input 
                 type="text" 
                 placeholder="Enter menu slug" 
@@ -194,7 +194,7 @@ export default function AdminMenuAddPage({ onBack }) {
               </select>
             </label>
             <label>
-              <span>Menu Order <span className="compulsory-star">*</span></span>
+              <span>Menu Order <span data-admin-required className="compulsory-star">*</span></span>
               <input
                 type="number"
                 min="0"
@@ -205,7 +205,7 @@ export default function AdminMenuAddPage({ onBack }) {
               />
             </label>
             <label>
-              <span>Menu Site Type <span className="compulsory-star">*</span></span>
+              <span>Menu Site Type <span data-admin-required className="compulsory-star">*</span></span>
               <select 
                 value={formValues.module} 
                 onChange={handleChange("module")}
@@ -217,7 +217,7 @@ export default function AdminMenuAddPage({ onBack }) {
               </select>
             </label>
             <label>
-              <span>Menu Type <span className="compulsory-star">*</span></span>
+              <span>Menu Type <span data-admin-required className="compulsory-star">*</span></span>
               <select 
                 value={formValues.location} 
                 onChange={handleChange("location")}
@@ -243,11 +243,11 @@ export default function AdminMenuAddPage({ onBack }) {
           )}
 
           <div className="admin-markup-modal-actions menu-form-actions">
-            <button type="button" className="secondary" onClick={handleReset}>
+            <button data-admin-action="reset" type="button" className="secondary" onClick={handleReset}>
               <RotateCcw size={14} />
               Reset
             </button>
-            <button type="submit" className="primary">
+            <button data-admin-action="primary" type="submit" className="primary">
               <Check size={14} />
               {editItem ? "Save Changes" : "Save Menu"}
             </button>

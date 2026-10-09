@@ -37,7 +37,7 @@ function AirlineWebCheckLink() {
 
   useEffect(() => {
     loadCheckins();
-  }, [localAirlines]);
+  }, []);
 
   const [selectedAirline, setSelectedAirline] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -119,6 +119,7 @@ function AirlineWebCheckLink() {
           url: formData.url
         };
         setLocalAirlines([...localAirlines, newAirline]);
+        setAirlines(previous => [...previous, newAirline]);
       }
     }
 
@@ -157,7 +158,7 @@ function AirlineWebCheckLink() {
               <span style={{ color: '#A51C49', fontWeight: 500 }}>B2C Flight</span> Airline WebCheck Link List
             </h2>
             <div className="actions">
-              <button className="btn add" onClick={goToAdd}>
+              <button data-admin-action="primary" className="btn add" onClick={goToAdd}>
                 + Add WebCheck Link
               </button>
             </div>
@@ -186,7 +187,7 @@ function AirlineWebCheckLink() {
                       <td>{item.url}</td>
                       <td className="action-buttons" style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
                         <button
-                          className="icon-btn view"
+                          className="icon-btn view admin-view-button"
                           title="View"
                           onClick={() => setSelectedAirline(item)}
                         >
@@ -275,7 +276,7 @@ function AirlineWebCheckLink() {
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
-              <button className="submit-btn" style={{ marginTop: 0 }} onClick={handleSubmit}>
+              <button data-admin-action="primary" className="submit-btn" style={{ marginTop: 0 }} onClick={handleSubmit}>
                 SUBMIT
               </button>
             </div>
@@ -308,7 +309,7 @@ function AirlineWebCheckLink() {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button className="submit-btn" style={{ marginTop: 0 }} onClick={() => setSelectedAirline(null)}>Close</button>
+              <button data-admin-close className="submit-btn" style={{ marginTop: 0 }} onClick={() => setSelectedAirline(null)}>Close</button>
             </div>
           </div>
         </div>

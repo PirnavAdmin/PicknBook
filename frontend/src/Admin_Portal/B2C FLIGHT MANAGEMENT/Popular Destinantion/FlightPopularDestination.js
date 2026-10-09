@@ -453,7 +453,7 @@ export default function AdminFlightPopularDestinationsPage() {
           </div>
 
           <div className="flight-markup-actions">
-            <button
+            <button data-admin-action="primary"
               type="button"
               className={`flight-markup-action-btn filter ${isFilterPanelOpen ? "active" : ""}`}
               onClick={() => setIsFilterPanelOpen((previous) => !previous)}
@@ -463,7 +463,7 @@ export default function AdminFlightPopularDestinationsPage() {
               <SlidersHorizontal size={16} />
               <span>Filter</span>
             </button>
-            <button
+            <button data-admin-action="reset"
               type="button"
               className="flight-markup-action-btn secondary"
               onClick={handleClearFilters}
@@ -472,7 +472,7 @@ export default function AdminFlightPopularDestinationsPage() {
               <X size={16} />
               <span>Clear Filter</span>
             </button>
-            <button type="button" className="flight-markup-action-btn primary" onClick={handleOpenAddModal}>
+            <button data-admin-action="primary" type="button" className="flight-markup-action-btn primary" onClick={handleOpenAddModal}>
               <Plus size={16} />
               <span>Add Popular Destination</span>
             </button>
@@ -780,7 +780,7 @@ export default function AdminFlightPopularDestinationsPage() {
             {addError && <p className="admin-markup-coupon-error">{addError}</p>}
 
             <div className="admin-markup-coupon-modal-actions generate-actions">
-              <button type="button" className="primary generate-submit" onClick={handleAddDestination}>
+              <button data-admin-action="primary" type="button" className="primary generate-submit" onClick={handleAddDestination}>
                 <Check size={16} />
                 <span>Submit</span>
               </button>
@@ -921,7 +921,7 @@ export default function AdminFlightPopularDestinationsPage() {
             {editError && <p className="admin-markup-coupon-error">{editError}</p>}
 
             <div className="admin-markup-coupon-modal-actions generate-actions">
-              <button type="button" className="primary generate-submit" onClick={handleEditDestination}>
+              <button data-admin-action="primary" type="button" className="primary generate-submit" onClick={handleEditDestination}>
                 <Check size={16} />
                 <span>Save</span>
               </button>

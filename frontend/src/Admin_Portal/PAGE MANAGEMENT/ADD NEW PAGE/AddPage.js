@@ -319,7 +319,7 @@ const AddPage = () => {
 
           <div className="form-grid">
             <div className="form-group">
-              <label>Title <span style={{ color: "#d93025" }}>*</span></label>
+              <label>Title <span data-admin-required style={{ color: "#d93025" }}>*</span></label>
               <input
                 placeholder="Page title"
                 value={formData.title}
@@ -495,7 +495,7 @@ const AddPage = () => {
           {saved && <p className="menu-form-success" style={{ marginTop: '16px' }}>Page saved successfully.</p>}
 
           <div className="submit-area" style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: "10px", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid #e2e8f0", flexWrap: "nowrap" }}>
-            <button
+            <button data-admin-action="reset"
               type="button"
               className="reset-btn"
               onClick={handleReset}
@@ -519,7 +519,7 @@ const AddPage = () => {
             >
               RESET
             </button>
-            <button
+            <button data-admin-action="primary"
               type="submit"
               className="submit-btn"
               disabled={loading}

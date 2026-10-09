@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getAdminDashboardSummary, deriveAdminMetrics } from '../../services/adminDashboardService';
 import { adminNotificationService } from '../../services/adminNotificationService';
-import { clearAdminAuthSession } from '../../services/authSession';
+import { clearAuthSession } from '../../services/authSession';
 import pickNBookLogo from '../../assets/images/brand/pick-n-book-logo.png';
 
 
@@ -401,7 +401,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
             [`Generated Date: ${todayDate}`],
             [],
             ["Dashboard Metric", "Current Value"],
-            ["Cash Balance", `INR ${balanceData.amount}`],
+            ["Cash Balance", `₹ ${balanceData.amount}`],
             ["Last Login IP", "192.168.1.10"],
             ["Total Daily Bookings", "107"],
             ["Pending Transactions", "2"],
@@ -461,10 +461,20 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
         currency: 'INR',
     });
 
+    const summaryRef = useRef(null);
+    const notificationLoadedAt = useRef(0);
     useEffect(() => {
+        let active = true;
+        let busy = false;
+        let interval;
+        const controller = new AbortController();
         const fetchBalanceAndNotifications = async () => {
+            if (!active || busy) return;
+            busy = true;
             try {
-                const summary = await getAdminDashboardSummary();
+                const summary = await getAdminDashboardSummary({ signal: controller.signal });
+                if (!active) return;
+                summaryRef.current = summary;
                 const metrics = deriveAdminMetrics(summary);
                 if (metrics && metrics.revenue !== undefined) {
                     setBalanceData({
@@ -477,7 +487,8 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
 
                 // 1. Fetch live unread count from API Endpoint 2
                 try {
-                    const count = await adminNotificationService.getUnreadCount();
+                    const count = await adminNotificationService.getUnreadCount({ signal: controller.signal });
+                    if (!active) return;
                     if (typeof count === 'number') {
                         if (isAllCleared && count === 0) {
                             setNotificationCount(0);
@@ -491,13 +502,44 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         }
                     }
                 } catch (cntErr) {
-                    console.error("Unread count fetch error:", cntErr);
+                    if (active && !controller.signal.aborted) console.error("Unread count fetch error:", cntErr);
                 }
 
+            } catch (err) {
+                if (active && !controller.signal.aborted) console.error("Error fetching Topbar dashboard summary data:", err);
+            } finally {
+                busy = false;
+            }
+        };
+        const start = () => {
+            if (interval) return;
+            fetchBalanceAndNotifications();
+            interval = setInterval(fetchBalanceAndNotifications, 30000);
+        };
+        window.addEventListener('admin:screen-ready', start);
+        return () => {
+            active = false;
+            window.removeEventListener('admin:screen-ready', start);
+            clearInterval(interval);
+            controller.abort();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!showNotifications) return;
+        let active = true;
+        const controller = new AbortController();
+        let busy = false;
+        const load = async (force = false) => {
+            if (!active || busy || (!force && Date.now() - notificationLoadedAt.current < 30000)) return;
+            busy = true;
+            try {
+            const summary = summaryRef.current;
+            const isAllCleared = localStorage.getItem('admin_notifications_marked_all_read') === 'true';
                 // 2. Fetch notifications list from API Endpoint 1
                 let apiItems = [];
                 try {
-                    const apiRes = await adminNotificationService.getNotifications({ page: 1, pageSize: 10 });
+                    const apiRes = await adminNotificationService.getNotifications({ page: 1, pageSize: 10 }, { signal: controller.signal });
                     if (apiRes) {
                         if (Array.isArray(apiRes.items)) apiItems = apiRes.items;
                         else if (Array.isArray(apiRes)) apiItems = apiRes;
@@ -505,9 +547,11 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                         else if (Array.isArray(apiRes.data)) apiItems = apiRes.data;
                     }
                 } catch (notifErr) {
-                    console.error("Notifications list fetch error:", notifErr);
+                    if (active && !controller.signal.aborted) console.error("Notifications list fetch error:", notifErr);
                 }
 
+                if (!active) return;
+                notificationLoadedAt.current = Date.now();
                 const unreadApiItems = apiItems.filter(item => !item.isRead);
 
                 if (isAllCleared && unreadApiItems.length === 0) {
@@ -578,17 +622,15 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                     setNotificationCount(0);
                     setHasUnread(false);
                 }
-            } catch (err) {
-                console.error("Error fetching Topbar dashboard summary data:", err);
-            }
+            } finally { busy = false; }
         };
-        fetchBalanceAndNotifications();
-        const interval = setInterval(fetchBalanceAndNotifications, 30000);
-        return () => clearInterval(interval);
-    }, []);
+        load();
+        const interval = setInterval(() => load(true), 30000);
+        return () => { active = false; controller.abort(); clearInterval(interval); };
+    }, [showNotifications]);
 
     const handleLogout = () => {
-        clearAdminAuthSession();
+        clearAuthSession();
         setIsDropdownOpen(false);
         navigate('/admin/login', { replace: true });
     };
@@ -1722,7 +1764,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                             <button style={{ ...styles.modalBtn, ...styles.modalBtnCancel }} onClick={() => setShowTopupModal(false)}>
                                 Cancel
                             </button>
-                            <button style={{ ...styles.modalBtn, ...styles.modalBtnSubmit }} onClick={handleTopupSubmit}>
+                            <button data-admin-action="primary" style={{ ...styles.modalBtn, ...styles.modalBtnSubmit }} onClick={handleTopupSubmit}>
                                 Submit
                             </button>
                         </div>
@@ -1807,7 +1849,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                             <button style={{ ...styles.modalBtn, ...styles.modalBtnCancel }} onClick={() => setShowPasswordModal(false)}>
                                 Cancel
                             </button>
-                            <button style={{ ...styles.modalBtn, ...styles.modalBtnSubmit }} onClick={handlePasswordSubmit}>
+                            <button data-admin-action="primary" style={{ ...styles.modalBtn, ...styles.modalBtnSubmit }} onClick={handlePasswordSubmit}>
                                 Save
                             </button>
                         </div>
@@ -1833,7 +1875,7 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
                             <button style={{ ...styles.modalBtn, ...styles.modalBtnCancel }} onClick={() => setShowPinModal(false)}>
                                 Cancel
                             </button>
-                            <button style={{ ...styles.modalBtn, ...styles.modalBtnSubmit }} onClick={handlePinSubmit}>
+                            <button data-admin-action="primary" style={{ ...styles.modalBtn, ...styles.modalBtnSubmit }} onClick={handlePinSubmit}>
                                 Submit
                             </button>
                         </div>
@@ -1845,3 +1887,4 @@ function Topbar({ onToggleSidebar, searchQuery, setSearchQuery, theme, onToggleT
 }
 
 export default Topbar;
+

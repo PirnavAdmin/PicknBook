@@ -1,5 +1,6 @@
+import useDebouncedValue from '../../hooks/useDebouncedValue';
 /* eslint-disable */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import securityService from '../../services/securityService';
@@ -107,6 +108,8 @@ export default function UserSecurityRules() {
 
   // Filters State
   const [searchUserId, setSearchUserId] = useState('');
+  const debouncedSearch = useDebouncedValue(searchUserId);
+  const rulesRequestRef = useRef(null);
   const [filterRuleType, setFilterRuleType] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL');
 
@@ -116,6 +119,7 @@ export default function UserSecurityRules() {
   const [showUnblockModal, setShowUnblockModal] = useState(false);
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeDropdownId, setActiveDropdownId] = useState(null);
 
   const [selectedRule, setSelectedRule] = useState(null);
@@ -161,15 +165,19 @@ export default function UserSecurityRules() {
 
   // Fetch Rules from API
   const fetchRules = useCallback(async () => {
+    rulesRequestRef.current?.abort();
+    const controller = new AbortController();
+    rulesRequestRef.current = controller;
     setLoading(true);
     setErrorMsg('');
     try {
       const response = await securityService.getUserSecurityRules({
         page: currentPage,
         pageSize,
-        userId: searchUserId.trim(),
+        userId: debouncedSearch.trim(),
         status: filterStatus === 'ALL' ? '' : filterStatus
-      });
+      }, { signal: controller.signal });
+      if (controller.signal.aborted) return;
 
       // Extract backend response data strictly
       const resPayload = response?.data || response;
@@ -192,17 +200,19 @@ export default function UserSecurityRules() {
       setRules(fetchedData);
       setTotalItems(resPayload?.totalRecords ?? resPayload?.total ?? response?.totalRecords ?? fetchedData.length);
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error('Error fetching user security rules:', err);
       setErrorMsg(err.message || 'Failed to load user security rules from API.');
       setRules([]);
       setTotalItems(0);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
-  }, [currentPage, pageSize, searchUserId, filterRuleType, filterStatus]);
+  }, [currentPage, pageSize, debouncedSearch, filterStatus]);
 
   useEffect(() => {
     fetchRules();
+    return () => rulesRequestRef.current?.abort();
   }, [fetchRules]);
 
   // Handler: Block User ID
@@ -565,7 +575,7 @@ export default function UserSecurityRules() {
                             <div className="usr-dropdown-wrapper">
                               <button
                                 type="button"
-                                className="usr-action-dropdown-btn"
+                                className="usr-action-dropdown-btn admin-view-button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setActiveDropdownId(activeDropdownId === rule.id ? null : rule.id);
@@ -578,7 +588,7 @@ export default function UserSecurityRules() {
                                 <div className="usr-dropdown-menu">
                                   <button
                                     type="button"
-                                    className="usr-dropdown-item"
+                                    className="usr-dropdown-item admin-view-button"
                                     onClick={() => {
                                       setSelectedRule(rule);
                                       setShowViewModal(true);
@@ -666,7 +676,7 @@ export default function UserSecurityRules() {
             <form onSubmit={handleBlockUserSubmit}>
               <div className="usr-modal-body">
                 <div className="usr-form-group">
-                  <label className="usr-label">User ID <span className="req">*</span></label>
+                  <label className="usr-label">User ID <span data-admin-required className="req">*</span></label>
                   <input
                     type="text"
                     className="usr-input-text"
@@ -796,7 +806,7 @@ export default function UserSecurityRules() {
                       value={blockUrlsForm.customUrlInput}
                       onChange={(e) => setBlockUrlsForm({ ...blockUrlsForm, customUrlInput: e.target.value })}
                     />
-                    <button type="button" className="usr-btn-add-custom" onClick={addCustomUrl}>
+                    <button data-admin-action="primary" type="button" className="usr-btn-add-custom" onClick={addCustomUrl}>
                       + Add URL
                     </button>
                   </div>
@@ -1017,7 +1027,7 @@ export default function UserSecurityRules() {
               </div>
             </div>
             <div className="usr-modal-footer">
-              <button type="button" className="sd-btn-secondary" onClick={() => setShowViewModal(false)}>
+              <button data-admin-close type="button" className="sd-btn-secondary" onClick={() => setShowViewModal(false)}>
                 Close
               </button>
             </div>

@@ -178,7 +178,7 @@ export default function HotelPopularDestinations() {
             <span>Refresh</span>
           </button>
           
-          <button
+          <button data-admin-action="export"
             type="button"
             className="admin-markup-popular-btn export"
             onClick={handleExport}

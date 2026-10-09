@@ -1170,8 +1170,9 @@ const TicketPreviewPage = () => {
       const ticketType = getTicketType(ticket, requestedType);
       if (requestedType && ticketType !== requestedType) return false;
       if (!normalizedPnr) return true;
-      const ticketReference = normalizeRef(ticket?.bookingReference || ticket?.pnr);
-      return ticketReference === normalizedPnr;
+      const bookingRef = normalizeRef(ticket?.bookingReference);
+      const pnrRef = normalizeRef(ticket?.pnr);
+      return bookingRef === normalizedPnr || pnrRef === normalizedPnr;
     });
   }, [providedTickets, requestedPnr, requestedType]);
 
@@ -1235,8 +1236,9 @@ const TicketPreviewPage = () => {
         const normalizedPnr = normalizeRef(requestedPnr);
         const filteredTickets = normalizedPnr
           ? scopedTickets.filter((ticket) => {
-              const ticketReference = normalizeRef(ticket?.bookingReference || ticket?.pnr);
-              return ticketReference === normalizedPnr;
+              const bookingRef = normalizeRef(ticket?.bookingReference);
+              const pnrRef = normalizeRef(ticket?.pnr);
+              return bookingRef === normalizedPnr || pnrRef === normalizedPnr;
             })
           : scopedTickets;
         setTickets(filteredTickets);

@@ -63,7 +63,8 @@ async function requestAdminJson(path, options = {}) {
         errorPayload?.title ||
         response.statusText ||
         "An error occurred";
-    } catch {
+    } catch (adminRequestError) {
+      if (adminRequestError?.name === 'AbortError' || adminRequestError?.code === 'ERR_CANCELED') throw adminRequestError;
       errorMessage = response.statusText;
     }
     throw new Error(errorMessage);
@@ -258,8 +259,8 @@ export async function updateConvenienceFeeById(ruleId, rule) {
 // CANCELLATIONS & AMENDMENTS API
 // ---------------------------------------------------------
 
-export async function listAdminCancellations() {
-  const data = await requestAdminJson(`${ADMIN_FLIGHT_ROOT}/cancellations`, { method: "GET" });
+export async function listAdminCancellations(params = {}, options = {}) {
+  const data = await requestAdminJson(`${ADMIN_FLIGHT_ROOT}/cancellations`, { ...options, method: "GET" });
   return Array.isArray(data) ? data : [];
 }
 

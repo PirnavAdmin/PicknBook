@@ -508,7 +508,7 @@ export default function HotelBookingList() {
         </div>
 
         <div className="admin-actions-row" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button 
+          <button data-admin-action="primary" 
             type="button" 
             onClick={() => setIsFiltersOpen(prev => !prev)}
             style={{
@@ -532,7 +532,7 @@ export default function HotelBookingList() {
             <Filter size={13} />
             <span>{isFiltersOpen ? "Close Filter" : "Filter"}</span>
           </button>
-          <button 
+          <button data-admin-action="export" 
             type="button" 
             onClick={handleExport}
             disabled={filteredBookings.length === 0}
@@ -628,14 +628,14 @@ export default function HotelBookingList() {
             </div>
           </div>
           <div className="hbl-filter-actions">
-            <button
+            <button data-admin-action="primary"
               type="button"
               className="hbl-btn-apply"
               onClick={handleApplyFilters}
             >
               Apply Filter
             </button>
-            <button
+            <button data-admin-action="reset"
               type="button"
               className="hbl-btn-reset"
               onClick={handleResetFilters}
@@ -765,7 +765,7 @@ export default function HotelBookingList() {
                   <div className="admin-table-cell admin-cell-centered">
                     <button
                       type="button"
-                      className="admin-action-btn"
+                      className="admin-action-btn admin-view-button"
                       onClick={() => setSelectedBooking(b)}
                     >
                       View
@@ -821,7 +821,7 @@ export default function HotelBookingList() {
                   </span>
                 </div>
               </div>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setSelectedBooking(null)}
                 style={{
@@ -842,8 +842,8 @@ export default function HotelBookingList() {
 
             <div style={{ maxHeight: "72vh", overflowY: "auto", paddingRight: "4px" }}>
               {/* SECTION 1: GENERAL & RESERVATION DETAILS */}
-              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "14px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+              <div className="admin-view-section-title" >
+                
                 GENERAL & RESERVATION DETAILS
               </div>
               <table className="admin-view-table">
@@ -902,8 +902,8 @@ export default function HotelBookingList() {
               </table>
 
               {/* SECTION 2: FINANCIAL & FARE BREAKDOWN */}
-              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+              <div className="admin-view-section-title" >
+                
                 FINANCIAL & FARE BREAKDOWN
               </div>
               <table className="admin-view-table">
@@ -970,8 +970,8 @@ export default function HotelBookingList() {
               </table>
 
               {/* SECTION 3: PAYMENT INFORMATION */}
-              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+              <div className="admin-view-section-title" >
+                
                 PAYMENT INFORMATION
               </div>
               <table className="admin-view-table">
@@ -1002,8 +1002,8 @@ export default function HotelBookingList() {
               </table>
 
               {/* SECTION 4: GUEST & ROOM DETAILS */}
-              <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#A51C49", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#A51C49", borderRadius: "2px" }}></span>
+              <div className="admin-view-section-title" >
+                
                 GUEST & ROOM DETAILS ({Array.isArray(selectedBooking.guests) ? selectedBooking.guests.length : (Array.isArray(selectedBooking.passengers) ? selectedBooking.passengers.length : 1)})
               </div>
               <table className="admin-view-table">
@@ -1048,8 +1048,8 @@ export default function HotelBookingList() {
               {/* SECTION 5: HOTEL CANCELLATION & REFUND BREAKDOWN */}
               {(selectedBooking.status === "Cancelled" || selectedBooking.cancelledAtUtc || selectedBooking.cancellationReason) && (
                 <>
-                  <div className="admin-view-section-title" style={{ fontSize: "0.85rem", margin: "16px 0 8px", fontWeight: "700", color: "#ef4444", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ display: "inline-block", width: "3px", height: "14px", background: "#ef4444", borderRadius: "2px" }}></span>
+                  <div className="admin-view-section-title" >
+                    
                     HOTEL CANCELLATION & REFUND BREAKDOWN
                   </div>
                   <table className="admin-view-table">

@@ -624,10 +624,10 @@ export default function EmailTemplates() {
           </div>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button className="btn-export-tmpl" onClick={() => showToast('📤 Exported templates data successfully.')}>
+            <button data-admin-action="export" className="btn-export-tmpl" onClick={() => showToast('📤 Exported templates data successfully.')}>
               <span>📤 Export</span>
             </button>
-            <button className="btn-add-tmpl" onClick={() => {
+            <button data-admin-action="primary" className="btn-add-tmpl" onClick={() => {
               setRightForm({
                 id: '',
                 name: 'New Template',
@@ -741,8 +741,8 @@ export default function EmailTemplates() {
             </div>
 
             <div className="email-filter-actions">
-              <button type="button" className="btn-filter-reset" onClick={handleResetFilters}>Reset</button>
-              <button type="submit" className="btn-filter-apply">Apply Filters</button>
+              <button data-admin-action="reset" type="button" className="btn-filter-reset" onClick={handleResetFilters}>Reset</button>
+              <button data-admin-action="primary" type="submit" className="btn-filter-apply">Apply Filters</button>
             </div>
           </form>
         )}
@@ -870,7 +870,7 @@ export default function EmailTemplates() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div
+            <div className="admin-view-button"
               style={{ padding: '8px 14px', fontSize: '11.5px', fontWeight: '500', color: '#1e293b', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.15s' }}
               onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
               onMouseLeave={(e) => e.currentTarget.style.background = '#ffffff'}
@@ -986,7 +986,7 @@ export default function EmailTemplates() {
                 </div>
               </div>
               <div className="email-modal-footer">
-                <button className="btn-card-cancel" onClick={() => setViewPanelData(null)}>Close</button>
+                <button data-admin-close className="btn-card-cancel" onClick={() => setViewPanelData(null)}>Close</button>
               </div>
             </div>
           </div>,
@@ -1044,7 +1044,7 @@ export default function EmailTemplates() {
                   
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <div className="form-field" style={{ flex: 1.2 }}>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Template Name *</label>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Template Name <span data-admin-required className="admin-required-indicator">*</span></label>
                       <input
                         type="text"
                         required
@@ -1064,7 +1064,7 @@ export default function EmailTemplates() {
                     </div>
 
                     <div className="form-field" style={{ flex: 1 }}>
-                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Template Key (Code) *</label>
+                      <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Template Key (Code) <span data-admin-required className="admin-required-indicator">*</span></label>
                       <input
                         type="text"
                         required
@@ -1134,7 +1134,7 @@ export default function EmailTemplates() {
                   <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#901335', textTransform: 'uppercase', letterSpacing: '0.5px' }}>2. Email Subject & Body Markup</span>
 
                   <div className="form-field full">
-                    <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Email Subject *</label>
+                    <label style={{ fontSize: '11px', fontWeight: 'bold' }}>Email Subject <span data-admin-required className="admin-required-indicator">*</span></label>
                     <input
                       type="text"
                       required
@@ -1288,7 +1288,7 @@ export default function EmailTemplates() {
                       onChange={(e) => setRightForm({ ...rightForm, testEmail: e.target.value })}
                       style={{ height: '34px', fontSize: '12px', flex: 1 }}
                     />
-                    <button
+                    <button data-admin-action="primary"
                       type="button"
                       onClick={() => handleSendTest(rightForm.templateKey || rightForm.name || 'TEST_CODE', rightForm.testEmail)}
                       style={{
@@ -1312,7 +1312,7 @@ export default function EmailTemplates() {
 
               <div className="action-card-footer" style={{ flexShrink: 0, padding: '14px 24px', background: '#ffffff', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid #cbd5e1' }}>
                 <button type="button" className="btn-card-cancel" onClick={handleCancelRightForm}>Cancel</button>
-                <button type="submit" className="btn-card-save">{isEditMode ? 'Save Changes' : 'Save Template'}</button>
+                <button data-admin-action="primary" type="submit" className="btn-card-save">{isEditMode ? 'Save Changes' : 'Save Template'}</button>
               </div>
             </form>
           </div>

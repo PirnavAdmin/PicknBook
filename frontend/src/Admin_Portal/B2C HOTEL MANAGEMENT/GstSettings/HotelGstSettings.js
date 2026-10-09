@@ -372,7 +372,7 @@ export default function HotelGstSettings() {
           <div className="admin-markup-coupon-form" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
 
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span>Markup Type: <span style={{ color: "red" }}>*</span></span>
+              <span>Markup Type: <span data-admin-required style={{ color: "red" }}>*</span></span>
               <select value={form.markupType} onChange={(e) => setForm(prev => ({ ...prev, markupType: e.target.value }))}>
                 <option value="Flat">Flat</option>
                 <option value="Percentage">Percentage</option>
@@ -380,7 +380,7 @@ export default function HotelGstSettings() {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span>Markup Value: <span style={{ color: "red" }}>*</span></span>
+              <span>Markup Value: <span data-admin-required style={{ color: "red" }}>*</span></span>
               <input
                 type="number"
                 className={validationErrors.markupValue ? "validation-error" : ""}
@@ -396,7 +396,7 @@ export default function HotelGstSettings() {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span>Convenience Fee Type: <span style={{ color: "red" }}>*</span></span>
+              <span>Convenience Fee Type: <span data-admin-required style={{ color: "red" }}>*</span></span>
               <select value={form.convenienceFeeType} onChange={(e) => setForm(prev => ({ ...prev, convenienceFeeType: e.target.value }))}>
                 <option value="Flat">Flat</option>
                 <option value="Percentage">Percentage</option>
@@ -404,7 +404,7 @@ export default function HotelGstSettings() {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <span>Convenience Fee Value: <span style={{ color: "red" }}>*</span></span>
+              <span>Convenience Fee Value: <span data-admin-required style={{ color: "red" }}>*</span></span>
               <input
                 type="number"
                 className={validationErrors.convenienceFeeValue ? "validation-error" : ""}
@@ -420,7 +420,7 @@ export default function HotelGstSettings() {
             </label>
 
             <label style={{ display: "flex", flexDirection: "column", gap: "6px", gridColumn: "span 2" }}>
-              <span>GST Percentage (%): <span style={{ color: "red" }}>*</span></span>
+              <span>GST Percentage (%): <span data-admin-required style={{ color: "red" }}>*</span></span>
               <input
                 type="number"
                 min="0"
@@ -439,7 +439,7 @@ export default function HotelGstSettings() {
             </label>
 
             <div style={{ display: "flex", gap: "12px", gridColumn: "span 2", marginTop: "10px", alignItems: "center" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#be185d", marginRight: "10px" }}>Status: <span style={{ color: "red" }}>*</span></span>
+              <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#be185d", marginRight: "10px" }}>Status: <span data-admin-required style={{ color: "red" }}>*</span></span>
               <button
                 type="button"
                 onClick={() => setForm(prev => ({ ...prev, isActive: true }))}
@@ -486,7 +486,7 @@ export default function HotelGstSettings() {
 
           <footer style={{ marginTop: "32px", paddingTop: "16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
             <button type="button" className="admin-markup-coupon-btn clear" onClick={handleCancelForm} style={{ backgroundColor: "#f97316", borderColor: "#f97316", color: "#ffffff" }}>Cancel</button>
-            <button type="button" className="admin-markup-coupon-btn generate" onClick={handleSave} disabled={isSubmitting} style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
+            <button data-admin-action="primary" type="button" className="admin-markup-coupon-btn generate" onClick={handleSave} disabled={isSubmitting} style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
               {isSubmitting ? "Saving..." : editId ? "Save Changes" : "Save Settings"}
             </button>
           </footer>
@@ -548,11 +548,11 @@ export default function HotelGstSettings() {
               </label>
             </div>
             <div className="markup-toolbar-actions">
-              <button type="button" className="markup-primary-btn" onClick={openAddForm} style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
+              <button data-admin-action="primary" type="button" className="markup-primary-btn" onClick={openAddForm} style={{ backgroundColor: "#A51C49", borderColor: "#A51C49" }}>
                 <Plus size={14} aria-hidden="true" />
                 Add GST Setting
               </button>
-              <button type="button" className="markup-export-btn" onClick={handleExport} disabled={filteredRows.length === 0} style={{ backgroundColor: "#16a34a", borderColor: "#16a34a", color: "#ffffff" }}>
+              <button data-admin-action="export" type="button" className="markup-export-btn" onClick={handleExport} disabled={filteredRows.length === 0} style={{ backgroundColor: "#16a34a", borderColor: "#16a34a", color: "#ffffff" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>
@@ -644,7 +644,7 @@ export default function HotelGstSettings() {
                               <div className="actions-dropdown-menu">
                                 <button
                                   type="button"
-                                  className="dropdown-item view"
+                                  className="dropdown-item view admin-view-button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setViewingGstRecord(row);
@@ -708,7 +708,7 @@ export default function HotelGstSettings() {
           <div className="discount-modal-container view-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px' }}>
             <div className="modal-header" style={{ borderBottom: 'none', marginBottom: '8px' }}>
               <h3 style={{ color: '#1e293b', fontWeight: '700' }}>GST Setting Details</h3>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setViewingGstRecord(null)}
                 style={{

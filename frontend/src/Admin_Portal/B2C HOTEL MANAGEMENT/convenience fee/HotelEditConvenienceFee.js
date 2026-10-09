@@ -120,7 +120,7 @@ export default function AdminHotelEditConvenienceFeePage() {
         </div>
 
         <div className="admin-hotel-fee-edit-actions">
-          <button type="button" className="admin-hotel-fee-update-btn" onClick={handleUpdate}>
+          <button data-admin-action="primary" type="button" className="admin-hotel-fee-update-btn" onClick={handleUpdate}>
             Submit
           </button>
         </div>

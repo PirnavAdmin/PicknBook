@@ -47,7 +47,8 @@ async function handleResponse(response) {
         errorPayload?.title ||
         response.statusText ||
         "An error occurred";
-    } catch {
+    } catch (adminRequestError) {
+      if (adminRequestError?.name === 'AbortError' || adminRequestError?.code === 'ERR_CANCELED') throw adminRequestError;
       errorMessage = response.statusText;
     }
     throw new Error(errorMessage);
@@ -281,12 +282,13 @@ export async function cancelHotelBookingByAdmin(bookingId, { reason, cancellatio
   return handleResponse(response);
 }
 
-export async function listHotelSearchHistory({ searchTerm } = {}) {
+export async function listHotelSearchHistory({ searchTerm } = {}, options = {}) {
   const query = new URLSearchParams();
   if (searchTerm) query.set("searchTerm", searchTerm);
   const queryString = query.toString() ? `?${query.toString()}` : "";
 
   const response = await fetch(toApiUrl(`/api/admin/hotel/search-history${queryString}`), {
+    ...options,
     method: "GET",
     headers: getAdminAuthHeaders(),
   });
@@ -420,6 +422,7 @@ export async function getPopularHotelDestinationsFromSearchHistory({ limit = 10 
       );
     }
   } catch (err) {
+    if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') throw err;
     if (process.env.NODE_ENV !== "production") {
       console.warn("[HotelPopularDestinations] API error:", err?.message || err);
     }

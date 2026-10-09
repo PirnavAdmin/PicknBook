@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter, Download, ChevronDown, Eye, Edit2 } from 'lucide-react';
 import depositApi, { getDepositRequests, cycleDepositStatus, updateAdminRemark } from "../../../services/depositService";
@@ -14,6 +14,8 @@ const toTitleCase = (str) => {
         .join(' ');
 };
 
+import useDebouncedValue from '../../../hooks/useDebouncedValue';
+
 function DepositRequestList() {
     const toastTimerRef = useRef(null);
     const [depositRequests, setDepositRequests] = useState([]);
@@ -22,11 +24,16 @@ function DepositRequestList() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebouncedValue(searchQuery);
+    const listRequestRef = useRef(null);
+    useEffect(() => () => { listRequestRef.current?.abort(); clearTimeout(toastTimerRef.current); }, []);
     const [filterOpen, setFilterOpen] = useState(false);
     const [statusFilter, setStatusFilter] = useState('All');
     const [typeFilter, setTypeFilter] = useState('All');
     const [minAmount, setMinAmount] = useState('');
     const [maxAmount, setMaxAmount] = useState('');
+    const [appliedFilters, setAppliedFilters] = useState({ statusFilter: 'All', typeFilter: 'All', minAmount: '', maxAmount: '' });
+    const commitFilters = () => setAppliedFilters({ statusFilter, typeFilter, minAmount, maxAmount });
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [toast, setToast] = useState(null);
     const [activeDropdownId, setActiveDropdownId] = useState(null);
@@ -50,19 +57,24 @@ function DepositRequestList() {
     };
 
     const fetchDepositRequests = async () => {
+        listRequestRef.current?.abort();
+        const controller = new AbortController();
+        listRequestRef.current = controller;
         setLoading(true);
         try {
             const data = await getDepositRequests({
-                status: statusFilter,
-                type: typeFilter,
-                search: searchQuery,
-            });
+                status: appliedFilters.statusFilter,
+                type: appliedFilters.typeFilter,
+                search: debouncedSearch,
+            }, { signal: controller.signal });
+            if (controller.signal.aborted) return;
             setDepositRequests(data || []);
         } catch (error) {
+            if (controller.signal.aborted) return;
             console.error("Error fetching deposit requests:", error);
             showToast("Failed to fetch deposit requests.", "error");
         } finally {
-            setLoading(false);
+            if (!controller.signal.aborted) setLoading(false);
         }
     };
 
@@ -70,10 +82,11 @@ function DepositRequestList() {
         fetchDepositRequests();
         setCurrentPage(1);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [statusFilter, typeFilter, searchQuery]);
+        return () => listRequestRef.current?.abort();
+    }, [appliedFilters.statusFilter, appliedFilters.typeFilter, debouncedSearch]);
 
     // Apply search and min/max amount filters on deposit requests
-    const filteredRequests = depositRequests
+    const filteredRequests = useMemo(() => depositRequests
         .filter(request => {
             if (!searchQuery || !searchQuery.trim()) return true;
             const q = searchQuery.trim().toLowerCase();
@@ -88,10 +101,10 @@ function DepositRequestList() {
                 (request.transactionDate && String(request.transactionDate).toLowerCase().includes(q))
             );
         })
-        .filter(request => (statusFilter === 'All' || !statusFilter ? true : (request.status || '').toLowerCase() === statusFilter.toLowerCase()))
-        .filter(request => (typeFilter === 'All' || !typeFilter ? true : (request.type || '').toLowerCase() === typeFilter.toLowerCase()))
-        .filter(request => (minAmount === '' ? true : Number(request.amount) >= Number(minAmount)))
-        .filter(request => (maxAmount === '' ? true : Number(request.amount) <= Number(maxAmount)));
+        .filter(request => (appliedFilters.statusFilter === 'All' || !appliedFilters.statusFilter ? true : (request.status || '').toLowerCase() === appliedFilters.statusFilter.toLowerCase()))
+        .filter(request => (appliedFilters.typeFilter === 'All' || !appliedFilters.typeFilter ? true : (request.type || '').toLowerCase() === appliedFilters.typeFilter.toLowerCase()))
+        .filter(request => (appliedFilters.minAmount === '' ? true : Number(request.amount) >= Number(appliedFilters.minAmount)))
+        .filter(request => (appliedFilters.maxAmount === '' ? true : Number(request.amount) <= Number(appliedFilters.maxAmount))), [depositRequests, searchQuery, appliedFilters]);
 
     const totalItems = filteredRequests.length;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -101,6 +114,7 @@ function DepositRequestList() {
 
 
     const handleClearFilters = () => {
+        setAppliedFilters({ statusFilter: 'All', typeFilter: 'All', minAmount: '', maxAmount: '' });
         setSearchQuery('');
         setStatusFilter('All');
         setTypeFilter('All');
@@ -590,7 +604,7 @@ function DepositRequestList() {
 
     return (
         <>
-            <div style={styles.container}>
+            <div data-admin-surface style={styles.container}>
                 {/* Header */}
                 <div style={styles.header}>
                     <div style={styles.titleWrapper}>
@@ -613,7 +627,7 @@ function DepositRequestList() {
                                 e.target.style.boxShadow = 'none';
                             }}
                         />
-                        <button
+                        <button data-admin-action="primary"
                             style={{ ...styles.button, ...styles.filterBtn, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.background = 'var(--primary-strong)';
@@ -628,7 +642,7 @@ function DepositRequestList() {
                             <Filter size={16} />
                             <span>Filter</span>
                         </button>
-                        <button
+                        <button data-admin-action="export"
                             style={{ ...styles.button, ...styles.exportBtn, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.background = 'rgba(30, 142, 62, 0.85)';
@@ -728,9 +742,10 @@ function DepositRequestList() {
 
                             {/* Buttons in same line: Apply Filter (Blue) and Reset Filter (Gray) */}
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center', height: '38px' }}>
-                                <button
+                                <button data-admin-action="primary"
                                     type="button"
                                     onClick={() => {
+                                        commitFilters();
                                         setCurrentPage(1);
                                     }}
                                     style={{
@@ -761,7 +776,7 @@ function DepositRequestList() {
                                     Apply Filter
                                 </button>
 
-                                <button
+                                <button data-admin-action="reset"
                                     type="button"
                                     onClick={handleClearFilters}
                                     style={{
@@ -811,7 +826,7 @@ function DepositRequestList() {
                                 boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)', border: '1px solid #e2e8f0'
                             }}
                         >
-                            <div style={styles.detailHeader}>
+                            <div data-admin-surface style={styles.detailHeader}>
                                 <div style={{ ...styles.detailTitle, fontSize: '1.25rem', marginBottom: '16px' }}>Request Details</div>
                                 <button
                                     type="button"
@@ -829,7 +844,7 @@ function DepositRequestList() {
                                 </div>
                                 <div>
                                     <div style={styles.detailLabel}>Amount</div>
-                                    <div style={styles.detailValue}>Rs. {selectedRequest.amount}</div>
+                                    <div style={styles.detailValue}>₹ {selectedRequest.amount}</div>
                                 </div>
                                 <div>
                                     <div style={styles.detailLabel}>Type</div>
@@ -854,7 +869,7 @@ function DepositRequestList() {
                 )}
 
                 {/* Table */}
-                <div style={styles.tableWrapper}>
+                <div data-admin-surface style={styles.tableWrapper}>
                     <table style={styles.table}>
                         <thead style={styles.thead}>
                             <tr>
@@ -891,7 +906,7 @@ function DepositRequestList() {
                                         <td style={{ ...styles.td, ...styles.snBadge }}>{indexOfFirstItem + index + 1}</td>
 
                                         <td style={{ ...styles.td, ...styles.userCell }}>{request.user}</td>
-                                        <td style={{ ...styles.td, ...styles.amountCell }}>Rs. {request.amount}</td>
+                                        <td style={{ ...styles.td, ...styles.amountCell }}>₹ {request.amount}</td>
                                         <td style={styles.td}>{request.type}</td>
                                         <td style={styles.td}>
                                             <button
@@ -945,7 +960,7 @@ function DepositRequestList() {
                                                         flexDirection: 'column',
                                                         gap: '2px'
                                                     }}>
-                                                        <button
+                                                        <button className="admin-view-button"
                                                             type="button"
                                                             style={{
                                                                 display: 'flex', alignItems: 'center', gap: '8px',
@@ -1027,7 +1042,7 @@ function DepositRequestList() {
                                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#0f172a' }}>
                                     Edit Deposit Request
                                 </h3>
-                                <button
+                                <button data-admin-close
                                     type="button"
                                     onClick={() => setEditPopupOpen(false)}
                                     style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}
@@ -1044,7 +1059,7 @@ function DepositRequestList() {
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '2px' }}>Amount</div>
-                                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#A51C49' }}>Rs. {requestToEdit.amount}</div>
+                                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#A51C49' }}>₹ {requestToEdit.amount}</div>
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '2px' }}>Type</div>
@@ -1067,7 +1082,7 @@ function DepositRequestList() {
                             {/* Edit Status Dropdown */}
                             <div style={{ marginBottom: '22px' }}>
                                 <label style={{ display: 'block', marginBottom: '6px', fontWeight: 700, color: '#0f172a', fontSize: '0.85rem' }}>
-                                    Status <span style={{ color: '#dc2626' }}>*</span>
+                                    Status <span data-admin-required style={{ color: '#dc2626' }}>*</span>
                                 </label>
                                 <select 
                                     value={newStatus} 
@@ -1107,7 +1122,7 @@ function DepositRequestList() {
                                 >
                                     Cancel
                                 </button>
-                                <button 
+                                <button data-admin-action="primary" 
                                     type="button"
                                     onClick={handleSaveStatus}
                                     style={{

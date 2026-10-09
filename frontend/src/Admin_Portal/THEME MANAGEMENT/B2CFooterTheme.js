@@ -915,7 +915,7 @@ export default function B2CFooterTheme() {
           <h1>Footer Theme Management</h1>
           <p>Theme Management &gt; Footer Management</p>
         </div>
-        <button
+        <button data-admin-action="primary"
           type="button"
           className="btn-theme-action-primary"
           style={{ maxWidth: "200px" }}
@@ -990,7 +990,7 @@ export default function B2CFooterTheme() {
                             Applied
                           </button>
                         ) : (
-                          <button
+                          <button data-admin-action="primary"
                             type="button"
                             className="btn-theme-card-small apply"
                             onClick={() => handleApplyTheme(theme)}
@@ -1270,7 +1270,7 @@ export default function B2CFooterTheme() {
                       </div>
                     ))}
                     
-                    <button
+                    <button data-admin-action="primary"
                       type="button"
                       className="upload-btn-solid"
                       onClick={handleAddColumn}
@@ -1379,7 +1379,7 @@ export default function B2CFooterTheme() {
                     ))}
                   </div>
 
-                  <button
+                  <button data-admin-action="primary"
                     type="button"
                     className="upload-btn-solid"
                     onClick={handleAddSocialLink}
@@ -1513,7 +1513,7 @@ export default function B2CFooterTheme() {
 
               {/* ACTION FOOTER BUTTONS */}
               <div style={{ display: "flex", gap: "10px", marginTop: "12px", borderTop: "1px solid #e2e8f0", paddingTop: "14px" }}>
-                <button
+                <button data-admin-action="primary"
                   type="submit"
                   className="btn-theme-action-primary"
                   onClick={handleSaveChanges}
@@ -1521,7 +1521,7 @@ export default function B2CFooterTheme() {
                 >
                   {saving ? "Saving Changes..." : "Save Changes"}
                 </button>
-                <button
+                <button data-admin-action="reset"
                   type="button"
                   className="btn-theme-action-outline"
                   onClick={() => populateForm(selectedTheme)}

@@ -372,11 +372,11 @@ export default function AdminBusCouponListPage() {
         const catFilter = categoryFilter !== "all" ? categoryFilter : undefined;
 
         if (sType === "all") {
-          const [busRes, flightRes, hotelRes] = await Promise.all([
-            listBusCoupons({ type: "bus", category: catFilter }),
-            listBusCoupons({ type: "flight", category: catFilter }),
-            listBusCoupons({ type: "hotel", category: catFilter })
-          ]);
+          const busRes = await listBusCoupons({ type: "bus", category: catFilter });
+          if (!isMounted) return;
+          const flightRes = await listBusCoupons({ type: "flight", category: catFilter });
+          if (!isMounted) return;
+          const hotelRes = await listBusCoupons({ type: "hotel", category: catFilter });
           const bList = Array.isArray(busRes) ? busRes.map(item => ({ ...item, _targetService: "bus", type: item.type || "bus", serviceType: item.serviceType || "bus" })) : [];
           const fList = Array.isArray(flightRes) ? flightRes.map(item => ({ ...item, _targetService: "flight", type: item.type || "flight", serviceType: item.serviceType || "flight" })) : [];
           const hList = Array.isArray(hotelRes) ? hotelRes.map(item => ({ ...item, _targetService: "hotel", type: item.type || "hotel", serviceType: item.serviceType || "hotel" })) : [];
@@ -1304,7 +1304,7 @@ export default function AdminBusCouponListPage() {
             </div>
 
             {categoryFilter === "all" && (
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 className={`admin-markup-coupon-btn filter ${isFilterPanelOpen ? "active" : ""}`}
                 onClick={() => setIsFilterPanelOpen((previous) => !previous)}
@@ -1318,7 +1318,7 @@ export default function AdminBusCouponListPage() {
             )}
 
             {categoryFilter === "all" && (
-              <button
+              <button data-admin-action="primary"
                 type="button"
                 className="admin-markup-coupon-btn generate"
                 onClick={openAddPromotionModal}
@@ -1330,7 +1330,7 @@ export default function AdminBusCouponListPage() {
             )}
 
             {categoryFilter === "all" && (
-              <button
+              <button data-admin-action="export"
                 type="button"
                 className="admin-markup-coupon-btn export"
                 onClick={handleExport}
@@ -1427,7 +1427,7 @@ export default function AdminBusCouponListPage() {
           </div>
 
           <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "16px" }}>
-            <button
+            <button data-admin-action="reset"
               type="button"
               onClick={() => {
                 setDraftFilters(DEFAULT_FILTERS);
@@ -1448,7 +1448,7 @@ export default function AdminBusCouponListPage() {
             >
               Reset
             </button>
-            <button
+            <button data-admin-action="primary"
               type="button"
               onClick={() => {
                 setFilters({ ...draftFilters });
@@ -1670,7 +1670,7 @@ export default function AdminBusCouponListPage() {
                             >
                               <button
                                 type="button"
-                                className="dropdown-item view"
+                                className="dropdown-item view admin-view-button"
                                 onClick={() => {
                                   setViewingCoupon(coupon);
                                   setActiveActionDropdownId(null);
@@ -1780,7 +1780,7 @@ export default function AdminBusCouponListPage() {
             <form onSubmit={(e) => { e.preventDefault(); handleGenerateCoupon(); }}>
               <div className="discount-form-grid">
                 <div className="modal-field">
-                  <span>Target Service Type *</span>
+                  <span>Target Service Type <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={generateForm.type || "bus"}
                     onChange={(e) => setGenerateForm({ ...generateForm, type: e.target.value })}
@@ -1792,7 +1792,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Promotion Category *</span>
+                  <span>Promotion Category <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={generateForm.promotionCategory}
                     onChange={(e) => setGenerateForm({ ...generateForm, promotionCategory: e.target.value })}
@@ -1803,7 +1803,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>{generateForm.promotionCategory === "Offer" ? "Offer Code *" : "Coupon Code *"}</span>
+                  <span>{generateForm.promotionCategory === "Offer" ? "Offer Code " : "Coupon Code "}<span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="text"
                     value={generateForm.couponCode}
@@ -1814,7 +1814,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Title *</span>
+                  <span>Title <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="text"
                     value={generateForm.title}
@@ -1825,7 +1825,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Amount Type *</span>
+                  <span>Amount Type <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={generateForm.cpnType}
                     onChange={(e) => setGenerateForm({ ...generateForm, cpnType: e.target.value })}
@@ -1836,7 +1836,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Value / Discount Amount *</span>
+                  <span>Value / Discount Amount <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     step="0.01"
@@ -1859,7 +1859,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Total Use Limit *</span>
+                  <span>Total Use Limit <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     value={generateForm.useLimit}
@@ -1901,7 +1901,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Start Date *</span>
+                  <span>Start Date <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="date"
                     value={generateForm.startDate}
@@ -1911,7 +1911,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Expiry Date *</span>
+                  <span>Expiry Date <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="date"
                     value={generateForm.expiryDate}
@@ -1921,7 +1921,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Status *</span>
+                  <span>Status <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={generateForm.status}
                     onChange={(e) => setGenerateForm({ ...generateForm, status: e.target.value })}
@@ -2088,7 +2088,7 @@ export default function AdminBusCouponListPage() {
                 >
                   Cancel
                 </button>
-                <button
+                <button data-admin-action="primary"
                   type="submit"
                   className="modal-btn save-btn"
                   disabled={isCreating}
@@ -2135,7 +2135,7 @@ export default function AdminBusCouponListPage() {
             }}
           >
             {/* Header */}
-            <div
+            <div data-admin-tone="primary"
               style={{
                 display: "flex",
                 justifyContent: "space-between",
@@ -2164,7 +2164,7 @@ export default function AdminBusCouponListPage() {
                   {viewingCoupon.couponCode}
                 </span>
               </div>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setViewingCoupon(null)}
                 style={{
@@ -2375,7 +2375,7 @@ export default function AdminBusCouponListPage() {
 
               {/* Footer */}
               <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
-                <button
+                <button data-admin-close
                   type="button"
                   onClick={() => setViewingCoupon(null)}
                   style={{
@@ -2427,7 +2427,7 @@ export default function AdminBusCouponListPage() {
               <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1e293b", fontWeight: 700 }}>
                 Manage Conditions — <span style={{ color: "#A51C49" }}>{conditionsCoupon.couponCode}</span>
               </h3>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setConditionsCoupon(null)}
                 style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#64748b" }}
@@ -2486,7 +2486,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: "11px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Primary Value (Value 1) *</label>
+                  <label style={{ fontSize: "11px", fontWeight: 600, color: "#475569", display: "block", marginBottom: "4px" }}>Primary Value (Value 1) <span data-admin-required className="admin-required-indicator">*</span></label>
                   <input
                     type="text"
                     value={newConditionForm.value1}
@@ -2510,7 +2510,7 @@ export default function AdminBusCouponListPage() {
               </div>
 
               <div style={{ marginTop: "14px", display: "flex", justifyContent: "flex-end" }}>
-                <button
+                <button data-admin-action="primary"
                   type="submit"
                   style={{ background: "#A51C49", color: "#fff", border: "none", padding: "8px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}
                 >
@@ -2616,7 +2616,7 @@ export default function AdminBusCouponListPage() {
             <form onSubmit={(e) => { e.preventDefault(); handleEditSave(); }}>
               <div className="discount-form-grid">
                 <div className="modal-field">
-                  <span>Target Service Type *</span>
+                  <span>Target Service Type <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editCoupon.type || "bus"}
                     onChange={(e) => setEditCoupon({ ...editCoupon, type: e.target.value })}
@@ -2628,7 +2628,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Promotion Category *</span>
+                  <span>Promotion Category <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editCoupon.promotionCategory || "Offer"}
                     onChange={(e) => setEditCoupon({ ...editCoupon, promotionCategory: e.target.value })}
@@ -2639,7 +2639,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>{editCoupon.promotionCategory === "Offer" ? "Offer Code *" : "Coupon Code *"}</span>
+                  <span>{editCoupon.promotionCategory === "Offer" ? "Offer Code " : "Coupon Code "}<span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="text"
                     value={editCoupon.couponCode || ""}
@@ -2650,7 +2650,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Title *</span>
+                  <span>Title <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="text"
                     value={editCoupon.title || ""}
@@ -2660,7 +2660,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Amount Type *</span>
+                  <span>Amount Type <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editCoupon.cpnType || "Fixed"}
                     onChange={(e) => setEditCoupon({ ...editCoupon, cpnType: e.target.value })}
@@ -2671,7 +2671,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Value / Discount Amount *</span>
+                  <span>Value / Discount Amount <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     step="0.01"
@@ -2692,7 +2692,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Total Use Limit *</span>
+                  <span>Total Use Limit <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     value={editCoupon.useLimit || ""}
@@ -2730,7 +2730,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Start Date *</span>
+                  <span>Start Date <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="date"
                     value={editCoupon.startDate || ""}
@@ -2740,7 +2740,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Expiry Date *</span>
+                  <span>Expiry Date <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="date"
                     value={editCoupon.expiryDate || ""}
@@ -2750,7 +2750,7 @@ export default function AdminBusCouponListPage() {
                 </div>
 
                 <div className="modal-field">
-                  <span>Status *</span>
+                  <span>Status <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editCoupon.status || "Active"}
                     onChange={(e) => setEditCoupon({ ...editCoupon, status: e.target.value })}
@@ -2915,7 +2915,7 @@ export default function AdminBusCouponListPage() {
                 >
                   Cancel
                 </button>
-                <button
+                <button data-admin-action="primary"
                   type="submit"
                   className="modal-btn save-btn"
                 >
@@ -2953,7 +2953,7 @@ export default function AdminBusCouponListPage() {
           >
             <div className="modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #e2e8f0", paddingBottom: "16px", marginBottom: "16px" }}>
               <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#b91c1c", fontWeight: 700 }}>Delete Promotion</h3>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setDeleteCoupon(null)}
                 style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#64748b" }}

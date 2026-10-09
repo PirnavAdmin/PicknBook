@@ -20,7 +20,7 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-IN", {
 const CURRENCY_FORMATTER_WHOLE = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
-  currencyDisplay: "code",
+  currencyDisplay: "symbol",
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 });
@@ -28,7 +28,7 @@ const CURRENCY_FORMATTER_WHOLE = new Intl.NumberFormat("en-IN", {
 const CURRENCY_FORMATTER_DECIMAL = new Intl.NumberFormat("en-IN", {
   style: "currency",
   currency: "INR",
-  currencyDisplay: "code",
+  currencyDisplay: "symbol",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
@@ -390,7 +390,7 @@ export function RefundActionButton({ refundStatus, refundAmount, onClick, disabl
   };
 
   return (
-    <button type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
+    <button className="admin-view-button" type="button" style={btnStyle} onClick={onClick} disabled={disabled}>
       View
     </button>
   );

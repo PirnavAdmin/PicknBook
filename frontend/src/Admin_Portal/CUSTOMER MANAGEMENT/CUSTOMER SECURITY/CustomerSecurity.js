@@ -420,7 +420,7 @@ export default function CustomerSecurity() {
         </div>
 
         <div className="admin-markup-coupon-actions" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <button type="button" className={`admin-markup-coupon-btn filter ${isFilterOpen ? "active" : ""}`} onClick={() => setIsFilterOpen((prev) => !prev)}>
+          <button data-admin-action="primary" type="button" className={`admin-markup-coupon-btn filter ${isFilterOpen ? "active" : ""}`} onClick={() => setIsFilterOpen((prev) => !prev)}>
             <SlidersHorizontal size={14} /> <span>Filter</span>
           </button>
 
@@ -428,11 +428,11 @@ export default function CustomerSecurity() {
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> <span>Refresh</span>
           </button>
 
-          <button type="button" className="admin-markup-coupon-btn export" onClick={handleExportCSV} disabled={filteredList.length === 0} title="Export Blocklist to CSV">
+          <button data-admin-action="export" type="button" className="admin-markup-coupon-btn export" onClick={handleExportCSV} disabled={filteredList.length === 0} title="Export Blocklist to CSV">
             <Download size={14} /> <span>Export</span>
           </button>
 
-          <button type="button" style={{ height: "32px", padding: "0 14px", borderRadius: "6px", background: "#A51C49", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: "700", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }} onClick={() => setIsAddingBlockModal(true)}>
+          <button data-admin-action="primary" type="button" style={{ height: "32px", padding: "0 14px", borderRadius: "6px", background: "#A51C49", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: "700", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }} onClick={() => setIsAddingBlockModal(true)}>
             <PlusCircle size={14} /> Add Blocked User
           </button>
         </div>
@@ -511,10 +511,10 @@ export default function CustomerSecurity() {
             </label>
 
             <div style={{ display: "flex", gap: "8px", alignItems: "center", height: "35px" }}>
-              <button type="button" onClick={handleApplyFilters} style={{ height: "35px", padding: "0 18px", borderRadius: "8px", background: "#2563eb", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+              <button data-admin-action="primary" type="button" onClick={handleApplyFilters} style={{ height: "35px", padding: "0 18px", borderRadius: "8px", background: "#2563eb", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
                 Apply Filter
               </button>
-              <button type="button" onClick={handleResetFilters} style={{ height: "35px", padding: "0 18px", borderRadius: "8px", background: "#64748b", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+              <button data-admin-action="reset" type="button" onClick={handleResetFilters} style={{ height: "35px", padding: "0 18px", borderRadius: "8px", background: "#64748b", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
                 Reset
               </button>
             </div>
@@ -593,7 +593,7 @@ export default function CustomerSecurity() {
 
                           {activeDropdownId === dropdownKey && (
                             <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", zIndex: 9999, width: "160px", padding: "4px 0", textAlign: "left" }}>
-                              <button
+                              <button className="admin-view-button"
                                 type="button"
                                 style={{ width: "100%", padding: "8px 12px", background: "none", border: "none", textAlign: "left", fontSize: "12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", color: "#2563eb" }}
                                 onClick={() => {
@@ -652,7 +652,7 @@ export default function CustomerSecurity() {
           <div className="discount-modal-container" style={{ background: "#ffffff", borderRadius: "12px", width: "600px", maxWidth: "92%", overflow: "hidden" }}>
             <div style={{ background: "#A51C49", color: "#ffffff", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>Security Audit Record - Customer #{selectedRecord.userId}</h3>
-              <button type="button" onClick={() => setSelectedRecord(null)} style={{ background: "none", border: "none", color: "#ffffff", cursor: "pointer", fontSize: "18px" }}>&times;</button>
+              <button data-admin-close type="button" onClick={() => setSelectedRecord(null)} style={{ background: "none", border: "none", color: "#ffffff", cursor: "pointer", fontSize: "18px" }}>&times;</button>
             </div>
             <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px", fontSize: "12px" }}>
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
@@ -677,7 +677,7 @@ export default function CustomerSecurity() {
                 <p style={{ margin: "4px 0 0", color: "#475569", background: "#f1f5f9", padding: "8px 10px", borderRadius: "6px" }}>{selectedRecord.notes}</p>
               </div>
               <div style={{ textAlign: "right", marginTop: "8px" }}>
-                <button type="button" style={{ padding: "6px 16px", borderRadius: "6px", background: "#64748b", color: "#ffffff", border: "none", fontWeight: "600", cursor: "pointer" }} onClick={() => setSelectedRecord(null)}>Close</button>
+                <button data-admin-close type="button" style={{ padding: "6px 16px", borderRadius: "6px", background: "#64748b", color: "#ffffff", border: "none", fontWeight: "600", cursor: "pointer" }} onClick={() => setSelectedRecord(null)}>Close</button>
               </div>
             </div>
           </div>
@@ -706,7 +706,7 @@ export default function CustomerSecurity() {
           <div className="discount-modal-container" style={{ background: "#ffffff", borderRadius: "12px", width: "500px", maxWidth: "90%", overflow: "hidden" }}>
             <div style={{ background: "#A51C49", color: "#ffffff", padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ margin: 0, fontSize: "15px", fontWeight: "700" }}>Add Customer to Block List</h3>
-              <button type="button" onClick={() => setIsAddingBlockModal(false)} style={{ background: "none", border: "none", color: "#ffffff", cursor: "pointer", fontSize: "18px" }}>&times;</button>
+              <button data-admin-close type="button" onClick={() => setIsAddingBlockModal(false)} style={{ background: "none", border: "none", color: "#ffffff", cursor: "pointer", fontSize: "18px" }}>&times;</button>
             </div>
             <form onSubmit={handleAddBlockSubmit} style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>
@@ -715,12 +715,12 @@ export default function CustomerSecurity() {
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>
-                <span>Customer Name *</span>
+                <span>Customer Name <span data-admin-required className="admin-required-indicator">*</span></span>
                 <input type="text" required placeholder="Enter full name..." value={newBlockName} onChange={(e) => setNewBlockName(e.target.value)} style={{ padding: "8px", border: "1px solid #cbd5e1", borderRadius: "6px" }} />
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>
-                <span>Email Address *</span>
+                <span>Email Address <span data-admin-required className="admin-required-indicator">*</span></span>
                 <input type="email" required placeholder="Enter customer email..." value={newBlockEmail} onChange={(e) => setNewBlockEmail(e.target.value)} style={{ padding: "8px", border: "1px solid #cbd5e1", borderRadius: "6px" }} />
               </label>
 
@@ -730,7 +730,7 @@ export default function CustomerSecurity() {
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", fontWeight: "600", color: "#475569" }}>
-                <span>Block Reason *</span>
+                <span>Block Reason <span data-admin-required className="admin-required-indicator">*</span></span>
                 <select value={newBlockReason} onChange={(e) => setNewBlockReason(e.target.value)} style={{ padding: "8px", border: "1px solid #cbd5e1", borderRadius: "6px" }}>
                   <option value="Multiple Failed Login Attempts & Fraud Signal">Multiple Failed Login Attempts &amp; Fraud Signal</option>
                   <option value="Chargeback / Payment Dispute">Chargeback / Payment Dispute</option>
@@ -752,7 +752,7 @@ export default function CustomerSecurity() {
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "8px" }}>
                 <button type="button" style={{ padding: "8px 16px", borderRadius: "6px", background: "#cbd5e1", color: "#1e293b", border: "none", fontWeight: "600", cursor: "pointer" }} onClick={() => setIsAddingBlockModal(false)}>Cancel</button>
-                <button type="submit" style={{ padding: "8px 16px", borderRadius: "6px", background: "#A51C49", color: "#ffffff", border: "none", fontWeight: "600", cursor: "pointer" }}>Add to Block List</button>
+                <button data-admin-action="primary" type="submit" style={{ padding: "8px 16px", borderRadius: "6px", background: "#A51C49", color: "#ffffff", border: "none", fontWeight: "600", cursor: "pointer" }}>Add to Block List</button>
               </div>
             </form>
           </div>

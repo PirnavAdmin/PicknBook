@@ -467,15 +467,15 @@ export default function AdminBusMarkupListPage() {
         </div>
 
         <div className="markup-toolbar-actions">
-          <button type="button" className="markup-primary-btn" onClick={openAddModal}>
+          <button data-admin-action="primary" type="button" className="markup-primary-btn" onClick={openAddModal}>
             <Plus size={14} />
             Add New
           </button>
-          <button type="button" className="markup-filter-btn" onClick={openFilterModal}>
+          <button data-admin-action="primary" type="button" className="markup-filter-btn" onClick={openFilterModal}>
             <Filter size={14} />
             Filter
           </button>
-          <button
+          <button data-admin-action="export"
             type="button"
             className="markup-export-btn"
             onClick={handleExport}
@@ -559,10 +559,10 @@ export default function AdminBusMarkupListPage() {
             </label>
 
             <div className="markup-filter-actions-inline">
-              <button type="button" className="markup-btn-reset" onClick={handleResetFilter}>
+              <button data-admin-action="reset" type="button" className="markup-btn-reset" onClick={handleResetFilter}>
                 Reset
               </button>
-              <button type="button" className="markup-btn-apply" onClick={handleApplyFilter}>
+              <button data-admin-action="primary" type="button" className="markup-btn-apply" onClick={handleApplyFilter}>
                 Apply Filter
               </button>
             </div>
@@ -659,7 +659,7 @@ export default function AdminBusMarkupListPage() {
                           <div className="actions-dropdown-menu">
                             <button
                               type="button"
-                              className="dropdown-item view"
+                              className="dropdown-item view admin-view-button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setViewRow(row);
@@ -766,7 +766,7 @@ export default function AdminBusMarkupListPage() {
                   </label>
                 )}
                 <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
-                  <span>Seat Type *</span>
+                  <span>Seat Type <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editRow.seatType}
                     onChange={(event) =>
@@ -792,7 +792,7 @@ export default function AdminBusMarkupListPage() {
                   </select>
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
-                  <span>Value *</span>
+                  <span>Value <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="number"
                     min="0"
@@ -808,7 +808,7 @@ export default function AdminBusMarkupListPage() {
                   />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
-                  <span>Markup Type *</span>
+                  <span>Markup Type <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editRow.markupType}
                     onChange={(event) =>
@@ -826,7 +826,7 @@ export default function AdminBusMarkupListPage() {
                   </select>
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
-                  <span>Status *</span>
+                  <span>Status <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editRow.status}
                     onChange={(event) =>
@@ -844,7 +844,7 @@ export default function AdminBusMarkupListPage() {
                   </select>
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "2px", fontSize: "11px", fontWeight: "600", color: "#64748b" }}>
-                  <span>Updated By *</span>
+                  <span>Updated By <span data-admin-required className="admin-required-indicator">*</span></span>
                   <input
                     type="text"
                     placeholder="Enter your name"
@@ -887,7 +887,7 @@ export default function AdminBusMarkupListPage() {
                 >
                   Cancel
                 </button>
-                <button 
+                <button data-admin-action="primary" 
                   type="submit" 
                   disabled={isSaving}
                   style={{ backgroundColor: "#A51C49", color: "#ffffff", padding: "5px 12px", borderRadius: "6px", border: "none", fontWeight: "600", cursor: "pointer", fontSize: "12px" }}
@@ -921,7 +921,7 @@ export default function AdminBusMarkupListPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 'none', marginBottom: '8px' }}>
               <h3 style={{ color: '#1e293b', fontWeight: '700', fontSize: '18px', margin: 0 }}>Markup Detail View</h3>
-              <button
+              <button data-admin-close
                 type="button"
                 onClick={() => setViewRow(null)}
                 style={{
@@ -947,7 +947,7 @@ export default function AdminBusMarkupListPage() {
                 {viewRow.seatType}
               </span>
               <span style={{ background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', padding: '4px 12px', borderRadius: '100px', fontWeight: '600', fontSize: '11px' }}>
-                {viewRow.markupType === 'Fixed' ? `INR ${viewRow.value}` : `${viewRow.value}%`}
+                {viewRow.markupType === 'Fixed' ? `₹ ${viewRow.value}` : `${viewRow.value}%`}
               </span>
             </div>
 

@@ -35,6 +35,8 @@ async function adminNotificationRequest(path, options = {}) {
     const data = await response.json().catch(() => null);
     return data;
   } catch (err) {
+    if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') throw err;
+    if (options.signal?.aborted) throw err;
     console.error("adminNotificationRequest error:", err);
     return null;
   }
@@ -45,7 +47,7 @@ export const adminNotificationService = {
    * 1. Get Paginated Notifications
    * GET /api/admin/notifications?page=1&pageSize=20&isRead=true/false
    */
-  getNotifications: async (params = {}) => {
+  getNotifications: async (params = {}, options = {}) => {
     const query = new URLSearchParams();
     if (params.page !== undefined && params.page !== null) query.append("page", String(params.page));
     if (params.pageSize !== undefined && params.pageSize !== null) query.append("pageSize", String(params.pageSize));
@@ -53,7 +55,7 @@ export const adminNotificationService = {
 
     const queryString = query.toString();
     const endpoint = `/api/admin/notifications${queryString ? `?${queryString}` : ""}`;
-    const result = await adminNotificationRequest(endpoint, { method: "GET" });
+    const result = await adminNotificationRequest(endpoint, { ...options, method: "GET" });
     return result;
   },
 
@@ -61,8 +63,8 @@ export const adminNotificationService = {
    * 2. Get Unread Count
    * GET /api/admin/notifications/unread-count
    */
-  getUnreadCount: async () => {
-    const result = await adminNotificationRequest("/api/admin/notifications/unread-count", { method: "GET" });
+  getUnreadCount: async (options = {}) => {
+    const result = await adminNotificationRequest("/api/admin/notifications/unread-count", { ...options, method: "GET" });
     if (result === null || result === undefined) return 0;
     if (typeof result === "number") return result;
     if (typeof result === "object") {

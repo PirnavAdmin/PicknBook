@@ -455,171 +455,7 @@ function normalizePointOptionList(value) {
     .filter(Boolean);
 }
 
-function createFallbackBookedIndexes(totalSeats, bookedSeats, seedText) {
-  const bookedIndexes = new Set();
-  let cursor = Math.max(0, String(seedText || "").length);
 
-  while (bookedIndexes.size < Math.min(bookedSeats, Math.max(0, totalSeats - 1))) {
-    cursor = (cursor + 7) % totalSeats;
-    bookedIndexes.add(cursor);
-  }
-
-  return bookedIndexes;
-}
-
-function createFallbackSeatCodes(template) {
-  const totalSeats = Number(template?.totalSeats) || 0;
-  const busType = String(template?.busType || "").toLowerCase();
-
-  if (busType.includes("sleeper") && !busType.includes("seater")) {
-    const lowerCount = Math.ceil(totalSeats / 2);
-    const upperCount = totalSeats - lowerCount;
-    return [
-      ...Array.from({ length: lowerCount }, (_, index) => ({
-        code: `L${index + 1}`,
-        deck: "Lower",
-        sectionLabel: "Lower deck",
-        isSleeper: true,
-        isUpper: false,
-      })),
-      ...Array.from({ length: upperCount }, (_, index) => ({
-        code: `U${index + 1}`,
-        deck: "Upper",
-        sectionLabel: "Upper deck",
-        isSleeper: true,
-        isUpper: true,
-      })),
-    ];
-  }
-
-  if (busType.includes("seater") && busType.includes("sleeper")) {
-    const lowerCount = Math.ceil(totalSeats * 0.67);
-    const upperCount = totalSeats - lowerCount;
-    return [
-      ...Array.from({ length: lowerCount }, (_, index) => ({
-        code: `L${index + 1}`,
-        deck: "Lower",
-        sectionLabel: "Lower deck",
-        isSleeper: false,
-        isUpper: false,
-      })),
-      ...Array.from({ length: upperCount }, (_, index) => ({
-        code: `U${index + 1}`,
-        deck: "Upper",
-        sectionLabel: "Upper deck",
-        isSleeper: true,
-        isUpper: true,
-      })),
-    ];
-  }
-
-  return Array.from({ length: totalSeats }, (_, index) => ({
-    code: `L${index + 1}`,
-    deck: "Main",
-    sectionLabel: "Main deck",
-    isSleeper: false,
-    isUpper: false,
-  }));
-}
-
-function buildFallbackSeatMap(busId) {
-  const template = getFallbackBusTemplate(busId);
-  const seatCodes = createFallbackSeatCodes(template);
-  const totalSeats = seatCodes.length;
-  const availableSeats = Math.min(
-    Number(template.availableSeats) || totalSeats,
-    totalSeats
-  );
-  const bookedIndexes = createFallbackBookedIndexes(
-    totalSeats,
-    totalSeats - availableSeats,
-    `${busId}-${template.busNumber}`
-  );
-  const fare = Number(template.priceInr) || 0;
-
-  const seats = seatCodes.map((seat, index) => ({
-    seatCode: seat.code,
-    seatType: seat.isSleeper ? "Sleeper" : "Seat",
-    priceInr: fare,
-    baseFare: fare,
-    markupAmount: 0,
-    fareBeforeTax: fare,
-    isBooked: bookedIndexes.has(index),
-    gender: "",
-  }));
-  const seatDefinitions = seatCodes.map((seat, index) => {
-    const columnsPerRow = seat.isSleeper ? 3 : 4;
-
-    return {
-      seatCode: seat.code,
-      seatType: seat.isSleeper ? "Sleeper" : "Seat",
-      deck: seat.deck,
-      row: Math.floor(index / columnsPerRow) + 1,
-      column: (index % columnsPerRow) + 1,
-      isSleeper: seat.isSleeper,
-      isUpper: seat.isUpper,
-      sectionLabel: seat.sectionLabel,
-    };
-  });
-  const sectionsByLabel = new Map();
-
-  seatCodes.forEach((seat) => {
-    if (!sectionsByLabel.has(seat.sectionLabel)) {
-      sectionsByLabel.set(seat.sectionLabel, {
-        label: seat.sectionLabel,
-        deck: seat.deck,
-        columnsPerRow: seat.isSleeper ? 3 : 4,
-        aisleAfterColumn: seat.isSleeper ? 0 : 1,
-        seatCodes: [],
-      });
-    }
-
-    sectionsByLabel.get(seat.sectionLabel).seatCodes.push(seat.code);
-  });
-
-  return {
-    tripId: busId,
-    tripType: "Bus",
-    travelClass: null,
-    layoutType: template.busType,
-    totalSeats,
-    bookedSeats: totalSeats - availableSeats,
-    availableSeats,
-    priceInr: fare,
-    seats,
-    seatDefinitions,
-    sections: [...sectionsByLabel.values()],
-    boardingPoints: [],
-    droppingPoints: [],
-  };
-}
-
-function buildFallbackPricingPreview(busId, normalizedSeatCodes) {
-  const template = getFallbackBusTemplate(busId);
-  const fare = Number(template.priceInr) || 0;
-  const subtotalBeforeCoupon = normalizedSeatCodes.length * fare;
-  const gstAmount = Math.round(subtotalBeforeCoupon * 0.05);
-  const convenienceFee = normalizedSeatCodes.length > 0 ? 50 : 0;
-  const finalAmount = subtotalBeforeCoupon + gstAmount + convenienceFee;
-
-  return normalizeBusPricingPreview({
-    busId,
-    subtotalBeforeCoupon,
-    taxableFare: subtotalBeforeCoupon,
-    gstPercent: 5,
-    gstAmount,
-    convenienceFee,
-    finalAmount,
-    grandTotal: finalAmount,
-    seats: normalizedSeatCodes.map((seatCode) => ({
-      seatCode,
-      seatType: "Seat",
-      baseFare: fare,
-      markupAmount: 0,
-      fareBeforeTax: fare,
-    })),
-  });
-}
 
 function normalizeBusPricingPreview(payload) {
   const seatsRaw = pickFirst(payload, ["seats", "Seats"], []);
@@ -1152,9 +988,7 @@ function normalizeBusActionResponse(response) {
   };
 }
 
-function isFallbackBusId(busId) {
-  return String(busId ?? "").trim().toLowerCase().startsWith("fallback-bus-");
-}
+
 
 function buildLocalBusBookingResponse(busId) {
   const suffix = Date.now().toString().slice(-8);
@@ -2829,7 +2663,7 @@ function normalizeFeaturedOffer(record) {
 
 export async function getFeaturedBusOffers() {
   try {
-    const data = await requestJson("/api/FeaturedOffers?bookingType=Bus", {
+    const data = await requestJson("/api/Coupons?serviceType=bus&category=Offer", {
       method: "GET",
       skipAuth: true,
     });

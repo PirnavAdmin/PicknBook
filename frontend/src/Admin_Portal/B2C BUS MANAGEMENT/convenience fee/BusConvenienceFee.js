@@ -127,7 +127,7 @@ export default function AdminConvenienceFeePage() {
           <h1><span style={{ color: '#A51C49', fontWeight: 700 }}>B2C Bus</span> Convenience Fee</h1>
         </header>
 
-        <button
+        <button data-admin-action="primary"
           type="button"
           className="admin-convenience-icon-btn edit"
           style={{ width: 'auto', padding: '8px 16px', gap: '6px', fontSize: '0.88rem', fontWeight: 700, borderRadius: '9px', height: 'auto' }}
@@ -201,7 +201,7 @@ export default function AdminConvenienceFeePage() {
                 <div className="admin-convenience-cell admin-convenience-action-cell">
                   <button
                     type="button"
-                    className="admin-convenience-action-btn view"
+                    className="admin-convenience-action-btn view admin-view-button"
                     aria-label="View convenience fee"
                     title="View"
                     onClick={() => setIsViewing(true)}
@@ -311,7 +311,7 @@ export default function AdminConvenienceFeePage() {
               
               <div className="admin-convenience-modal-actions">
                 <button type="button" className="secondary" onClick={() => setIsEditing(false)} disabled={isSaving}>Cancel</button>
-                <button type="button" className="primary" onClick={handleSaveEdit} disabled={isSaving}>
+                <button data-admin-action="primary" type="button" className="primary" onClick={handleSaveEdit} disabled={isSaving}>
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>

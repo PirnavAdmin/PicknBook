@@ -401,10 +401,10 @@ export default function AdminFlightRemarkEditPage() {
         </div>
 
         <div className="admin-flight-remark-edit-actions">
-          <button type="button" className="admin-flight-remark-submit-btn" onClick={handleSubmit}>
+          <button data-admin-action="primary" type="button" className="admin-flight-remark-submit-btn" onClick={handleSubmit}>
             Submit
           </button>
-          <button type="button" className="admin-flight-remark-reset-btn" onClick={handleReset}>
+          <button data-admin-action="reset" type="button" className="admin-flight-remark-reset-btn" onClick={handleReset}>
             Reset
           </button>
         </div>
