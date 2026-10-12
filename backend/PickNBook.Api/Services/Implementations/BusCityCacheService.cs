@@ -24,6 +24,8 @@ namespace PickNBook.Api.Services
         private Dictionary<long, string> _cityIdToName = new();
         private Dictionary<string, long> _cityNameToId = new(StringComparer.OrdinalIgnoreCase);
         private Dictionary<long, List<long>> _cityAliases = new();
+        private Dictionary<long, long> _canonicalCityMap = new();
+        private Dictionary<long, List<long>> _twinCityAliases = new();
 
         private class CachedBusCity
         {
@@ -38,6 +40,7 @@ namespace PickNBook.Api.Services
             public bool IsCity { get; set; }
             public long? ParentCityId { get; set; }
             public string? ParentCityName { get; set; }
+            public string? ParentCityNameLower { get; set; }
             public int ChildStopCount { get; set; }
         }
 
@@ -206,18 +209,32 @@ namespace PickNBook.Api.Services
                         IsCity = string.Equals(c.Type, "CITY", StringComparison.OrdinalIgnoreCase) || c.ParentCityId == null || c.ParentCityId == 0,
                         ParentCityId = c.ParentCityId,
                         ParentCityName = parentName,
+                        ParentCityNameLower = parentName?.ToLowerInvariant(),
                         ChildStopCount = childCount
                     });
                 }
 
                 // Build aliases dictionary
                 var aliases = new Dictionary<long, List<long>>();
+                var canonicalMap = new Dictionary<long, long>();
+                var twinAliases = new Dictionary<long, List<long>>();
 
                 // 1. Reciprocal aliases for phonetic clusters within same state
                 foreach (var group in clusterMap.Values)
                 {
                     if (group.Count > 1)
                     {
+                        var canonicalId = group
+                            .OrderByDescending(id => childCounts.GetValueOrDefault(id, 0))
+                            .ThenBy(id => id)
+                            .First();
+
+                        foreach (var id in group)
+                        {
+                            canonicalMap[id] = canonicalId;
+                            twinAliases[id] = group;
+                        }
+
                         foreach (var id in group)
                         {
                             if (!aliases.TryGetValue(id, out var list))
@@ -267,14 +284,33 @@ namespace PickNBook.Api.Services
                     }
                 }
 
+                // Update SearchCityId to canonical hub for all mapped cities
+                foreach (var dto in cities)
+                {
+                    if (long.TryParse(dto.CityCode, out var cid) && canonicalMap.TryGetValue(cid, out var canonId))
+                    {
+                        dto.SearchCityId = canonId.ToString();
+                    }
+                }
+
+                foreach (var c in cached)
+                {
+                    if (long.TryParse(c.CityCode, out var cid) && canonicalMap.TryGetValue(cid, out var canonId))
+                    {
+                        c.Dto.SearchCityId = canonId.ToString();
+                    }
+                }
+
                 BusCities = cities;
                 _cachedCities = cached;
                 _validCityIds = validIds;
                 _cityIdToName = idToName;
                 _cityNameToId = nameToId;
                 _cityAliases = aliases;
+                _canonicalCityMap = canonicalMap;
+                _twinCityAliases = twinAliases;
 
-                _logger.LogInformation($"Loaded {BusCities.Count} Bus City Codes and {_cityAliases.Count} aliased cluster IDs from Database.");
+                _logger.LogInformation($"Loaded {BusCities.Count} Bus City Codes, {_cityAliases.Count} aliased cluster IDs, and {_canonicalCityMap.Count} canonical twin IDs from Database.");
             }
             catch (Exception ex)
             {
@@ -316,6 +352,20 @@ namespace PickNBook.Api.Services
             return new[] { cityId };
         }
 
+        public long GetCanonicalCityCode(long cityId)
+        {
+            return _canonicalCityMap.TryGetValue(cityId, out var canonical) ? canonical : cityId;
+        }
+
+        public IReadOnlyList<long> GetTwinCityAliases(long cityId)
+        {
+            if (_twinCityAliases.TryGetValue(cityId, out var twins) && twins.Count > 1)
+            {
+                return twins;
+            }
+            return new[] { cityId };
+        }
+
         public bool IsValidCity(long cityId)
         {
             return cityId > 0 && _validCityIds.Contains(cityId);
@@ -352,6 +402,7 @@ namespace PickNBook.Api.Services
             if (string.IsNullOrWhiteSpace(query))
             {
                 return _cachedCities
+                    .Where(c => c.IsCity) // Default popular suggestions only show main cities
                     .Select(c => {
                         var usage = popularityMap != null && popularityMap.TryGetValue(c.Dto.CityName, out var pop) ? (int)pop : 1;
                         return new PlaceSuggestionDto
@@ -375,6 +426,30 @@ namespace PickNBook.Api.Services
                             MatchTier = 1
                         };
                     })
+                    .GroupBy(x =>
+                        string.Equals(x.LocationType, "CITY", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(x.StateName)
+                            ? $"{NormalizePhonetic(x.BaseCityName ?? x.CityName)}|{x.StateName.Trim()}".ToLowerInvariant()
+                            : (x.CityCode ?? x.CityName.Trim()),
+                        StringComparer.OrdinalIgnoreCase)
+                    .Select(g => {
+                        var best = g
+                            .OrderByDescending(x => x.UsageCount)
+                            .ThenByDescending(x => x.ChildStopCount)
+                            .ThenBy(x => (string.IsNullOrEmpty(x.SubArea) || string.Equals(x.SubArea, x.StateName, StringComparison.OrdinalIgnoreCase)) ? 0 : 1)
+                            .ThenBy(x => x.CityName.Length)
+                            .First();
+
+                        if (string.Equals(best.LocationType, "CITY", StringComparison.OrdinalIgnoreCase) &&
+                            !string.IsNullOrWhiteSpace(best.SubArea) &&
+                            string.Equals(best.SubArea, best.StateName, StringComparison.OrdinalIgnoreCase) &&
+                            !string.IsNullOrWhiteSpace(best.BaseCityName))
+                        {
+                            best.CityName = best.BaseCityName;
+                            best.DisplayName = !string.IsNullOrWhiteSpace(best.StateName) ? $"{best.BaseCityName}, {best.StateName}" : best.BaseCityName;
+                        }
+
+                        return best;
+                    })
                     .OrderByDescending(x => x.UsageCount)
                     .ThenBy(x => (string.IsNullOrEmpty(x.SubArea) || string.Equals(x.SubArea, x.StateName, StringComparison.OrdinalIgnoreCase)) ? 0 : 1)
                     .ThenByDescending(x => x.ChildStopCount)
@@ -395,51 +470,97 @@ namespace PickNBook.Api.Services
             {
                 int tier = 999;
 
-                // Tier 1: Exact match on CityCode or full CityName
-                if (item.CityCode == queryLower || item.CityNameLower == queryLower)
+                // Option B: Smart Area / Boarding Point Matching
+                if (!item.IsCity)
                 {
-                    tier = 1;
-                }
-                // Tier 2: Base city exact match (raw or phonetic transliteration, e.g. "ananthapur" matches "Anantapur")
-                else if (item.BaseCityNameLower == queryLower || (!string.IsNullOrEmpty(queryPhonetic) && item.NormalizedBaseCityLower == queryPhonetic))
-                {
-                    tier = 2;
-                }
-                // Tier 3: Base city prefix match (raw or phonetic)
-                else if (item.BaseCityNameLower.StartsWith(queryLower) || (!string.IsNullOrEmpty(queryPhonetic) && item.NormalizedBaseCityLower.StartsWith(queryPhonetic)))
-                {
-                    tier = 3;
-                }
-                // Tier 4: Qualifier / Parenthesis exact or prefix match (e.g. "sagara" or "sag" -> "Ananthapur (Sagara)")
-                else if (!string.IsNullOrEmpty(item.SubAreaLower) &&
-                         (item.SubAreaLower == queryLower || item.SubAreaLower.StartsWith(queryLower)))
-                {
-                    tier = 4;
-                }
-                // Tier 5: Multi-token match across full name + state
-                else if (queryTokens.Length > 1 && queryTokens.All(qt => item.SearchTokens.Any(st => st.StartsWith(qt))))
-                {
-                    tier = 5;
-                }
-                // Tier 6: Substring match in CityName or StateName (for queries >= 2 chars)
-                else if (queryLower.Length >= 2 && (item.CityNameLower.Contains(queryLower) || item.StateNameLower.Contains(queryLower)))
-                {
-                    tier = 6;
-                }
-                // Tier 7: Fuzzy match (Levenshtein distance <= 2, queries >= 3 chars)
-                else if (queryLower.Length >= 3)
-                {
-                    var distBase = FuzzyMatcher.ComputeLevenshteinDistance(queryLower, item.BaseCityNameLower);
-                    if (distBase <= 2)
+                    // 1. Guard: If the query matches the parent city name (e.g. "pro", "proddatur", "bangalore", "chennai"),
+                    // suppress the child boarding areas so the dropdown is not flooded with local stops.
+                    // The user is searching for the city, so only the city should appear.
+                    bool isSearchingParentCity =
+                        (!string.IsNullOrEmpty(item.ParentCityNameLower) &&
+                         (item.ParentCityNameLower.StartsWith(queryLower) || queryLower.StartsWith(item.ParentCityNameLower))) ||
+                        (!string.IsNullOrEmpty(item.SubAreaLower) &&
+                         (item.SubAreaLower.StartsWith(queryLower) || queryLower.StartsWith(item.SubAreaLower)));
+
+                    if (isSearchingParentCity)
                     {
-                        tier = 7;
+                        continue;
                     }
-                    else if (!string.IsNullOrEmpty(item.SubAreaLower))
+
+                    // 2. If the user is specifically typing the AREA's own name (e.g. "madiwala", "koyambedu", "old bus stand"):
+                    if (item.BaseCityNameLower == queryLower || (!string.IsNullOrEmpty(queryPhonetic) && item.NormalizedBaseCityLower == queryPhonetic))
                     {
-                        var distSub = FuzzyMatcher.ComputeLevenshteinDistance(queryLower, item.SubAreaLower);
-                        if (distSub <= 2)
+                        tier = 2;
+                    }
+                    else if (item.BaseCityNameLower.StartsWith(queryLower) || (!string.IsNullOrEmpty(queryPhonetic) && item.NormalizedBaseCityLower.StartsWith(queryPhonetic)))
+                    {
+                        tier = 3;
+                    }
+                    else if (queryTokens.Length > 1 && queryTokens.All(qt => item.SearchTokens.Any(st => st.StartsWith(qt))))
+                    {
+                        tier = 5;
+                    }
+                    else if (queryLower.Length >= 3 && item.BaseCityNameLower.Contains(queryLower))
+                    {
+                        tier = 6;
+                    }
+                    else if (queryLower.Length >= 4)
+                    {
+                        var distBase = FuzzyMatcher.ComputeLevenshteinDistance(queryLower, item.BaseCityNameLower);
+                        if (distBase <= 1)
                         {
                             tier = 7;
+                        }
+                    }
+                }
+                else
+                {
+                    // Tier 1: Exact match on CityCode or full CityName
+                    if (item.CityCode == queryLower || item.CityNameLower == queryLower)
+                    {
+                        tier = 1;
+                    }
+                    // Tier 2: Base city exact match (raw or phonetic transliteration, e.g. "ananthapur" matches "Anantapur")
+                    else if (item.BaseCityNameLower == queryLower || (!string.IsNullOrEmpty(queryPhonetic) && item.NormalizedBaseCityLower == queryPhonetic))
+                    {
+                        tier = 2;
+                    }
+                    // Tier 3: Base city prefix match (raw or phonetic)
+                    else if (item.BaseCityNameLower.StartsWith(queryLower) || (!string.IsNullOrEmpty(queryPhonetic) && item.NormalizedBaseCityLower.StartsWith(queryPhonetic)))
+                    {
+                        tier = 3;
+                    }
+                    // Tier 4: Qualifier / Parenthesis exact or prefix match (e.g. "sagara" or "sag" -> "Ananthapur (Sagara)")
+                    else if (!string.IsNullOrEmpty(item.SubAreaLower) &&
+                             (item.SubAreaLower == queryLower || item.SubAreaLower.StartsWith(queryLower)))
+                    {
+                        tier = 4;
+                    }
+                    // Tier 5: Multi-token match across full name + state
+                    else if (queryTokens.Length > 1 && queryTokens.All(qt => item.SearchTokens.Any(st => st.StartsWith(qt))))
+                    {
+                        tier = 5;
+                    }
+                    // Tier 6: Substring match in CityName or StateName (for queries >= 2 chars)
+                    else if (queryLower.Length >= 2 && (item.CityNameLower.Contains(queryLower) || item.StateNameLower.Contains(queryLower)))
+                    {
+                        tier = 6;
+                    }
+                    // Tier 7: Fuzzy match (Levenshtein distance <= 2, queries >= 3 chars)
+                    else if (queryLower.Length >= 3)
+                    {
+                        var distBase = FuzzyMatcher.ComputeLevenshteinDistance(queryLower, item.BaseCityNameLower);
+                        if (distBase <= 2)
+                        {
+                            tier = 7;
+                        }
+                        else if (!string.IsNullOrEmpty(item.SubAreaLower))
+                        {
+                            var distSub = FuzzyMatcher.ComputeLevenshteinDistance(queryLower, item.SubAreaLower);
+                            if (distSub <= 2)
+                            {
+                                tier = 7;
+                            }
                         }
                     }
                 }
@@ -471,11 +592,34 @@ namespace PickNBook.Api.Services
             }
 
             return matches
+                .GroupBy(x =>
+                    string.Equals(x.LocationType, "CITY", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(x.StateName)
+                        ? $"{NormalizePhonetic(x.BaseCityName ?? x.CityName)}|{x.StateName.Trim()}".ToLowerInvariant()
+                        : (x.CityCode ?? x.CityName.Trim()),
+                    StringComparer.OrdinalIgnoreCase)
+                .Select(g => {
+                    var best = g
+                        .OrderBy(x => x.MatchTier)
+                        .ThenByDescending(x => x.UsageCount)
+                        .ThenByDescending(x => x.ChildStopCount)
+                        .ThenBy(x => (string.IsNullOrEmpty(x.SubArea) || string.Equals(x.SubArea, x.StateName, StringComparison.OrdinalIgnoreCase)) ? 0 : 1)
+                        .ThenBy(x => x.CityName.Length)
+                        .First();
+
+                    if (string.Equals(best.LocationType, "CITY", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(best.SubArea) &&
+                        string.Equals(best.SubArea, best.StateName, StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(best.BaseCityName))
+                    {
+                        best.CityName = best.BaseCityName;
+                        best.DisplayName = !string.IsNullOrWhiteSpace(best.StateName) ? $"{best.BaseCityName}, {best.StateName}" : best.BaseCityName;
+                    }
+
+                    return best;
+                })
                 .OrderBy(x => x.MatchTier)
                 .ThenByDescending(x => x.UsageCount)
-                // Primary Hub Priority: A pure city or state-qualified city ranks above a localized sub-area (e.g. Anantapur > Ananthapur (Sagara))
                 .ThenBy(x => (string.IsNullOrEmpty(x.SubArea) || string.Equals(x.SubArea, x.StateName, StringComparison.OrdinalIgnoreCase)) ? 0 : 1)
-                // Major District Hub Priority: Cities with child boarding stops rank above 0-stop locations
                 .ThenByDescending(x => x.ChildStopCount)
                 .ThenByDescending(x => string.Equals(x.LocationType, "CITY", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
                 .ThenBy(x => x.CityName.Length)
