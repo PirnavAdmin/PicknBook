@@ -1774,20 +1774,23 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
     const rawSeats = [];
     const extractRawSeatList = (container) => {
       if (!container || typeof container !== "object") return;
-      Object.values(container).forEach((val) => {
-        if (Array.isArray(val)) {
-          val.forEach((s) => s && rawSeats.push(s));
-        } else if (val && typeof val === "object") {
-          Object.values(val).forEach((s) => s && rawSeats.push(s));
+      if (container.SeatName || container.seatName || container.SeatNo) {
+        rawSeats.push(container);
+        return;
+      }
+      const values = Array.isArray(container) ? container : Object.values(container);
+      values.forEach((val) => {
+        if (val && typeof val === "object") {
+          extractRawSeatList(val);
         }
       });
     };
 
-    if (data && data.Result && typeof data.Result === "object" && !Array.isArray(data.Result)) {
+    if (data?.Result) {
       extractRawSeatList(data.Result);
-      if (data.ResultUpperSeat) extractRawSeatList(data.ResultUpperSeat);
-    } else if (Array.isArray(data?.Result)) {
-      data.Result.forEach((s) => s && rawSeats.push(s));
+    }
+    if (data?.ResultUpperSeat) {
+      extractRawSeatList(data.ResultUpperSeat);
     }
 
     const seats = rawSeats.map((s) => {
