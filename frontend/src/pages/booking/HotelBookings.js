@@ -21,6 +21,7 @@ import "../../STYLES/HotelBookings.css";
 import "../../STYLES/FlightOpsDashboard.css";
 import "../../STYLES/BookingTableRows.css";
 import CancellationModal from "./CancellationModal";
+import CancellationPolicySection from "../../components/booking/CancellationPolicySection";
 import BookingPagination, { paginateBookings } from "../../components/booking/BookingPagination";
 import BookingLifecycle from "../../components/booking/BookingLifecycle";
 import { matchesHotelFilters } from "../../utils/hotelBookingFilters";
@@ -80,6 +81,7 @@ export default function HotelBookings() {
   const [errorMessage, setErrorMessage] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedHotelItems, setSelectedHotelItems] = useState([]);
   const [cancellingBookingId, setCancellingBookingId] = useState(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelModalBookingId, setCancelModalBookingId] = useState(null);
@@ -125,6 +127,7 @@ export default function HotelBookings() {
 
   const handleViewDetails = (booking) => {
     setSelectedBooking(booking);
+    setSelectedHotelItems([]);
   };
 
   const triggerCancelBooking = (booking) => {
@@ -395,6 +398,29 @@ export default function HotelBookings() {
               </header>
               <div className="hotel-modal-body">
                 <BookingLifecycle booking={selectedBooking} />
+                <div className="hotel-modal-field full-width" style={{ marginTop: 12, background: "#f8fafc", padding: "10px 14px", borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  <label style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedHotelItems.includes(selectedBooking.id || selectedBooking.bookingReference)}
+                      onChange={(e) => {
+                        const itemKey = selectedBooking.id || selectedBooking.bookingReference;
+                        if (e.target.checked) {
+                          setSelectedHotelItems([itemKey]);
+                        } else {
+                          setSelectedHotelItems([]);
+                        }
+                      }}
+                      style={{ cursor: "pointer", width: 16, height: 16, accentColor: "#ff0000" }}
+                    />
+                    <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#1e293b" }}>
+                      Select room reservation for cancellation ({selectedBooking.hotelName})
+                    </span>
+                  </label>
+                </div>
+                {selectedHotelItems.length > 0 && (
+                  <CancellationPolicySection booking={selectedBooking} bookingType="hotel" />
+                )}
                 <div className="hotel-modal-field">
                   <label>Booking Reference</label>
                   <strong>{selectedBooking.bookingReference}</strong>
@@ -454,6 +480,8 @@ export default function HotelBookings() {
           onConfirm={handleCancelBooking}
           title="Cancel Hotel Reservation"
           message="Are you sure you want to cancel this hotel reservation? WARNING: Hotel cancellation policies will apply. Refunds are subject to the provider's terms and conditions, and you may incur cancellation charges."
+          booking={cancelModalBookingId}
+          bookingType="hotel"
         />
       </div>
     </main>

@@ -346,6 +346,7 @@ function AiPandaLogoIcon({ className, size = 32 }) {
 }
 
 const CLASS_OPTIONS = [
+  "All cabins",
   "Economy",
   "Premium Economy",
   "Business",
@@ -2302,7 +2303,7 @@ export default function HomePage() {
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
-  const [cabinClass, setCabinClass] = useState("");
+  const [cabinClass, setCabinClass] = useState("All cabins");
   const [showTravellerDropdown, setShowTravellerDropdown] = useState(false);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const travellerFieldRef = useRef(null);
@@ -3721,7 +3722,7 @@ export default function HomePage() {
         >
           <Plane size={16} color="#ff0000" style={{ color: "#ff0000", flexShrink: 0, position: "static" }} />
           <span>
-            {cabinClass || "Economy"}
+            {cabinClass || "All cabins"}
           </span>
         </span>
         <ChevronDown
@@ -9399,4 +9400,3 @@ export default function HomePage() {
     </div >
   );
 }
-

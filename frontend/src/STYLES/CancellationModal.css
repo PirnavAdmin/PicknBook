@@ -15,11 +15,13 @@
 
 .cancel-modal-card {
   position: relative;
-  width: min(480px, 100%);
+  width: min(580px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
   background: #ffffff;
   border: 1px solid rgba(255, 0, 0, 0.12);
-  border-radius: 28px;
-  padding: 32px;
+  border-radius: 24px;
+  padding: 28px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
   animation: cancelScaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -175,4 +177,39 @@
   .cancel-modal-actions {
     grid-template-columns: 1fr;
   }
+}
+
+.cancel-modal-selection-wrap {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.cancel-modal-selection-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.cancel-modal-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cancel-modal-checkbox-label input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  accent-color: #ff0000;
 }

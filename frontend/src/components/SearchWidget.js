@@ -28,6 +28,7 @@ import "../STYLES/HomePage.css";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CLASS_OPTIONS = [
+  "All cabins",
   "Economy",
   "Premium Economy",
   "Business",
@@ -265,7 +266,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
-  const [cabinClass, setCabinClass] = useState("");
+  const [cabinClass, setCabinClass] = useState("All cabins");
   const [showTravellerDropdown, setShowTravellerDropdown] = useState(false);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const travellerFieldRef = useRef(null);

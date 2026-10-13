@@ -352,18 +352,20 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
     Number(firstSegment?.NoOfSeatAvailable || firstSegment?.noOfSeatAvailable || 0) ||
     0;
 
+  const segmentCabinCode = primaryFareSegment?.CabinClass || firstSegment?.CabinClass;
+  const cabinFromCode = cabinClassCodeToName(segmentCabinCode);
   const cabin = String(
     pickFirst(primaryFareSegment || {}, ["CabinClassName", "cabinClassName"], "") ||
     pickFirst(record, ["cabin", "Cabin", "cabinClass", "CabinClass"], "") ||
-    (firstSegment?.CabinClass === 2 ? "Economy" : firstSegment?.CabinClass === 4 ? "Business" : "") ||
-    ""
+    cabinFromCode ||
+    "Economy"
   ).trim();
 
   // A single supplier fare can be represented without a classOptions array.
-  if (classOptions.length === 0 && cabin && price > 0) {
+  if (classOptions.length === 0 && price > 0) {
     classOptions = [
       {
-        travelClass: cabin,
+        travelClass: cabin || "Economy",
         priceInr: price,
         availableSeats: availableSeats,
         totalSeats: availableSeats,
@@ -1375,18 +1377,29 @@ function logFlightApiError(method, url, error) {
 
 
 
+export function cabinClassCodeToName(code) {
+  const c = Number(code);
+  if (c === 2) return "Economy";
+  if (c === 3) return "Premium Economy";
+  if (c === 4) return "Business";
+  if (c === 5) return "Premium Business";
+  if (c === 6) return "First Class";
+  if (c === 1) return "Economy";
+  return "";
+}
+
 export function toCabinClassCode(cabinClassStr) {
   if (typeof cabinClassStr === "number" && !isNaN(cabinClassStr)) {
     return cabinClassStr;
   }
   const text = String(cabinClassStr || "").trim().toLowerCase();
-  if (text === "1" || text === "all") return 1;
+  if (text === "1" || text === "all" || text.includes("all")) return 1;
   if (text === "2" || (text.includes("economy") && !text.includes("premium"))) return 2;
   if (text === "3" || (text.includes("premium") && text.includes("economy"))) return 3;
   if (text === "4" || (text.includes("business") && !text.includes("premium"))) return 4;
   if (text === "5" || (text.includes("premium") && text.includes("business"))) return 5;
   if (text === "6" || text.includes("first")) return 6;
-  return null;
+  return 1;
 }
 
 export function mapCabinClassToCode(cabinClass) {
@@ -1632,7 +1645,11 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
       fareData?.FareSegments?.[0]?.CabinClassName ||
       item?.FareDataMultiple?.[0]?.FareSegments?.[0]?.CabinClassName ||
       "";
-    const resolvedTravelClass = cabinFromFareSegment || searchParams.travelClass || "Economy";
+    const segmentCabinCode = firstSegment?.CabinClass || fareSegment?.CabinClass;
+    const segmentCabinName = cabinClassCodeToName(segmentCabinCode);
+    const searchClassIsAll = String(searchParams?.travelClass || "").toLowerCase().includes("all");
+    const fallbackClass = searchClassIsAll ? "Economy" : (searchParams?.travelClass || "Economy");
+    const resolvedTravelClass = cabinFromFareSegment || segmentCabinName || fallbackClass;
 
     return {
       ...item,
@@ -1850,7 +1867,7 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
       segments.push({
         Origin: String(codeFrom).toUpperCase(),
         Destination: String(codeTo).toUpperCase(),
-        FlightCabinClass: cabinClassCode,
+        FlightCabinClass: String(cabinClassCode),
         PreferredDepartureTime: formatIsoDateTime(leg.date || leg.departureDate),
         PreferredArrivalTime: formatIsoDateTime(leg.date || leg.departureDate),
       });
@@ -1862,14 +1879,14 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
       {
         Origin: String(from).toUpperCase(),
         Destination: String(to).toUpperCase(),
-        FlightCabinClass: cabinClassCode,
+        FlightCabinClass: String(cabinClassCode),
         PreferredDepartureTime: outboundDateStr,
         PreferredArrivalTime: outboundDateStr,
       },
       {
         Origin: String(to).toUpperCase(),
         Destination: String(from).toUpperCase(),
-        FlightCabinClass: cabinClassCode,
+        FlightCabinClass: String(cabinClassCode),
         PreferredDepartureTime: returnDateStr,
         PreferredArrivalTime: returnDateStr,
       },
@@ -1880,7 +1897,7 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
       {
         Origin: String(from).toUpperCase(),
         Destination: String(to).toUpperCase(),
-        FlightCabinClass: cabinClassCode,
+        FlightCabinClass: String(cabinClassCode),
         PreferredDepartureTime: outboundDateStr,
         PreferredArrivalTime: outboundDateStr,
       },

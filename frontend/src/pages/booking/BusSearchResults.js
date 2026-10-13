@@ -40,6 +40,8 @@ import {
   searchBuses,
   getBoardingPointsProxy,
   getBusSeatMap,
+  hasBlockedBusTrace,
+  isBusTraceBlocked,
 } from "../../services/busBookingService";
 import { getPublicPromotions } from "../../services/adminFeaturedOffersService";
 import BusSeatSelectionPage from "./BusSeatSelectionPage";
@@ -640,6 +642,8 @@ export default function BusSearchResults() {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const state = location.state || {};
+  const forceRefreshToken =
+    location.state?.forceRefresh === true ? location.key : "";
 
   const [activeDatePicker, setActiveDatePicker] = useState(null);
 
@@ -703,6 +707,7 @@ export default function BusSearchResults() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [observerTarget, setObserverTarget] = useState(null);
   const loadingMoreRef = useRef(false);
+  const forcedRefreshLocationKeyRef = useRef("");
 
   const [activeDetailTab, setActiveDetailTab] = useState("boarding");
   const [detailsBoardingData, setDetailsBoardingData] = useState(null);
@@ -838,18 +843,21 @@ export default function BusSearchResults() {
         return;
       }
 
-      const searchKey = `${sourceName.trim()}|${sourceId.trim()}|${destinationName.trim()}|${destinationId.trim()}|${formatDateInput(selectedDate)}|${searchVersion}`;
+      const searchKey = `${sourceName.trim()}|${sourceId.trim()}|${destinationName.trim()}|${destinationId.trim()}|${formatDateInput(selectedDate)}|${searchVersion}|${forceRefreshToken}`;
       const cacheKey = `bus_search_cache_${btoa(searchKey)}`;
       console.log(`[DEBUG BusSearchResults] searchKey=${searchKey}, cacheKey=${cacheKey}`);
       if (lastSearchKeyRef.current === searchKey && apiBuses.length > 0) {
         return;
       }
 
-      // Check session storage cache
-      
-      // If we came from a screen that explicitly requested a fresh search (like abandoning a blocked seat),
-      // we must bypass the cache and remove the existing cache key to force a new TraceId generation.
-      const shouldForceRefresh = location.state?.forceRefresh === true;
+      // A used supplier workflow requires bypassing the browser cache.
+      let shouldForceRefresh = Boolean(
+        forceRefreshToken && forcedRefreshLocationKeyRef.current !== forceRefreshToken
+      );
+      if (forceRefreshToken && shouldForceRefresh) {
+        forcedRefreshLocationKeyRef.current = forceRefreshToken;
+      }
+
       if (shouldForceRefresh) {
         try {
           sessionStorage.removeItem(cacheKey);
@@ -863,10 +871,16 @@ export default function BusSearchResults() {
         if (cachedStr) {
           const cachedData = JSON.parse(cachedStr);
           if (cachedData.timestamp && Date.now() - cachedData.timestamp < 5 * 60 * 1000) {
-            lastSearchKeyRef.current = searchKey;
-            setApiBuses(cachedData.results);
-            setExpandedCard(null);
-            return;
+            if (!hasBlockedBusTrace(cachedData.results)) {
+              lastSearchKeyRef.current = searchKey;
+              setApiBuses(cachedData.results);
+              setExpandedCard(null);
+              setSearchError("");
+              setActionMessage("");
+              return;
+            }
+            sessionStorage.removeItem(cacheKey);
+            shouldForceRefresh = true;
           }
         }
       } catch (e) {
@@ -891,18 +905,42 @@ export default function BusSearchResults() {
           return;
         }
 
-        try {
-          sessionStorage.setItem(cacheKey, JSON.stringify({ timestamp: Date.now(), results: result }));
-        } catch (e) {
-          // ignore quota exceeded or other errors
+        const availableResult = result.filter(
+          (bus) => !isBusTraceBlocked(bus?.traceId || bus?.TraceId || bus?.tripId)
+        );
+        const containsUsedTrace = availableResult.length !== result.length;
+
+        if (!containsUsedTrace || availableResult.length > 0) {
+          try {
+            sessionStorage.setItem(
+              cacheKey,
+              JSON.stringify({ timestamp: Date.now(), results: availableResult })
+            );
+          } catch (e) {
+            // ignore quota exceeded or other errors
+          }
         }
 
         lastSearchKeyRef.current = searchKey;
-        setApiBuses(result);
+        setApiBuses(availableResult);
         setExpandedCard(null);
+        if (containsUsedTrace && availableResult.length === 0) {
+          setSearchError(
+            "The provider returned the previous seat session again. Use Search Buses above to try for fresh availability."
+          );
+          setActionMessage("");
+        } else {
+          setSearchError("");
+          setActionMessage(
+            containsUsedTrace
+              ? "Some buses were removed because their seat sessions were already used."
+              : ""
+          );
+        }
       } catch (error) {
         if (isCurrent) {
           setApiBuses([]);
+          setActionMessage("");
           setSearchError(error.message || "Unable to load buses right now.");
         }
       } finally {
@@ -916,7 +954,7 @@ export default function BusSearchResults() {
     return () => {
       isCurrent = false;
     };
-  }, [sourceName, sourceId, destinationName, destinationId, selectedDate, searchVersion]);
+  }, [sourceName, sourceId, destinationName, destinationId, selectedDate, searchVersion, forceRefreshToken]);
 
   const buses = useMemo(
     () =>
@@ -1410,6 +1448,14 @@ export default function BusSearchResults() {
       return;
     }
 
+    if (isBusTraceBlocked(bus.traceId || bus.TraceId || bus.tripId)) {
+      setExpandedCard(null);
+      setSearchError(
+        "This bus search session was already used. Use Search Buses above to load fresh availability."
+      );
+      return;
+    }
+
     if (expandedCard?.busId === bus.id && expandedCard?.panel === "seats") {
       setExpandedCard(null);
       return;
@@ -1439,11 +1485,21 @@ export default function BusSearchResults() {
       });
     } catch (error) {
       const isSupplierWorkflowLocked = Number(error?.code) === 7023;
-      setSearchError(
-        isSupplierWorkflowLocked
-          ? "This bus availability session has already been used. Search again to load fresh seats."
-          : error?.message || "Unable to load live seat availability. Please try again."
-      );
+      if (isSupplierWorkflowLocked) {
+        setExpandedCard(null);
+        const lockedTraceId = String(bus.traceId || bus.TraceId || bus.tripId || "");
+        setApiBuses((previous) =>
+          previous.filter(
+            (item) =>
+              String(item.traceId || item.TraceId || item.tripId || "") !== lockedTraceId
+          )
+        );
+        setSearchError(
+          "This bus search session was already used. Use Search Buses above to load fresh availability."
+        );
+      } else {
+        setSearchError(error?.message || "Unable to load live seat availability. Please try again.");
+      }
     } finally {
       if (seatLayoutLoadRef.current === bus.id) {
         seatLayoutLoadRef.current = null;

@@ -136,9 +136,42 @@ export default function BusCancelRequest() {
     }
   };
 
-  const triggerCancelBooking = (bookingId) => {
-    setCancelModalBookingId(bookingId);
+  const [cancelModalBooking, setCancelModalBooking] = useState(null);
+  const [isFetchingPolicy, setIsFetchingPolicy] = useState(false);
+
+  const triggerCancelBooking = async (bookingOrId) => {
+    let bookingObj = typeof bookingOrId === "object"
+      ? bookingOrId
+      : bookings.find(b => b.bookingId === bookingOrId || b.bookingReference === bookingOrId) || { bookingId: bookingOrId };
+
+    const targetId = bookingObj.bookingId || bookingObj.id || (typeof bookingOrId === "string" ? bookingOrId : null);
+    setCancelModalBookingId(targetId);
+    setCancelModalBooking(bookingObj);
     setIsCancelModalOpen(true);
+
+    const hasPolicy = Boolean(
+      (Array.isArray(bookingObj.cancellationPolicies) && bookingObj.cancellationPolicies.length > 0) ||
+      (Array.isArray(bookingObj.CancellationPolicies) && bookingObj.CancellationPolicies.length > 0) ||
+      (typeof bookingObj.cancellationPoliciesJson === "string" && bookingObj.cancellationPoliciesJson.trim().length > 5) ||
+      (typeof bookingObj.cancellationPolicy === "string" && bookingObj.cancellationPolicy.trim().length > 10 && !bookingObj.cancellationPolicy.toLowerCase().includes("as per policy")) ||
+      bookingObj.cancellationPolicyDetails
+    );
+
+    if (targetId) {
+      if (!hasPolicy) setIsFetchingPolicy(true);
+      getBusBookingById(targetId)
+        .then((fullDetail) => {
+          if (fullDetail) {
+            setCancelModalBooking((prev) => ({ ...prev, ...fullDetail }));
+          }
+        })
+        .catch((err) => {
+          console.warn("Unable to fetch detailed bus policy:", err);
+        })
+        .finally(() => {
+          setIsFetchingPolicy(false);
+        });
+    }
   };
 
   const handleCancelBooking = async (reason) => {
@@ -438,10 +471,14 @@ export default function BusCancelRequest() {
         onClose={() => {
           setIsCancelModalOpen(false);
           setCancelModalBookingId(null);
+          setCancelModalBooking(null);
         }}
         onConfirm={handleCancelBooking}
         title="Cancel Bus Ticket"
         message="Are you sure you want to cancel this ticket?"
+        booking={cancelModalBooking || bookings.find(b => b.bookingId === cancelModalBookingId || b.bookingReference === cancelModalBookingId) || { bookingId: cancelModalBookingId }}
+        bookingType="bus"
+        isLoadingPolicy={isFetchingPolicy}
       />
     </div>
   );

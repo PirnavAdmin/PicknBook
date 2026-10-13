@@ -1145,6 +1145,15 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                       viewingPayment.canonicalStatus === "BOOKING_FAILED_REFUNDED" ||
                       stages[4]?.status === "COMPLETED";
 
+                    const isCancellationCompleted =
+                      isRefundCompleted ||
+                      stages[3]?.status === "COMPLETED" ||
+                      viewingPayment.canonicalStatus === "CANCELLED_AND_REFUNDED" ||
+                      viewingPayment.canonicalStatus === "BOOKING_FAILED_REFUNDED" ||
+                      viewingPayment.cancellationStatus === "COMPLETED" ||
+                      viewingPayment.cancellationStatus === "Confirmed" ||
+                      Boolean(viewingPayment.cancelledAt);
+
                     return (
                       <div className="lifecycle-flowchart-card" style={{ border: "1.5px solid #cbd5e1", background: "#ffffff", padding: "18px" }}>
                         <div className="lifecycle-flowchart-header" style={{ marginBottom: "6px" }}>
@@ -1177,7 +1186,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                               1. Payment
                             </span>
                             <span className="flowchart-node-status" style={{ fontSize: "10.5px", color: isPaymentCaptured ? "#047857" : "#64748b", fontWeight: "600" }}>
-                              {isPaymentCaptured ? "Captured (Green)" : "Pending"}
+                              {isPaymentCaptured ? "Captured" : "Pending"}
                             </span>
                             <div className={`flowchart-connector-line ${isPaymentCaptured ? "active-green" : ""}`} style={{ top: "22px" }} />
                           </div>
@@ -1191,23 +1200,45 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                               2. Ticket Status
                             </span>
                             <span className="flowchart-node-status" style={{ fontSize: "10.5px", color: isTicketBooked ? "#047857" : "#dc2626", fontWeight: "700" }}>
-                              {isTicketBooked ? "PNR Issued (Green)" : "Supplier Failed"}
+                              {isTicketBooked ? "PNR Issued" : "Supplier Failed"}
                             </span>
                             <div className={`flowchart-connector-line ${isTicketBooked ? "active-green" : "active-orange"}`} style={{ top: "22px" }} />
                           </div>
 
                           {/* Node 3: Cancellation Flow */}
-                          <div className="flowchart-node-item cancelled">
+                          <div className={`flowchart-node-item ${isCancellationCompleted ? "booked" : "cancelled"}`}>
                             <div className="flowchart-node-circle" style={{ width: "44px", height: "44px" }}>
-                              <RefreshCw size={22} className="animate-spin" />
+                              {isCancellationCompleted ? (
+                                <CheckCircle2 size={22} />
+                              ) : (
+                                <RefreshCw size={22} className="animate-spin" />
+                              )}
                             </div>
-                            <span className="flowchart-node-label" style={{ fontWeight: "700", fontSize: "11.5px", marginTop: "8px", color: "#c2410c" }}>
+                            <span
+                              className="flowchart-node-label"
+                              style={{
+                                fontWeight: "700",
+                                fontSize: "11.5px",
+                                marginTop: "8px",
+                                color: isCancellationCompleted ? "#047857" : "#c2410c",
+                              }}
+                            >
                               3. Cancellation
                             </span>
-                            <span className="flowchart-node-status" style={{ fontSize: "10.5px", color: "#c2410c", fontWeight: "700" }}>
-                              Processing Refund
+                            <span
+                              className="flowchart-node-status"
+                              style={{
+                                fontSize: "10.5px",
+                                color: isCancellationCompleted ? "#047857" : "#c2410c",
+                                fontWeight: "700",
+                              }}
+                            >
+                              {isCancellationCompleted ? "Cancelled" : "Processing Refund"}
                             </span>
-                            <div className={`flowchart-connector-line ${isRefundCompleted ? "active-green" : "active-orange"}`} style={{ top: "22px" }} />
+                            <div
+                              className={`flowchart-connector-line ${isCancellationCompleted || isRefundCompleted ? "active-green" : "active-orange"}`}
+                              style={{ top: "22px" }}
+                            />
                           </div>
 
                           {/* Node 4: Refund Settlement */}

@@ -128,7 +128,41 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
     else if (isBooked) status = SEAT_STATUS.BOOKED;
     else if (selectedLookup.has(seatNumber)) status = SEAT_STATUS.SELECTED;
 
-    const isExit = Boolean(s.IsExitRow === true || s.IsLegroom === true || s.isExitRow === true || s.isLegroom === true);
+    const isExit = Boolean(
+      s.IsExitRow === true ||
+      s.isExitRow === true ||
+      s.ExitRow === true ||
+      s.Exit === true ||
+      s.IsEmergencyExit === true ||
+      s.isEmergencyExit === true ||
+      s.IsEmergency === true ||
+      s.isEmergency === true ||
+      s.IsLegroom === true ||
+      s.isLegroom === true ||
+      (typeof s.SeatCharacteristic === "string" && (s.SeatCharacteristic.includes("E") || s.SeatCharacteristic.toLowerCase().includes("exit"))) ||
+      (Array.isArray(s.SeatCharacteristic) && s.SeatCharacteristic.some(c => String(c).toUpperCase() === "E" || String(c).toLowerCase().includes("exit"))) ||
+      (typeof s.Description === "string" && s.Description.toLowerCase().includes("exit")) ||
+      (typeof s.SeatDescription === "string" && s.SeatDescription.toLowerCase().includes("exit")) ||
+      (typeof s.SeatType === "string" && s.SeatType.toLowerCase().includes("exit")) ||
+      (typeof s.SeatClassification === "string" && s.SeatClassification.toLowerCase().includes("exit")) ||
+      (typeof s.Remarks === "string" && s.Remarks.toLowerCase().includes("exit"))
+    );
+
+    const isWing = Boolean(
+      s.IsWing === true ||
+      s.isWing === true ||
+      s.IsOverWing === true ||
+      s.isOverWing === true ||
+      s.OverWing === true ||
+      s.Wing === true ||
+      (typeof s.SeatCharacteristic === "string" && (s.SeatCharacteristic.toLowerCase().includes("wing") || s.SeatCharacteristic.toLowerCase().includes("ow"))) ||
+      (Array.isArray(s.SeatCharacteristic) && s.SeatCharacteristic.some(c => String(c).toLowerCase().includes("wing") || String(c).toUpperCase() === "OW")) ||
+      (typeof s.Description === "string" && s.Description.toLowerCase().includes("wing")) ||
+      (typeof s.SeatDescription === "string" && s.SeatDescription.toLowerCase().includes("wing")) ||
+      (typeof s.SeatType === "string" && s.SeatType.toLowerCase().includes("wing")) ||
+      (typeof s.SeatClassification === "string" && s.SeatClassification.toLowerCase().includes("wing"))
+    );
+
     const type = isExit
       ? SEAT_TYPES.EXIT_ROW
       : price > 800
@@ -155,12 +189,14 @@ export function parseSrdvSeatMap(srdvData, seedSelectedLabels = []) {
       status,
       type,
       isExit,
+      isWing,
       cabinClass,
       cabinClassName,
       isWindow: ["A", "F"].includes(seatLetter),
       isAisle: ["C", "D"].includes(seatLetter),
       features: {
         extraLegroom: isExit,
+        overWing: isWing,
       },
     });
   });

@@ -40,6 +40,7 @@ function resolveCleanTravelClass(travelClass) {
   if (clean.includes("economy")) return "Economy";
   if (clean.includes("business")) return "Business";
   if (clean.includes("first")) return "First Class";
+  if (clean.includes("all")) return "Economy";
   return travelClass;
 }
 

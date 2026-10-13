@@ -20,6 +20,7 @@ import {
 } from "../../services/busBookingService";
 import TravelLoadingScreen from "../../components/layout/TravelLoadingScreen";
 import CancellationModal from "./CancellationModal";
+import CancellationPolicySection from "../../components/booking/CancellationPolicySection";
 import BookingPagination, { paginateBookings } from "../../components/booking/BookingPagination";
 import BookingLifecycle from "../../components/booking/BookingLifecycle";
 import "../../STYLES/BusOpsDashboard.css";
@@ -134,9 +135,42 @@ export default function BusBookings() {
     }
   };
 
-  const triggerCancelBooking = (bookingId) => {
-    setCancelModalBookingId(bookingId);
+  const [cancelModalBooking, setCancelModalBooking] = useState(null);
+  const [isFetchingPolicy, setIsFetchingPolicy] = useState(false);
+
+  const triggerCancelBooking = async (bookingOrId) => {
+    let bookingObj = typeof bookingOrId === "object"
+      ? bookingOrId
+      : bookings.find(b => b.bookingId === bookingOrId || b.bookingReference === bookingOrId) || { bookingId: bookingOrId };
+
+    const targetId = bookingObj.bookingId || bookingObj.id || (typeof bookingOrId === "string" ? bookingOrId : null);
+    setCancelModalBookingId(targetId);
+    setCancelModalBooking(bookingObj);
     setIsCancelModalOpen(true);
+
+    const hasPolicy = Boolean(
+      (Array.isArray(bookingObj.cancellationPolicies) && bookingObj.cancellationPolicies.length > 0) ||
+      (Array.isArray(bookingObj.CancellationPolicies) && bookingObj.CancellationPolicies.length > 0) ||
+      (typeof bookingObj.cancellationPoliciesJson === "string" && bookingObj.cancellationPoliciesJson.trim().length > 5) ||
+      (typeof bookingObj.cancellationPolicy === "string" && bookingObj.cancellationPolicy.trim().length > 10 && !bookingObj.cancellationPolicy.toLowerCase().includes("as per policy")) ||
+      bookingObj.cancellationPolicyDetails
+    );
+
+    if (targetId) {
+      if (!hasPolicy) setIsFetchingPolicy(true);
+      getBusBookingById(targetId)
+        .then((fullDetail) => {
+          if (fullDetail) {
+            setCancelModalBooking((prev) => ({ ...prev, ...fullDetail }));
+          }
+        })
+        .catch((err) => {
+          console.warn("Unable to fetch detailed bus policy:", err);
+        })
+        .finally(() => {
+          setIsFetchingPolicy(false);
+        });
+    }
   };
 
   const handleCancelBooking = async (reason, refundPreference = "Original") => {
@@ -584,6 +618,14 @@ export default function BusBookings() {
                 </div>
 
                 {selectedPassengerIds.length > 0 && (
+                  <CancellationPolicySection
+                    booking={selectedBooking}
+                    bookingType="bus"
+                    selectedPassengerIds={selectedPassengerIds}
+                  />
+                )}
+
+                {selectedPassengerIds.length > 0 && (
                   <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: 12, marginTop: 12 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                       <label style={{ fontSize: 11.5, fontWeight: 600, color: "#4b5563" }}>
@@ -630,10 +672,14 @@ export default function BusBookings() {
         onClose={() => {
           setIsCancelModalOpen(false);
           setCancelModalBookingId(null);
+          setCancelModalBooking(null);
         }}
         onConfirm={handleCancelBooking}
         title="Cancel Bus Booking"
         message="Are you sure you want to cancel this booking?"
+        booking={cancelModalBooking || bookings.find(b => b.bookingId === cancelModalBookingId || b.bookingReference === cancelModalBookingId) || { bookingId: cancelModalBookingId }}
+        bookingType="bus"
+        isLoadingPolicy={isFetchingPolicy}
       />
     </div>
   );

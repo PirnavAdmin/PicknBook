@@ -25,6 +25,7 @@ import "../../STYLES/BookingDetailsScrollbar.css";
 import "../../STYLES/BookingTableRows.css";
 import "../../STYLES/TransportBookingDetails.css";
 import CancellationModal from "./CancellationModal";
+import CancellationPolicySection from "../../components/booking/CancellationPolicySection";
 import BookingPagination, { paginateBookings } from "../../components/booking/BookingPagination";
 import BookingLifecycle from "../../components/booking/BookingLifecycle";
 import { matchesFlightFilters } from "../../utils/flightBookingFilters";
@@ -176,11 +177,26 @@ export default function FlightBookings() {
 
     try {
       const detail = targetBooking || await getFlightBookingById(bookingId);
-      setSelectedBooking(detail || targetBooking);
+      const activeBooking = detail || targetBooking;
+      setSelectedBooking(activeBooking);
       setSelectedLegIndexes([]);
       setSelectedPassengerIds([]);
       setCancelReason("");
       setActionMessage("");
+
+      if (activeBooking && activeBooking.status !== "Cancelled" && activeBooking.status !== "Payment Failed") {
+        setIsFetchingCharges(true);
+        try {
+          const result = await getCancellationCharges(activeBooking);
+          if (result && result.success) {
+            setCancelCharges(result.result || result.rawResponse);
+          }
+        } catch {
+          // Keep existing policy if any
+        } finally {
+          setIsFetchingCharges(false);
+        }
+      }
     } catch (error) {
       if (targetBooking) {
         setSelectedBooking(targetBooking);
@@ -748,6 +764,17 @@ export default function FlightBookings() {
                 </div>
 
                 {(selectedLegIndexes.length > 0 || selectedPassengerIds.length > 0) && (
+                  <CancellationPolicySection
+                    booking={selectedBooking}
+                    bookingType="flight"
+                    policyData={cancelCharges}
+                    isLoading={isFetchingCharges}
+                    selectedLegIndexes={selectedLegIndexes}
+                    selectedPassengerIds={selectedPassengerIds}
+                  />
+                )}
+
+                {(selectedLegIndexes.length > 0 || selectedPassengerIds.length > 0) && (
                   <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 14, marginTop: 12 }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <div style={{ fontWeight: 700, fontSize: 12, color: "#ff0000" }}>
@@ -817,8 +844,10 @@ export default function FlightBookings() {
         onConfirm={handleCancelBooking}
         title="Cancel Flight Booking"
         message={`Are you sure you want to cancel flight booking ${cancelModalBooking?.bookingReference || cancelModalBooking?.bookingId || ""}?`}
-        isLoadingCharges={isFetchingCharges}
-        cancellationDetails={cancelCharges}
+        booking={cancelModalBooking}
+        bookingType="flight"
+        policyData={cancelCharges}
+        isLoadingPolicy={isFetchingCharges}
       />
     </div>
   );

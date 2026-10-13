@@ -598,7 +598,9 @@ function normalizeBusPassenger(passenger, index = 0) {
 }
 
 function normalizeBusBookingRecord(record) {
-  const passengersRaw = pickFirst(record, ["passengers", "Passengers"], []);
+  if (!record || typeof record !== "object") return null;
+  const payload = record?.booking ?? record?.data ?? record?.result ?? record;
+  const passengersRaw = pickFirst(payload, ["passengers", "Passengers"], pickFirst(record, ["passengers", "Passengers"], []));
   const passengers = Array.isArray(passengersRaw)
     ? passengersRaw.map((passenger, index) => normalizeBusPassenger(passenger, index))
     : [];
@@ -606,7 +608,8 @@ function normalizeBusBookingRecord(record) {
 
   return {
     ...record,
-    bookingId: pickFirst(record, ["bookingId", "BookingId"], null),
+    ...payload,
+    bookingId: pickFirst(payload, ["bookingId", "BookingId"], pickFirst(record, ["bookingId", "BookingId"], null)),
     bookingReference: String(
       pickFirst(record, ["bookingReference", "BookingReference"], "") || ""
     ),
@@ -1543,8 +1546,75 @@ export async function searchBusCities(query) {
 // naturally has a separate cache entry.
 const SEAT_LAYOUT_CACHE_TTL_MS = 15 * 60 * 1000;
 const SEAT_LAYOUT_CACHE_PREFIX = "picknbook.bus-seat-layout.v1:";
+const BLOCKED_BUS_TRACE_STORAGE_KEY = "picknbook.bus-blocked-traces.v1";
+const BLOCKED_BUS_TRACE_TTL_MS = 60 * 60 * 1000;
+const blockedBusTraces = new Set();
 const seatLayoutInFlightRequests = new Map();
 const seatLayoutResponseCache = new Map();
+
+function readBlockedBusTraces() {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const stored = JSON.parse(
+      window.sessionStorage.getItem(BLOCKED_BUS_TRACE_STORAGE_KEY) || "[]"
+    );
+    if (!Array.isArray(stored)) return [];
+
+    const active = stored.filter(
+      (entry) =>
+        entry?.traceId &&
+        Date.now() - Number(entry.blockedAt) < BLOCKED_BUS_TRACE_TTL_MS
+    );
+    if (active.length !== stored.length) {
+      window.sessionStorage.setItem(
+        BLOCKED_BUS_TRACE_STORAGE_KEY,
+        JSON.stringify(active)
+      );
+    }
+    return active;
+  } catch {
+    return [];
+  }
+}
+
+export function markBusTraceBlocked(traceId) {
+  const normalizedTraceId = String(traceId ?? "").trim();
+  if (!normalizedTraceId) return;
+  blockedBusTraces.add(normalizedTraceId);
+  if (typeof window === "undefined") return;
+
+  try {
+    const active = readBlockedBusTraces().filter(
+      (entry) => entry.traceId !== normalizedTraceId
+    );
+    active.push({ traceId: normalizedTraceId, blockedAt: Date.now() });
+    window.sessionStorage.setItem(
+      BLOCKED_BUS_TRACE_STORAGE_KEY,
+      JSON.stringify(active.slice(-50))
+    );
+  } catch {
+    // Continue blocking this trace for the current page even if storage is unavailable.
+  }
+}
+
+export function isBusTraceBlocked(traceId) {
+  const normalizedTraceId = String(traceId ?? "").trim();
+  if (!normalizedTraceId) return false;
+  if (blockedBusTraces.has(normalizedTraceId)) return true;
+  return readBlockedBusTraces().some(
+    (entry) => entry.traceId === normalizedTraceId
+  );
+}
+
+export function hasBlockedBusTrace(buses) {
+  return (
+    Array.isArray(buses) &&
+    buses.some((bus) =>
+      isBusTraceBlocked(bus?.traceId || bus?.TraceId || bus?.tripId)
+    )
+  );
+}
 
 function getSeatLayoutWorkflowKey({ traceId, srdvIndex, resultIndex }) {
   return [traceId, srdvIndex, resultIndex]
@@ -1637,6 +1707,14 @@ export async function getBusSeatLayoutProxy({ traceId, srdvIndex, resultIndex })
     srdvIndex: String(srdvIndex ?? "").trim(),
     resultIndex: String(resultIndex ?? "").trim(),
   };
+  if (isBusTraceBlocked(payload.traceId)) {
+    const blockedError = new Error(
+      "This bus search session has already been used. Search again to load fresh availability."
+    );
+    blockedError.code = 7023;
+    throw blockedError;
+  }
+
   const workflowKey = getSeatLayoutWorkflowKey(payload);
   const cachedLayout = readCachedSeatLayout(workflowKey);
   if (cachedLayout) return cachedLayout;
@@ -1656,7 +1734,9 @@ export async function getBusSeatLayoutProxy({ traceId, srdvIndex, resultIndex })
         return data;
       })
       .catch((error) => {
-        throw toBlockedWorkflowError(error) || error;
+        const blockedError = toBlockedWorkflowError(error);
+        if (blockedError) markBusTraceBlocked(payload.traceId);
+        throw blockedError || error;
       })
       .finally(() => {
         seatLayoutInFlightRequests.delete(workflowKey);
@@ -1688,6 +1768,27 @@ export async function getBoardingPointsProxy({ traceId, srdvIndex, resultIndex }
 }
 
 export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingPointId, droppingPointId, passengers, couponCode, promotionId, selectedFeaturedOfferId }) {
+  let resolvedCouponCode = couponCode ? String(couponCode).trim().toUpperCase() : null;
+  const resolvedOfferId = selectedFeaturedOfferId || promotionId || null;
+
+  if (!resolvedCouponCode && resolvedOfferId) {
+    try {
+      const offers = await getFeaturedBusOffers();
+      const match = offers.find(
+        (o) =>
+          Number(o.id) === Number(resolvedOfferId) ||
+          Number(o.offerId) === Number(resolvedOfferId) ||
+          Number(o.selectedFeaturedOfferId) === Number(resolvedOfferId) ||
+          Number(o.promotionId) === Number(resolvedOfferId)
+      );
+      if (match && (match.couponCode || match.code)) {
+        resolvedCouponCode = String(match.couponCode || match.code).trim().toUpperCase();
+      }
+    } catch {
+      // Ignore lookup error
+    }
+  }
+
   try {
     const data = await requestJson(`${BUS_BOOKINGS_ROOT}/block`, {
       method: "POST",
@@ -1698,13 +1799,20 @@ export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingP
         srdvIndex: Number(srdvIndex),
         boardingPointId: String(boardingPointId),
         droppingPointId: String(droppingPointId),
-        couponCode: couponCode || null,
+        couponCode: resolvedCouponCode || null,
         promotionId: promotionId || selectedFeaturedOfferId || null,
         passengers,
       }),
     });
+    const blockedError = toBlockedWorkflowError(data);
+    if (blockedError || data?.BlockKey || data?.blockKey) {
+      markBusTraceBlocked(traceId);
+    }
     return data;
   } catch (error) {
+    if (toBlockedWorkflowError(error)) {
+      markBusTraceBlocked(traceId);
+    }
     console.error("[busBookingService] blockBusProxy Error:", error);
     throw error;
   }
@@ -1774,23 +1882,20 @@ export async function getBusSeatMap(busParam, proxyParams = null) {
     const rawSeats = [];
     const extractRawSeatList = (container) => {
       if (!container || typeof container !== "object") return;
-      if (container.SeatName || container.seatName || container.SeatNo) {
-        rawSeats.push(container);
-        return;
-      }
-      const values = Array.isArray(container) ? container : Object.values(container);
-      values.forEach((val) => {
-        if (val && typeof val === "object") {
-          extractRawSeatList(val);
+      Object.values(container).forEach((val) => {
+        if (Array.isArray(val)) {
+          val.forEach((s) => s && rawSeats.push(s));
+        } else if (val && typeof val === "object") {
+          Object.values(val).forEach((s) => s && rawSeats.push(s));
         }
       });
     };
 
-    if (data?.Result) {
+    if (data && data.Result && typeof data.Result === "object" && !Array.isArray(data.Result)) {
       extractRawSeatList(data.Result);
-    }
-    if (data?.ResultUpperSeat) {
-      extractRawSeatList(data.ResultUpperSeat);
+      if (data.ResultUpperSeat) extractRawSeatList(data.ResultUpperSeat);
+    } else if (Array.isArray(data?.Result)) {
+      data.Result.forEach((s) => s && rawSeats.push(s));
     }
 
     const seats = rawSeats.map((s) => {
@@ -1900,10 +2005,26 @@ export async function getBusPricingPreview({
     try {
       const offers = await getFeaturedBusOffers();
       const matchingOffer = offers.find(
-        (o) => String(o.couponCode || "").toUpperCase() === finalCouponCode
+        (o) => String(o.couponCode || o.code || "").toUpperCase() === finalCouponCode
       );
       if (matchingOffer) {
         finalFeaturedOfferId = matchingOffer.id || matchingOffer.offerId || matchingOffer.selectedFeaturedOfferId || null;
+      }
+    } catch {
+      // Ignore lookup error
+    }
+  } else if (!finalCouponCode && finalFeaturedOfferId) {
+    try {
+      const offers = await getFeaturedBusOffers();
+      const matchingOffer = offers.find(
+        (o) =>
+          Number(o.id) === finalFeaturedOfferId ||
+          Number(o.offerId) === finalFeaturedOfferId ||
+          Number(o.selectedFeaturedOfferId) === finalFeaturedOfferId ||
+          Number(o.promotionId) === finalFeaturedOfferId
+      );
+      if (matchingOffer && (matchingOffer.couponCode || matchingOffer.code)) {
+        finalCouponCode = String(matchingOffer.couponCode || matchingOffer.code).trim().toUpperCase();
       }
     } catch {
       // Ignore lookup error
@@ -2563,7 +2684,8 @@ export async function getBusBookingById(bookingId) {
     { method: "GET" }
   );
 
-  return normalizeBusBookingRecord(data);
+  const payload = data?.booking ?? data?.data ?? data?.result ?? data;
+  return normalizeBusBookingRecord(payload);
 }
 
 export async function cancelBusBooking(bookingId, reason, refundPreference = "Original") {
@@ -2623,8 +2745,8 @@ function normalizeFeaturedOffer(record) {
     : pickFirst(record, ["promotionId", "PromotionId"], null);
 
   const couponCode = promo
-    ? String(pickFirst(promo, ["code", "Code"], "") || "").toUpperCase()
-    : String(pickFirst(record, ["couponCode", "CouponCode"], "") || "").toUpperCase();
+    ? String(pickFirst(promo, ["couponCode", "CouponCode", "code", "Code"], "") || "").toUpperCase()
+    : String(pickFirst(record, ["couponCode", "CouponCode", "code", "Code"], "") || "").toUpperCase();
 
   const isPercentageDiscount = promo
     ? String(pickFirst(promo, ["discountType", "DiscountType"], "")).toLowerCase() === "percentage"
@@ -2653,6 +2775,7 @@ function normalizeFeaturedOffer(record) {
     subtitle: String(pickFirst(record, ["subtitle", "Subtitle"], "") || ""),
     description: String(pickFirst(record, ["description", "Description"], "") || ""),
     couponCode,
+    code: couponCode,
     basePrice: Number(pickFirst(record, ["basePrice", "BasePrice"], 0)) || 0,
     isPercentageDiscount,
     discountValue,

@@ -68,11 +68,9 @@
   border-radius: 9px;
   min-height: 40px;
   padding: 0 14px;
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   color: #ffffff;
   font-size: 0.774rem;
   font-weight: 700;
@@ -106,11 +104,9 @@
 .bus-flow-overview-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    120deg,
-    rgba(255, 0, 0, 0.96) 0%,
-    rgba(255, 0, 0, 0.82) 100%
-  );
+  background: linear-gradient(120deg,
+      rgba(255, 0, 0, 0.96) 0%,
+      rgba(255, 0, 0, 0.82) 100%);
 }
 
 .bus-flow-overview-content {
@@ -310,11 +306,9 @@
   border-radius: 10px;
   min-height: 180px;
   background:
-    linear-gradient(
-      90deg,
+    linear-gradient(90deg,
       rgba(255, 0, 0, 0.02) 30%,
-      rgba(255, 0, 0, 0.03) 60%
-    ),
+      rgba(255, 0, 0, 0.03) 60%),
     #faf8f6;
   box-shadow: 0 4px 12px rgba(13, 74, 83, 0.04);
   display: grid;
@@ -364,11 +358,9 @@
   border-radius: 9px;
   min-height: 40px;
   padding: 0 20px;
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 700;
@@ -409,6 +401,7 @@
 }
 
 @keyframes flow-loader-bars {
+
   0%,
   100% {
     transform: scaleY(0.72);
@@ -764,7 +757,7 @@
   letter-spacing: 0.08em;
 }
 
-.bus-flow-deck-card > aside {
+.bus-flow-deck-card>aside {
   position: absolute;
   top: 16px;
   right: 24px;
@@ -1208,7 +1201,7 @@
   font-family: var(--app-font-family) !important;
 }
 
-.bus-flow-point-item > div {
+.bus-flow-point-item>div {
   min-width: 0;
 }
 
@@ -1326,11 +1319,9 @@
   border-radius: 10px;
   min-height: 42px;
   padding: 0 14px;
-  background: linear-gradient(
-    135deg,
-    var(--flow-accent),
-    var(--flow-accent-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-accent),
+      var(--flow-accent-strong));
   color: #ffffff;
   font-size: 0.972rem;
   font-family: var(--app-font-family) !important;
@@ -1367,18 +1358,16 @@
   overflow: hidden;
 }
 
-.flow-card > header {
+.flow-card>header {
   min-height: 46px;
   padding: 0 14px;
   display: inline-flex;
   align-items: center;
   width: 100%;
   color: #ffffff;
-  background: linear-gradient(
-    135deg,
-    var(--flow-accent),
-    var(--flow-accent-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-accent),
+      var(--flow-accent-strong));
   font-size: 1.53rem;
   font-family: var(--app-font-family) !important;
 }
@@ -1387,7 +1376,7 @@
   padding: 14px;
 }
 
-.flow-card.compact > header {
+.flow-card.compact>header {
   min-height: 42px;
   font-size: 1.26rem;
 }
@@ -1454,7 +1443,7 @@
   line-height: 1.4;
 }
 
-.passenger-row + .passenger-row {
+.passenger-row+.passenger-row {
   margin-top: 10px;
 }
 
@@ -1665,7 +1654,7 @@
   gap: 9px;
 }
 
-.fare-list > div {
+.fare-list>div {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1674,7 +1663,7 @@
   border-bottom: 1px dashed #d0dbea;
 }
 
-.fare-list > div:last-child {
+.fare-list>div:last-child {
   border-bottom: 0;
   padding-bottom: 0;
 }
@@ -1762,7 +1751,7 @@
   gap: 7px;
 }
 
-.detail-list > div {
+.detail-list>div {
   border: 1px solid #d1dae7;
   border-radius: 8px;
   min-height: 38px;
@@ -1829,11 +1818,9 @@
 
 .payment-method-grid button.active {
   border-color: transparent;
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   color: #ffffff;
 }
 
@@ -1854,7 +1841,7 @@
   font-weight: 700;
 }
 
-.payment-form-grid > label:first-child:last-child {
+.payment-form-grid>label:first-child:last-child {
   grid-column: span 2;
 }
 
@@ -1921,11 +1908,9 @@
   border-radius: 9px;
   min-height: 38px;
   padding: 0 12px;
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
@@ -1964,7 +1949,7 @@
 .bus-flow-seat-legend,
 .bus-flow-deck-card,
 .bus-flow-page .point-item,
-.detail-list > div,
+.detail-list>div,
 .ack-pay-strip,
 .payment-method-grid button {
   border-color: #cedcee;
@@ -1984,11 +1969,9 @@
 .bus-flow-page .point-tabs button.active,
 .payment-method-grid button.active {
   border-color: transparent;
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   color: #ffffff;
 }
 
@@ -2009,13 +1992,11 @@
   color: var(--flow-primary-strong, #ff0000);
 }
 
-.flow-card > header,
+.flow-card>header,
 .flow-modal-header {
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   color: #ffffff;
 }
 
@@ -2052,11 +2033,9 @@
 .flow-pay-btn,
 .coupon-box button {
   min-height: 44px;
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   font-size: 0.846rem;
   font-weight: 700;
   transition:
@@ -2100,11 +2079,9 @@
 
 .flow-modal-actions button.proceed {
   border: 0;
-  background: linear-gradient(
-    135deg,
-    var(--flow-primary),
-    var(--flow-primary-strong)
-  );
+  background: linear-gradient(135deg,
+      var(--flow-primary),
+      var(--flow-primary-strong));
   color: #ffffff;
 }
 
@@ -2138,11 +2115,12 @@
   }
 
   @media (max-width: 1100px) {
-  .bus-flow-seat-layout,
-  .bus-passenger-layout,
-  .flow-payment-layout {
-    grid-template-columns: 1fr;
-  }
+
+    .bus-flow-seat-layout,
+    .bus-passenger-layout,
+    .flow-payment-layout {
+      grid-template-columns: 1fr;
+    }
   }
 
   .bus-flow-point-panel h3 {
@@ -2172,7 +2150,7 @@
     width: min(430px, 100%);
   }
 
-  .bus-flow-deck-card > aside {
+  .bus-flow-deck-card>aside {
     min-height: 32px;
   }
 
@@ -2235,10 +2213,8 @@
   }
 
   .bus-flow-seater-row {
-    grid-template-columns: repeat(2, minmax(0, .5fr)) 22px repeat(
-        2,
-        minmax(0, 1fr)
-      );
+    grid-template-columns: repeat(2, minmax(0, .5fr)) 22px repeat(2,
+        minmax(0, 1fr));
     gap: 6px;
   }
 
@@ -2297,7 +2273,7 @@
 .bus-flow-seat-legend,
 .bus-flow-deck-card,
 .bus-flow-page .point-item,
-.detail-list > div,
+.detail-list>div,
 .ack-pay-strip,
 .payment-method-grid button {
   border-color: #f3cbbf;
@@ -2394,7 +2370,7 @@
 }
 
 .bus-flow-driver-cabin,
-.bus-flow-deck-card > aside {
+.bus-flow-deck-card>aside {
   border-color: #ffd0bf;
   background: #fef2f2;
   color: var(--flow-primary-strong);
@@ -2481,7 +2457,7 @@
 
 .bus-flow-page .bus-flow-deck-label,
 .bus-flow-page .bus-flow-driver-cabin,
-.bus-flow-page .bus-flow-deck-card > aside {
+.bus-flow-page .bus-flow-deck-card>aside {
   border-color: #e5e7eb;
   border-radius: 999px;
   min-height: 34px;
@@ -2687,6 +2663,7 @@
   background: #fef2f2;
   color: #b9381c;
 }
+
 /* ── Passenger Mode Toggle (Existing Traveler / Add New Traveler) ── */
 
 .passenger-mode-toggle {
@@ -3522,7 +3499,7 @@
   box-shadow: 0 8px 0 rgba(17, 24, 39, 0.9);
 }
 
-.bus-flow-page .flow-card > .coupon-sheet-header {
+.bus-flow-page .flow-card>.coupon-sheet-header {
   min-height: 68px;
   padding: 0 22px;
   display: flex;
@@ -3559,34 +3536,38 @@
 }
 
 .bus-flow-page .coupon-carousel-controls {
-  display: flex;
-  position: absolute;
-  z-index: 5;
-  top: 50%;
-  right: -17px;
-  left: -17px;
-  justify-content: space-between;
-  transform: translateY(-50%);
-  pointer-events: none;
+  display: flex !important;
+  position: absolute !important;
+  z-index: 15 !important;
+  top: 50% !important;
+  right: -16px !important;
+  left: -16px !important;
+  justify-content: space-between !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
 }
 
 .bus-flow-page .coupon-carousel-controls button {
-  display: inline-grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border: 1px solid #d5dbe5 !important;
+  display: inline-grid !important;
+  width: 36px !important;
+  height: 36px !important;
+  place-items: center !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
   border-radius: 50% !important;
-  background: #fff;
-  color: #17202f;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
-  pointer-events: auto;
+  background: #ffffff !important;
+  color: #17202f !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18) !important;
+  pointer-events: auto !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .bus-flow-page .coupon-carousel-controls button:hover {
-  border-color: #ff0000;
-  color: #ff0000;
+  background: #ffffff !important;
+  border-color: #ff0000 !important;
+  color: #ff0000 !important;
+  transform: scale(1.12) !important;
+  box-shadow: 0 6px 16px rgba(255, 0, 0, 0.25) !important;
 }
 
 .bus-flow-page .coupon-section-label {
@@ -3803,7 +3784,7 @@
 }
 
 @media (max-width: 640px) {
-  .bus-flow-page .flow-card > .coupon-sheet-header {
+  .bus-flow-page .flow-card>.coupon-sheet-header {
     min-height: 58px;
     padding: 0 18px;
     font-size: 1.55rem;
@@ -3890,9 +3871,9 @@
   overflow: hidden !important;
 }
 
-.flow-card > header,
+.flow-card>header,
 .flow-modal-header,
-.bus-flow-page .flow-card > .coupon-sheet-header {
+.bus-flow-page .flow-card>.coupon-sheet-header {
   min-height: 57px !important;
   padding: 0 22px !important;
   display: flex !important;
@@ -3909,13 +3890,13 @@
   box-shadow: none !important;
 }
 
-.bus-passenger-main > .flow-card:nth-of-type(1) > header::before,
-.bus-passenger-main > .flow-card:nth-of-type(2) > header::before,
-.bus-passenger-main > .flow-card:nth-of-type(3) > header::before,
-.bus-passenger-side > .flow-card:nth-of-type(1) > header::before,
-.bus-passenger-side > .flow-card:nth-of-type(2) > header::before,
-.flow-payment-main > .flow-card > header::before,
-.flow-payment-side > .flow-card > header::before {
+.bus-passenger-main>.flow-card:nth-of-type(1)>header::before,
+.bus-passenger-main>.flow-card:nth-of-type(2)>header::before,
+.bus-passenger-main>.flow-card:nth-of-type(3)>header::before,
+.bus-passenger-side>.flow-card:nth-of-type(1)>header::before,
+.bus-passenger-side>.flow-card:nth-of-type(2)>header::before,
+.flow-payment-main>.flow-card>header::before,
+.flow-payment-side>.flow-card>header::before {
   display: inline-grid;
   place-items: center;
   width: 18px;
@@ -3926,12 +3907,26 @@
   font-weight: 700;
 }
 
-.bus-passenger-main > .flow-card:nth-of-type(1) > header::before { content: "▣"; }
-.bus-passenger-main > .flow-card:nth-of-type(2) > header::before { content: "●"; }
-.bus-passenger-main > .flow-card:nth-of-type(3) > header::before { content: "☎"; }
-.bus-passenger-side > .flow-card:nth-of-type(1) > header::before,
-.flow-payment-side > .flow-card:nth-of-type(2) > header::before { content: "₹"; }
-.bus-passenger-side > .flow-card:nth-of-type(2) > header::before { content: "%"; }
+.bus-passenger-main>.flow-card:nth-of-type(1)>header::before {
+  content: "▣";
+}
+
+.bus-passenger-main>.flow-card:nth-of-type(2)>header::before {
+  content: "●";
+}
+
+.bus-passenger-main>.flow-card:nth-of-type(3)>header::before {
+  content: "☎";
+}
+
+.bus-passenger-side>.flow-card:nth-of-type(1)>header::before,
+.flow-payment-side>.flow-card:nth-of-type(2)>header::before {
+  content: "₹";
+}
+
+.bus-passenger-side>.flow-card:nth-of-type(2)>header::before {
+  content: "%";
+}
 
 .flow-card-body {
   padding: 26px 22px 30px !important;
@@ -3944,7 +3939,7 @@
   align-items: start !important;
 }
 
-.bus-journey-grid > div {
+.bus-journey-grid>div {
   min-width: 0 !important;
 }
 
@@ -3967,7 +3962,7 @@
   line-height: 1.2 !important;
 }
 
-.bus-journey-grid > div:first-child strong {
+.bus-journey-grid>div:first-child strong {
   display: inline-flex !important;
   min-height: 27px !important;
   align-items: center !important;
@@ -3980,7 +3975,7 @@
   font-weight: 500 !important;
 }
 
-.bus-journey-grid > div:not(.journey-point):not(.journey-duration) strong {
+.bus-journey-grid>div:not(.journey-point):not(.journey-duration) strong {
   color: #050b18 !important;
   font-size: 1.22rem !important;
   font-weight: 600 !important;
@@ -4059,7 +4054,7 @@
   background: transparent !important;
 }
 
-.passenger-row + .passenger-row {
+.passenger-row+.passenger-row {
   margin-top: 24px !important;
 }
 
@@ -4107,9 +4102,9 @@
   gap: 7px !important;
 }
 
-.passenger-fields label > span,
-.contact-grid label > span,
-.payment-form-grid label > span {
+.passenger-fields label>span,
+.contact-grid label>span,
+.payment-form-grid label>span {
   color: #050b18 !important;
   font-size: 0.9rem !important;
   font-weight: 500 !important;
@@ -4165,7 +4160,7 @@
   gap: 0 !important;
 }
 
-.fare-list > div {
+.fare-list>div {
   min-height: 45px !important;
   padding: 0 !important;
   border: 0 !important;
@@ -4251,7 +4246,7 @@
 }
 
 .ack-pay-strip,
-.detail-list > div,
+.detail-list>div,
 .payment-method-grid button,
 .bus-flow-fares,
 .bus-flow-seat-legend,
@@ -4269,6 +4264,7 @@
 }
 
 @media (max-width: 1240px) {
+
   .bus-passenger-layout,
   .flow-payment-layout {
     grid-template-columns: 1fr !important;
@@ -4295,6 +4291,7 @@
 }
 
 @media (max-width: 640px) {
+
   .bus-journey-grid,
   .passenger-fields,
   .contact-grid,
@@ -4363,7 +4360,7 @@
 .payment-card,
 .coupon-sheet-card,
 .ack-pay-strip,
-.detail-list > div,
+.detail-list>div,
 .payment-method-grid button,
 .bus-flow-fares,
 .bus-flow-seat-legend,
@@ -4430,8 +4427,8 @@
   overflow: hidden !important;
 }
 
-.bus-flow-page .flow-card > header,
-.bus-flow-page .flow-card > .coupon-sheet-header {
+.bus-flow-page .flow-card>header,
+.bus-flow-page .flow-card>.coupon-sheet-header {
   min-height: 64px !important;
   padding: 0 28px !important;
   background: var(--theme-gradient-action, linear-gradient(135deg, #ff0000, #ff0000)) !important;
@@ -4441,8 +4438,8 @@
   letter-spacing: -0.01em !important;
 }
 
-.bus-flow-page .bus-passenger-main > .flow-card > header::before,
-.bus-flow-page .bus-passenger-side > .flow-card > header::before {
+.bus-flow-page .bus-passenger-main>.flow-card>header::before,
+.bus-flow-page .bus-passenger-side>.flow-card>header::before {
   display: none !important;
 }
 
@@ -4457,11 +4454,11 @@
   align-items: stretch !important;
 }
 
-.bus-flow-page .bus-journey-grid > div {
+.bus-flow-page .bus-journey-grid>div {
   min-width: 0 !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:not(.journey-point):not(.journey-duration) {
+.bus-flow-page .bus-journey-grid>div:not(.journey-point):not(.journey-duration) {
   min-height: 118px !important;
   padding: 16px !important;
   border: 1px solid #dceae6 !important;
@@ -4469,23 +4466,23 @@
   background: linear-gradient(180deg, #ffffff 0%, #F9FAFB 100%) !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:nth-child(1) {
+.bus-flow-page .bus-journey-grid>div:nth-child(1) {
   grid-column: span 3 !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:nth-child(2) {
+.bus-flow-page .bus-journey-grid>div:nth-child(2) {
   grid-column: span 2 !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:nth-child(3) {
+.bus-flow-page .bus-journey-grid>div:nth-child(3) {
   grid-column: span 2 !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:nth-child(4) {
+.bus-flow-page .bus-journey-grid>div:nth-child(4) {
   grid-column: span 2 !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:nth-child(5) {
+.bus-flow-page .bus-journey-grid>div:nth-child(5) {
   grid-column: span 3 !important;
 }
 
@@ -4500,7 +4497,7 @@
   text-transform: uppercase !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:first-child small {
+.bus-flow-page .bus-journey-grid>div:first-child small {
   color: var(--theme-navy, #17242d) !important;
   font-size: 0.95rem !important;
   letter-spacing: -0.01em !important;
@@ -4515,7 +4512,7 @@
   line-height: 1.12 !important;
 }
 
-.bus-flow-page .bus-journey-grid > div:first-child strong {
+.bus-flow-page .bus-journey-grid>div:first-child strong {
   display: inline-flex !important;
   width: fit-content !important;
   min-height: 0 !important;
@@ -4599,13 +4596,13 @@
   gap: 0 !important;
 }
 
-.bus-flow-page .fare-list > div {
+.bus-flow-page .fare-list>div {
   min-height: 48px !important;
   padding: 0 !important;
   border-bottom: 0 !important;
 }
 
-.bus-flow-page .fare-list > div + div {
+.bus-flow-page .fare-list>div+div {
   margin-top: 6px !important;
 }
 
@@ -4652,8 +4649,9 @@
 
 .bus-flow-page .coupon-featured-offer,
 .bus-flow-page .coupon-chip {
-  border-color: #dceae6 !important;
-  background: #F9FAFB !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .bus-flow-page .coupon-featured-offer.is-selected,
@@ -4736,20 +4734,21 @@
     grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   }
 
-  .bus-flow-page .bus-journey-grid > div:nth-child(1),
-  .bus-flow-page .bus-journey-grid > div:nth-child(5),
+  .bus-flow-page .bus-journey-grid>div:nth-child(1),
+  .bus-flow-page .bus-journey-grid>div:nth-child(5),
   .bus-flow-page .bus-journey-grid .journey-point {
     grid-column: span 6 !important;
   }
 
-  .bus-flow-page .bus-journey-grid > div:nth-child(2),
-  .bus-flow-page .bus-journey-grid > div:nth-child(3),
-  .bus-flow-page .bus-journey-grid > div:nth-child(4) {
+  .bus-flow-page .bus-journey-grid>div:nth-child(2),
+  .bus-flow-page .bus-journey-grid>div:nth-child(3),
+  .bus-flow-page .bus-journey-grid>div:nth-child(4) {
     grid-column: span 2 !important;
   }
 }
 
 @media (max-width: 640px) {
+
   .bus-flow-page .flow-card-body,
   .bus-flow-page .coupon-sheet-body {
     padding: 18px !important;
@@ -4759,7 +4758,7 @@
     grid-template-columns: 1fr !important;
   }
 
-  .bus-flow-page .bus-journey-grid > div {
+  .bus-flow-page .bus-journey-grid>div {
     grid-column: span 1 !important;
   }
 }
@@ -4768,11 +4767,13 @@
 
 /* 1. Page Shell Layout & Spacing */
 .bus-flow-page {
-  padding-top: 4px !important; /* reduce vertical gap between topbar and content */
+  padding-top: 4px !important;
+  /* reduce vertical gap between topbar and content */
 }
 
 .bus-flow-page .bus-passenger-layout {
-  grid-template-columns: minmax(0, 1fr) 420px !important; /* Make sidebar slightly narrower to fit content compactly */
+  grid-template-columns: minmax(0, 1fr) 420px !important;
+  /* Make sidebar slightly narrower to fit content compactly */
   gap: 12px !important;
   margin-top: 10px !important;
 }
@@ -4784,39 +4785,43 @@
 
 /* 2. Card Padding & Border */
 .bus-flow-page .flow-card {
-  border: 1px solid #F3F4F6 !important; /* theme border color */
+  border: 1px solid #F3F4F6 !important;
+  /* theme border color */
   border-radius: 8px !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 .bus-flow-page .flow-card-body {
-  padding: 12px !important; /* tight body padding */
+  padding: 12px !important;
+  /* tight body padding */
 }
 
 /* 3. Header Styling - Solid colored Teal headers without pseudo-element icons */
-.bus-flow-page .flow-card > header,
+.bus-flow-page .flow-card>header,
 .bus-flow-page .flow-modal-header,
-.bus-flow-page .flow-card > .coupon-sheet-header {
-  min-height: 38px !important; /* tight header height */
+.bus-flow-page .flow-card>.coupon-sheet-header {
+  min-height: 38px !important;
+  /* tight header height */
   padding: 0 12px !important;
   font-size: 0.95rem !important;
   font-weight: 600 !important;
   border-radius: 0 !important;
-  background: var(--flow-primary, #ff0000) !important; /* Teal theme background */
+  background: var(--flow-primary, #ff0000) !important;
+  /* Teal theme background */
   gap: 6px !important;
 }
 
 /* Disable old unicode content icons */
-.bus-flow-page .flow-card > header::before,
+.bus-flow-page .flow-card>header::before,
 .bus-flow-page .flow-modal-header::before,
-.bus-flow-page .flow-card > .coupon-sheet-header::before {
+.bus-flow-page .flow-card>.coupon-sheet-header::before {
   display: none !important;
   content: none !important;
 }
 
 /* SVG icon styling in headers */
-.bus-flow-page .flow-card > header svg,
-.bus-flow-page .flow-card > .coupon-sheet-header svg {
+.bus-flow-page .flow-card>header svg,
+.bus-flow-page .flow-card>.coupon-sheet-header svg {
   margin-right: 0 !important;
   flex-shrink: 0;
 }
@@ -4830,12 +4835,12 @@
 }
 
 /* Use high specificity selector list to neutralize inner card borders, paddings, and background gradients completely */
-.bus-flow-page .bus-journey-grid > div:not(.journey-point):not(.journey-duration),
-.bus-flow-page .bus-journey-grid > div:nth-child(1),
-.bus-flow-page .bus-journey-grid > div:nth-child(2),
-.bus-flow-page .bus-journey-grid > div:nth-child(3),
-.bus-flow-page .bus-journey-grid > div:nth-child(4),
-.bus-flow-page .bus-journey-grid > div:nth-child(5) {
+.bus-flow-page .bus-journey-grid>div:not(.journey-point):not(.journey-duration),
+.bus-flow-page .bus-journey-grid>div:nth-child(1),
+.bus-flow-page .bus-journey-grid>div:nth-child(2),
+.bus-flow-page .bus-journey-grid>div:nth-child(3),
+.bus-flow-page .bus-journey-grid>div:nth-child(4),
+.bus-flow-page .bus-journey-grid>div:nth-child(5) {
   grid-column: span 1 !important;
   min-height: 0 !important;
   padding: 0 !important;
@@ -4849,7 +4854,8 @@
 }
 
 .bus-flow-page .bus-journey-grid small {
-  color: #66757b !important; /* theme muted color */
+  color: #66757b !important;
+  /* theme muted color */
   font-size: 0.72rem !important;
   font-weight: 500 !important;
   margin-bottom: 2px !important;
@@ -4857,13 +4863,14 @@
 }
 
 .bus-flow-page .bus-journey-grid strong {
-  color: #162126 !important; /* theme text color */
+  color: #162126 !important;
+  /* theme text color */
   font-size: 0.95rem !important;
   font-weight: 600 !important;
 }
 
 /* Route display block - flat without blue card styling */
-.bus-flow-page .bus-journey-grid > div:first-child strong {
+.bus-flow-page .bus-journey-grid>div:first-child strong {
   border: none !important;
   background: transparent !important;
   padding: 0 !important;
@@ -4875,8 +4882,10 @@
 
 .bus-flow-page .date-badge {
   display: inline-block !important;
-  background-color: var(--theme-primary-soft, #fef2f2) !important; /* theme soft primary */
-  color: var(--theme-primary, #ff0000) !important; /* theme primary */
+  background-color: var(--theme-primary-soft, #fef2f2) !important;
+  /* theme soft primary */
+  color: var(--theme-primary, #ff0000) !important;
+  /* theme primary */
   padding: 2px 6px !important;
   border-radius: 4px !important;
   font-size: 0.68rem !important;
@@ -4948,10 +4957,13 @@
 .bus-flow-page .journey-point .point-header {
   display: block !important;
   width: 100% !important;
-  background: var(--theme-primary-soft, #fef2f2) !important; /* theme soft primary background */
-  border: 1px dashed var(--theme-primary, #ff0000) !important; /* theme primary dashed border */
+  background: var(--theme-primary-soft, #fef2f2) !important;
+  /* theme soft primary background */
+  border: 1px dashed var(--theme-primary, #ff0000) !important;
+  /* theme primary dashed border */
   border-radius: 4px !important;
-  color: var(--theme-primary, #ff0000) !important; /* theme primary text */
+  color: var(--theme-primary, #ff0000) !important;
+  /* theme primary text */
   font-size: 0.76rem !important;
   font-weight: 700 !important;
   padding: 4px 6px !important;
@@ -4961,7 +4973,8 @@
 
 .bus-flow-page .journey-point strong {
   font-size: 0.85rem !important;
-  color: var(--theme-coral, #ff0000) !important; /* theme accent color for time */
+  color: var(--theme-coral, #ff0000) !important;
+  /* theme accent color for time */
   font-weight: 700 !important;
   margin-top: 2px !important;
   display: block !important;
@@ -5000,7 +5013,8 @@
   bottom: 0 !important;
   width: 32px !important;
   height: 3px !important;
-  background: var(--flow-primary, #ff0000) !important; /* underline in theme primary color */
+  background: var(--flow-primary, #ff0000) !important;
+  /* underline in theme primary color */
 }
 
 .bus-flow-page .passenger-row h4 span {
@@ -5023,8 +5037,8 @@
 }
 
 /* Hide input label spans but keep error text visible */
-.bus-flow-page .passenger-field > span:not(.field-error-text),
-.bus-flow-page .contact-grid label > span:not(.field-error-text) {
+.bus-flow-page .passenger-field>span:not(.field-error-text),
+.bus-flow-page .contact-grid label>span:not(.field-error-text) {
   display: none !important;
 }
 
@@ -5036,9 +5050,11 @@
 .bus-flow-page .contact-input input,
 .bus-flow-page .payment-form-grid input,
 .bus-flow-page .payment-form-grid select {
-  min-height: 32px !important; /* extra tight inputs */
+  min-height: 32px !important;
+  /* extra tight inputs */
   height: 32px !important;
-  border: 1px solid #E5E7EB !important; /* theme border color */
+  border: 1px solid #E5E7EB !important;
+  /* theme border color */
   border-radius: 6px !important;
   padding: 0 8px !important;
   font-size: 0.8rem !important;
@@ -5117,11 +5133,12 @@
 .bus-flow-page .fare-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 4px !important; /* extra tight gap */
+  gap: 4px !important;
+  /* extra tight gap */
 }
 
 /* Override 48px height and borders of divisions inside fare list */
-.bus-flow-page .fare-list > div {
+.bus-flow-page .fare-list>div {
   display: flex !important;
   justify-content: space-between !important;
   font-size: 0.8rem !important;
@@ -5131,16 +5148,16 @@
   border-bottom: none !important;
 }
 
-.bus-flow-page .fare-list > div + div {
+.bus-flow-page .fare-list>div+div {
   margin-top: 0 !important;
 }
 
-.bus-flow-page .fare-list > div span {
+.bus-flow-page .fare-list>div span {
   font-weight: 500 !important;
   font-size: 0.8rem !important;
 }
 
-.bus-flow-page .fare-list > div strong {
+.bus-flow-page .fare-list>div strong {
   color: #162126 !important;
   font-weight: 600 !important;
   font-size: 0.8rem !important;
@@ -5171,7 +5188,8 @@
 
 /* 7. Apply Coupon Box */
 .bus-flow-page .coupon-sheet-body {
-  padding: 8px !important; /* tighter padding */
+  padding: 8px !important;
+  /* tighter padding */
   display: flex !important;
   flex-direction: column !important;
   gap: 8px !important;
@@ -5218,7 +5236,8 @@
 }
 
 .bus-flow-page .coupon-action-button.is-apply {
-  background: var(--flow-primary, #ff0000) !important; /* Teal apply button */
+  background: var(--flow-primary, #ff0000) !important;
+  /* Teal apply button */
   color: #ffffff !important;
 }
 
@@ -5340,30 +5359,56 @@
 }
 
 /* Voucher Card styling overrides */
+.bus-flow-page .coupon-featured-block,
+.bus-flow-page .coupon-chip-block {
+  margin-top: 6px !important;
+  margin-bottom: 14px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.bus-flow-page .coupon-carousel-frame {
+  position: relative !important;
+  margin: 0 17px !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
 .bus-flow-page .coupon-featured-list,
 .bus-flow-page .coupon-chip-list {
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: nowrap !important;
-  gap: 12px !important;
+  gap: 0 !important;
   overflow-x: auto !important;
-  overflow-y: visible !important;
-  padding: 8px 4px !important;
+  overflow-y: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
   -webkit-overflow-scrolling: touch;
-  cursor: grab;
-  scroll-behavior: smooth;
-  scroll-snap-type: x proximity;
-  touch-action: pan-y;
-  user-select: none;
+  scroll-behavior: smooth !important;
+  scroll-snap-type: x mandatory !important;
+  touch-action: pan-x;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .bus-flow-page .coupon-featured-list::-webkit-scrollbar,
-.bus-flow-page .coupon-chip-list::-webkit-scrollbar {
+.bus-flow-page .coupon-chip-list::-webkit-scrollbar,
+.bus-flow-page .coupon-featured-list::-webkit-scrollbar-thumb,
+.bus-flow-page .coupon-chip-list::-webkit-scrollbar-thumb,
+.bus-flow-page .coupon-featured-list::-webkit-scrollbar-track,
+.bus-flow-page .coupon-chip-list::-webkit-scrollbar-track {
   width: 0 !important;
   height: 0 !important;
   display: none !important;
+  background: transparent !important;
 }
 
 .bus-flow-page .coupon-featured-list.is-dragging,
@@ -5395,191 +5440,495 @@
   color: #1e293b !important;
 }
 
-/* Base voucher card style */
+/* Base voucher card style - Option C: Soft Coral Gradient Card (Exact Mockup Match) */
 .bus-flow-page .coupon-featured-offer,
 .bus-flow-page .coupon-voucher-card {
-  flex: 0 0 min(350px, calc(100% - 12px)) !important;
-  width: min(350px, calc(100% - 12px)) !important;
-  scroll-snap-align: start;
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  min-height: 132px !important;
+  scroll-snap-align: start !important;
+  scroll-snap-stop: always !important;
   display: flex !important;
   flex-direction: column !important;
-  align-items: stretch !important; /* Stretch header/body to full card width */
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 10px !important;
-  background: #ffffff !important;
+  align-items: stretch !important;
+  justify-content: space-between !important;
+  border-radius: 18px !important;
+  background: radial-gradient(circle at 92% 16%, rgba(255, 255, 255, 0.22) 0%, transparent 42%), linear-gradient(135deg, #ff5c4b 0%, #ff6e5e 50%, #ff8375 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: none !important;
   position: relative !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.03) !important;
-  overflow: visible !important; /* Needed for notches */
-  transition: all 0.2s ease !important;
-  padding: 0 !important; /* Reset default padding */
-  min-height: 150px !important;
-  justify-content: flex-start !important;
-  gap: 0 !important; /* Reset default gap to ensure no extra height difference between offer and coupon cards */
+  overflow: hidden !important;
+  transition: filter 0.2s ease !important;
+  padding: 16px 20px 14px 20px !important;
   box-sizing: border-box !important;
 }
 
-/* Voucher Card notches (semi-circle ticket cuts) on left/right borders centered on the dashed separator line */
+.bus-flow-page .coupon-featured-offer:hover,
+.bus-flow-page .coupon-voucher-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  filter: brightness(1.02) !important;
+}
+
+/* Hide all old ticket notches and pseudo-elements */
 .bus-flow-page .coupon-featured-offer::before,
 .bus-flow-page .coupon-featured-offer::after,
 .bus-flow-page .coupon-voucher-card::before,
-.bus-flow-page .coupon-voucher-card::after {
-  content: "" !important;
-  position: absolute !important;
-  width: 14px !important;
-  height: 14px !important;
-  border-radius: 50% !important;
-  background: #ffffff !important; /* Matches wrapper background */
-  border: 1px solid #cbd5e1 !important;
-  top: 27px !important; /* Centered perfectly on the dashed line at 34px */
-  z-index: 2 !important;
-}
-
-.bus-flow-page .coupon-featured-offer::before,
-.bus-flow-page .coupon-voucher-card::before {
-  left: -8px !important;
-  box-shadow: inset -2px 0 2px rgba(0,0,0,0.01) !important;
-}
-
-.bus-flow-page .coupon-featured-offer::after,
-.bus-flow-page .coupon-voucher-card::after {
-  right: -8px !important;
-  box-shadow: inset 2px 0 2px rgba(0,0,0,0.01) !important;
+.bus-flow-page .coupon-voucher-card::after,
+.bus-flow-page .coupon-featured-list::before,
+.bus-flow-page .coupon-featured-list::after,
+.bus-flow-page .coupon-chip-list::before,
+.bus-flow-page .coupon-chip-list::after,
+.bus-flow-page .coupon-carousel-frame::before,
+.bus-flow-page .coupon-carousel-frame::after {
+  display: none !important;
+  content: none !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Selected state */
 .bus-flow-page .coupon-featured-offer.is-selected,
 .bus-flow-page .coupon-voucher-card.is-selected {
-  border: 1px solid #ff0000 !important;
-  background: #ffffff !important;
-  box-shadow: 0 3px 12px rgba(255, 0, 0, 0.1) !important;
-}
-.bus-flow-page .coupon-featured-offer.is-selected::before,
-.bus-flow-page .coupon-featured-offer.is-selected::after,
-.bus-flow-page .coupon-voucher-card.is-selected::before,
-.bus-flow-page .coupon-voucher-card.is-selected::after {
-  border-color: #ff0000 !important;
+  border: 2px solid #ff0000 !important;
+  box-shadow: 0 0 0 2px #ffffff !important;
 }
 
-/* Voucher Top Section (Discount & Code info) */
-.bus-flow-page .voucher-header {
-  padding: 6px 12px !important;
-  background: linear-gradient(135deg, #fef3c7, #fffbeb) !important;
-  border-top-left-radius: 9px !important;
-  border-top-right-radius: 9px !important;
-  border-bottom: 1px dashed #cbd5e1 !important;
+/* Card Top Section: Main Heading & "i" Info Icon */
+.bus-flow-page .voucher-card-top {
   display: flex !important;
   justify-content: space-between !important;
-  align-items: center !important;
-  height: 34px !important;
-  box-sizing: border-box !important;
+  align-items: flex-start !important;
   width: 100% !important;
+  margin-bottom: 2px !important;
 }
 
-.bus-flow-page .coupon-featured-offer.is-selected .voucher-header,
-.bus-flow-page .coupon-voucher-card.is-selected .voucher-header {
-  background: linear-gradient(135deg, #dcfce7, #f0fdf4) !important;
-}
-
-.bus-flow-page .voucher-discount {
-  font-size: 0.85rem !important;
-  font-weight: 800 !important;
-  color: #b45309 !important;
-}
-.bus-flow-page .coupon-featured-offer.is-selected .voucher-discount,
-.bus-flow-page .coupon-voucher-card.is-selected .voucher-discount {
-  color: #166534 !important;
-}
-
-.bus-flow-page .voucher-code-badge {
-  font-family: monospace !important;
-  font-size: 0.7rem !important;
-  font-weight: 700 !important;
-  color: #1e293b !important;
-  border: 1px dashed #cbd5e1 !important;
-  padding: 1px 4px !important;
-  background: #ffffff !important;
-  border-radius: 3px !important;
+.bus-flow-page .voucher-main-heading {
+  font-size: 1.32rem !important;
+  font-weight: 900 !important;
+  color: #fffaf0 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.4px !important;
+  text-shadow: 0 1px 3px rgba(180, 50, 40, 0.28) !important;
   text-transform: uppercase !important;
+  padding-right: 28px !important;
 }
 
-/* Voucher Bottom Section (Copy & Button) */
-.bus-flow-page .voucher-body {
-  padding: 0px 12px 6px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 2px !important;
-  flex-grow: 1 !important;
-  justify-content: flex-start !important;
-  min-height: 110px !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
+.bus-flow-page .voucher-info-btn {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  color: #d13426 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  flex-shrink: 0 !important;
+  z-index: 2 !important;
 }
 
-.bus-flow-page .voucher-title {
-  font-size: 0.85rem !important;
-  font-weight: 700 !important;
-  color: #0f172a !important;
-  line-height: 1.2 !important;
+.bus-flow-page .voucher-info-btn:hover {
+  background: #ffffff !important;
+  color: #b91c1c !important;
+  border-color: #ffffff !important;
+  transform: scale(1.15) !important;
+  box-shadow: 0 4px 12px rgba(209, 52, 38, 0.25) !important;
+}
+
+/* Sub Heading: "title" keyword in response */
+.bus-flow-page .voucher-sub-heading {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  color: #2c1b1b !important;
+  line-height: 1.3 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  margin: 0 !important;
-  padding-top: 0 !important;
+  margin: 2px 0 8px 0 !important;
 }
 
-.bus-flow-page .voucher-description {
-  font-size: 0.72rem !important;
-  color: #64748b !important;
-  line-height: 1.35 !important;
-  margin: 0 0 8px 0 !important;
-  display: -webkit-box !important;
-  -webkit-line-clamp: 3 !important;
-  -webkit-box-orient: vertical !important;
-  overflow: hidden !important;
-}
-
-.bus-flow-page .voucher-action-row {
+/* Bottom Row: Code in bottom left corner, Apply in bottom right corner */
+.bus-flow-page .voucher-bottom-row {
   display: flex !important;
-  justify-content: flex-end !important;
+  justify-content: space-between !important;
   align-items: center !important;
+  width: 100% !important;
+  gap: 8px !important;
   margin-top: auto !important;
 }
 
-.bus-flow-page .voucher-apply-btn {
-  background: #ff0000 !important;
-  color: #ffffff !important;
-  font-size: 0.72rem !important;
-  font-weight: 700 !important;
-  border: none !important;
-  padding: 4px 10px !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
-  transition: opacity 0.2s ease !important;
-  height: 22px !important;
+/* Bottom Left Pill */
+.bus-flow-page .voucher-code-wrapper {
   display: inline-flex !important;
   align-items: center !important;
+  gap: 5px !important;
+  background: #fff9ef !important;
+  border-radius: 9999px !important;
+  padding: 4px 12px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+  border: none !important;
 }
+
+.bus-flow-page .voucher-code-prefix {
+  font-size: 0.72rem !important;
+  font-weight: 500 !important;
+  color: #4b5563 !important;
+}
+
+.bus-flow-page .voucher-code-badge {
+  font-size: 0.76rem !important;
+  font-weight: 850 !important;
+  color: #0f172a !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  letter-spacing: 0.3px !important;
+  font-family: inherit !important;
+}
+
+.voucher-copy-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #4b5563 !important;
+  cursor: pointer !important;
+  padding: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.voucher-copy-btn:hover {
+  color: #0f172a !important;
+  transform: scale(1.15) !important;
+}
+
+.bus-flow-page .voucher-action-btn-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+}
+
+/* Bottom Right Pill (Apply button) */
+.bus-flow-page .voucher-apply-btn {
+  background: linear-gradient(135deg, #ff574d 0%, #ea3b30 100%) !important;
+  color: #ffffff !important;
+  font-size: 0.74rem !important;
+  font-weight: 850 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+  border: none !important;
+  padding: 6px 16px !important;
+  border-radius: 9999px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  box-shadow: 0 4px 12px rgba(234, 59, 48, 0.42) !important;
+  height: auto !important;
+}
+
 .bus-flow-page .voucher-apply-btn:hover {
-  opacity: 0.9 !important;
+  transform: translateY(-1px) scale(1.02) !important;
+  box-shadow: 0 6px 16px rgba(234, 59, 48, 0.55) !important;
+  opacity: 1 !important;
 }
+
 .bus-flow-page .voucher-apply-btn:disabled {
   background: #cbd5e1 !important;
   color: #94a3b8 !important;
+  box-shadow: none !important;
   cursor: not-allowed !important;
+  transform: none !important;
 }
 
 .bus-flow-page .voucher-remove-btn {
-  background: #ff0000 !important;
-  color: #ffffff !important;
+  background: #ffffff !important;
+  color: #ea3b30 !important;
+  border: 1px solid rgba(234, 59, 48, 0.4) !important;
   font-size: 0.72rem !important;
-  font-weight: 700 !important;
-  border: none !important;
-  padding: 4px 10px !important;
-  border-radius: 4px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+  padding: 5px 14px !important;
+  border-radius: 9999px !important;
   cursor: pointer !important;
-  height: 22px !important;
   display: inline-flex !important;
   align-items: center !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+  transition: all 0.2s ease !important;
+}
+
+.bus-flow-page .voucher-remove-btn:hover {
+  background: #ea3b30 !important;
+  color: #ffffff !important;
+}
+
+/* Coupon / Offer Info Details Modal (Opened via "i" button) */
+.coupon-info-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(5px) !important;
+  -webkit-backdrop-filter: blur(5px) !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  animation: couponModalFadeIn 0.2s ease !important;
+}
+
+.coupon-info-modal {
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  max-width: 460px !important;
+  width: 100% !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 0, 0, 0.1) !important;
+  animation: couponModalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes couponModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes couponModalSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.coupon-info-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 16px 20px 14px !important;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%) !important;
+  border-bottom: 1px solid #fee2e2 !important;
+}
+
+.coupon-info-header-badge {
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  color: #ff0000 !important;
+  background: #ffe4e6 !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+  border: 1px solid rgba(255, 0, 0, 0.2) !important;
+}
+
+.coupon-info-close-btn {
+  background: #f1f5f9 !important;
+  border: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  color: #475569 !important;
+  transition: all 0.2s ease !important;
+}
+
+.coupon-info-close-btn:hover {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+  transform: rotate(90deg) !important;
+}
+
+.coupon-info-body {
+  padding: 20px !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+.coupon-info-main-badge {
+  font-size: 1.4rem !important;
+  font-weight: 850 !important;
+  color: #ff0000 !important;
+  letter-spacing: -0.4px !important;
+  line-height: 1 !important;
+}
+
+.coupon-info-title {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.coupon-info-code-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 14px !important;
+  background: #fff5f5 !important;
+  border: 1px dashed #fca5a5 !important;
+  border-radius: 12px !important;
+}
+
+.coupon-info-code-chip {
+  display: flex !important;
+  align-items: center !gap: 8px !important;
+}
+
+.coupon-info-code-chip .code-label {
+  font-size: 0.75rem !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+
+.coupon-info-code-chip .code-val {
+  font-family: monospace !important;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  color: #ff0000 !important;
+  letter-spacing: 0.5px !important;
+}
+
+.coupon-info-copy-btn {
+  background: #ffffff !important;
+  border: 1px solid #fca5a5 !important;
+  border-radius: 8px !important;
+  padding: 5px 12px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: #ff0000 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  transition: all 0.2s ease !important;
+}
+
+.coupon-info-copy-btn:hover {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+}
+
+.coupon-info-details-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px !important;
+}
+
+.coupon-info-detail-item {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+.coupon-info-detail-item .detail-item-label {
+  font-size: 0.68rem !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+}
+
+.coupon-info-detail-item .detail-item-value {
+  font-size: 0.88rem !important;
+  font-weight: 750 !important;
+  color: #1e293b !important;
+}
+
+.coupon-info-detail-item .detail-item-value.highlight {
+  color: #ff0000 !important;
+}
+
+.coupon-info-terms-box {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+}
+
+.coupon-info-terms-box .terms-title {
+  font-size: 0.8rem !important;
+  font-weight: 750 !important;
+  color: #0f172a !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.coupon-info-terms-box .terms-list {
+  margin: 0 !important;
+  padding-left: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.coupon-info-terms-box .terms-list li {
+  font-size: 0.74rem !important;
+  color: #475569 !important;
+  line-height: 1.45 !important;
+}
+
+.coupon-info-footer {
+  padding: 14px 20px !important;
+  background: #f8fafc !important;
+  border-top: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+
+.coupon-info-apply-btn {
+  background: linear-gradient(135deg, #ff0000 0%, #e00000 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  padding: 8px 22px !important;
+  font-size: 0.82rem !important;
+  font-weight: 750 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 3px 10px rgba(255, 0, 0, 0.3) !important;
+}
+
+.coupon-info-apply-btn:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 5px 15px rgba(255, 0, 0, 0.45) !important;
+}
+
+.coupon-info-apply-btn:disabled {
+  background: #cbd5e1 !important;
+  color: #94a3b8 !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
 }
 
 /* Ensure no opacity issues with muted state */
@@ -5604,6 +5953,7 @@
 }
 
 @media (max-width: 980px) {
+
   .bus-flow-page .flight-passenger-fields,
   .bus-flow-page .hotel-guest-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -5612,6 +5962,7 @@
 }
 
 @media (max-width: 640px) {
+
   .bus-flow-page .flight-passenger-fields,
   .bus-flow-page .hotel-guest-fields {
     grid-template-columns: 1fr !important;
@@ -5838,7 +6189,7 @@
   min-width: 0;
 }
 
-.bus-flow-page .fare-list .wallet-amount-field > span {
+.bus-flow-page .fare-list .wallet-amount-field>span {
   font-size: 0.8rem !important;
   color: #17242d !important;
   font-weight: 500 !important;
@@ -5907,7 +6258,7 @@
   justify-content: center;
 }
 
-.bus-flow-page .fare-list .wallet-balance-summary > span {
+.bus-flow-page .fare-list .wallet-balance-summary>span {
   font-size: 0.8rem !important;
   color: #17242d !important;
   font-weight: 500 !important;
@@ -5989,7 +6340,7 @@
     padding: 14px 14px 12px;
   }
 
-  .wallet-balance-summary > span {
+  .wallet-balance-summary>span {
     font-size: 0.75rem;
   }
 

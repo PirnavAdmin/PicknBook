@@ -13,6 +13,7 @@ import {
   cancelFlightBooking,
   getFlightBookingById,
   listFlightBookings,
+  getCancellationCharges,
 } from "../../services/flightBookingService";
 import "../../STYLES/FlightOpsDashboard.css";
 import CancellationModal from "./CancellationModal";
@@ -134,9 +135,38 @@ export default function FlightCancelRequest() {
     }
   };
 
-  const triggerCancelBooking = (bookingId) => {
-    setCancelModalBookingId(bookingId);
+  const [cancelModalBooking, setCancelModalBooking] = useState(null);
+  const [isFetchingCharges, setIsFetchingCharges] = useState(false);
+  const [cancelCharges, setCancelCharges] = useState(null);
+
+  const triggerCancelBooking = async (bookingOrId) => {
+    let targetBooking = typeof bookingOrId === "object"
+      ? bookingOrId
+      : bookings.find(b => b.bookingId === bookingOrId || b.bookingReference === bookingOrId) || { bookingId: bookingOrId };
+
+    if (!targetBooking.fareRules && !targetBooking.miniFareRules && !targetBooking.cancellationPolicy && (targetBooking.bookingId || targetBooking.id)) {
+      try {
+        const fullDetail = await getFlightBookingById(targetBooking.bookingId || targetBooking.id);
+        if (fullDetail) targetBooking = fullDetail;
+      } catch (e) {}
+    }
+
+    setCancelModalBookingId(targetBooking.bookingId || targetBooking.bookingReference);
+    setCancelModalBooking(targetBooking);
     setIsCancelModalOpen(true);
+    setCancelCharges(null);
+    setIsFetchingCharges(true);
+
+    try {
+      const result = await getCancellationCharges(targetBooking);
+      if (result && result.success) {
+        setCancelCharges(result.result || result.rawResponse);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch flight cancellation charges:", err);
+    } finally {
+      setIsFetchingCharges(false);
+    }
   };
 
   const handleCancelBooking = async (reason) => {
@@ -508,10 +538,15 @@ export default function FlightCancelRequest() {
         onClose={() => {
           setIsCancelModalOpen(false);
           setCancelModalBookingId(null);
+          setCancelModalBooking(null);
         }}
         onConfirm={handleCancelBooking}
         title="Cancel Flight Ticket"
         message="Are you sure you want to cancel this ticket?"
+        booking={cancelModalBooking || bookings.find(b => b.bookingId === cancelModalBookingId || b.bookingReference === cancelModalBookingId) || { bookingId: cancelModalBookingId }}
+        bookingType="flight"
+        policyData={cancelCharges}
+        isLoadingPolicy={isFetchingCharges}
       />
     </div>
   );

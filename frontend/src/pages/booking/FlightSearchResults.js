@@ -121,7 +121,16 @@ const STOP_FILTERS = [
   { key: "oneStop", label: "1 Stop" },
 ];
 
+const CABIN_CLASS_FILTERS = [
+  { key: "Economy", label: "Economy" },
+  { key: "Premium Economy", label: "Premium Economy" },
+  { key: "Business", label: "Business" },
+  { key: "Premium Business", label: "Premium Business" },
+  { key: "First Class", label: "First Class" },
+];
+
 const TRAVEL_CLASS_ORDER = [
+  "All cabins",
   "Economy",
   "Premium Economy",
   "Business",
@@ -399,11 +408,12 @@ function getAirportName(code, city) {
 }
 
 function getClassBadgeTone(travelClass) {
-  if (travelClass.includes("First")) {
+  const str = String(travelClass || "");
+  if (str.includes("First")) {
     return "elite";
   }
 
-  if (travelClass.includes("Business")) {
+  if (str.includes("Business")) {
     return "premium";
   }
 
@@ -436,7 +446,7 @@ export default function FlightSearchResults() {
   const initialTripType =
     normalizeTripType(readValue(params, state, "tripType")) || "oneway";
   const initialCabinClass =
-    readValue(params, state, "cabinClass") || "Economy";
+    readValue(params, state, "cabinClass") || "All cabins";
   const initialTravellerText = normalizeTravellerSummary(
     readValue(params, state, "travellers") || "1 Adult"
   );
@@ -598,11 +608,12 @@ export default function FlightSearchResults() {
     return apiFlights.map((flight) => {
       const classOptions = normalizeClassOptions(flight);
       if (!flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
+      const isAllClass = Boolean(cabinClass && cabinClass.toLowerCase().includes("all"));
       const selectedClass =
         selectedClassByFlight[flight.id] ||
         flight.selectedTravelClass ||
         classOptions[0]?.travelClass ||
-        cabinClass;
+        (isAllClass ? "Economy" : cabinClass);
 
       const resolvedClassOptions = classOptions;
       const selectedClassOption = resolvedClassOptions.find((o) => o.travelClass === selectedClass) || resolvedClassOptions[0];
@@ -623,7 +634,7 @@ export default function FlightSearchResults() {
         fare: finalPrice,
         baseFarePrice,
         fareType,
-        className: selectedClass
+        className: selectedClassOption?.travelClass || flight.selectedTravelClass || (isAllClass ? (classOptions[0]?.travelClass || "Economy") : selectedClass)
       };
     }).filter(Boolean);
   }, [apiFlights, selectedClassByFlight, selectedFareTypeByFlight, cabinClass, sourceName, destinationName, sourceCode, destinationCode]);
@@ -632,11 +643,12 @@ export default function FlightSearchResults() {
     return returnFlights.map((flight) => {
       const classOptions = normalizeClassOptions(flight);
       if (!flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
+      const isAllClass = Boolean(cabinClass && cabinClass.toLowerCase().includes("all"));
       const selectedClass =
         selectedClassByFlight[flight.id] ||
         flight.selectedTravelClass ||
         classOptions[0]?.travelClass ||
-        cabinClass;
+        (isAllClass ? "Economy" : cabinClass);
 
       const resolvedClassOptions = classOptions;
       const selectedClassOption = resolvedClassOptions.find((o) => o.travelClass === selectedClass) || resolvedClassOptions[0];
@@ -657,7 +669,7 @@ export default function FlightSearchResults() {
         fare: finalPrice,
         baseFarePrice,
         fareType,
-        className: selectedClass
+        className: selectedClassOption?.travelClass || flight.selectedTravelClass || (isAllClass ? (classOptions[0]?.travelClass || "Economy") : selectedClass)
       };
     }).filter(Boolean);
   }, [returnFlights, selectedClassByFlight, selectedFareTypeByFlight, cabinClass, sourceName, destinationName, sourceCode, destinationCode]);
@@ -740,6 +752,7 @@ export default function FlightSearchResults() {
   }));
   const [sortBy, setSortBy] = useState("price");
   const [airlineFilters, setAirlineFilters] = useState({});
+  const [cabinClassFilters, setCabinClassFilters] = useState({});
 
   const [sharedMultiCityTraceId, setSharedMultiCityTraceId] = useState("");
   const [bookingFlightId, setBookingFlightId] = useState(null);
@@ -883,14 +896,12 @@ export default function FlightSearchResults() {
           const allList = (result && result.isTwoWay) ? [...(result.onward || []), ...(result.return || [])] :
             (result && result.isMultiCity) ? (Array.isArray(result.legs) ? result.legs.flat() : []) :
               (Array.isArray(result) ? result : []);
+          const isAllClass = Boolean(cabinClass && cabinClass.toLowerCase().includes("all"));
           allList.forEach((flight) => {
             const classOptions = normalizeClassOptions(flight);
             const resolvedClass =
               previous[flight.id] ||
-              flight.selectedTravelClass ||
-              cabinClass ||
-              classOptions[0]?.travelClass ||
-              "";
+              (isAllClass ? (flight.selectedTravelClass || flight.cabinClass || classOptions[0]?.travelClass || "Economy") : (flight.selectedTravelClass || cabinClass || classOptions[0]?.travelClass || "Economy"));
             next[flight.id] = resolvedClass;
           });
 
@@ -991,13 +1002,14 @@ export default function FlightSearchResults() {
     () =>
       activeFlightList.map((flight) => {
         const classOptions = normalizeClassOptions(flight);
+        const isAllClass = Boolean(cabinClass && cabinClass.toLowerCase().includes("all"));
         const selectedClass =
           selectedClassByFlight[flight.id] ||
           flight.selectedTravelClass ||
           classOptions[0]?.travelClass ||
-          cabinClass;
+          (isAllClass ? "Economy" : cabinClass);
 
-        if (flight.isLcc !== true || !flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
+        if (!flight.traceId || !flight.resultIndex || !flight.srdvType || !flight.srdvIndex || classOptions.length === 0) return null;
         const resolvedClassOptions = classOptions;
 
         const selectedClassOption =
@@ -1011,7 +1023,8 @@ export default function FlightSearchResults() {
         const travelClass =
           selectedClassOption?.travelClass ||
           flight.selectedTravelClass ||
-          cabinClass;
+          flight.cabinClass ||
+          (isAllClass ? (classOptions[0]?.travelClass || "Economy") : cabinClass);
 
         const currentSource = (tripType === "twoway" && twoWayActiveTab === "return") ? destinationName : sourceName;
         const currentDestination = (tripType === "twoway" && twoWayActiveTab === "return") ? sourceName : destinationName;
@@ -1155,6 +1168,13 @@ export default function FlightSearchResults() {
           if (!airlineFilters[flight.airlineName]) return false;
         }
 
+        // 5. Cabin Class Filter
+        const hasAnyCabinFilter = Object.values(cabinClassFilters).some(Boolean);
+        if (hasAnyCabinFilter) {
+          const flightClass = flight.className || flight.cabinClass || "Economy";
+          if (!cabinClassFilters[flightClass]) return false;
+        }
+
         return true;
       }),
     [
@@ -1165,6 +1185,7 @@ export default function FlightSearchResults() {
       fareTypeFilters,
       stopFilters,
       airlineFilters,
+      cabinClassFilters,
     ]
   );
 
@@ -1264,7 +1285,7 @@ export default function FlightSearchResults() {
     const nextDateInput = modifyForm.departureDate || formatDateInput(selectedDate);
     const nextTripType = normalizeTripType(modifyForm.tripType);
     const nextTravellerText = normalizeTravellerSummary(modifyForm.travellers);
-    const nextCabinClass = modifyForm.cabinClass || "Economy";
+    const nextCabinClass = modifyForm.cabinClass || "All cabins";
 
     if (!nextSource || !nextDestination) {
       setSearchError("Source and destination are required to update search.");
@@ -1321,6 +1342,10 @@ export default function FlightSearchResults() {
 
   const toggleAirline = (name) => {
     setAirlineFilters((previous) => ({ ...previous, [name]: !previous[name] }));
+  };
+
+  const toggleCabinClassFilter = (key) => {
+    setCabinClassFilters((previous) => ({ ...previous, [key]: !previous[key] }));
   };
 
 
@@ -1914,7 +1939,7 @@ export default function FlightSearchResults() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Users size={14} color="#000000" style={{ flexShrink: 0 }} />
                     <span style={{ fontSize: '13px', fontWeight: 400, color: '#000000', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "Economy"}
+                      {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "All cabins"}
                     </span>
                   </div>
                   <span style={{ fontSize: '13px', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
@@ -2171,6 +2196,28 @@ export default function FlightSearchResults() {
                 ))
               )}
             </section>
+
+            <section className="filter-group">
+              <h3>
+                <Armchair size={17} />
+                <span>Cabin Class</span>
+              </h3>
+              {CABIN_CLASS_FILTERS.map((item) => {
+                const count = flights.filter(
+                  (f) => (f.className || f.cabinClass || "Economy") === item.key
+                ).length;
+                return (
+                  <label className="check-row" key={item.key}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(cabinClassFilters[item.key])}
+                      onChange={() => toggleCabinClassFilter(item.key)}
+                    />
+                    <span>{item.label} {count > 0 ? `(${count})` : ""}</span>
+                  </label>
+                );
+              })}
+            </section>
           </aside>
 
           <section className="results-column" style={{ paddingBottom: tripType === "twoway" ? "100px" : "20px" }}>
@@ -2303,20 +2350,21 @@ export default function FlightSearchResults() {
                               <div className="premium-airline-title-row">
                                 <span className="premium-airline-name">{flight.airlineName}</span>
                                 {globalCheapestFlightId === flight.id && (
-                                  <span className="premium-cheapest-badge"><LineChart size={12} /> CHEAPEST</span>
+                                  <span className="premium-cheapest-badge"><LineChart size={9} /> CHEAPEST</span>
                                 )}
                               </div>
                               <div className="premium-flight-numbers">
-                                {flight.flightNumber} {flight.equipment ? `· 🛠 Aircraft ${flight.equipment}` : ""}
+                                {flight.flightNumber}
                               </div>
                             </div>
                           </div>
                           <div className="premium-top-actions">
-
-                            <span className={`premium-tag ${flight.isRefundable == null ? "" : flight.isRefundable ? "green" : "red"}`}>
-                              <CheckCircle2 size={12} /> {flight.isRefundable == null ? "Refund status unavailable" : flight.isRefundable ? "Refundable" : "Non-Refundable"}
+                            <span className="premium-compact-tag">
+                              <CheckCircle2 size={10} /> {flight.isRefundable ? "REFUNDABLE" : "NON-REFUNDABLE"}
                             </span>
-                            <span className="premium-tag grey"><Armchair size={12} /> {cabinClass || "ECONOMY"}</span>
+                            <span className="premium-compact-tag">
+                              <Briefcase size={10} /> {(flight.className || flight.cabinClass || (cabinClass && !cabinClass.toLowerCase().includes("all") ? cabinClass : "ECONOMY")).toUpperCase()}
+                            </span>
                           </div>
                         </div>
 
@@ -2326,13 +2374,12 @@ export default function FlightSearchResults() {
                             <div className="premium-time-code">
                               <span className="premium-large-time">{flight.departureTime}</span>
                               <span className="premium-city-code">{flight.sourceCode}</span>
-                            </div>
-                            {/* Dynamic tag for time of day */}
-                            <div className="premium-time-tag">
-                              {isDayTime(flight.departureTime) ? <><Sun size={12} /> DAY</> : <><Moon size={12} /> NIGHT</>}
+                              <span className="premium-time-tag">
+                                {isDayTime(flight.departureTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
+                              </span>
                             </div>
                             <div className="premium-airport-desc">
-                              <strong>{getAirportName(flight.sourceCode, sourceName)}</strong>
+                              {getAirportName(flight.sourceCode, sourceName)}
                             </div>
                           </div>
 
@@ -2341,7 +2388,7 @@ export default function FlightSearchResults() {
                             <div className="premium-path-line">
                               <div className="premium-circle-start"></div>
                               <div className="premium-solid-line"></div>
-                              <ArrowRight size={14} className="premium-arrow-end" />
+                              <ArrowRight size={10} className="premium-arrow-end" />
                             </div>
                             <span className="premium-stops-text">
                               {flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop`}
@@ -2349,69 +2396,66 @@ export default function FlightSearchResults() {
                           </div>
 
                           <div className="premium-arr-block">
-                            <div className="premium-time-code">
-                              <span className="premium-large-time">{flight.arrivalTime}</span>
+                            <div className="premium-time-code right">
+                              <span className="premium-time-tag">
+                                {isDayTime(flight.arrivalTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
+                              </span>
                               <span className="premium-city-code">{flight.destinationCode}</span>
-                            </div>
-                            {/* Dynamic tag for time of day */}
-                            <div className="premium-time-tag">
-                              {isDayTime(flight.arrivalTime) ? <><Sun size={12} /> DAY</> : <><Moon size={12} /> NIGHT</>}
+                              <span className="premium-large-time">{flight.arrivalTime}</span>
                             </div>
                             <div className="premium-airport-desc">
-                              <strong>{getAirportName(flight.destinationCode, destinationName)}</strong>
+                              {getAirportName(flight.destinationCode, destinationName)}
                             </div>
                           </div>
                         </div>
 
-                        {/* Bottom Metadata & Price Row */}
-                        <div className="premium-bottom-info-row">
+                        {/* Bottom Metadata & Price / Action Row */}
+                        <div className="premium-bottom-compact-row">
                           <div className="premium-baggage-chips">
-                            <span className="premium-bag-chip"><Briefcase size={12} /> Check-in {flight.checkedBagsWeight || "Not provided"}</span>
-                            <span className="premium-bag-chip"><Briefcase size={12} /> Cabin {flight.cabinBagsWeight || "Not provided"}</span>
-                            <span className="premium-bag-chip"><Armchair size={12} /> Class {flight.bookingClass || "Not provided"}</span>
-                            <span className="premium-bag-chip"><Users size={12} /> Seats left {flight.totalAvailableSeats || "Not provided"}</span>
+                            <span className="premium-bag-chip"><Briefcase size={9} /> Check-in {flight.checkedBagsWeight || "N/A"}</span>
+                            <span className="premium-bag-chip"><Briefcase size={9} /> Cabin {flight.cabinBagsWeight || "N/A"}</span>
+                            <span className="premium-bag-chip"><Armchair size={9} /> Class {flight.bookingClass || flight.className || "N/A"}</span>
+                            <span className="premium-bag-chip"><Users size={9} /> Seats {flight.totalAvailableSeats != null && flight.totalAvailableSeats !== "" ? flight.totalAvailableSeats : "N/A"}</span>
                           </div>
                           
-                          <div className="premium-price-block">
-                            <div className="premium-huge-price">
-                              ₹{new Intl.NumberFormat("en-IN").format(flight.fare)} <span className="info-circle">i</span>
+                          <div className="premium-compact-actions">
+                            <div className="premium-compact-price-col">
+                              <div className="premium-compact-price">
+                                ₹{new Intl.NumberFormat("en-IN").format(flight.fare)} <span className="info-circle">i</span>
+                              </div>
+                              <div className="premium-compact-published">
+                                Published ₹{new Intl.NumberFormat("en-IN").format(flight.fare + 150)}
+                              </div>
                             </div>
-                            <div className="premium-fare-type-tag">
-                              <Check size={12} /> Saver Fare
-                            </div>
-                            <div className="premium-published-fare">
-                              Published ₹{new Intl.NumberFormat("en-IN").format(flight.fare + 150)}
-                            </div>
-                          </div>
-                        </div>
 
-                        {/* Action Bar */}
-                        <div className="premium-action-bar">
-                          <button 
-                            type="button" 
-                            className="premium-more-fares-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenFareSelection(flight);
-                            }}
-                          >
-                            <span className="dot"></span> {flight.fareOptions?.length > 1 ? `${flight.fareOptions.length - 1} More Fare >` : "View Details >"}
-                          </button>
-                          
-                          <button 
-                            type="button" 
-                            className="premium-select-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (flight.fareOptions?.length > 1) {
-                                handleOpenFareSelection(flight);
-                              } else {
-                                handleFinalizeFlightSelection(flight);
-                              }
-                            }}
-                          >
-                            <ArrowRight size={18} /> Select
-                          </button>
+                            {flight.fareOptions?.length > 1 && (
+                              <button 
+                                type="button" 
+                                className="premium-compact-fares-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenFareSelection(flight);
+                                }}
+                              >
+                                +{flight.fareOptions.length - 1} Fares
+                              </button>
+                            )}
+                            
+                            <button 
+                              type="button" 
+                              className="premium-compact-select-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (flight.fareOptions?.length > 1) {
+                                  handleOpenFareSelection(flight);
+                                } else {
+                                  handleFinalizeFlightSelection(flight);
+                                }
+                              }}
+                            >
+                              <ArrowRight size={12} /> Select
+                            </button>
+                          </div>
                         </div>
                       </div>
 
