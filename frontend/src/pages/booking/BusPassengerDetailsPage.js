@@ -2881,22 +2881,26 @@ export default function BusPassengerDetailsPage() {
                     )}
                   </div>
 
-                  {errors.coupon && (
-                    <span className="field-error-text coupon-field-error">
-                      {errors.coupon}
-                    </span>
-                  )}
+                  {(errors.coupon || selectedFeaturedOffer || couponMessage) && (
+                    <div className="coupon-feedback-group">
+                      {errors.coupon && (
+                        <span className="field-error-text coupon-field-error">
+                          {errors.coupon}
+                        </span>
+                      )}
 
-                  {selectedFeaturedOffer && (
-                    <p className="coupon-featured-note">
-                      Featured offer applied. Remove it to use a manual coupon.
-                    </p>
-                  )}
+                      {selectedFeaturedOffer && (
+                        <p className="coupon-featured-note">
+                          Featured offer applied. Remove it to use a manual coupon.
+                        </p>
+                      )}
 
-                  {couponMessage && (
-                    <p className={`coupon-sheet-message ${couponMessageType === "success" ? "is-success" : "is-error"}`}>
-                      {couponMessage}
-                    </p>
+                      {couponMessage && (
+                        <p className={`coupon-sheet-message ${couponMessageType === "success" ? "is-success" : "is-error"}`}>
+                          {couponMessage}
+                        </p>
+                      )}
+                    </div>
                   )}
 
                   {/* ── 1. Featured Offers Section ── */}
