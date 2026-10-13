@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using PickNBook.Api.Data;
+using PickNBook.Api.Helpers;
 using PickNBook.Api.Models;
 using PickNBook.Api.Models.DTOs;
+using QRCoder;
 
 namespace PickNBook.Api.Services;
 
@@ -647,28 +649,16 @@ public class TicketEmailService : ITicketEmailService
         // =========================================
         var boardingTime = ToIst(request.BoardingPointTime != default ? request.BoardingPointTime : request.DepartureTime);
         var droppingTime = ToIst(request.ArrivalPointTime != default ? request.ArrivalPointTime : request.ArrivalTime);
-        var boardingTimeStr = boardingTime.ToString("ddd, dd MMM yyyy hh:mm tt");
-        var droppingTimeStr = droppingTime.ToString("ddd, dd MMM yyyy hh:mm tt");
-        var departureTimeStr = ToIst(request.DepartureTime).ToString("hh:mm tt");
-        var reportingTimeStr = boardingTime.AddMinutes(-15).ToString("hh:mm tt");
+        var departureTime = ToIst(request.DepartureTime != default ? request.DepartureTime : boardingTime);
+        var boardingTimeStr = boardingTime != default ? boardingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
+        var droppingTimeStr = droppingTime != default ? droppingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
+        var departureTimeStr = departureTime != default ? departureTime.ToString("hh:mm tt") : "-";
+        var reportingTimeStr = boardingTime != default ? boardingTime.AddMinutes(-15).ToString("hh:mm tt") : "-";
         var pListSummary = request.Passengers.Count > 0
             ? string.Join(", ", request.Passengers.Select(p => $"{p.FullName} (Seat {p.SeatNumber})"))
             : $"{request.PassengerName} (Seat {request.SeatNumber})";
 
-        var qrPlainText = $"PICK&BOOK BUS TICKET\n" +
-                          $"Booking ID: {request.BookingReference}\n" +
-                          $"PNR: {request.Pnr}\n" +
-                          $"Operator: {request.OperatorName} ({request.BusType})\n" +
-                          $"Route: {request.Origin} -> {request.Destination}\n" +
-                          $"Boarding: {request.BoardingPoint ?? "-"} ({boardingTimeStr})\n" +
-                          $"Dropping: {request.ArrivalPoint ?? "-"} ({droppingTimeStr})\n" +
-                          $"Passengers: {pListSummary}\n" +
-                          $"Fare: INR {request.Price:0.00}\n" +
-                          $"Status: CONFIRMED\n" +
-                          $"Support: https://picknbook.in/contact";
-
-        var qrImgUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=95x95&data={Uri.EscapeDataString(qrPlainText)}";
-        var bookingDateStr = ToIst(DateTime.UtcNow).ToString("dd MMM yyyy, hh:mm tt");
+        var bookingDateStr = IndiaTimeHelper.FormatIst(request.BookedAtUtc != default ? request.BookedAtUtc : DateTime.UtcNow, "dd MMM yyyy, hh:mm tt");
         var baseFareVal = request.BaseFare > 0 ? request.BaseFare : Math.Max(0, request.Price - request.GstAmount);
 
         // =========================================
@@ -752,11 +742,11 @@ public class TicketEmailService : ITicketEmailService
       </tr>
     </table>
 
-    <!-- 3. JOURNEY ROUTE & TIMELINE WITH QR CODE -->
+    <!-- 3. JOURNEY ROUTE & TIMELINE -->
     <div style=""padding: 18px 20px; border-bottom: 1px solid #e2e8f0; background-color: #ffffff;"">
       <table style=""width: 100%; border-collapse: collapse;"">
         <tr>
-          <td class=""stack-col"" style=""width: 36%; vertical-align: top;"">
+          <td class=""stack-col"" style=""width: 44%; vertical-align: top;"">
             <div style=""font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;"">DEPARTURE</div>
             <div style=""font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 2px;"">{request.Origin}</div>
             <div style=""font-size: 12px; color: #334155; font-weight: 600; margin-top: 2px;"">{boardingTimeStr}</div>
@@ -764,20 +754,16 @@ public class TicketEmailService : ITicketEmailService
               <b style=""color: #334155;"">Boarding Point:</b><br/>{request.BoardingPoint}
             </div>
           </td>
-          <td class=""route-arrow"" style=""width: 8%; text-align: center; vertical-align: middle;"">
+          <td class=""route-arrow"" style=""width: 12%; text-align: center; vertical-align: middle;"">
             <div style=""color: #dc2626; font-size: 22px; font-weight: bold; line-height: 1;"">&#10142;</div>
           </td>
-          <td class=""stack-col"" style=""width: 36%; vertical-align: top;"">
+          <td class=""stack-col"" style=""width: 44%; vertical-align: top;"">
             <div style=""font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;"">ARRIVAL</div>
             <div style=""font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 2px;"">{request.Destination}</div>
             <div style=""font-size: 12px; color: #334155; font-weight: 600; margin-top: 2px;"">{droppingTimeStr}</div>
             <div style=""margin-top: 8px; font-size: 11px; color: #64748b; line-height: 1.4;"">
               <b style=""color: #334155;"">Dropping Point:</b><br/>{request.ArrivalPoint}
             </div>
-          </td>
-          <td class=""stack-col text-mobile-center"" style=""width: 20%; text-align: center; vertical-align: middle; padding-left: 10px; border-left: 1px dashed #e2e8f0;"">
-            <img src=""{qrImgUrl}"" width=""85"" height=""85"" alt=""Ticket QR"" style=""display: inline-block; width: 85px; height: 85px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 2px; background: #ffffff;"" />
-            <div style=""font-size: 9px; color: #64748b; font-weight: 700; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;"">Scan for Details</div>
           </td>
         </tr>
       </table>
@@ -872,11 +858,13 @@ public class TicketEmailService : ITicketEmailService
 </body>
 </html>";
 
+        var emailAttachments = new List<EmailAttachment> { attachment };
+
         await _emailService.SendEmailWithAttachmentsAsync(
             request.ToEmail,
             subject,
             body,
-            [attachment]);
+            emailAttachments);
     }
 
     public async Task SendBusCancellationAsync(
@@ -928,23 +916,18 @@ public class TicketEmailService : ITicketEmailService
             : string.Empty;
 
         // =========================================
-        // TIMINGS & QR DATA
+        // TIMINGS
         // =========================================
         var boardingTime = ToIst(request.BoardingPointTime != default ? request.BoardingPointTime : request.DepartureTime);
         var droppingTime = ToIst(request.ArrivalPointTime != default ? request.ArrivalPointTime : request.ArrivalTime);
-        var boardingTimeStr = boardingTime.ToString("ddd, dd MMM yyyy hh:mm tt");
-        var droppingTimeStr = droppingTime.ToString("ddd, dd MMM yyyy hh:mm tt");
-        var departureTimeStr = ToIst(request.DepartureTime).ToString("hh:mm tt");
-        var cancellationDateStr = ToIst(DateTime.UtcNow).ToString("dd MMM yyyy, hh:mm tt");
-
-        var qrPlainText = $"PICK&BOOK BUS TICKET [CANCELLED]\n" +
-                          $"Booking ID: {request.BookingReference}\n" +
-                          $"PNR: {request.Pnr}\n" +
-                          $"Status: CANCELLED\n" +
-                          $"Refund Amount: INR {refundAmount:0.00}\n" +
-                          $"Support: https://picknbook.in/contact";
-
-        var qrImgUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=95x95&data={Uri.EscapeDataString(qrPlainText)}";
+        var departureTime = ToIst(request.DepartureTime != default ? request.DepartureTime : boardingTime);
+        var boardingTimeStr = boardingTime != default ? boardingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
+        var droppingTimeStr = droppingTime != default ? droppingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
+        var departureTimeStr = departureTime != default ? departureTime.ToString("hh:mm tt") : "-";
+        var effectiveCancelDate = request.CancelledAtUtc.HasValue 
+            ? request.CancelledAtUtc.Value 
+            : (request.BookedAtUtc != default ? request.BookedAtUtc : DateTime.UtcNow);
+        var cancellationDateStr = IndiaTimeHelper.FormatIst(effectiveCancelDate, "dd MMM yyyy, hh:mm tt");
 
         // =========================================
         // DYNAMIC CANCELLATION POLICY ROWS
@@ -1126,11 +1109,11 @@ public class TicketEmailService : ITicketEmailService
       </tr>
     </table>
 
-    <!-- 3. JOURNEY ROUTE & TIMELINE WITH VOID STATUS QR -->
+    <!-- 3. JOURNEY ROUTE & TIMELINE -->
     <div style=""padding: 18px 20px; border-bottom: 1px solid #e2e8f0; background-color: #ffffff;"">
       <table style=""width: 100%; border-collapse: collapse;"">
         <tr>
-          <td class=""stack-col"" style=""width: 36%; vertical-align: top;"">
+          <td class=""stack-col"" style=""width: 44%; vertical-align: top;"">
             <div style=""font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;"">DEPARTURE</div>
             <div style=""font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 2px;"">{request.Origin}</div>
             <div style=""font-size: 12px; color: #334155; font-weight: 600; margin-top: 2px;"">{boardingTimeStr}</div>
@@ -1138,20 +1121,16 @@ public class TicketEmailService : ITicketEmailService
               <b style=""color: #334155;"">Boarding Point:</b><br/>{request.BoardingPoint ?? "-"}
             </div>
           </td>
-          <td class=""route-arrow"" style=""width: 8%; text-align: center; vertical-align: middle;"">
+          <td class=""route-arrow"" style=""width: 12%; text-align: center; vertical-align: middle;"">
             <div style=""color: #94a3b8; font-size: 22px; font-weight: bold; line-height: 1;"">&#10142;</div>
           </td>
-          <td class=""stack-col"" style=""width: 36%; vertical-align: top;"">
+          <td class=""stack-col"" style=""width: 44%; vertical-align: top;"">
             <div style=""font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;"">ARRIVAL</div>
             <div style=""font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 2px;"">{request.Destination}</div>
             <div style=""font-size: 12px; color: #334155; font-weight: 600; margin-top: 2px;"">{droppingTimeStr}</div>
             <div style=""margin-top: 8px; font-size: 11px; color: #64748b; line-height: 1.4;"">
               <b style=""color: #334155;"">Dropping Point:</b><br/>{request.ArrivalPoint ?? "-"}
             </div>
-          </td>
-          <td class=""stack-col text-mobile-center"" style=""width: 20%; text-align: center; vertical-align: middle; padding-left: 10px; border-left: 1px dashed #e2e8f0;"">
-            <img src=""{qrImgUrl}"" width=""85"" height=""85"" alt=""Cancellation QR"" style=""display: inline-block; width: 85px; height: 85px; border: 1px solid #fee2e2; border-radius: 6px; padding: 2px; background: #ffffff;"" />
-            <div style=""font-size: 9px; color: #dc2626; font-weight: 800; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px;"">VOID / CANCELLED</div>
           </td>
         </tr>
       </table>
@@ -1275,11 +1254,13 @@ public class TicketEmailService : ITicketEmailService
             Content = pdfBytes
         };
 
+        var cancelAttachments = new List<EmailAttachment> { attachment };
+
         await _emailService.SendEmailWithAttachmentsAsync(
             request.ToEmail,
             subject,
             body,
-            [attachment]);
+            cancelAttachments);
     }
 
     public async Task SendFlightCancellationAsync(
@@ -1379,11 +1360,7 @@ public class TicketEmailService : ITicketEmailService
 
     private static DateTime ToIst(DateTime dt)
     {
-        if (dt.Kind == DateTimeKind.Local)
-        {
-            return dt;
-        }
-        return DateTime.SpecifyKind(dt, DateTimeKind.Utc).AddHours(5.5);
+        return IndiaTimeHelper.ToIst(dt);
     }
     private static string GetCityName(string airportCode)
     {

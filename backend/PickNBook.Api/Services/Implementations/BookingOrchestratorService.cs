@@ -8,6 +8,7 @@ using PickNBook.Api.Models.Entities;
 using PickNBook.Api.Services.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
+using PickNBook.Api.Helpers;
 
 namespace PickNBook.Api.Services.Implementations
 {
@@ -406,8 +407,8 @@ namespace PickNBook.Api.Services.Implementations
 
                 var seatsRequired = authoritativeBlockedSeats.Count;
 
-                var depTime = DateTime.Parse(request.DepartureTime).ToUniversalTime();
-                var arrTime = string.IsNullOrWhiteSpace(request.ArrivalTime) ? depTime.AddHours(10) : DateTime.Parse(request.ArrivalTime).ToUniversalTime();
+                var depTime = DateTime.TryParse(request.DepartureTime, out var parsedDep) ? parsedDep : DateTime.UtcNow.Add(IndiaTimeHelper.IndiaOffset);
+                var arrTime = !string.IsNullOrWhiteSpace(request.ArrivalTime) && DateTime.TryParse(request.ArrivalTime, out var parsedArr) ? parsedArr : depTime.AddHours(10);
                 if (arrTime <= depTime)
                 {
                     arrTime = arrTime.AddDays(1);
@@ -811,7 +812,8 @@ namespace PickNBook.Api.Services.Implementations
                             }).ToList(),
                             CancellationPoliciesJson = !string.IsNullOrWhiteSpace(reservation.CancellationPolicyJson) 
                                 ? reservation.CancellationPolicyJson 
-                                : bus.CancellationPoliciesJson
+                                : bus.CancellationPoliciesJson,
+                            BookedAtUtc = reservation.BookedAtUtc
                         };
 
                         try

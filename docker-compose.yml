@@ -10,6 +10,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
+      
+      TZ: Asia/Kolkata
 
       # MySQL is running on the Ubuntu host
       ConnectionStrings__DefaultConnection: ${BACKEND_CONNECTION_STRING:?Set BACKEND_CONNECTION_STRING in .env}

@@ -65,10 +65,11 @@ namespace PickNBook.Api.Controllers
 
             if (journeyDate.HasValue)
             {
-                var (startUtc, endUtc) = GetUtcRangeForIstDate(journeyDate.Value);
-                sql += " AND DepartureTime >= @StartUtc AND DepartureTime < @EndUtc";
-                parameters.Add("StartUtc", startUtc);
-                parameters.Add("EndUtc", endUtc);
+                var startDate = journeyDate.Value.ToDateTime(TimeOnly.MinValue);
+                var endDate = startDate.AddDays(1);
+                sql += " AND DepartureTime >= @StartDate AND DepartureTime < @EndDate";
+                parameters.Add("StartDate", startDate);
+                parameters.Add("EndDate", endDate);
             }
 
             sql += " ORDER BY BookedAtUtc DESC LIMIT @Limit";
@@ -96,8 +97,8 @@ namespace PickNBook.Api.Controllers
 
             var response = bookingSummaries.Select(x =>
             {
-                var departIst = ToIst(x.DepartureTime);
-                var arriveIst = ToIst(x.ArrivalTime);
+                var departIst = x.DepartureTime;
+                var arriveIst = x.ArrivalTime;
                 var journeyDateIst = DateOnly.FromDateTime(departIst);
 
                 reservations.TryGetValue(x.Id, out var res);
@@ -367,6 +368,8 @@ namespace PickNBook.Api.Controllers
                             DurationMinutes = (int)(reservation.BusBooking.ArrivalTime - reservation.BusBooking.DepartureTime).TotalMinutes,
                             BoardingPoint = reservation.BusBooking.BoardingPoint,
                             ArrivalPoint = !string.IsNullOrWhiteSpace(reservation.BusBooking.DroppingPoint) ? reservation.BusBooking.DroppingPoint : reservation.BusBooking.ToCity,
+                            BookedAtUtc = reservation.BookedAtUtc,
+                            CancelledAtUtc = reservation.CancelledAtUtc ?? DateTime.UtcNow,
 
                             // Fare breakdown
                             Price = reservation.TotalPriceInr,
@@ -1706,7 +1709,7 @@ namespace PickNBook.Api.Controllers
                 .Select(x =>
                 {
                     var bus = x.BusBooking!;
-                    var departIst = ToIst(bus.DepartureTime);
+                    var departIst = bus.DepartureTime;
                     var journeyDateIst = DateOnly.FromDateTime(departIst);
                     var cancellationCharge = x.CancellationChargeInr ?? 0m;
                     var refundAmount = x.RefundAmountInr ?? Math.Max(0m, x.TotalPriceInr - cancellationCharge);
@@ -2109,7 +2112,10 @@ namespace PickNBook.Api.Controllers
                         x.AutoPromotionCode,
 
                         BookedAtUtc = DateTime.SpecifyKind(x.BookedAtUtc, DateTimeKind.Utc),
+                        BookingDateUtc = DateTime.SpecifyKind(x.BookedAtUtc, DateTimeKind.Utc),
+                        BookingDateIst = PickNBook.Api.Helpers.IndiaTimeHelper.ToIst(x.BookedAtUtc),
                         CancelledAtUtc = x.CancelledAtUtc.HasValue ? DateTime.SpecifyKind(x.CancelledAtUtc.Value, DateTimeKind.Utc) : (DateTime?)null,
+                        CancelledAtIst = x.CancelledAtUtc.HasValue ? PickNBook.Api.Helpers.IndiaTimeHelper.ToIst(x.CancelledAtUtc.Value) : (DateTime?)null,
 
                         Bus = new
                         {
@@ -2119,8 +2125,11 @@ namespace PickNBook.Api.Controllers
                             x.BusBooking.BusType,
                             x.BusBooking.FromCity,
                             x.BusBooking.ToCity,
-                            DepartureTime = DateTime.SpecifyKind(x.BusBooking.DepartureTime, DateTimeKind.Utc),
-                            ArrivalTime = DateTime.SpecifyKind(x.BusBooking.ArrivalTime, DateTimeKind.Utc)
+                            DepartureTime = PickNBook.Api.Helpers.IndiaTimeHelper.ToUtcFromIst(x.BusBooking.DepartureTime),
+                            DepartureTimeIst = x.BusBooking.DepartureTime,
+                            ArrivalTime = PickNBook.Api.Helpers.IndiaTimeHelper.ToUtcFromIst(x.BusBooking.ArrivalTime),
+                            ArrivalTimeIst = x.BusBooking.ArrivalTime,
+                            JourneyDateIst = DateOnly.FromDateTime(x.BusBooking.DepartureTime)
                         },
 
                         Passengers = passengerRows.Select(p => new
@@ -2223,8 +2232,8 @@ namespace PickNBook.Api.Controllers
                 return BadRequest(new { message = "Reservation does not have a valid passenger phone number." });
             }
 
-            var rawTime = reservation.BoardingPointTime ?? reservation.BusBooking?.DepartureTime ?? DateTime.UtcNow;
-            var istTime = ToIst(rawTime);
+            var rawTime = reservation.BoardingPointTime ?? reservation.BusBooking?.DepartureTime ?? PickNBook.Api.Helpers.IndiaTimeHelper.ToIst(DateTime.UtcNow);
+            var istTime = rawTime;
             string formattedDate = istTime.ToString("dd/MM/yyyy");
             string formattedTime = istTime.ToString("hh:mm tt");
 

@@ -8455,6 +8455,66 @@
         }
       }
     },
+    "/api/BusBookings/bookings/{bookingId}/cancellation-quote": {
+      "get": {
+        "tags": [
+          "BusBookings"
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "passengerIds",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/bus/bookings/{bookingId}/cancellation-quote": {
+      "get": {
+        "tags": [
+          "BusBookings"
+        ],
+        "parameters": [
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "passengerIds",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
     "/api/BusBookings/bookings/{bookingId}/cancel": {
       "post": {
         "tags": [
@@ -12230,32 +12290,7 @@
             "description": "Success"
           }
         }
-      }
-    },
-    "/api/Profile/{id}": {
-      "get": {
-        "tags": [
-          "Profile"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
-        }
-      }
-    },
-    "/api/Profile/edit": {
+      },
       "put": {
         "tags": [
           "Profile"
@@ -12267,15 +12302,25 @@
                 "type": "object",
                 "properties": {
                   "FirstName": {
+                    "maxLength": 50,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
                     "type": "string"
                   },
                   "LastName": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
                     "type": "string"
                   },
                   "PhoneNumber": {
+                    "pattern": "^[6-9]\\d{9}$",
                     "type": "string"
                   },
                   "Location": {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z0-9\\s,.'-]+$",
                     "type": "string"
                   },
                   "ProfileImage": {
@@ -12307,15 +12352,166 @@
                 "type": "object",
                 "properties": {
                   "FirstName": {
+                    "maxLength": 50,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
                     "type": "string"
                   },
                   "LastName": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
                     "type": "string"
                   },
                   "PhoneNumber": {
+                    "pattern": "^[6-9]\\d{9}$",
                     "type": "string"
                   },
                   "Location": {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z0-9\\s,.'-]+$",
+                    "type": "string"
+                  },
+                  "ProfileImage": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "FirstName": {
+                  "style": "form"
+                },
+                "LastName": {
+                  "style": "form"
+                },
+                "PhoneNumber": {
+                  "style": "form"
+                },
+                "Location": {
+                  "style": "form"
+                },
+                "ProfileImage": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Profile/{id}": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Profile/edit": {
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "FirstName": {
+                    "maxLength": 50,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
+                    "type": "string"
+                  },
+                  "LastName": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
+                    "type": "string"
+                  },
+                  "PhoneNumber": {
+                    "pattern": "^[6-9]\\d{9}$",
+                    "type": "string"
+                  },
+                  "Location": {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z0-9\\s,.'-]+$",
+                    "type": "string"
+                  },
+                  "ProfileImage": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              },
+              "encoding": {
+                "FirstName": {
+                  "style": "form"
+                },
+                "LastName": {
+                  "style": "form"
+                },
+                "PhoneNumber": {
+                  "style": "form"
+                },
+                "Location": {
+                  "style": "form"
+                },
+                "ProfileImage": {
+                  "style": "form"
+                }
+              }
+            },
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "FirstName": {
+                    "maxLength": 50,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
+                    "type": "string"
+                  },
+                  "LastName": {
+                    "maxLength": 50,
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z\\s.'-]+$",
+                    "type": "string"
+                  },
+                  "PhoneNumber": {
+                    "pattern": "^[6-9]\\d{9}$",
+                    "type": "string"
+                  },
+                  "Location": {
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "pattern": "^[a-zA-Z0-9\\s,.'-]+$",
                     "type": "string"
                   },
                   "ProfileImage": {
@@ -17702,10 +17898,12 @@
             "format": "email"
           },
           "reason": {
+            "maxLength": 200,
             "type": "string",
             "nullable": true
           },
           "additionalDetails": {
+            "maxLength": 1000,
             "type": "string",
             "nullable": true
           }

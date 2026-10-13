@@ -5195,6 +5195,27 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBusCancellationQuote",
+    "RelativePath": "api/bus/bookings/{bookingId}/cancellation-quote",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bookingId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "passengerIds",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
     "Method": "CancelBusTicketV9",
     "RelativePath": "api/bus/cancel",
     "HttpMethod": "POST",
@@ -5565,6 +5586,27 @@
         "Name": "request",
         "Type": "PickNBook.Api.Models.DTOs.CancelPassengersRequestDto",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.BusBookingsController",
+    "Method": "GetBusCancellationQuote",
+    "RelativePath": "api/BusBookings/bookings/{bookingId}/cancellation-quote",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "bookingId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "passengerIds",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
@@ -7987,6 +8029,42 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.ProfileController",
+    "Method": "EditProfileFromForm",
+    "RelativePath": "api/Profile",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "FirstName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "LastName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "PhoneNumber",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "Location",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "ProfileImage",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {
