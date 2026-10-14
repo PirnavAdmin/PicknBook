@@ -92,6 +92,34 @@ function normalizeFetchedTicket(ticket, request) {
     ...(ticket.fare && typeof ticket.fare === "object" ? ticket.fare : {}),
     totalFare: pickFirst(ticket?.fare, ["totalFare", "TotalFare"], fareValue),
   };
+  const normalizePoint = (point, fallbackName, fallbackTime) => {
+    const name = typeof point === "string"
+      ? point
+      : pickFirst(point, ["name", "pointName", "Name", "PointName"], fallbackName || "--");
+    const time = point && typeof point === "object"
+      ? pickFirst(point, ["timeDisplay", "time", "TimeDisplay", "Time"], fallbackTime || "--")
+      : fallbackTime || "--";
+    return {
+      ...(point && typeof point === "object" ? point : {}),
+      name: String(name || "--"),
+      time: String(time || "--"),
+      timeDisplay: String(time || "--"),
+    };
+  };
+  const rawBoardingPoint = ticket.boardingPoint ?? ticket.BoardingPoint ?? pickFirst(ticket, ["boarding", "Boarding"], null);
+  const rawDroppingPoint = ticket.droppingPoint ?? ticket.DroppingPoint ?? pickFirst(ticket, ["arrivalPlace", "ArrivalPlace", "dropping", "Dropping"], null);
+  const boardingPoint = normalizePoint(
+    rawBoardingPoint,
+    pickFirst(ticket, ["boardingPointName", "BoardingPointName"], "--"),
+    pickFirst(ticket, ["boardingPointTime", "BoardingPointTime"], "--")
+  );
+  const droppingPoint = normalizePoint(
+    rawDroppingPoint,
+    pickFirst(ticket, ["droppingPointName", "DroppingPointName"], "--"),
+    pickFirst(ticket, ["droppingPointTime", "DroppingPointTime"], "--")
+  );
+  const status = String(ticket.status ?? ticket.Status ?? "Booked").trim();
+  const refundAmount = pickFirst(ticket, ["refundAmount", "RefundAmount"], 0);
 
   return {
     ...ticket,
@@ -127,9 +155,13 @@ function normalizeFetchedTicket(ticket, request) {
     departureTimeUtc: ticket.departureTimeUtc ?? ticket.DepartureTimeUtc ?? departureTimeUtc,
     arrivalTimeUtc: ticket.arrivalTimeUtc ?? ticket.ArrivalTimeUtc ?? arrivalTimeUtc,
     busType: ticket.busType ?? ticket.BusType ?? pickFirst(ticket, ["travelClass", "TravelClass", "className", "ClassName"], ""),
-    boardingPoint: ticket.boardingPoint ?? ticket.BoardingPoint ?? pickFirst(ticket, ["boarding", "Boarding"], ticket?.boardingPoint),
-    droppingPoint: ticket.droppingPoint ?? ticket.DroppingPoint ?? pickFirst(ticket, ["arrivalPlace", "ArrivalPlace", "dropping", "Dropping"], ticket?.droppingPoint),
-    status: ticket.status ?? ticket.Status ?? "Booked",
+    boardingPoint,
+    droppingPoint,
+    boardingPointTime: ticket.boardingPointTime ?? ticket.BoardingPointTime ?? boardingPoint.timeDisplay,
+    droppingPointTime: ticket.droppingPointTime ?? ticket.DroppingPointTime ?? droppingPoint.timeDisplay,
+    status,
+    refundAmount,
+    isCancelled: status.toUpperCase() === "CANCELLED",
     passengers: Array.isArray(ticket.passengers) ? ticket.passengers : normalizedPassengers,
     normalizedPassengers,
     contact: fallbackContact,
@@ -141,11 +173,18 @@ function normalizeFetchedTicket(ticket, request) {
 }
 
 // Returns ALL tickets normalized (not just one)
-export async function fetchTicketByContact({ mobile, email, bookingType, activeOnly = true }) {
+export async function fetchTicketByContact({
+  mobile,
+  email,
+  bookingType,
+  bookingReference,
+  activeOnly = true,
+}) {
   const request = {
     mobile: String(mobile || "").trim(),
     email: String(email || "").trim(),
     bookingType: String(bookingType || "").trim().toLowerCase(),
+    bookingReference: String(bookingReference || "").trim(),
     activeOnly: activeOnly !== false,
   };
 
@@ -173,11 +212,17 @@ export async function fetchTicketByContact({ mobile, email, bookingType, activeO
   const hasSuccessField =
     payload && typeof payload === "object" && ("success" in payload || "Success" in payload);
   const successValue = pickFirst(payload, ["success", "Success"], false);
+  const ticketsArray = pickFirst(payload, ["tickets", "Tickets"], null);
+  const singleTicket = pickFirst(payload, ["ticket", "Ticket", "data", "Data"], null);
+  const returnedTickets = [
+    ...(Array.isArray(ticketsArray) ? ticketsArray : []),
+    ...(singleTicket && typeof singleTicket === "object" ? [singleTicket] : []),
+  ];
+  const includesCancelledTicket = returnedTickets.some((ticket) =>
+    String(ticket?.status ?? ticket?.Status ?? "").trim().toUpperCase() === "CANCELLED"
+  );
 
-  if (!hasSuccessField || normalizeSuccess(successValue)) {
-    const ticketsArray = pickFirst(payload, ["tickets", "Tickets"], null);
-    const singleTicket = pickFirst(payload, ["ticket", "Ticket", "data", "Data"], null);
-
+  if (!hasSuccessField || normalizeSuccess(successValue) || includesCancelledTicket) {
     let result = [];
     if (Array.isArray(ticketsArray) && ticketsArray.length > 0) {
       result = ticketsArray.map((t) => normalizeFetchedTicket(t, request));
@@ -192,4 +237,3 @@ export async function fetchTicketByContact({ mobile, email, bookingType, activeO
 
   throw new Error("No active booking found for the provided contact details.");
 }
-

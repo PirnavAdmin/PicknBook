@@ -47,7 +47,9 @@ export async function fetchCouponsAndOffers({ serviceType = 'all', type, booking
   const targetType = type || (serviceType !== 'all' ? serviceType : bookingType);
   const query = {};
   if (targetType && targetType !== 'all') {
-    query.type = String(targetType).toLowerCase();
+    const normalizedType = String(targetType).toLowerCase();
+    query.serviceType = normalizedType;
+    query.type = normalizedType;
   }
   if (category && category !== 'all') {
     query.category = category;

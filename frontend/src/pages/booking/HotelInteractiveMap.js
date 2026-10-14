@@ -5,14 +5,13 @@ import {
   Marker,
   InfoWindow,
   useJsApiLoader,
-  MarkerClusterer,
 } from "@react-google-maps/api";
 import "../../STYLES/HotelInteractiveMap.css";
 
 const formatCurrency = (amount) => `₹${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.round(Number(amount) || 0))}`;
 
 export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
-  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [map, setMap] = useState(null);
 
   // 1. Filter out hotels with invalid or zero coordinates
@@ -23,6 +22,26 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
       return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
     });
   }, [hotels]);
+
+  const locationGroups = useMemo(() => {
+    const groups = new Map();
+
+    validHotels.forEach((hotel) => {
+      const position = {
+        lat: Number(hotel.latitude),
+        lng: Number(hotel.longitude),
+      };
+      const key = `${position.lat.toFixed(5)},${position.lng.toFixed(5)}`;
+      const group = groups.get(key) || { key, position, hotels: [] };
+      group.hotels.push(hotel);
+      groups.set(key, group);
+    });
+
+    return Array.from(groups.values()).map((group) => ({
+      ...group,
+      hotels: group.hotels.sort((left, right) => Number(left.price || 0) - Number(right.price || 0)),
+    }));
+  }, [validHotels]);
 
   // Load the Google Maps JavaScript API
   const { isLoaded, loadError } = useJsApiLoader({
@@ -71,42 +90,38 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
     };
   }, [isLoaded]);
 
-  // 4. Custom marker icon showing a bed/stay shape
-  const getMarkerIcon = useCallback(() => {
+  // Price pins keep the map scannable without count-based cluster bubbles.
+  const getPriceMarkerIcon = useCallback((amount, isSelected) => {
     if (!window.google) return null;
+    const label = formatCurrency(amount);
+    const width = Math.max(70, Math.ceil(label.length * 7.2) + 22);
+    const background = isSelected ? "#ff0000" : "#ffffff";
+    const foreground = isSelected ? "#ffffff" : "#172033";
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="34" viewBox="0 0 ${width} 34"><rect x="1" y="1" width="${width - 2}" height="30" rx="15" fill="${background}" stroke="#ff0000" stroke-width="2"/><text x="${width / 2}" y="21" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" font-weight="700" fill="${foreground}">${label}</text></svg>`;
+
     return {
-      path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm3 7.5H9v2H7.5v-5H9v2h3v-2h1.5v3H15v-3H16.5v5H15v-2z",
-      fillColor: "#ff0000", // hotel brand red/rose color
-      fillOpacity: 1.0,
-      strokeColor: "#ffffff",
-      strokeWeight: 1.5,
-      scale: 1.5,
-      anchor: new window.google.maps.Point(12, 22),
+      url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+      scaledSize: new window.google.maps.Size(width, 34),
+      anchor: new window.google.maps.Point(width / 2, 17),
     };
   }, []);
 
-  // 5. Render markers helper
-  const renderMarkers = useCallback((clusterer) => {
-    return validHotels.map((hotel) => {
-      const isSelected = selectedHotel?.hotelId === hotel.hotelId;
-      const markerIcon = getMarkerIcon();
-
-      if (markerIcon && isSelected) {
-        markerIcon.fillColor = "#8b0000"; // darken marker color when selected
-      }
-
+  const renderMarkers = useCallback(() => {
+    return locationGroups.map((location) => {
+      const lowestPriceHotel = location.hotels[0];
+      const isSelected = selectedLocation?.key === location.key;
       return (
         <Marker
-          key={hotel.hotelId}
-          position={{ lat: Number(hotel.latitude), lng: Number(hotel.longitude) }}
-          clusterer={clusterer}
-          onClick={() => setSelectedHotel(hotel)}
-          icon={markerIcon || undefined}
-          animation={window.google ? window.google.maps.Animation.DROP : undefined}
+          key={location.key}
+          position={location.position}
+          title={`From ${formatCurrency(lowestPriceHotel.price)} - ${lowestPriceHotel.name}`}
+          onClick={() => setSelectedLocation(location)}
+          icon={getPriceMarkerIcon(lowestPriceHotel.price, isSelected) || undefined}
+          zIndex={isSelected ? 1000 : undefined}
         />
       );
     });
-  }, [validHotels, selectedHotel, getMarkerIcon]);
+  }, [locationGroups, selectedLocation, getPriceMarkerIcon]);
 
   // Render fallbacks for invalid coords, load error, or script loading state
   if (validHotels.length === 0) {
@@ -143,66 +158,55 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
         onLoad={onLoad}
         onUnmount={onUnmount}
       >
-        {validHotels.length > 20 ? (
-          <MarkerClusterer>
-            {(clusterer) => (
-              <>
-                {renderMarkers(clusterer)}
-              </>
-            )}
-          </MarkerClusterer>
-        ) : (
-          renderMarkers(null)
-        )}
+        {renderMarkers()}
 
-        {selectedHotel && (
+        {selectedLocation && (
           <InfoWindow
-            position={{
-              lat: Number(selectedHotel.latitude),
-              lng: Number(selectedHotel.longitude),
-            }}
-            onCloseClick={() => setSelectedHotel(null)}
+            position={selectedLocation.position}
+            onCloseClick={() => setSelectedLocation(null)}
             options={
               typeof window !== "undefined" && window.google?.maps
                 ? {
-                    maxWidth: 300,
+                    maxWidth: 290,
                     pixelOffset: new window.google.maps.Size(0, -10),
                   }
-                : { maxWidth: 300 }
+                : { maxWidth: 290 }
             }
           >
-            <div className="hotel-map-info-window">
-              {selectedHotel.image && (
-                <img
-                  src={selectedHotel.image}
-                  alt={selectedHotel.name}
-                  className="hotel-map-info-image"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              )}
-              <div className="hotel-map-info-content">
-                <h4 className="hotel-map-info-title">{selectedHotel.name}</h4>
-                <p className="hotel-map-info-address">{selectedHotel.address}</p>
-                <div className="hotel-map-info-meta">
-                  <span className="hotel-map-info-rating" style={{ display: "flex", alignItems: "center", gap: "2px" }}>
-                    {Array.from({ length: Math.floor(Number(selectedHotel.rating || 0)) || 1 }).map((_, i) => (
-                      <span key={i} style={{ color: "#eab308", fontSize: "12px" }}>★</span>
-                    ))}
-                  </span>
-                  <span className="hotel-map-info-price">
-                    {formatCurrency(selectedHotel.price || selectedHotel.offers?.[0]?.price || 0)}/night
-                  </span>
+            <div className="hotel-map-location-preview">
+              <div className="hotel-map-location-heading">
+                <div>
+                  <span className="hotel-map-location-eyebrow">Starting from</span>
+                  <strong>{formatCurrency(selectedLocation.hotels[0].price)}<small>/night</small></strong>
                 </div>
-                <button
-                  type="button"
-                  className="hotel-map-info-button"
-                  onClick={() => onSelectHotel(selectedHotel)}
-                >
-                  View Details
-                </button>
+                <span className="hotel-map-location-count">
+                  {selectedLocation.hotels.length} {selectedLocation.hotels.length === 1 ? "stay" : "stays"}
+                </span>
               </div>
+              <div className="hotel-map-location-list">
+                {selectedLocation.hotels.slice(0, 4).map((hotel) => (
+                  <button
+                    type="button"
+                    className="hotel-map-location-hotel"
+                    key={hotel.id || hotel.hotelId || hotel.name}
+                    onClick={() => onSelectHotel(hotel)}
+                    aria-label={`View ${hotel.name}`}
+                  >
+                    {hotel.image ? (
+                      <img src={hotel.image} alt="" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
+                    ) : (
+                      <span className="hotel-map-location-image-placeholder" />
+                    )}
+                    <span className="hotel-map-location-hotel-name">{hotel.name}</span>
+                    <strong>{formatCurrency(hotel.price)}</strong>
+                  </button>
+                ))}
+              </div>
+              {selectedLocation.hotels.length > 4 && (
+                <p className="hotel-map-location-more">
+                  Showing the 4 lowest-priced stays. Compare the full list beside the map.
+                </p>
+              )}
             </div>
           </InfoWindow>
         )}

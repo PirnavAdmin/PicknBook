@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { BedDouble, ChevronDown, Loader2, Info } from 'lucide-react';
 import { getAmenityIcon, getAmenityName } from '../../utils/amenityIconMap';
 
@@ -82,31 +82,9 @@ export default function RoomCategoryAccordion({
     return categories;
   }, [offers, mealPlanFilter, refundableOnly, sortBy, images, gallery]);
 
-  // Auto-expand logic on initial load or filter change
-  useEffect(() => {
-    if (processedCategories.length > 0) {
-      // Find category with lowest price
-      let lowestCategory = processedCategories[0];
-      for (const cat of processedCategories) {
-        if (cat.lowestPrice < lowestCategory.lowestPrice) {
-          lowestCategory = cat;
-        }
-      }
-      setExpandedCategories(new Set([lowestCategory.categoryName]));
-    } else {
-      setExpandedCategories(new Set());
-    }
-  }, [offers, mealPlanFilter, refundableOnly]); // Only run when base data or filters change significantly
-
   const toggleCategory = (categoryName) => {
     setExpandedCategories(prev => {
-      const next = new Set(prev);
-      if (next.has(categoryName)) {
-        next.delete(categoryName);
-      } else {
-        next.add(categoryName);
-      }
-      return next;
+      return prev.has(categoryName) ? new Set() : new Set([categoryName]);
     });
   };
 

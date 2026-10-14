@@ -10,6 +10,14 @@ function roundCurrency(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 }
 
+function formatCurrency(value) {
+  const amount = Number(value);
+  return new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(roundCurrency(Number.isFinite(amount) ? amount : 0));
+}
+
 export default function BookingConfirmationModal({ isOpen, onClose, bookingType, flowState, payload, onSuccess }) {
   const navigate = useNavigate();
   const { initializePaymentSession, cfStatus, paymentError, isSubmitting: cfIsSubmitting, clearError } = useCashfreePayment();
@@ -88,6 +96,9 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     totalPayable = flowState?.payableAmount || flowState?.finalPayableAmount || 0;
   }
   totalPayable = roundCurrency(Math.max(0, Number(totalPayable) || 0));
+  const taxesAndFees = bookingType === "Bus"
+    ? Number(fareSummary?.gstAmount ?? fareSummary?.tax ?? 0)
+    : (Number(fareSummary?.tax) || 0) + (Number(fareSummary?.fee) || 0);
   const isBusBooking = bookingType === "Bus";
   const offerDiscountAmount = isBusBooking
     ? roundCurrency(
@@ -209,6 +220,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         GuestName: `${firstName} ${lastName}`,
         GuestEmail: cleanEmail,
         GuestPhone: cleanPhone,
+        CouponCode: flowState.couponCode || flowState.appliedCouponCode || "",
         Price: Number(totalPayable || 0),
         EndUserIp: "192.168.10.10",
       });
@@ -266,7 +278,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           discountedBookingTotal,
         } : {}),
       }),
-      couponCode: flowState.couponCode || null,
+      couponCode: flowState.couponCode || flowState.appliedCouponCode || null,
       promotionId: isBusBooking
         ? flowState.selectedFeaturedOfferId || flowState.promotionId || null
         : null,
@@ -360,31 +372,27 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           <h3 style={{ fontSize: "1.1rem", margin: "0 0 12px 0" }}>Fare Summary</h3>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
             <span>Base Fare</span>
-            <span>₹ {fareSummary?.baseFare || 0}</span>
+            <span>₹ {formatCurrency(fareSummary?.baseFare || 0)}</span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
             <span>{bookingType === "Bus" ? "Operator GST" : "Taxes & Fees"}</span>
-            <span>
-              ₹ {bookingType === "Bus"
-                ? Number(fareSummary?.gstAmount ?? fareSummary?.tax ?? 0)
-                : (fareSummary?.tax || 0) + (fareSummary?.fee || 0)}
-            </span>
+            <span>₹ {formatCurrency(taxesAndFees)}</span>
           </div>
           {(flowState?.couponDiscount > 0 || fareSummary?.discount > 0) && (
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", color: "green" }}>
               <span>Discount</span>
-              <span>- ₹ {flowState?.couponDiscount || fareSummary?.discount || 0}</span>
+              <span>- ₹ {formatCurrency(flowState?.couponDiscount || fareSummary?.discount || 0)}</span>
             </div>
           )}
           <hr style={{ margin: "12px 0", borderColor: "#eee" }} />
           <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "1.2rem" }}>
             <span>Total Payable</span>
-            <span>₹ {totalPayable}</span>
+            <span>₹ {formatCurrency(totalPayable)}</span>
           </div>
           {walletAppliedAmount > 0 && (
             <div style={{ display: "grid", gap: "4px", marginTop: "12px", color: "#555" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Wallet applied</span><span>- ₹ {walletAppliedAmount.toFixed(2)}</span></div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}><span>Pay via gateway</span><span>₹ {gatewayPayableAmount.toFixed(2)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Wallet applied</span><span>- ₹ {formatCurrency(walletAppliedAmount)}</span></div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}><span>Pay via gateway</span><span>₹ {formatCurrency(gatewayPayableAmount)}</span></div>
             </div>
           )}
         </div>

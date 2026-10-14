@@ -27,6 +27,7 @@ import { searchHotels } from "../../services/hotelBookingService";
 import { buildStayFacts, getHotelVisuals } from "./hotelPresentation";
 import HotelInteractiveMap from "./HotelInteractiveMap";
 import HotelSearchWidget from "../../components/HotelSearchWidget";
+import { clearHotelBookingFlowState } from "./hotelBookingFlowStore";
 import "../../STYLES/HotelSearchResults.css";
  
 const HOTEL_COLLECTIONS = [
@@ -765,7 +766,10 @@ export default function HotelSearchResults() {
  
   const handleSelectHotel = (hotel) => {
     setActionError("");
+    clearHotelBookingFlowState();
+    const bookingFlowId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const nextState = {
+      bookingFlowId,
       hotel: {
         hotelId: hotel.hotelId,
         name: hotel.name,
@@ -1062,7 +1066,7 @@ export default function HotelSearchResults() {
                         onClick={() => setShowMap(!showMap)}
                         title={showMap ? "Switch to list view" : "Switch to split map view"}
                       >
-                        <Map size={14} color="#ff0000" />
+                        <Map size={16} strokeWidth={2.2} />
                         <span>MAP</span>
                       </button>
 
@@ -1072,7 +1076,7 @@ export default function HotelSearchResults() {
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
                         title="Toggle Filters Sidebar"
                       >
-                        <Filter size={14} color="#ff0000" />
+                        <Filter size={16} strokeWidth={2.2} />
                         <span>FILTER</span>
                       </button>
 
@@ -1082,7 +1086,7 @@ export default function HotelSearchResults() {
                         onClick={() => setCollectionKey(collectionKey === "favourites" ? "all" : "favourites")}
                         title="Toggle Saved Favourites"
                       >
-                        <Heart size={14} fill={collectionKey === "favourites" ? "#ff0000" : "none"} color="#ff0000" />
+                        <Heart size={16} strokeWidth={2.2} fill={collectionKey === "favourites" ? "currentColor" : "none"} />
                         <span>FAVOURITES ({localFavouritesCount})</span>
                       </button>
                     </div>

@@ -1,21 +1,30 @@
 /* eslint-disable */
 import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
-  ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble
+  ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble, Info, X
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { toDisplayDate } from "../../utils/apiDateFormat";
+import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
 import { navigateWithAuth, isUserAuthenticated } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
-import { blockRoom, getHotelInfo, getHotelRoom, bookHotelRoom } from "../../services/hotelBookingService";
-import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
+import {
+  blockRoom,
+  getHotelInfo,
+  getHotelRoom,
+  bookHotelRoom,
+  listAvailableHotelCoupons,
+  getFeaturedHotelOffers,
+  validateHotelCoupon,
+  validateOfferConditions,
+} from "../../services/hotelBookingService";
 import { listTravelers } from "../../services/travelerService";
 import { buildGuestSummary, buildStayFacts, buildStayHighlights, formatNightLabel, getHotelVisuals } from "./hotelPresentation";
 
 import HotelDetail from "./HotelDetail";
 import "../../STYLES/HotelCheckoutExperience.css";
-import { readHotelBookingFlowState, writeHotelBookingFlowState } from "./hotelBookingFlowStore";
+import { clearHotelBookingFlowState, readHotelBookingFlowState, writeHotelBookingFlowState } from "./hotelBookingFlowStore";
 
 const formatCurrency = (amount) => `INR ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(Math.round(Number(amount) || 0))}`;
 const getHotelPromoDiscountLabel = (promo) => {
@@ -25,6 +34,63 @@ const getHotelPromoDiscountLabel = (promo) => {
     ? `${value}% OFF`
     : `${formatCurrency(value)} OFF`;
 };
+
+function getOfferMainHeading(offer) {
+  const isPercent = Boolean(
+    offer?.isPercentageDiscount ||
+    String(offer?.discountType || offer?.promotionType || offer?.couponType || "").toLowerCase().includes("percent")
+  );
+  const val = Number(offer?.discountValue ?? offer?.value ?? 0);
+  if (val > 0) {
+    return isPercent ? `GET ${val}% OFF!` : `FLAT ₹${val} OFF!`;
+  }
+  const titleText = String(offer?.title || offer?.Title || "");
+  const percentMatch = titleText.match(/(\d+)\s*%/);
+  if (percentMatch) {
+    return `GET ${percentMatch[1]}% OFF!`;
+  }
+  const flatMatch = titleText.match(/(?:flat|rs\.?|inr|₹)\s*(\d+)|(\d+)\s*(?:rs|inr|off)/i);
+  if (flatMatch) {
+    const num = flatMatch[1] || flatMatch[2];
+    if (num) return `FLAT ₹${num} OFF!`;
+  }
+  return isPercent ? "GET % OFF!" : "SPECIAL OFFER!";
+}
+
+function getCouponMainHeading(coupon) {
+  const val = Number(coupon?.value || coupon?.discountValue || 0);
+  const isPercent = String(coupon?.couponType || coupon?.cpnType || coupon?.discountType || "")
+    .toLowerCase()
+    .includes("percent");
+  if (val > 0) {
+    return isPercent ? `GET ${val}% OFF!` : `FLAT ₹${val} OFF!`;
+  }
+  const desc = String(coupon?.title || coupon?.Title || coupon?.description || "");
+  const percentMatch = desc.match(/(\d+)\s*%/);
+  if (percentMatch) {
+    return `GET ${percentMatch[1]}% OFF!`;
+  }
+  const flatMatch = desc.match(/(?:flat|rs\.?|inr|₹)\s*(\d+)|(\d+)\s*(?:rs|inr|off)/i);
+  if (flatMatch) {
+    const num = flatMatch[1] || flatMatch[2];
+    if (num) return `FLAT ₹${num} OFF!`;
+  }
+  return isPercent ? "GET % OFF!" : "COUPON OFFER!";
+}
+
+function getPromotionSubHeading(item) {
+  const rawTitle = String(item?.title || item?.Title || item?.remark || item?.description || "").trim();
+  if (!rawTitle) {
+    return item?.promotionCategory === "Offer" || item?.category === "Offer" || item?.itemType === "offer"
+      ? "Featured Offer"
+      : "Exclusive Coupon";
+  }
+  const cleanedTitle = rawTitle
+    .replace(/\s*[-–—:]?\s*(?:get\s*)?(?:\d+%\s*off|\d+%|flat\s*₹?\s*\d+|₹\s*\d+\s*off)\s*$/i, "")
+    .trim();
+
+  return cleanedTitle || rawTitle;
+}
 const calculateNights = (inDate, outDate) => (!inDate || !outDate ? 1 : Math.ceil(Math.abs(new Date(outDate) - new Date(inDate)) / 86400000) || 1);
 const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(String(email || "").trim());
 const isValidMobile = (mobile) => String(mobile || "").replace(/\D/g, "").length >= 10 && String(mobile || "").replace(/\D/g, "").length <= 13;
@@ -213,7 +279,11 @@ export default function HotelPassengerDetailsPage() {
   const incomingState = useMemo(() => {
     const routerState = location.state && typeof location.state === "object" ? location.state : null;
     const storedState = readHotelBookingFlowState() || {};
-    const merged = { ...storedState, ...routerState };
+    const hasDifferentBookingFlow = Boolean(
+      routerState?.bookingFlowId && routerState.bookingFlowId !== storedState.bookingFlowId
+    );
+    const merged = hasDifferentBookingFlow ? { ...routerState } : { ...storedState, ...routerState };
+    if (hasDifferentBookingFlow) clearHotelBookingFlowState();
     if (merged.hotel || merged.offer) {
       writeHotelBookingFlowState(merged);
       return merged;
@@ -328,48 +398,56 @@ export default function HotelPassengerDetailsPage() {
       initChildren = Number(rawSearch?.children || 0);
     }
 
+    const savedGuests = Array.isArray(incomingState.guests) ? incomingState.guests : [];
+    const savedPrimaryGuest = savedGuests[0] || {};
     const list = [];
     list.push({
+      ...savedPrimaryGuest,
       index: 0,
       type: "adult",
-      title: incomingState.guestTitle || "",
-      fullName: incomingState.guestName || "",
-      age: incomingState.guestAge || "",
-      gender: "",
-      nationality: "India",
-      idProofType: "Aadhaar",
-      idProofNumber: "",
-      email: incomingState.guestEmail || "",
-      mobile: incomingState.guestPhone || "",
+      title: savedPrimaryGuest.title || incomingState.guestTitle || "",
+      fullName: savedPrimaryGuest.fullName || incomingState.guestName || "",
+      age: savedPrimaryGuest.age || incomingState.guestAge || "",
+      gender: savedPrimaryGuest.gender || incomingState.guestGender || "",
+      nationality: savedPrimaryGuest.nationality || "India",
+      idProofType: savedPrimaryGuest.idProofType || "Aadhaar",
+      idProofNumber: savedPrimaryGuest.idProofNumber || "",
+      email: savedPrimaryGuest.email || incomingState.guestEmail || "",
+      mobile: savedPrimaryGuest.mobile || incomingState.guestPhone || "",
     });
     for (let i = 1; i < initAdults; i++) {
+      const savedGuest = savedGuests[i] || {};
       list.push({
+        ...savedGuest,
         index: i,
         type: "adult",
-        title: "",
-        fullName: "",
-        age: "",
-        gender: "",
-        nationality: "India",
-        idProofType: "Aadhaar",
-        idProofNumber: "",
-        email: "",
-        mobile: "",
+        title: savedGuest.title || "",
+        fullName: savedGuest.fullName || "",
+        age: savedGuest.age || "",
+        gender: savedGuest.gender || "",
+        nationality: savedGuest.nationality || "India",
+        idProofType: savedGuest.idProofType || "Aadhaar",
+        idProofNumber: savedGuest.idProofNumber || "",
+        email: savedGuest.email || "",
+        mobile: savedGuest.mobile || "",
       });
     }
     for (let i = 0; i < initChildren; i++) {
+      const guestIndex = initAdults + i;
+      const savedGuest = savedGuests[guestIndex] || {};
       list.push({
-        index: initAdults + i,
+        ...savedGuest,
+        index: guestIndex,
         type: "child",
-        title: "Mstr",
-        fullName: "",
-        age: "",
-        gender: "",
-        nationality: "India",
-        idProofType: "Aadhaar",
-        idProofNumber: "",
-        email: "",
-        mobile: "",
+        title: savedGuest.title || "Mstr",
+        fullName: savedGuest.fullName || "",
+        age: savedGuest.age || "",
+        gender: savedGuest.gender || "",
+        nationality: savedGuest.nationality || "India",
+        idProofType: savedGuest.idProofType || "Aadhaar",
+        idProofNumber: savedGuest.idProofNumber || "",
+        email: savedGuest.email || "",
+        mobile: savedGuest.mobile || "",
       });
     }
     return list;
@@ -448,14 +526,25 @@ export default function HotelPassengerDetailsPage() {
   const [couponCode, setCouponCode] = useState(incomingState.couponCode || "");
   const [couponSuccess, setCouponSuccess] = useState(incomingState.couponSuccess || "");
   const [couponError, setCouponError] = useState(incomingState.couponError || "");
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [featuredOffers, setFeaturedOffers] = useState([]);
-  const hotelOffersCarouselRef = useRef(null);
-  const hotelCouponsCarouselRef = useRef(null);
+  const featuredOffersScrollerRef = useRef(null);
+  const couponScrollerRef = useRef(null);
+  const [detailModalItem, setDetailModalItem] = useState(null);
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(false);
   const [isLoadingOffers, setIsLoadingOffers] = useState(false);
   const [copiedPromoCode, setCopiedPromoCode] = useState("");
+
+  useEffect(() => {
+    if (!detailModalItem) return;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setDetailModalItem(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [detailModalItem]);
 
   const [showChildAgeAlert, setShowChildAgeAlert] = useState(false);
   const [alertChildIndex, setAlertChildIndex] = useState(null);
@@ -736,9 +825,11 @@ export default function HotelPassengerDetailsPage() {
         guestName,
         guestTitle,
         guestAge,
+        guestGender: guests[0]?.gender || "",
         guestPassportNo,
         guestEmail,
         guestPhone,
+        guests,
         agreedToTerms,
         isPANMandatory,
         isPassportMandatory,
@@ -747,7 +838,7 @@ export default function HotelPassengerDetailsPage() {
         selectedMultiRooms,
       });
     }
-  }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPassportNo, guestEmail, guestPhone, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse, currentStep, selectedMultiRooms]);
+  }, [hotel, offer, searchContext, guestName, guestTitle, guestAge, guestPassportNo, guestEmail, guestPhone, guests, agreedToTerms, isPANMandatory, isPassportMandatory, blockRoomResponse, currentStep, selectedMultiRooms]);
 
   const handleSelectOffer = async (roomOffer, couponToApply = couponCode) => {
     // If user is re-selecting (replacing an already chosen room), drop the previous
@@ -1094,49 +1185,22 @@ export default function HotelPassengerDetailsPage() {
 
     if (currentStep !== 2) return undefined;
 
-    const normalizeHotelPromoRecord = (record) => {
-      const code = String(record?.couponCode || record?.CouponCode || record?.code || record?.Code || record?.promoCode || record?.PromoCode || "").trim();
-      const serviceType = String(record?.bookingType || record?.BookingType || record?.serviceType || record?.ServiceType || "").toLowerCase();
-      const category = String(record?.category || record?.Category || record?.promotionCategory || record?.PromotionCategory || "").toLowerCase();
-      const title = record?.title || record?.Title || record?.remark || record?.Remark || record?.description || record?.Description || code || "Hotel offer";
-      const value = Number(record?.value ?? record?.Value ?? record?.discountValue ?? record?.DiscountValue ?? record?.couponValue ?? record?.CouponValue ?? record?.amount ?? record?.Amount ?? 0);
-      const statusValue = String(record?.status ?? record?.Status ?? "active").toLowerCase();
-      const isActive = record?.isActive ?? record?.IsActive ?? record?.isCouponActive ?? record?.IsCouponActive ?? (statusValue !== "inactive");
-      const expiryDate = record?.expiryDate || record?.ExpiryDate || record?.endDateUtc || record?.EndDateUtc || record?.couponExpiresAtUtc || record?.CouponExpiresAtUtc;
-
-      return {
-        id: record?.id ?? record?.Id ?? record?.offerId ?? record?.OfferId ?? (code || `${title}-${expiryDate || "hotel"}`),
-        couponCode: code,
-        title,
-        description: record?.description || record?.Description || record?.remark || record?.Remark || "",
-        value,
-        couponType: record?.couponType || record?.CouponType || record?.discountType || record?.DiscountType || "Fixed",
-        expiryDate,
-        category,
-        bookingType: serviceType,
-        isActive: Boolean(isActive),
-      };
-    };
-
     const loadHotelPromos = async () => {
       setIsLoadingCoupons(true);
       setIsLoadingOffers(true);
 
       try {
-        const [couponRecords, offerRecords] = await Promise.all([
-          fetchCouponsAndOffers({ serviceType: "hotel", category: "Coupon" }),
-          fetchCouponsAndOffers({ serviceType: "hotel", category: "Offer" }),
+        const [couponsData, offersData] = await Promise.all([
+          listAvailableHotelCoupons().catch(() => []),
+          getFeaturedHotelOffers().catch(() => []),
         ]);
-        const coupons = (Array.isArray(couponRecords) ? couponRecords : [])
-          .map(normalizeHotelPromoRecord)
-          .filter((item) => item.couponCode && item.isActive);
-        const offers = (Array.isArray(offerRecords) ? offerRecords : [])
-          .map(normalizeHotelPromoRecord)
-          .filter((item) => item.isActive);
 
         if (isMounted) {
-          setAvailableCoupons(coupons.slice(0, 8));
-          setFeaturedOffers(offers.slice(0, 8));
+          const validCoupons = Array.isArray(couponsData) ? couponsData : [];
+          const validOffers = Array.isArray(offersData) ? offersData : [];
+
+          setAvailableCoupons(validCoupons.slice(0, 8));
+          setFeaturedOffers(validOffers.slice(0, 8));
         }
       } catch (error) {
         console.error("Failed to load hotel coupons and offers", error);
@@ -1176,6 +1240,7 @@ export default function HotelPassengerDetailsPage() {
       checkInDate: activeCheckIn,
       checkOutDate: activeCheckOut,
       searchContext, 
+      bookingFlowId: incomingState.bookingFlowId,
       guestTitle: guests[0]?.title || "Mr",
       guestName: guests[0]?.fullName?.trim() || "Primary Guest", 
       guestEmail: guests[0]?.email?.trim() || "", 
@@ -1186,16 +1251,21 @@ export default function HotelPassengerDetailsPage() {
       blockRoomResponse,
       currentStep,
       selectedMultiRooms,
-      payableAmount: finalPayable, 
+      payableAmount: Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)), 
+      finalPayableAmount: Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)),
+      couponDiscount: couponDiscount > 0 ? couponDiscount : appliedDiscount,
+      couponCode: couponCode.trim().toUpperCase(),
+      appliedCouponCode: couponCode || "",
       fareSummary: { 
         baseFare: basePrice, 
         tax, 
         convenienceFee, 
         markup: markupValue, 
-        couponDiscount, 
+        couponDiscount: couponDiscount > 0 ? couponDiscount : appliedDiscount,
+        discount: couponDiscount > 0 ? couponDiscount : appliedDiscount,
         tierDiscount: 0, 
         volumeDiscount: 0, 
-        totalFare: finalPayable 
+        totalFare: Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount))
       } 
     };
 
@@ -1230,15 +1300,102 @@ export default function HotelPassengerDetailsPage() {
     try {
       const uppercaseCode = nextCode.toUpperCase();
       setCouponCode(uppercaseCode);
-      // Wait for re-selection with the new coupon code to re-trigger blockRoom
-      await handleSelectOffer(offer, uppercaseCode);
-      
-      // Look at the new block room response to verify coupon success
-      // We rely on the React state update loop to populate couponDiscount, 
-      // but if the API returns blockRoomResponse with couponDiscount > 0 on the next render, it's successful.
-      // We can also just set a generic success message.
+
+      const totalBeforeDiscount = (basePrice || 0) + (tax || 0);
+      const activeCheckIn = offer?.checkInDate || checkInDate || searchContext?.checkInDate || hotel?.checkInDate || "";
+      const formattedCheckIn = toYyyyMmDd(activeCheckIn);
+
+      // 1. Look up in preloaded offers and coupons
+      const matched = [...availableCoupons, ...featuredOffers].find(
+        (c) => String(c.couponCode || "").toUpperCase() === uppercaseCode
+      );
+
+      // 2. Strict client-side condition validation
+      if (matched) {
+        const clientVal = validateOfferConditions(matched, {
+          totalAmount: totalBeforeDiscount,
+          checkInDate: formattedCheckIn || activeCheckIn,
+        });
+
+        if (!clientVal.isValid) {
+          setAppliedDiscount(0);
+          setCouponError(clientVal.message);
+          return;
+        }
+      }
+
+      // 3. Validate against backend endpoint
+      let validatedDiscount = 0;
+      let backendValidated = false;
+
+      try {
+        const valRes = await validateHotelCoupon({
+          CouponCode: uppercaseCode,
+          TotalAmount: totalBeforeDiscount,
+          CheckInDate: formattedCheckIn || null,
+        });
+
+        if (valRes && valRes.isValid === false) {
+          // Explicit backend rejection — do NOT bypass or calculate a discount!
+          setAppliedDiscount(0);
+          setCouponError(valRes.message || "Invalid hotel coupon or conditions not met.");
+          return;
+        }
+
+        if (valRes && valRes.isValid) {
+          validatedDiscount = Number(valRes.discountAmount || 0);
+          backendValidated = true;
+        }
+      } catch (valErr) {
+        const errMsg = String(valErr?.message || "");
+        // If the server responded with an explicit domain error message, respect it and stop!
+        const isNetworkOrAuthIssue =
+          errMsg.toLowerCase().includes("failed to fetch") ||
+          errMsg.toLowerCase().includes("networkerror") ||
+          errMsg.toLowerCase().includes("unauthorized") ||
+          errMsg.toLowerCase().includes("unable to validate");
+
+        if (!isNetworkOrAuthIssue && errMsg) {
+          setAppliedDiscount(0);
+          setCouponError(errMsg);
+          return;
+        }
+      }
+
+      // 4. If backend was unreachable or returned auth error, fallback to strictly verified matched offer discount
+      if (!backendValidated && matched) {
+        const recheck = validateOfferConditions(matched, {
+          totalAmount: totalBeforeDiscount,
+          checkInDate: formattedCheckIn || activeCheckIn,
+        });
+
+        if (!recheck.isValid) {
+          setAppliedDiscount(0);
+          setCouponError(recheck.message);
+          return;
+        }
+
+        validatedDiscount = recheck.discountAmount;
+      }
+
+      if (validatedDiscount <= 0) {
+        setAppliedDiscount(0);
+        setCouponError("This coupon could not be applied to the current booking.");
+        return;
+      }
+
+      setAppliedDiscount(validatedDiscount);
+
+      // Re-trigger blockRoom with uppercaseCode
+      try {
+        await handleSelectOffer(offer, uppercaseCode);
+      } catch (blockErr) {
+        console.warn("blockRoom coupon update notice:", blockErr);
+      }
+
       setCouponSuccess(`Coupon "${uppercaseCode}" applied! Check the breakdown below.`);
     } catch (err) {
+      setAppliedDiscount(0);
       setCouponError(err.message || "Failed to apply coupon.");
     } finally {
       setIsApplyingCoupon(false);
@@ -1256,14 +1413,32 @@ export default function HotelPassengerDetailsPage() {
     }
   };
 
-  const scrollHotelPromoCarousel = (carouselRef, direction) => {
-    const carousel = carouselRef.current;
-    if (!carousel) return;
-    carousel.scrollBy({ left: direction * carousel.clientWidth, behavior: "smooth" });
+  const scrollPromotionCards = (scrollerRef, direction, totalCount) => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const cardWidth = scroller.clientWidth;
+    if (!cardWidth) return;
+
+    const cardsCount = totalCount || scroller.children?.length || Math.max(1, Math.round(scroller.scrollWidth / cardWidth));
+    const currentScroll = scroller.scrollLeft;
+    const currentIndex = Math.round(currentScroll / cardWidth);
+
+    let nextIndex = currentIndex + direction;
+    if (nextIndex < 0) {
+      nextIndex = cardsCount - 1;
+    } else if (nextIndex >= cardsCount) {
+      nextIndex = 0;
+    }
+
+    scroller.scrollTo({
+      left: nextIndex * cardWidth,
+      behavior: "smooth",
+    });
   };
 
   const handleRemoveCoupon = async () => {
     setCouponCode("");
+    setAppliedDiscount(0);
     setCouponSuccess("");
     setCouponError("");
     setIsApplyingCoupon(true);
@@ -1506,11 +1681,12 @@ export default function HotelPassengerDetailsPage() {
                   <div className="floating-field" style={{ gridColumn: "span 1" }}>
                     <label style={{ fontSize: "0.75rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "6px" }}>Gender <span style={{ color: "red" }}>*</span></label>
                     <select
-                      value={guests[0]?.gender || "Male"}
+                      value={guests[0]?.gender || ""}
                       onChange={(e) => updateGuest(0, "gender", e.target.value)}
                       className={errors.guest_0_gender ? "is-error" : ""}
                       style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
                     >
+                      <option value="">Select</option>
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                       <option value="Other">Other</option>
@@ -1736,123 +1912,11 @@ export default function HotelPassengerDetailsPage() {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "10px", marginTop: "4px" }}>
                     <span>💰 <strong>Total Amount:</strong></span>
-                    <strong style={{ color: "#10b981", fontSize: "1rem" }}>{formatCurrency(finalPayable)}</strong>
+                    <strong style={{ color: "#10b981", fontSize: "1rem" }}>{formatCurrency(Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}</strong>
                   </div>
                 </div>
 
-                <div className="hotel-promotions-panel">
-                  <div className="hotel-promotions-heading">
-                    <h4>Offers & Coupons</h4>
-                    <span>Hotel Deals</span>
-                  </div>
 
-                  <div className="hotel-promo-entry">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      placeholder="Enter coupon code"
-                      aria-label="Enter hotel coupon code"
-                    />
-                    <button type="button" onClick={handleApplyCoupon} disabled={isApplyingCoupon || !couponCode.trim()}>
-                      {isApplyingCoupon ? "Applying..." : "Apply"}
-                    </button>
-                  </div>
-
-                  {(couponError || couponSuccess) && (
-                    <div className={`hotel-promo-message${couponError ? " is-error" : " is-success"}`} role="status">
-                      {couponError || couponSuccess}
-                    </div>
-                  )}
-
-                  {couponCode && (
-                    <button type="button" className="hotel-promo-remove" onClick={handleRemoveCoupon} disabled={isApplyingCoupon}>
-                      Remove applied coupon
-                    </button>
-                  )}
-
-                  {(isLoadingOffers || isLoadingCoupons) && (
-                    <div className="hotel-promo-loading"><Loader2 size={15} className="spin" /> Loading hotel promotions...</div>
-                  )}
-
-                  {featuredOffers.length > 0 && (
-                    <section className="hotel-promo-group" aria-label="Featured hotel offers">
-                      <div className="hotel-promo-group-heading">
-                        <h5>Featured Offers</h5>
-                        <div className="hotel-promo-carousel-controls">
-                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelOffersCarouselRef, -1)} disabled={featuredOffers.length < 2} aria-label="Scroll featured offers left" title="Previous offers"><ChevronLeft size={17} /></button>
-                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelOffersCarouselRef, 1)} disabled={featuredOffers.length < 2} aria-label="Scroll featured offers right" title="Next offers"><ChevronRight size={17} /></button>
-                        </div>
-                      </div>
-                      <div className="hotel-promo-card-list" ref={hotelOffersCarouselRef}>
-                        {featuredOffers.map((promo) => {
-                          const code = promo.couponCode || "";
-                          const isSelected = Boolean(code) && couponCode.toUpperCase() === code.toUpperCase();
-                          return (
-                            <article className={`hotel-promo-card${isSelected ? " is-selected" : ""}`} key={promo.id || code || promo.title}>
-                              <div className="hotel-promo-card-header">
-                                <span className="hotel-promo-discount">{getHotelPromoDiscountLabel(promo)}</span>
-                                <div className="hotel-promo-code-wrap">
-                                  <span className="hotel-promo-code">{code || "HOTEL OFFER"}</span>
-                                  {code && (
-                                    <button type="button" className="hotel-promo-copy" onClick={() => handleCopyPromoCode(code)} aria-label={`Copy ${code}`} title="Copy code">
-                                      {copiedPromoCode === code ? <Check size={14} /> : <Copy size={14} />}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="hotel-promo-card-body">
-                                <strong>{promo.title || code || "Hotel offer"}</strong>
-                                <p>{promo.description || "Use this offer on your hotel booking."}</p>
-                                <button type="button" onClick={() => handleApplyCoupon(code)} disabled={!code || isApplyingCoupon}>
-                                  {isSelected ? "Applied" : "Apply offer"}
-                                </button>
-                              </div>
-                            </article>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
-
-                  {availableCoupons.length > 0 && (
-                    <section className="hotel-promo-group" aria-label="Available hotel coupons">
-                      <div className="hotel-promo-group-heading">
-                        <h5>Available Coupons</h5>
-                        <div className="hotel-promo-carousel-controls">
-                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelCouponsCarouselRef, -1)} disabled={availableCoupons.length < 2} aria-label="Scroll available coupons left" title="Previous coupons"><ChevronLeft size={17} /></button>
-                          <button type="button" onClick={() => scrollHotelPromoCarousel(hotelCouponsCarouselRef, 1)} disabled={availableCoupons.length < 2} aria-label="Scroll available coupons right" title="Next coupons"><ChevronRight size={17} /></button>
-                        </div>
-                      </div>
-                      <div className="hotel-promo-card-list" ref={hotelCouponsCarouselRef}>
-                        {availableCoupons.map((promo) => {
-                          const code = promo.couponCode;
-                          const isSelected = couponCode.toUpperCase() === code.toUpperCase();
-                          return (
-                            <article className={`hotel-promo-card${isSelected ? " is-selected" : ""}`} key={promo.id || code}>
-                              <div className="hotel-promo-card-header">
-                                <span className="hotel-promo-discount">{getHotelPromoDiscountLabel(promo)}</span>
-                                <div className="hotel-promo-code-wrap">
-                                  <span className="hotel-promo-code">{code}</span>
-                                  <button type="button" className="hotel-promo-copy" onClick={() => handleCopyPromoCode(code)} aria-label={`Copy ${code}`} title="Copy code">
-                                    {copiedPromoCode === code ? <Check size={14} /> : <Copy size={14} />}
-                                  </button>
-                                </div>
-                              </div>
-                              <div className="hotel-promo-card-body">
-                                <strong>{promo.title || code}</strong>
-                                <p>{promo.description || "Save on your hotel booking with this coupon."}</p>
-                                <button type="button" onClick={() => handleApplyCoupon(code)} disabled={isApplyingCoupon}>
-                                  {isSelected ? "Applied" : "Apply coupon"}
-                                </button>
-                              </div>
-                            </article>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
-                </div>
 
                 {specialRequests.length > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", background: "#f8fafc", padding: "10px 14px", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.03)", fontSize: "0.82rem" }}>
@@ -2004,6 +2068,12 @@ export default function HotelPassengerDetailsPage() {
                         <span>Room base charges</span>
                         <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(basePrice)}</strong>
                       </div>
+                      {(couponDiscount > 0 || appliedDiscount > 0) && (
+                        <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#16a34a" }}>
+                          <span>Coupon Discount {couponCode ? `(${couponCode})` : ""}</span>
+                          <strong style={{ color: "#16a34a" }}>(-) {formatCurrency(couponDiscount > 0 ? couponDiscount : appliedDiscount)}</strong>
+                        </div>
+                      )}
                       <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
                         <span>Taxes & GST</span>
                         <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(tax)}</strong>
@@ -2012,12 +2082,318 @@ export default function HotelPassengerDetailsPage() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                       <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Total Price</span>
-                      <strong style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981" }}>{formatCurrency(finalPayable)}</strong>
+                      <strong style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981" }}>
+                        {formatCurrency(Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}
+                      </strong>
                     </div>
                   </>
                 )}
               </div>
 
+              {/* Coupons & Featured Offers */}
+              {(!isAgent || activePortal !== "b2b") && (
+                <article className="flow-card coupon-sheet-card hotel-coupon-sheet-card" style={{ marginBottom: "1rem" }}>
+                  <header className="coupon-sheet-header">
+                    <span className="header-icon-wrap" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                      </svg>
+                    </span>
+                    <span className="coupon-sheet-header-title">
+                      {(isLoadingCoupons || isLoadingOffers || isApplyingCoupon) && (
+                        <span className="coupon-sheet-loading">Loading...</span>
+                      )}
+                      <span>Apply Coupon</span>
+                    </span>
+                  </header>
+                  <div className="flow-card-body coupon-sheet-body">
+                    <div className="coupon-manual-row">
+                      <input
+                        type="text"
+                        placeholder="ENTER COUPON CODE"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        disabled={isApplyingCoupon}
+                      />
+                      {couponSuccess || couponDiscount > 0 ? (
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          disabled={isApplyingCoupon}
+                          className="coupon-action-button is-remove"
+                        >
+                          Remove
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleApplyCoupon(couponCode)}
+                          disabled={isApplyingCoupon || !couponCode.trim()}
+                          className="coupon-action-button is-apply"
+                        >
+                          {isApplyingCoupon ? "Applying..." : "APPLY"}
+                        </button>
+                      )}
+                    </div>
+
+                    {(couponError || couponSuccess) && (
+                      <div className="coupon-feedback-group">
+                        {couponError && (
+                          <p className="coupon-sheet-message is-error">
+                            {couponError}
+                          </p>
+                        )}
+                        {couponSuccess && (
+                          <p className="coupon-sheet-message is-success">
+                            {couponSuccess}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── 1. Featured Offers Section ── */}
+                    {featuredOffers.length > 0 && (
+                      <div className="coupon-featured-block">
+                        <p className="coupon-section-label">Featured Offers:</p>
+                        <div className="coupon-carousel-frame">
+                          {featuredOffers.length > 1 && (
+                            <div className="coupon-carousel-controls">
+                              <button
+                                type="button"
+                                onClick={() => scrollPromotionCards(featuredOffersScrollerRef, -1, featuredOffers.length)}
+                                aria-label="Scroll featured offers left"
+                                title="Previous offer"
+                              >
+                                <ChevronLeft size={18} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => scrollPromotionCards(featuredOffersScrollerRef, 1, featuredOffers.length)}
+                                aria-label="Scroll featured offers right"
+                                title="Next offer"
+                              >
+                                <ChevronRight size={18} />
+                              </button>
+                            </div>
+                          )}
+                          <div
+                            className="coupon-featured-list"
+                            ref={featuredOffersScrollerRef}
+                            aria-label="Featured offers carousel"
+                          >
+                            {featuredOffers.map((offerItem) => {
+                              const code = offerItem.couponCode || "";
+                              const isThisSelected = Boolean(code) && couponCode.toUpperCase() === code.toUpperCase();
+                              const anotherOfferSelected = Boolean(couponCode) && !isThisSelected;
+                              const mainHeading = getOfferMainHeading(offerItem);
+                              const subHeading = getPromotionSubHeading(offerItem);
+
+                              return (
+                                <div
+                                  key={offerItem.id || code || offerItem.title}
+                                  className={`coupon-voucher-card${isThisSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""}`}
+                                >
+                                  {/* Top Row: Main Heading & "i" Info Icon */}
+                                  <div className="voucher-card-top">
+                                    <div className="voucher-main-heading">{mainHeading}</div>
+                                    <button
+                                      type="button"
+                                      className="voucher-info-btn"
+                                      title="View Details"
+                                      aria-label="View offer details"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDetailModalItem({ ...offerItem, type: "offer" });
+                                      }}
+                                    >
+                                      <Info size={14} strokeWidth={2.5} />
+                                    </button>
+                                  </div>
+
+                                  {/* Sub Heading */}
+                                  <div className="voucher-sub-heading" title={subHeading}>
+                                    {subHeading}
+                                  </div>
+
+                                  {/* Bottom Row */}
+                                  <div className="voucher-bottom-row">
+                                    <div className="voucher-code-wrapper">
+                                      <span className="voucher-code-prefix">Code:</span>
+                                      <span className="voucher-code-badge">{code || "OFFER"}</span>
+                                      {code && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCopyPromoCode(code);
+                                          }}
+                                          className="voucher-copy-btn"
+                                          title="Copy Coupon Code"
+                                        >
+                                          {copiedPromoCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    <div className="voucher-action-btn-wrap">
+                                      {isThisSelected ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveCoupon();
+                                          }}
+                                          disabled={isApplyingCoupon}
+                                          className="voucher-remove-btn"
+                                        >
+                                          Remove
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleApplyCoupon(code);
+                                          }}
+                                          disabled={isApplyingCoupon}
+                                          className="voucher-apply-btn"
+                                        >
+                                          <span>APPLY</span>
+                                          <Sparkles size={11} style={{ marginLeft: "4px" }} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── 2. Available Coupons Section ── */}
+                    {availableCoupons.length > 0 && (
+                      <div className="coupon-chip-block">
+                        <p className="coupon-section-label">Available Coupons:</p>
+                        <div className="coupon-carousel-frame">
+                          {availableCoupons.length > 1 && (
+                            <div className="coupon-carousel-controls">
+                              <button
+                                type="button"
+                                onClick={() => scrollPromotionCards(couponScrollerRef, -1, availableCoupons.length)}
+                                aria-label="Scroll available coupons left"
+                                title="Previous coupon"
+                              >
+                                <ChevronLeft size={18} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => scrollPromotionCards(couponScrollerRef, 1, availableCoupons.length)}
+                                aria-label="Scroll available coupons right"
+                                title="Next coupon"
+                              >
+                                <ChevronRight size={18} />
+                              </button>
+                            </div>
+                          )}
+                          <div
+                            className="coupon-chip-list"
+                            ref={couponScrollerRef}
+                            aria-label="Available coupons carousel"
+                          >
+                            {availableCoupons.map((couponItem, idx) => {
+                              const code = couponItem.couponCode || `Promo #${couponItem.id || idx}`;
+                              const isThisSelected = Boolean(code) && couponCode.toUpperCase() === code.toUpperCase();
+                              const anotherOfferSelected = Boolean(couponCode) && !isThisSelected;
+                              const mainHeading = getCouponMainHeading(couponItem);
+                              const subHeading = getPromotionSubHeading(couponItem);
+
+                              return (
+                                <div
+                                  key={couponItem.id || code || idx}
+                                  className={`coupon-voucher-card${isThisSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""}`}
+                                >
+                                  {/* Top Row: Main Heading & "i" Info Icon */}
+                                  <div className="voucher-card-top">
+                                    <div className="voucher-main-heading">{mainHeading}</div>
+                                    <button
+                                      type="button"
+                                      className="voucher-info-btn"
+                                      title="View Details"
+                                      aria-label="View coupon details"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDetailModalItem({ ...couponItem, type: "coupon" });
+                                      }}
+                                    >
+                                      <Info size={14} strokeWidth={2.5} />
+                                    </button>
+                                  </div>
+
+                                  {/* Sub Heading */}
+                                  <div className="voucher-sub-heading" title={subHeading}>
+                                    {subHeading}
+                                  </div>
+
+                                  {/* Bottom Row */}
+                                  <div className="voucher-bottom-row">
+                                    <div className="voucher-code-wrapper">
+                                      <span className="voucher-code-prefix">Code:</span>
+                                      <span className="voucher-code-badge">{code}</span>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCopyPromoCode(code);
+                                        }}
+                                        className="voucher-copy-btn"
+                                        title="Copy Coupon Code"
+                                      >
+                                        {copiedPromoCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                      </button>
+                                    </div>
+
+                                    <div className="voucher-action-btn-wrap">
+                                      {isThisSelected ? (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRemoveCoupon();
+                                          }}
+                                          disabled={isApplyingCoupon}
+                                          className="voucher-remove-btn"
+                                        >
+                                          Remove
+                                        </button>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleApplyCoupon(code);
+                                          }}
+                                          disabled={isApplyingCoupon}
+                                          className="voucher-apply-btn"
+                                        >
+                                          <span>APPLY</span>
+                                          <Sparkles size={11} style={{ marginLeft: "4px" }} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              )}
             </aside>
 
           </div>
@@ -2209,12 +2585,14 @@ export default function HotelPassengerDetailsPage() {
                   GuestName: `${firstName} ${lastName}`,
                   GuestEmail: cleanEmail,
                   GuestPhone: cleanPhone,
+                  CouponCode: checkoutPayload.couponCode || checkoutPayload.appliedCouponCode || "",
                   Price: Number(totalPayable || 0),
                   EndUserIp: "192.168.10.10",
                   PaymentMethod: res.paymentMethod
                 };
                 
                 const bookRes = await bookHotelRoom(bookPayload);
+                clearHotelBookingFlowState();
                 navigate("/ticket/confirmation", { state: bookRes.response || bookRes.Response || bookRes, replace: true });
               } catch (err) {
                 console.error("Hotel Booking failed", err);
@@ -2222,10 +2600,157 @@ export default function HotelPassengerDetailsPage() {
                 setIsModalOpen(false);
               }
             } else {
+              clearHotelBookingFlowState();
               navigate("/ticket/confirmation", { state: checkoutPayload, replace: true });
             }
           }} 
         />
+      )}
+      {/* ── Detail Information Modal when "i" icon is clicked ── */}
+      {detailModalItem && typeof document !== "undefined" && createPortal(
+        <div
+          className="coupon-info-modal-backdrop"
+          role="presentation"
+          onClick={() => setDetailModalItem(null)}
+        >
+          <div
+            className="coupon-info-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="coupon-info-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="coupon-info-header">
+              <span className="coupon-info-header-badge">
+                {detailModalItem.type === "offer" ? "FEATURED OFFER" : "COUPON DETAILS"}
+              </span>
+              <button
+                type="button"
+                className="coupon-info-close-btn"
+                onClick={() => setDetailModalItem(null)}
+                aria-label="Close details"
+              >
+                <X size={18} />
+              </button>
+            </header>
+
+            <div className="coupon-info-body">
+              <div className="coupon-info-main-badge">
+                {detailModalItem.type === "offer"
+                  ? getOfferMainHeading(detailModalItem)
+                  : getCouponMainHeading(detailModalItem)}
+              </div>
+
+              <h3 id="coupon-info-title" className="coupon-info-title">
+                {detailModalItem.title || detailModalItem.Title || detailModalItem.couponCode}
+              </h3>
+
+              {/* Promo code box with copy button */}
+              <div className="coupon-info-code-row">
+                <div className="coupon-info-code-chip">
+                  <span className="code-label">Coupon Code:</span>
+                  <code className="code-val">{detailModalItem.couponCode || "OFFER"}</code>
+                </div>
+                <button
+                  type="button"
+                  className="coupon-info-copy-btn"
+                  onClick={() => {
+                    const codeToCopy = detailModalItem.couponCode || "OFFER";
+                    handleCopyPromoCode(codeToCopy);
+                  }}
+                >
+                  {copiedPromoCode === (detailModalItem.couponCode || "OFFER") ? (
+                    <>
+                      <Check size={14} /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={14} /> Copy Code
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Important details grid */}
+              <div className="coupon-info-details-grid">
+                <div className="coupon-info-detail-item">
+                  <span className="detail-item-label">Discount Benefit</span>
+                  <span className="detail-item-value highlight">
+                    {detailModalItem.discountValue
+                      ? (detailModalItem.isPercentageDiscount
+                        ? `${detailModalItem.discountValue}% OFF`
+                        : `₹${detailModalItem.discountValue} OFF`)
+                      : detailModalItem.value
+                        ? `₹${detailModalItem.value} OFF`
+                        : (detailModalItem.type === "offer"
+                          ? getOfferMainHeading(detailModalItem)
+                          : getCouponMainHeading(detailModalItem))}
+                  </span>
+                </div>
+
+                {(detailModalItem.minBookingAmount || detailModalItem.minAmount) && (
+                  <div className="coupon-info-detail-item">
+                    <span className="detail-item-label">Min Booking Amount</span>
+                    <span className="detail-item-value">
+                      ₹{detailModalItem.minBookingAmount || detailModalItem.minAmount}
+                    </span>
+                  </div>
+                )}
+
+                {(detailModalItem.maxDiscountAmount || detailModalItem.maxDiscount) && (
+                  <div className="coupon-info-detail-item">
+                    <span className="detail-item-label">Max Discount</span>
+                    <span className="detail-item-value">
+                      ₹{detailModalItem.maxDiscountAmount || detailModalItem.maxDiscount}
+                    </span>
+                  </div>
+                )}
+
+                {(detailModalItem.validTill || detailModalItem.expiryDate) && (
+                  <div className="coupon-info-detail-item">
+                    <span className="detail-item-label">Valid Till</span>
+                    <span className="detail-item-value">
+                      {new Date(
+                        detailModalItem.validTill || detailModalItem.expiryDate
+                      ).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Terms and Conditions */}
+              {(detailModalItem.description || detailModalItem.subtitle || detailModalItem.remark) && (
+                <div className="coupon-info-terms-box">
+                  <h4 className="terms-title">Terms & Conditions:</h4>
+                  <ul className="terms-list">
+                    {(detailModalItem.description || detailModalItem.subtitle || detailModalItem.remark)
+                      .split(/[•\n]+/)
+                      .map((term) => term.trim())
+                      .filter(Boolean)
+                      .map((term, tIdx) => (
+                        <li key={tIdx}>{term}</li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <footer className="coupon-info-footer">
+              <button
+                type="button"
+                className="coupon-info-apply-btn"
+                onClick={() => {
+                  handleApplyCoupon(detailModalItem.couponCode);
+                  setDetailModalItem(null);
+                }}
+                disabled={isApplyingCoupon}
+              >
+                {isApplyingCoupon ? "Applying..." : "Apply This Offer"}
+              </button>
+            </footer>
+          </div>
+        </div>,
+        document.body
       )}
     </main>
   );

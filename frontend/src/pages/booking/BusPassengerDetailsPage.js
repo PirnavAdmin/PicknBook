@@ -2128,11 +2128,22 @@ export default function BusPassengerDetailsPage() {
     const parseBoardingTime = (timeStr, baseDateStr) => {
       if (!timeStr) return null;
       try {
-        const baseDate = new Date(baseDateStr || Date.now());
-        if (isNaN(baseDate.getTime())) return null;
+        const rawTime = String(timeStr).trim();
+        const fullDateTime = rawTime.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (fullDateTime) {
+          return `${fullDateTime[1]}T${fullDateTime[2].padStart(2, "0")}:${fullDateTime[3]}:${fullDateTime[4] || "00"}`;
+        }
 
-        const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?/);
+        const match = rawTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?/);
         if (!match) return null;
+
+        const baseDateValue = String(baseDateStr || "");
+        let date = baseDateValue.match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
+        if (!date) {
+          const baseDate = new Date(baseDateStr || Date.now());
+          if (isNaN(baseDate.getTime())) return null;
+          date = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, "0")}-${String(baseDate.getDate()).padStart(2, "0")}`;
+        }
 
         let hours = parseInt(match[1], 10);
         const mins = parseInt(match[2], 10);
@@ -2143,14 +2154,34 @@ export default function BusPassengerDetailsPage() {
           if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
         }
 
-        const newDate = new Date(baseDate);
-        newDate.setHours(hours, mins, 0, 0);
-
-        return newDate.toISOString();
+        return `${date}T${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:00`;
       } catch (e) {
         return null;
       }
     };
+
+    const findJourneyDate = (...values) => values
+      .map((value) => String(value || "").match(/^(\d{4}-\d{2}-\d{2})/)?.[1])
+      .find(Boolean);
+    const departurePointDate = findJourneyDate(
+      flowState.searchContext?.departureDate,
+      flowState.searchContext?.journeyDate,
+      bus?.departureDate,
+      bus?.travelDate,
+      bus?.journeyDate,
+      bus?.departureTimeUtc,
+      bus?.departureTimeIst,
+      bus?.departureTime
+    );
+    const arrivalPointDate = findJourneyDate(
+      bus?.arrivalDate,
+      bus?.arrivalTimeUtc,
+      bus?.arrivalTimeIst,
+      bus?.arrivalTime,
+      departurePointDate
+    ) || departurePointDate;
+    const boardingPointTimeValue = flowState.boardingPoint?.time || flowState.boardingPoint?.Time || flowState.selectedBoardingPoint?.time || flowState.selectedBoardingPoint?.Time;
+    const droppingPointTimeValue = flowState.droppingPoint?.time || flowState.droppingPoint?.Time || flowState.selectedDroppingPoint?.time || flowState.selectedDroppingPoint?.Time;
 
     const payload = {
       ...flowState,
@@ -2177,10 +2208,10 @@ export default function BusPassengerDetailsPage() {
       walletStatus,
       fareSummary,
       blockKey,
-      boardingPointName: String(flowState.boardingPoint?.name || ""),
-      boardingPointTime: parseBoardingTime(flowState.boardingPoint?.time, bus?.departureTimeUtc || bus?.departureTime),
-      droppingPointName: String(flowState.droppingPoint?.name || ""),
-      droppingPointTime: parseBoardingTime(flowState.droppingPoint?.time, bus?.departureTimeUtc || bus?.departureTime),
+      boardingPointName: String(flowState.boardingPoint?.name || flowState.boardingPoint?.Name || ""),
+      boardingPointTime: parseBoardingTime(boardingPointTimeValue, departurePointDate),
+      droppingPointName: String(flowState.droppingPoint?.name || flowState.droppingPoint?.Name || ""),
+      droppingPointTime: parseBoardingTime(droppingPointTimeValue, arrivalPointDate),
       passengerName: String(bookingContact.fullName || ""),
       passengerPhone: String(bookingContact.mobile || bookingContact.phone || ""),
       passengerEmail: String(bookingContact.email || ""),

@@ -67,7 +67,8 @@
 
 .gm-style .gm-style-iw-d {
   padding: 0 !important;
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
   max-height: none !important;
 }
 
@@ -218,4 +219,118 @@
 
 .hotel-map-info-button:active {
   transform: translateY(0);
+}
+
+.hotel-map-location-preview {
+  width: 270px;
+  max-width: 270px;
+  padding: 12px;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #172033;
+  font-family: var(--app-font-family) !important;
+}
+
+.hotel-map-location-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e8edf2;
+}
+
+.hotel-map-location-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hotel-map-location-eyebrow {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.hotel-map-location-heading strong {
+  color: #172033;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.hotel-map-location-heading strong small {
+  margin-left: 3px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.hotel-map-location-count {
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.hotel-map-location-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 208px;
+  overflow-y: auto;
+}
+
+.hotel-map-location-hotel {
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  padding: 7px 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #eef1f4 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  color: #172033 !important;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hotel-map-location-hotel:hover {
+  background: #f8fafc !important;
+}
+
+.hotel-map-location-hotel img,
+.hotel-map-location-image-placeholder {
+  width: 42px;
+  height: 40px;
+  border-radius: 5px;
+  object-fit: cover;
+  background: #e9eef2;
+}
+
+.hotel-map-location-hotel-name {
+  display: -webkit-box;
+  overflow: hidden;
+  color: #263244;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.hotel-map-location-hotel > strong {
+  color: #172033;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hotel-map-location-more {
+  margin: 9px 0 0;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.4;
 }

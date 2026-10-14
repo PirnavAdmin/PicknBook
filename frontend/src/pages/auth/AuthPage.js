@@ -262,7 +262,19 @@ export default function AuthPage() {
       const role = (localStorage.getItem("role") || sessionStorage.getItem("role")) || "";
 
       if (targetReturn && targetReturn.startsWith("/")) {
-        navigate(targetReturn, { state: targetContext || undefined, replace: true });
+        // Strip the previous user's personal details from the context before passing to the next page.
+        // Hotel/bus/room selection, pricing and search context are preserved — only personal data is cleared.
+        let safeContext = targetContext || undefined;
+        if (safeContext && typeof safeContext === "object") {
+          const { guestName, guestEmail, guestPhone, guestAge, guestTitle, guests, ...restContext } = safeContext;
+          safeContext = restContext;
+          // Also strip from nested fareSummary guest data if any
+          if (safeContext.fareSummary) {
+            const { guestName: _a, guestEmail: _b, guestPhone: _c, ...restFare } = safeContext.fareSummary;
+            safeContext = { ...safeContext, fareSummary: restFare };
+          }
+        }
+        navigate(targetReturn, { state: safeContext, replace: true });
       } else if (adminToken || adminRole === "admin") {
         navigate("/admin", { replace: true });
       } else if (role === "Agent" || role === "B2B") {

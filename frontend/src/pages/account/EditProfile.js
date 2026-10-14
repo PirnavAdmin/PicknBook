@@ -91,7 +91,28 @@ const EditProfileCard = () => {
  
         navigate("/dashboard/my-account");
       } catch (err) {
-        setStatusMessage("Failed to update profile.");
+        const fieldNameMap = {
+          firstname: "firstName",
+          lastname: "lastName",
+          email: "email",
+          emailaddress: "email",
+          mobile: "mobile",
+          mobilenumber: "mobile",
+          phonenumber: "mobile",
+        };
+        const validationErrors = Object.entries(err.validationErrors || {}).reduce((mappedErrors, [name, messages]) => {
+          const fieldName = fieldNameMap[name.replace(/[^a-z]/gi, "").toLowerCase()];
+          const message = Array.isArray(messages) ? messages[0] : messages;
+          if (fieldName && message) mappedErrors[fieldName] = String(message);
+          return mappedErrors;
+        }, {});
+
+        if (Object.keys(validationErrors).length > 0) {
+          setErrors((currentErrors) => ({ ...currentErrors, ...validationErrors }));
+          setStatusMessage("");
+        } else {
+          setStatusMessage("Failed to update profile.");
+        }
       }
     } else {
       setStatusMessage("");
@@ -120,16 +141,21 @@ const EditProfileCard = () => {
         <div className="edit-profile-grid">
           {fields.map((field) => (
             <div key={field.id}>
-              <label className="edit-profile-label">{field.label}</label>
+              <label className="edit-profile-label" htmlFor={`edit-profile-${field.id}`}>{field.label}</label>
               <input
+                id={`edit-profile-${field.id}`}
                 type={field.type}
                 name={field.id}
                 value={formData[field.id]}
                 placeholder={field.placeholder}
                 onChange={handleChange}
                 className={`edit-profile-input ${errors[field.id] ? "is-error" : ""}`}
+                aria-invalid={Boolean(errors[field.id])}
+                aria-describedby={errors[field.id] ? `edit-profile-${field.id}-error` : undefined}
               />
-              <div className="edit-profile-error">{errors[field.id] || ""}</div>
+              <div id={`edit-profile-${field.id}-error`} className="edit-profile-error" role={errors[field.id] ? "alert" : undefined}>
+                {errors[field.id] || ""}
+              </div>
             </div>
           ))}
         </div>

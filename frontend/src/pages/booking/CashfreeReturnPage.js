@@ -38,10 +38,21 @@ export default function CashfreeReturnPage() {
         
         if (data.status === "Success") {
           const isFulfillmentPending = data.fulfillmentStatus === "Pending" || data.fulfillmentStatus === "InProgress";
+          const bookingReference = String(data.bookingReference || "").trim();
+          const bookingType = String(data.bookingType || pendingBooking?.bookingType || "bus").toLowerCase();
           
-          if (isFulfillmentPending && attemptsRef.current < 6) {
+          if (
+            (isFulfillmentPending || (bookingType === "bus" && !bookingReference)) &&
+            attemptsRef.current < maxAttempts
+          ) {
             setMessage("Payment received! Confirming your seat with operator...");
-            timeoutId = setTimeout(verify, 2000);
+            timeoutId = setTimeout(verify, 5000);
+            return;
+          }
+
+          if (bookingType === "bus" && !bookingReference) {
+            setStatus("error");
+            setMessage("Payment was received, but the bus booking is not confirmed yet. Please contact support before trying again.");
             return;
           }
 
@@ -54,10 +65,10 @@ export default function CashfreeReturnPage() {
             navigate("/print-ticket", {
               replace: true,
               state: {
-                pnr: data.paymentReference || (pendingBooking && pendingBooking.bookingReference),
+                pnr: bookingReference || "",
                 email: pendingBooking?.email || "",
                 mobile: pendingBooking?.mobile || "",
-                bookingType: data.bookingType?.toLowerCase() || pendingBooking?.bookingType || "bus",
+                bookingType,
                 forceFetch: true,
               },
             });

@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchTicketByContact, normalizeBookingType } from "../../services/ticketService";
+import BusEmailStyleTicket from "../../components/BusEmailStyleTicket";
 import "../../STYLES/PrintTicket.css";
 
 const TICKET_TYPES = { BUS: "bus", FLIGHT: "flight", HOTEL: "hotel" };
@@ -151,31 +152,16 @@ function pickTicketField(ticket, keys, fallback = "") {
   return fallback;
 }
 
+function readPointWithTime(pointObj, fallbackName) {
+  if (!pointObj) return fallbackName || FALLBACK_STOP;
+  if (typeof pointObj === "string") return pointObj;
+  const name = pointObj.name || pointObj.pointName || pointObj.Name || fallbackName || FALLBACK_STOP;
+  const time = pointObj.timeDisplay || pointObj.time || pointObj.TimeDisplay || pointObj.Time;
+  return time && time !== FALLBACK_STOP ? `${name} (${time})` : name;
+}
+
 function readPointName(value) {
-  if (!value) return FALLBACK_STOP;
-
-  if (typeof value === "object") {
-    return String(
-      pickTicketField(
-        value,
-        [
-          "name",
-          "Name",
-          "pointName",
-          "PointName",
-          "boardingPoint",
-          "BoardingPoint",
-          "droppingPoint",
-          "DroppingPoint",
-          "location",
-          "Location",
-        ],
-        FALLBACK_STOP
-      ) || FALLBACK_STOP
-    ).trim();
-  }
-
-  return String(value || FALLBACK_STOP).trim();
+  return readPointWithTime(value);
 }
 
 function getDepartureValue(ticket) {
@@ -279,20 +265,19 @@ function isOvernightJourney(departureTime, arrivalTime) {
 function mapTicketToBus(ticket, fallbackPnr) {
   const departureValue = getDepartureValue(ticket);
   const arrivalValue = getArrivalValue(ticket);
+  const originDeparture = formatJourneyTime(departureValue);
+  const boardingPoint = pickTicketField(ticket, ["boardingPoint", "BoardingPoint", "boarding", "Boarding"], null);
+  const droppingPoint = pickTicketField(ticket, ["droppingPoint", "DroppingPoint", "arrivalPlace", "ArrivalPlace", "dropping", "Dropping"], null);
+  const boardingTime = boardingPoint?.timeDisplay || boardingPoint?.time || formatJourneyTime(ticket?.boardingPointTime);
+  const droppingTime = droppingPoint?.timeDisplay || droppingPoint?.time || formatJourneyTime(ticket?.droppingPointTime);
   const passengers = normalizePassengers(ticket).map((p) => ({
     name: p.name,
     age: p.detail || "--",
     seat: p.seat || "--",
   }));
 
-  // ✅ FIX: boardingPoint and droppingPoint come as objects from backend
-  const boardingStop = readPointName(
-    pickTicketField(ticket, ["boardingPoint", "BoardingPoint", "boarding", "Boarding"], "")
-  );
-
-  const droppingStop = readPointName(
-    pickTicketField(ticket, ["droppingPoint", "DroppingPoint", "arrivalPlace", "ArrivalPlace", "dropping", "Dropping"], "")
-  );
+  const boardingStop = readPointWithTime(boardingPoint, ticket?.boardingPointName);
+  const droppingStop = readPointWithTime(droppingPoint, ticket?.droppingPointName);
 
   const operator = String(
     pickTicketField(
@@ -334,13 +319,19 @@ function mapTicketToBus(ticket, fallbackPnr) {
     },
     date: formatJourneyDate(departureValue),
     arrivalDate: formatJourneyDate(arrivalValue),
-    departure: formatJourneyTime(departureValue),
+    departure: boardingTime !== "--" ? boardingTime : originDeparture,
+    boardingTime,
+    originDeparture,
+    droppingTime,
     arrival: formatJourneyTime(arrivalValue),
     duration: String(ticket?.duration || computeDuration(departureValue, arrivalValue) || "--").trim(),
     journeyLabel: isOvernightJourney(departureValue, arrivalValue) ? "Overnight" : "Same Day",
     class: String(ticket?.busType || ticket?.className || ticket?.class || "--").trim(),
     passengers,
-    status: String(ticket?.status || "Booked").toUpperCase(),
+    status: ticket?.isCancelled || String(ticket?.status || ticket?.Status || "Booked").toUpperCase() === "CANCELLED"
+      ? "CANCELLED"
+      : String(ticket?.status || ticket?.Status || "Booked").toUpperCase(),
+    refundAmount: Number(ticket?.refundAmount ?? ticket?.RefundAmount ?? 0) || 0,
     fare: formatCurrency(totalFare),
   };
 }
@@ -663,9 +654,13 @@ const FlipCard = ({ frontElement, backElement }) => {
 
 // ============ BUS TICKET ============
 
-const BusTicket = ({ data, id, rawTicket }) => (
+const BusTicket = ({ data, id, rawTicket }) => {
+  const isCancelled = data.status === "CANCELLED";
+  const isActiveBooking = ["BOOKED", "CONFIRMED"].includes(data.status);
+
+  return (
   <article id={id} className="pb-ticket-card">
-    <header className="pb-ticket-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <header className="pb-ticket-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", ...(isCancelled ? { background: "linear-gradient(135deg, #475569 0%, #334155 100%)" } : {}) }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         {(() => {
           const userObj = (() => {
@@ -685,8 +680,17 @@ const BusTicket = ({ data, id, rawTicket }) => (
           <h2>{data.operator} - {data.busNo}</h2>
         </div>
       </div>
-      <strong>{data.status}</strong>
+      <strong style={isCancelled ? { background: "#dc2626", color: "#fff", borderRadius: 999, padding: "6px 12px" } : undefined}>
+        {isCancelled ? "CANCELLED" : data.status}
+      </strong>
     </header>
+
+    {isCancelled && (
+      <div role="status" style={{ margin: "16px 20px 0", padding: "16px 18px", border: "1px solid #fca5a5", borderRadius: 10, background: "#fef2f2", color: "#991b1b" }}>
+        <strong style={{ display: "block", fontSize: 16 }}>This ticket has been cancelled. Seat released. Not valid for travel.</strong>
+        <span style={{ display: "block", marginTop: 6 }}>Refund Amount: {formatCurrency(data.refundAmount || 0)}</span>
+      </div>
+    )}
 
     <div className="pb-ticket-body">
       <section className="pb-ticket-main">
@@ -710,6 +714,12 @@ const BusTicket = ({ data, id, rawTicket }) => (
           <div>
             <span>Departure</span>
             <strong>{data.departure}</strong>
+            {data.originDeparture && data.originDeparture !== "--" && (
+              <small style={{ display: "block" }}>Bus Start Time: {data.originDeparture}</small>
+            )}
+            {isActiveBooking && (
+              <small style={{ display: "block" }}>Reporting Time: 15 minutes before your boarding time</small>
+            )}
           </div>
           <div>
             <span>Date</span>
@@ -788,7 +798,8 @@ const BusTicket = ({ data, id, rawTicket }) => (
       </aside>
     </div>
   </article>
-);
+  );
+};
 
 const SimpleTravelTicket = ({
   data,
@@ -1092,16 +1103,16 @@ const GenericBackSide = ({ id, title, ticket }) => {
 
 const downloadTicketAsImage = async (frontId, backId, filename) => {
   const frontElement = document.getElementById(frontId);
-  const backElement = document.getElementById(backId);
-  if (!frontElement || !backElement) { alert('Ticket not found!'); return; }
+  const backElement = backId ? document.getElementById(backId) : null;
+  if (!frontElement || (backId && !backElement)) { alert('Ticket not found!'); return; }
   const script = document.createElement('script');
   script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
   script.onload = async () => {
     try {
       const tempContainer = document.createElement('div');
-      tempContainer.style.cssText = 'position:fixed;left:-99999px;top:0;width:960px;padding:12px;background:#ffffff;display:grid;gap:18px;';
+      tempContainer.style.cssText = `position:fixed;left:-99999px;top:0;width:${backElement ? 960 : 760}px;padding:12px;background:#ffffff;display:grid;gap:18px;`;
       tempContainer.appendChild(frontElement.cloneNode(true));
-      tempContainer.appendChild(backElement.cloneNode(true));
+      if (backElement) tempContainer.appendChild(backElement.cloneNode(true));
       document.body.appendChild(tempContainer);
       const canvas = await window.html2canvas(tempContainer, { backgroundColor: '#ffffff', scale: 2, useCORS: true, allowTaint: true, logging: false });
       document.body.removeChild(tempContainer);
@@ -1119,6 +1130,31 @@ const downloadTicketAsImage = async (frontId, backId, filename) => {
   script.onerror = () => alert('Download library loading failed.');
   if (!window.html2canvas) document.head.appendChild(script);
   else script.onload();
+};
+
+const printTicketElement = (ticketId, title) => {
+  const ticketElement = document.getElementById(ticketId);
+  if (!ticketElement) return;
+
+  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+    .map((node) => node.outerHTML)
+    .join("");
+  const printWindow = window.open("", "_blank", "width=900,height=900");
+  if (!printWindow) {
+    alert("Please allow pop-ups to print your ticket.");
+    return;
+  }
+
+  printWindow.document.write(`<!DOCTYPE html><html><head><title>${title}</title>${styles}
+    <style>@page { margin: 0.35in; } body { margin: 0; padding: 12px; background: #fff !important; }
+    .pb-email-ticket { margin: 0 auto; } * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }</style>
+    </head><body>${ticketElement.outerHTML}</body></html>`);
+  printWindow.document.close();
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
 };
 
 // ============ TICKET SECTION WRAPPER ============
@@ -1227,6 +1263,7 @@ const TicketPreviewPage = () => {
       mobile: requestedMobile,
       email: requestedEmail,
       bookingType: requestedType,
+      bookingReference: requestedPnr,
     })
       .then((fetchedTickets) => {
         if (!isCurrent) return;
@@ -1334,7 +1371,7 @@ const TicketPreviewPage = () => {
         })}
       </div>
       <small className="pb-select-note">
-        Active bookings only are listed here. Completed or cancelled trips are not available for print.
+        Select a ticket below to view, print, or download confirmation. Cancelled tickets include cancellation receipt and refund status.
       </small>
     </div>
   );
@@ -1399,6 +1436,32 @@ const TicketPreviewPage = () => {
 
             if (activeTicketType === TICKET_TYPES.BUS) {
               const busData = mapTicketToBus(rawTicket, rawTicket?.bookingReference);
+              if (!busData.status.includes("CANCEL")) {
+                return (
+                  <section className="pb-ticket-section pb-email-ticket-section" key={frontId}>
+                    <div className="no-print pb-ticket-toolbar">
+                      <div className="pb-ticket-title">
+                        <span className="pb-ticket-icon">B</span>
+                        <div>
+                          <strong>Bus Ticket</strong>
+                          <small>{`${busData.operator} - ${busData.busNo} - PNR: ${busData.pnr}`}</small>
+                        </div>
+                      </div>
+                      <div className="pb-ticket-actions">
+                        <button type="button" onClick={() => printTicketElement(frontId, "Bus Ticket")}>Print</button>
+                        <button
+                          type="button"
+                          className="pb-secondary-action"
+                          onClick={() => downloadTicketAsImage(frontId, null, `bus-ticket-${index + 1}`)}
+                        >
+                          Download
+                        </button>
+                      </div>
+                    </div>
+                    <BusEmailStyleTicket ticket={rawTicket} data={busData} id={frontId} />
+                  </section>
+                );
+              }
               return (
                 <TicketSection
                   key={frontId}

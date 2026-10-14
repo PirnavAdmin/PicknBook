@@ -1,0 +1,399 @@
+.pb-email-ticket {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+}
+
+.pb-email-ticket-header,
+.pb-email-ticket-operator,
+.pb-email-ticket-details,
+.pb-email-ticket-policies {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.pb-email-ticket-header {
+  min-height: 104px;
+  padding: 18px 22px;
+  align-items: center;
+  gap: 16px;
+  border-top: 4px solid #dc2626;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pb-email-ticket-logo {
+  display: block;
+  width: auto;
+  height: 34px;
+  max-width: 140px;
+  object-fit: contain;
+}
+
+.pb-email-ticket-heading {
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-email-ticket-booked {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.pb-email-ticket-booked strong {
+  color: #1e293b;
+}
+
+.pb-email-ticket-reference {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  text-align: right;
+}
+
+.pb-email-ticket-reference div {
+  color: #64748b;
+}
+
+.pb-email-ticket-reference div:first-child strong {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.pb-email-ticket-reference div strong {
+  color: #1e293b;
+}
+
+.pb-email-ticket-reference > span {
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pb-email-ticket-operator {
+  padding: 16px 22px;
+  gap: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pb-email-ticket-operator > div {
+  display: grid;
+  gap: 4px;
+}
+
+.pb-email-ticket-operator > div > strong {
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.pb-email-ticket-operator span {
+  color: #475569;
+}
+
+.pb-email-ticket-operator small {
+  color: #64748b;
+}
+
+.pb-email-ticket-operator small b,
+.pb-email-ticket-service strong {
+  color: #0f172a;
+}
+
+.pb-email-ticket-service {
+  justify-items: end;
+  align-content: start;
+  text-align: right;
+}
+
+.pb-email-ticket-service strong {
+  font-size: 13px;
+}
+
+.pb-email-ticket-route {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px minmax(0, 1fr);
+  gap: 12px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pb-email-ticket-route-city {
+  min-width: 0;
+}
+
+.pb-email-ticket-route-city label,
+.pb-email-ticket-route-city strong,
+.pb-email-ticket-route-city span,
+.pb-email-ticket-route-city small {
+  display: block;
+}
+
+.pb-email-ticket-route-city label {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-email-ticket-route-city > strong {
+  margin-top: 3px;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.pb-email-ticket-route-city > span {
+  margin-top: 3px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.pb-email-ticket-route-city small {
+  margin-top: 9px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.pb-email-ticket-route-city small b {
+  color: #334155;
+}
+
+.pb-email-ticket-arrow {
+  align-self: center;
+  color: #dc2626;
+  font-size: 25px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.pb-email-ticket-reporting {
+  grid-column: 1 / -1;
+  padding: 10px 14px;
+  border: 1px solid #fef3c7;
+  border-radius: 6px;
+  background: #fffbeb;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.pb-email-ticket-reporting strong {
+  color: #78350f;
+}
+
+.pb-email-ticket-details {
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pb-email-ticket-details > div {
+  min-width: 0;
+  padding: 17px 20px;
+}
+
+.pb-email-ticket-details > div + div {
+  border-left: 1px solid #e2e8f0;
+}
+
+.pb-email-ticket h3 {
+  margin: 0 0 9px;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.pb-email-ticket table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #334155;
+  font-size: 11px;
+  text-align: left;
+}
+
+.pb-email-ticket th {
+  padding: 6px 4px;
+  border-bottom: 1px solid #cbd5e1;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.pb-email-ticket td {
+  padding: 7px 4px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pb-email-ticket th:last-child,
+.pb-email-ticket td:last-child {
+  text-align: right;
+}
+
+.pb-email-ticket-details > div:first-child td:first-child {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.pb-email-ticket-payment td:first-child {
+  color: #64748b;
+}
+
+.pb-email-ticket-payment td:last-child {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.pb-email-ticket-payment .pb-email-ticket-discount td {
+  color: #16a34a;
+}
+
+.pb-email-ticket-payment .pb-email-ticket-paid td {
+  padding-top: 10px;
+  border-top: 1px solid #cbd5e1;
+  border-bottom: 0;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pb-email-ticket-payment .pb-email-ticket-paid td:last-child {
+  color: #dc2626;
+  font-size: 16px;
+}
+
+.pb-email-ticket-important {
+  padding: 15px 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pb-email-ticket ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.pb-email-ticket a {
+  color: #0284c7;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pb-email-ticket-policies {
+  background: #f8fafc;
+}
+
+.pb-email-ticket-policies > div {
+  padding: 17px 20px;
+}
+
+.pb-email-ticket-policies > div + div {
+  border-left: 1px solid #e2e8f0;
+}
+
+.pb-email-ticket-policies ul {
+  padding-left: 15px;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.pb-email-ticket-policies table {
+  font-size: 10px;
+}
+
+.pb-email-ticket-policies th,
+.pb-email-ticket-policies td {
+  padding: 5px 2px;
+}
+
+.pb-email-ticket-policies th:nth-child(2),
+.pb-email-ticket-policies td:nth-child(2) {
+  text-align: center;
+}
+
+.pb-email-ticket-policies .is-good-refund {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.pb-email-ticket-policies .is-low-refund {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.pb-email-ticket-no-policy {
+  margin: 0;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.pb-email-ticket-policies > div > small {
+  display: block;
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 9px;
+}
+
+@media (max-width: 640px) {
+  .pb-email-ticket-header,
+  .pb-email-ticket-operator,
+  .pb-email-ticket-details,
+  .pb-email-ticket-policies {
+    grid-template-columns: 1fr;
+  }
+
+  .pb-email-ticket-reference,
+  .pb-email-ticket-service {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .pb-email-ticket-details > div + div,
+  .pb-email-ticket-policies > div + div {
+    border-top: 1px solid #e2e8f0;
+    border-left: 0;
+  }
+
+  .pb-email-ticket-route {
+    grid-template-columns: 1fr;
+  }
+
+  .pb-email-ticket-arrow {
+    transform: rotate(90deg);
+  }
+
+  .pb-email-ticket-reporting {
+    grid-column: auto;
+  }
+}
+
+@media print {
+  .pb-email-ticket {
+    width: 100%;
+    max-width: 760px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .pb-email-ticket,
+  .pb-email-ticket * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

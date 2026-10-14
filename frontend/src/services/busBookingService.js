@@ -600,6 +600,70 @@ function normalizeBusPassenger(passenger, index = 0) {
 function normalizeBusBookingRecord(record) {
   if (!record || typeof record !== "object") return null;
   const payload = record?.booking ?? record?.data ?? record?.result ?? record;
+  const sources = [
+    payload,
+    record,
+    payload?.bus,
+    record?.bus,
+    payload?.busDetails,
+    record?.busDetails,
+    payload?.trip,
+    record?.trip,
+    payload?.journey,
+    record?.journey,
+    payload?.busBooking,
+    record?.busBooking,
+    payload?.bookingDetails,
+    record?.bookingDetails,
+    payload?.details,
+    record?.details,
+  ].filter(Boolean);
+  const getFieldValue = (keys, fallback = null) => {
+    for (const source of sources) {
+      for (const key of keys) {
+        const value = source[key];
+        if (value !== undefined && value !== null && value !== "") return value;
+      }
+    }
+    return fallback;
+  };
+  const route = getFieldValue(["segment", "Segment", "route", "Route", "routeName", "RouteName"], "");
+  const routeParts = String(route).trim().split(/\s*(?:[-–]|\s+to\s+)\s*/i);
+  const routeFrom = routeParts.length === 2 ? routeParts[0].trim() : "";
+  const routeTo = routeParts.length === 2 ? routeParts[1].trim() : "";
+  const fromCity = String(
+    getFieldValue(
+      ["fromCity", "FromCity", "source", "Source", "from", "From", "origin", "Origin", "sourceCity", "SourceCity"],
+      routeFrom
+    ) || ""
+  ).trim();
+  const toCity = String(
+    getFieldValue(
+      [
+        "toCity",
+        "ToCity",
+        "toCityName",
+        "ToCityName",
+        "destination",
+        "Destination",
+        "destinationCity",
+        "DestinationCity",
+        "destinationCityName",
+        "DestinationCityName",
+        "destinationName",
+        "DestinationName",
+        "to",
+        "To",
+        "arrivalCity",
+        "ArrivalCity",
+        "arrivalCityName",
+        "ArrivalCityName",
+        "endCity",
+        "EndCity",
+      ],
+      routeTo
+    ) || ""
+  ).trim();
   const passengersRaw = pickFirst(payload, ["passengers", "Passengers"], pickFirst(record, ["passengers", "Passengers"], []));
   const passengers = Array.isArray(passengersRaw)
     ? passengersRaw.map((passenger, index) => normalizeBusPassenger(passenger, index))
@@ -622,8 +686,8 @@ function normalizeBusBookingRecord(record) {
     passengerEmail: String(
       pickFirst(record, ["passengerEmail", "PassengerEmail"], "") || ""
     ),
-    fromCity: String(pickFirst(record, ["fromCity", "FromCity"], "") || ""),
-    toCity: String(pickFirst(record, ["toCity", "ToCity"], "") || ""),
+    fromCity,
+    toCity,
     providerName: String(
       pickFirst(record, ["providerName", "ProviderName", "operatorName", "OperatorName"], "") ||
       ""

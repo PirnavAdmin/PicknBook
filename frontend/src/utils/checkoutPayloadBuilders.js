@@ -1,6 +1,30 @@
 import { mapPassengersForApi } from "../services/flightBookingService.js";
 import { flightIdentity, supplierBoolean, passengerFare } from "./flightContract.js";
 
+function formatBusPointTime(value, baseDateValue) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+
+  const datedTime = raw.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (datedTime) {
+    return `${datedTime[1]}T${datedTime[2].padStart(2, "0")}:${datedTime[3]}:${datedTime[4] || "00"}`;
+  }
+
+  const timeOnly = raw.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  const baseDateValues = Array.isArray(baseDateValue) ? baseDateValue : [baseDateValue];
+  const baseDate = baseDateValues
+    .map((candidate) => String(candidate || "").match(/^(\d{4}-\d{2}-\d{2})/)?.[1])
+    .find(Boolean);
+  if (!timeOnly || !baseDate) return null;
+
+  let hours = Number(timeOnly[1]);
+  const modifier = timeOnly[3]?.toUpperCase();
+  if (modifier === "PM" && hours < 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
+
+  return `${baseDate}T${String(hours).padStart(2, "0")}:${timeOnly[2]}:00`;
+}
+
 // Extracted payload builders
 function buildFlightBookingPayload(flowState) {
   const flight = flowState.flight || {};
@@ -44,6 +68,25 @@ export function prepareFlightBookingPayload(flowState) {
 function buildBookingPayload(flowState) {
   const firstPassenger = flowState.passengers?.[0] || {};
   const mobile = String(flowState.contact?.mobile || "").trim();
+  const departureDate = [
+    flowState.searchContext?.departureDate,
+    flowState.searchContext?.journeyDate,
+    flowState.bus?.departureDate,
+    flowState.bus?.travelDate,
+    flowState.bus?.journeyDate,
+    flowState.bus?.departureTimeUtc,
+    flowState.bus?.departureTimeIst,
+    flowState.bus?.departureTime,
+  ];
+  const arrivalDate = [
+    flowState.bus?.arrivalDate,
+    flowState.bus?.arrivalTimeUtc,
+    flowState.bus?.arrivalTimeIst,
+    flowState.bus?.arrivalTime,
+    ...departureDate,
+  ];
+  const boardingPointTime = flowState.boardingPointTime || flowState.selectedBoardingPoint?.time || flowState.selectedBoardingPoint?.Time || flowState.boardingPoint?.time || flowState.boardingPoint?.Time;
+  const droppingPointTime = flowState.droppingPointTime || flowState.selectedDroppingPoint?.time || flowState.selectedDroppingPoint?.Time || flowState.droppingPoint?.time || flowState.droppingPoint?.Time;
 
   const selectedSeats = Array.isArray(flowState.selectedSeats)
     ? flowState.selectedSeats
@@ -194,11 +237,11 @@ function buildBookingPayload(flowState) {
       0
     ),
     BoardingPointId: flowState.boardingPoint?.id ? String(flowState.boardingPoint.id) : null,
-    boardingPointName: String(flowState.boardingPoint?.name || flowState.boardingPointName || ""),
-    boardingPointTime: null,
+    boardingPointName: String(flowState.boardingPoint?.name || flowState.boardingPoint?.Name || flowState.boardingPointName || ""),
+    boardingPointTime: formatBusPointTime(boardingPointTime, departureDate),
     DroppingPointId: flowState.droppingPoint?.id ? String(flowState.droppingPoint.id) : null,
-    droppingPointName: String(flowState.droppingPoint?.name || flowState.droppingPointName || ""),
-    droppingPointTime: null,
+    droppingPointName: String(flowState.droppingPoint?.name || flowState.droppingPoint?.Name || flowState.droppingPointName || ""),
+    droppingPointTime: formatBusPointTime(droppingPointTime, arrivalDate),
   };
 }
 

@@ -141,12 +141,19 @@
 .edit-profile-input.is-error {
   border-color: #ff0000;
 }
+
+.edit-profile-input.is-error:hover,
+.edit-profile-input.is-error:focus {
+  border-color: #cf3f42 !important;
+  box-shadow: 0 0 0 3px rgba(207, 63, 66, 0.12) !important;
+}
  
 .edit-profile-error {
   color: #cf3f42;
   font-size: 0.648rem;
   margin-top: 3px;
-  height: 16px;
+  min-height: 16px;
+  line-height: 1.4;
 }
  
 .edit-profile-submit-row {

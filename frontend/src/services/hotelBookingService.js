@@ -215,6 +215,7 @@ export async function bookHotelRoom(payload) {
     GuestName: payload.GuestName || payload.guestName || "",
     GuestEmail: payload.GuestEmail || payload.guestEmail || "",
     GuestPhone: String(payload.GuestPhone || payload.guestPhone || ""),
+    CouponCode: String(payload.CouponCode || payload.couponCode || "").trim().toUpperCase(),
     Price: Number(payload.Price || payload.price || 0),
     HotelRoomsDetails: Array.isArray(payload.HotelRoomsDetails || payload.hotelRoomsDetails) ? (payload.HotelRoomsDetails || payload.hotelRoomsDetails) : [],
     PaymentMethod: payload.PaymentMethod || payload.paymentMethod || ""
@@ -266,34 +267,246 @@ export async function cancelHotelBooking(booking, reason = "User requested cance
   }
 }
 
+// ==========================================
+// HOTEL COUPONS & OFFERS ENDPOINTS
+// ==========================================
+
+function normalizeHotelCouponRecord(record) {
+  const code = String(record?.couponCode || record?.CouponCode || "").trim().toUpperCase();
+  const rawType = String(record?.couponType || record?.CouponType || record?.discountType || "Percentage");
+  const isPercent = rawType.toLowerCase().includes("percent");
+  const value = Number(record?.value ?? record?.Value ?? record?.discountValue ?? 0);
+  const minAmount = Number(record?.minBookingAmount ?? record?.MinBookingAmount ?? 0);
+  const maxDiscount = Number(record?.maxDiscountAmount ?? record?.MaxDiscountAmount ?? 0);
+  const expiry = record?.expiryDate || record?.ExpiryDate || record?.endDateUtc || record?.EndDateUtc;
+
+  return {
+    id: record?.id ?? record?.Id ?? record?.offerId ?? code,
+    couponCode: code,
+    title: record?.title || record?.Title || (code ? `Hotel Coupon: ${code}` : "Hotel Promotion"),
+    description: record?.description || record?.Description || record?.remark || record?.Remark || "",
+    couponType: rawType,
+    discountType: rawType,
+    value,
+    discountValue: value,
+    isPercentageDiscount: isPercent,
+    minBookingAmount: minAmount,
+    maxDiscountAmount: maxDiscount,
+    startDate: record?.startDate || record?.StartDate,
+    expiryDate: expiry,
+    validTill: expiry,
+    serviceType: "hotel",
+    bookingType: "hotel",
+    category: record?.promotionCategory || record?.category || "Coupon",
+    type: "coupon",
+    isActive: String(record?.status || "Active").toLowerCase() !== "inactive",
+    isFirstTimeUserOnly: Boolean(record?.isFirstTimeUserOnly ?? record?.IsFirstTimeUserOnly),
+    isExclusive: Boolean(record?.isExclusive ?? record?.IsExclusive),
+    conditions: Array.isArray(record?.conditions) ? record.conditions : (Array.isArray(record?.Conditions) ? record.Conditions : []),
+    imageUrl: record?.imageUrl || null,
+    remark: record?.remark || ""
+  };
+}
+
+export async function listAvailableHotelCoupons() {
+  const response = await requestHotelJson(
+    "/api/Coupons?serviceType=hotel&category=Coupon",
+    { method: "GET" },
+    "Unable to fetch hotel coupons."
+  );
+  const rawList = Array.isArray(response) ? response : (Array.isArray(response?.data) ? response.data : []);
+  return rawList
+    .map(normalizeHotelCouponRecord)
+    .filter((c) => c.couponCode && c.isActive);
+}
+
+export async function getFeaturedHotelOffers() {
+  const response = await requestHotelJson(
+    "/api/Coupons?serviceType=hotel&category=Offer",
+    { method: "GET" },
+    "Unable to fetch hotel offers."
+  );
+  const rawList = Array.isArray(response) ? response : (Array.isArray(response?.offers) ? response.offers : (Array.isArray(response?.data) ? response.data : []));
+  return rawList
+    .map((item) => {
+      const normalized = normalizeHotelCouponRecord(item);
+      return {
+        ...normalized,
+        type: "offer",
+        subtitle: item.subtitle || normalized.title
+      };
+    })
+    .filter((o) => o.isActive);
+}
+
 export async function getHotelActiveCoupons() {
-  try {
-    const unifiedData = await fetchCouponsAndOffers({ type: "hotel" }).catch(() => null);
-    if (Array.isArray(unifiedData) && unifiedData.length > 0) return unifiedData;
-  } catch (e) { }
-  try {
-    const response = await requestHotelJson(
-      "/api/Hotels/coupons/active",
-      { method: "GET" },
-      "Unable to fetch active hotel coupons."
-    );
-    return response;
-  } catch (err) {
-    console.error("Backend fetch active coupons failed:", err);
-    throw err;
+  return listAvailableHotelCoupons();
+}
+
+/**
+ * Validates hotel offer/coupon conditions locally (min amount, date range, day-of-week, etc.)
+ */
+export function validateOfferConditions(offer, { totalAmount = 0, checkInDate = "" } = {}) {
+  if (!offer) {
+    return { isValid: false, message: "Offer or coupon not found." };
   }
+
+  // 1. Active status
+  if (offer.isActive === false || String(offer.status || "Active").toLowerCase() === "inactive") {
+    return { isValid: false, message: "This offer is currently inactive." };
+  }
+
+  // 2. Minimum booking amount
+  const minAmount = Number(offer.minBookingAmount || 0);
+  if (minAmount > 0 && totalAmount < minAmount) {
+    return {
+      isValid: false,
+      message: `Minimum booking amount of ₹${new Intl.NumberFormat("en-IN").format(minAmount)} is required to apply this offer (current total: ₹${new Intl.NumberFormat("en-IN").format(Math.round(totalAmount))}).`
+    };
+  }
+
+  // 3. Date validity (StartDate & ExpiryDate)
+  const todayStr = new Date().toISOString().split("T")[0];
+  if (offer.startDate) {
+    const startStr = String(offer.startDate).split("T")[0];
+    if (todayStr < startStr) {
+      return { isValid: false, message: "This offer is not yet active." };
+    }
+  }
+  if (offer.expiryDate) {
+    const expiryStr = String(offer.expiryDate).split("T")[0];
+    if (todayStr > expiryStr) {
+      return { isValid: false, message: "This offer has expired." };
+    }
+  }
+
+  // 4. Check-in Day of Week & Weekend conditions
+  const titleOrCode = `${offer.couponCode || ""} ${offer.title || ""} ${offer.description || ""}`.toUpperCase();
+  const isWeekendOffer = titleOrCode.includes("WEEKEND");
+
+  if (isWeekendOffer || (Array.isArray(offer.conditions) && offer.conditions.length > 0)) {
+    let parsedCin = null;
+    if (checkInDate) {
+      parsedCin = new Date(checkInDate);
+      // Support DD-MM-YYYY format
+      if (Number.isNaN(parsedCin.getTime())) {
+        const parts = String(checkInDate).match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+        if (parts) {
+          parsedCin = new Date(`${parts[3]}-${parts[2]}-${parts[1]}`);
+        }
+      }
+    }
+
+    if (!parsedCin || Number.isNaN(parsedCin.getTime())) {
+      if (isWeekendOffer) {
+        return {
+          isValid: false,
+          message: "Check-in date is required to verify weekend eligibility for this offer."
+        };
+      }
+    } else {
+      const dayIndex = parsedCin.getDay(); // 0 = Sun, 5 = Fri, 6 = Sat
+      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const currentDay = dayNames[dayIndex];
+
+      if (isWeekendOffer) {
+        const isWeekend = dayIndex === 0 || dayIndex === 5 || dayIndex === 6; // Fri, Sat, Sun
+        if (!isWeekend) {
+          return {
+            isValid: false,
+            message: `This weekend offer is only valid for check-in on Friday, Saturday, or Sunday (your check-in is on ${currentDay}).`
+          };
+        }
+      }
+
+      // Check explicit conditions list if present
+      if (Array.isArray(offer.conditions) && offer.conditions.length > 0) {
+        for (const cond of offer.conditions) {
+          const type = String(cond.conditionType || cond.ConditionType || "").toLowerCase();
+          if (type === "dayofweek") {
+            const rawVal = String(cond.value1 || cond.Value1 || "").trim();
+            if (rawVal && rawVal.toUpperCase() !== "ALL") {
+              const allowedDays = rawVal.split(/[,;]/).map((d) => d.trim().toLowerCase());
+              if (!allowedDays.includes(currentDay.toLowerCase())) {
+                return {
+                  isValid: false,
+                  message: `This offer is not valid for check-in on ${currentDay}. Valid days: ${rawVal}.`
+                };
+              }
+            }
+          }
+
+          if (type === "traveldate" || type === "checkindate") {
+            const startDate = cond.value1 || cond.Value1;
+            const endDate = cond.value2 || cond.Value2;
+            const cinIso = parsedCin.toISOString().split("T")[0];
+            if (startDate && cinIso < String(startDate).split("T")[0]) {
+              return {
+                isValid: false,
+                message: `This offer is only valid for check-in on or after ${startDate}.`
+              };
+            }
+            if (endDate && cinIso > String(endDate).split("T")[0]) {
+              return {
+                isValid: false,
+                message: `This offer is only valid for check-in on or before ${endDate}.`
+              };
+            }
+          }
+
+          if (type === "minbookingamount" || type === "minamount") {
+            const condMin = Number(cond.value1 || cond.Value1 || 0);
+            if (condMin > 0 && totalAmount < condMin) {
+              return {
+                isValid: false,
+                message: `Minimum booking amount of ₹${new Intl.NumberFormat("en-IN").format(condMin)} is required for this offer.`
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calculate discount amount
+  let discount = 0;
+  if (offer.isPercentageDiscount || String(offer.couponType || offer.discountType || "").toLowerCase().includes("percent")) {
+    discount = (totalAmount * Number(offer.discountValue || offer.value || 0)) / 100;
+    const maxDiscount = Number(offer.maxDiscountAmount || 0);
+    if (maxDiscount > 0 && discount > maxDiscount) {
+      discount = maxDiscount;
+    }
+  } else {
+    discount = Number(offer.discountValue || offer.value || 0);
+  }
+
+  discount = Math.min(discount, totalAmount);
+  discount = Math.round(discount * 100) / 100;
+
+  return {
+    isValid: true,
+    discountAmount: discount,
+    message: "Offer applied successfully!"
+  };
 }
 
 export async function validateHotelCoupon(payload) {
+  const formattedPayload = {
+    CouponCode: String(payload.CouponCode || payload.couponCode || "").trim().toUpperCase(),
+    TotalAmount: Number(payload.TotalAmount || payload.totalAmount || 0),
+    CheckInDate: payload.CheckInDate || payload.checkInDate || null,
+  };
+
   try {
     const response = await requestHotelJson(
       "/api/Hotels/coupons/validate",
-      { method: "POST", body: JSON.stringify(payload) },
+      { method: "POST", body: JSON.stringify(formattedPayload) },
       "Unable to validate hotel coupon."
     );
     return response;
   } catch (err) {
-    console.error("Backend validate coupon failed:", err);
+    console.error("Backend validate coupon failed on /api/Hotels/coupons/validate:", err);
     throw err;
   }
 }
+

@@ -237,9 +237,12 @@ export function clearUserAuthSession() {
       "challengeId",
       "bus_booking_flow_state_v1",
       "flight_booking_flow_state_v1",
+      "hotel_booking_flow_state_v1",
       "latest_ticket_confirmation_v1",
       "ticket_confirmation_history_v1",
       "selectedOffer",
+      "pending_auth_return_to",
+      "pending_auth_booking_context",
     ];
 
     localKeys.forEach((key) => {

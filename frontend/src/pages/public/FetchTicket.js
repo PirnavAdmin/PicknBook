@@ -98,11 +98,16 @@ const FetchTicket = () => {
       const selectedBookingType = normalizeBookingType(bookingType, "hotel");
       const tickets = (Array.isArray(resolvedTickets) ? resolvedTickets : [resolvedTickets])
         .filter(Boolean)
-        .map((ticket) => ({
-          ...ticket,
-          bookingType: normalizeBookingType(ticket?.bookingType || ticket?.ticketType, selectedBookingType),
-          ticketType: normalizeBookingType(ticket?.ticketType || ticket?.bookingType, selectedBookingType),
-        }));
+        .map((ticket) => {
+          const status = String(ticket?.status ?? ticket?.Status ?? "Booked").trim();
+          return {
+            ...ticket,
+            status,
+            isCancelled: Boolean(ticket?.isCancelled) || status.toUpperCase() === "CANCELLED",
+            bookingType: normalizeBookingType(ticket?.bookingType || ticket?.ticketType, selectedBookingType),
+            ticketType: normalizeBookingType(ticket?.ticketType || ticket?.bookingType, selectedBookingType),
+          };
+        });
 
       if (tickets.length === 0) {
         setError("No booking found for the provided details.");
