@@ -3056,7 +3056,7 @@ namespace PickNBook.Api.Controllers
                         x.BusBooking.DepartureTime,
                         x.CancellationReason);
 
-                    return MapBusReservation(x, x.BusBooking!, passengerRows, lifecycle, payment, fallbackPaymentId, refundCalculator);
+                    return MapBusReservation(x, x.BusBooking!, passengerRows, lifecycle, payment, fallbackPaymentId, refundCalculator, srdvBusService);
                 });
 
             return Ok(response);
@@ -3139,7 +3139,7 @@ namespace PickNBook.Api.Controllers
                 .OrderBy(x => x.Id)
                 .ToListAsync();
 
-            return Ok(MapBusReservation(booking, booking.BusBooking, passengers, lifecycle, payment, fallbackPaymentId, refundCalculator));
+            return Ok(MapBusReservation(booking, booking.BusBooking, passengers, lifecycle, payment, fallbackPaymentId, refundCalculator, srdvBusService));
         }
 
         [HttpGet("bookings/{bookingId:int}/cancellation-quote")]
@@ -4047,8 +4047,14 @@ namespace PickNBook.Api.Controllers
             PickNBook.Api.Helpers.UserBookingLifecycleResult? lifecycle = null,
             PickNBook.Api.Models.Payments.Payment? payment = null,
             long? fallbackPaymentId = null,
-            PickNBook.Api.Services.Interfaces.ICancellationRefundCalculator? refundCalculator = null)
+            PickNBook.Api.Services.Interfaces.ICancellationRefundCalculator? refundCalculator = null,
+            ISrdvBusService? srdvBusService = null)
         {
+            var fromCityName = srdvBusService != null ? srdvBusService.MapCityCodeToName(bus.FromCity) : bus.FromCity;
+            var toCityName = srdvBusService != null ? srdvBusService.MapCityCodeToName(bus.ToCity) : bus.ToCity;
+            if (string.IsNullOrWhiteSpace(fromCityName)) fromCityName = bus.FromCity;
+            if (string.IsNullOrWhiteSpace(toCityName)) toCityName = bus.ToCity;
+
             var baseDto = new BookingResponseDto
             {
                 BookingId = reservation.Id.ToString(),
@@ -4059,8 +4065,8 @@ namespace PickNBook.Api.Controllers
                 TripId = bus.Id,
                 TripNumber = bus.BusNumber,
                 ProviderName = bus.OperatorName,
-                FromCity = bus.FromCity,
-                ToCity = bus.ToCity,
+                FromCity = fromCityName,
+                ToCity = toCityName,
                 DepartureTimeUtc = IndiaTimeHelper.ToUtcFromIst(bus.DepartureTime),
                 ArrivalTimeUtc = IndiaTimeHelper.ToUtcFromIst(bus.ArrivalTime),
                 Status = reservation.Status,
@@ -4142,6 +4148,19 @@ namespace PickNBook.Api.Controllers
                 baseDto.TripNumber,
                 baseDto.ProviderName,
                 baseDto.FromCity,
+                baseDto.ToCity,
+                From = fromCityName,
+                To = toCityName,
+                Origin = fromCityName,
+                Destination = toCityName,
+                FromCityName = fromCityName,
+                ToCityName = toCityName,
+                FromCityCode = bus.FromCity,
+                ToCityCode = bus.ToCity,
+                BoardingPoint = !string.IsNullOrWhiteSpace(reservation.BoardingPointName) ? reservation.BoardingPointName : bus.BoardingPoint,
+                BoardingPointName = !string.IsNullOrWhiteSpace(reservation.BoardingPointName) ? reservation.BoardingPointName : bus.BoardingPoint,
+                DroppingPoint = !string.IsNullOrWhiteSpace(reservation.DroppingPointName) ? reservation.DroppingPointName : bus.DroppingPoint,
+                DroppingPointName = !string.IsNullOrWhiteSpace(reservation.DroppingPointName) ? reservation.DroppingPointName : bus.DroppingPoint,
                 baseDto.DepartureTimeUtc,
                 DepartureTime = baseDto.DepartureTimeUtc,
                 DepartureTimeIst = bus.DepartureTime,
@@ -4790,12 +4809,11 @@ namespace PickNBook.Api.Controllers
                             Origin = _srdvBusService.MapCityCodeToName(booking.BusBooking.FromCity),
                             Destination = _srdvBusService.MapCityCodeToName(booking.BusBooking.ToCity),
                             DepartureTime = booking.BusBooking.DepartureTime,
-                            ArrivalTime = booking.BusBooking.ArrivalTime,
                             BoardingPointTime = booking.BoardingPointTime ?? booking.BusBooking.DepartureTime,
-                            ArrivalPointTime = booking.BusBooking.ArrivalTime,
+                            ArrivalPointTime = booking.DroppingPointTime ?? booking.BusBooking.ArrivalTime,
                             IsOvernightArrival = booking.BusBooking.ArrivalTime.Date > booking.BusBooking.DepartureTime.Date,
-                            BoardingPoint = booking.BusBooking.BoardingPoint,
-                            ArrivalPoint = !string.IsNullOrWhiteSpace(booking.BusBooking.DroppingPoint) ? booking.BusBooking.DroppingPoint : booking.BusBooking.ToCity,
+                            BoardingPoint = !string.IsNullOrWhiteSpace(booking.BoardingPointName) ? booking.BoardingPointName : booking.BusBooking.BoardingPoint,
+                            ArrivalPoint = !string.IsNullOrWhiteSpace(booking.DroppingPointName) ? booking.DroppingPointName : (!string.IsNullOrWhiteSpace(booking.BusBooking.DroppingPoint) ? booking.BusBooking.DroppingPoint : booking.BusBooking.ToCity),
                             BookedAtUtc = booking.BookedAtUtc,
                             CancelledAtUtc = booking.CancelledAtUtc ?? DateTime.UtcNow,
 
@@ -4803,6 +4821,8 @@ namespace PickNBook.Api.Controllers
                             Price = booking.TotalPriceInr,
                             BaseFare = booking.BaseFareInr,
                             Currency = "INR",
+                            TotalFareBeforeDiscount = booking.TotalPriceInr + booking.DiscountAmountInr,
+                            CancellationPoliciesJson = booking.BusBooking?.CancellationPoliciesJson ?? booking.CancellationPolicyJson,
 
                             NetFare = booking.NetFareInr,
                             GstPercent = booking.GstPercent,

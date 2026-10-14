@@ -408,15 +408,25 @@ namespace PickNBook.Api.Services.Implementations
                 var seatsRequired = authoritativeBlockedSeats.Count;
 
                 var depTime = DateTime.TryParse(request.DepartureTime, out var parsedDep) ? parsedDep : DateTime.UtcNow.Add(IndiaTimeHelper.IndiaOffset);
-                var arrTime = !string.IsNullOrWhiteSpace(request.ArrivalTime) && DateTime.TryParse(request.ArrivalTime, out var parsedArr) ? parsedArr : depTime.AddHours(10);
-                if (arrTime <= depTime)
+                DateTime arrTime;
+                if (!string.IsNullOrWhiteSpace(request.ArrivalTime) && DateTime.TryParse(request.ArrivalTime, out var parsedArr))
                 {
-                    arrTime = arrTime.AddDays(1);
-                    while (arrTime < depTime)
+                    if (parsedArr.Year == 1 || (parsedArr.Date == DateTime.MinValue.Date && parsedArr.TimeOfDay != TimeSpan.Zero))
                     {
-                        arrTime = arrTime.AddDays(1);
+                        var combined = depTime.Date.Add(parsedArr.TimeOfDay);
+                        if (combined <= depTime) combined = combined.AddDays(1);
+                        arrTime = combined;
+                    }
+                    else
+                    {
+                        arrTime = parsedArr;
                     }
                 }
+                else
+                {
+                    arrTime = depTime.AddHours(10);
+                }
+
 
                 BusSearchItemContext? busCtx = null;
                 if (!string.IsNullOrEmpty(request.TraceId) && !string.IsNullOrEmpty(request.ResultIndex))
@@ -792,6 +802,7 @@ namespace PickNBook.Api.Services.Implementations
                             ArrivalPoint = !string.IsNullOrWhiteSpace(reservation.DroppingPointName) ? reservation.DroppingPointName : bus.ToCity,
                             ArrivalPointTime = reservation.DroppingPointTime ?? bus.ArrivalTime,
                             Price = reservation.TotalPriceInr,
+                            TotalFareBeforeDiscount = reservation.TotalPriceInr + reservation.DiscountAmountInr,
                             BaseFare = reservation.BaseFareInr,
                             Currency = "INR",
                             NetFare = reservation.NetFareInr,

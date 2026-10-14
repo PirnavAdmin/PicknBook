@@ -647,9 +647,9 @@ public class TicketEmailService : ITicketEmailService
         // =========================================
         // TIMINGS & LABELS
         // =========================================
-        var boardingTime = ToIst(request.BoardingPointTime != default ? request.BoardingPointTime : request.DepartureTime);
-        var droppingTime = ToIst(request.ArrivalPointTime != default ? request.ArrivalPointTime : request.ArrivalTime);
-        var departureTime = ToIst(request.DepartureTime != default ? request.DepartureTime : boardingTime);
+        var boardingTime = request.BoardingPointTime != default ? request.BoardingPointTime : request.DepartureTime;
+        var droppingTime = request.ArrivalPointTime != default ? request.ArrivalPointTime : request.ArrivalTime;
+        var departureTime = request.DepartureTime != default ? request.DepartureTime : boardingTime;
         var boardingTimeStr = boardingTime != default ? boardingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
         var droppingTimeStr = droppingTime != default ? droppingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
         var departureTimeStr = departureTime != default ? departureTime.ToString("hh:mm tt") : "-";
@@ -658,8 +658,11 @@ public class TicketEmailService : ITicketEmailService
             ? string.Join(", ", request.Passengers.Select(p => $"{p.FullName} (Seat {p.SeatNumber})"))
             : $"{request.PassengerName} (Seat {request.SeatNumber})";
 
-        var bookingDateStr = IndiaTimeHelper.FormatIst(request.BookedAtUtc != default ? request.BookedAtUtc : DateTime.UtcNow, "dd MMM yyyy, hh:mm tt");
-        var baseFareVal = request.BaseFare > 0 ? request.BaseFare : Math.Max(0, request.Price - request.GstAmount);
+        var effectiveBookedDate = request.BookedAtUtc != default ? request.BookedAtUtc : DateTime.UtcNow;
+        var bookingDateStr = effectiveBookedDate.ToString("dd MMM yyyy, hh:mm tt");
+        var grossFare = request.TotalFareBeforeDiscount > 0
+            ? request.TotalFareBeforeDiscount
+            : (request.Price + totalDiscount);
 
         // =========================================
         // EMAIL BODY
@@ -796,10 +799,9 @@ public class TicketEmailService : ITicketEmailService
           <div style=""font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;"">Payment Details</div>
           <table style=""width: 100%; border-collapse: collapse; font-size: 12px;"">
             <tr>
-              <td style=""padding: 4px 0; color: #64748b;"">Basic Fare:</td>
-              <td style=""padding: 4px 0; text-align: right; color: #0f172a; font-weight: 600;"">&#8377;{baseFareVal:0.00}</td>
+              <td style=""padding: 4px 0; color: #64748b;"">Total Fare:</td>
+              <td style=""padding: 4px 0; text-align: right; color: #0f172a; font-weight: 600;"">&#8377;{grossFare:0.00}</td>
             </tr>
-            {gstRow}
             {discountRow}
             <tr style=""border-top: 1px solid #cbd5e1;"">
               <td style=""padding: 8px 0 0 0; font-weight: 700; color: #0f172a; font-size: 13px;"">Amount Paid:</td>
@@ -907,6 +909,10 @@ public class TicketEmailService : ITicketEmailService
             totalDiscount = request.DiscountAmount.Value;
         }
 
+        var grossFare = request.TotalFareBeforeDiscount > 0
+            ? request.TotalFareBeforeDiscount
+            : (request.Price + totalDiscount);
+
         var discountRow = totalDiscount > 0
             ? $@"
             <tr>
@@ -918,16 +924,16 @@ public class TicketEmailService : ITicketEmailService
         // =========================================
         // TIMINGS
         // =========================================
-        var boardingTime = ToIst(request.BoardingPointTime != default ? request.BoardingPointTime : request.DepartureTime);
-        var droppingTime = ToIst(request.ArrivalPointTime != default ? request.ArrivalPointTime : request.ArrivalTime);
-        var departureTime = ToIst(request.DepartureTime != default ? request.DepartureTime : boardingTime);
+        var boardingTime = request.BoardingPointTime != default ? request.BoardingPointTime : request.DepartureTime;
+        var droppingTime = request.ArrivalPointTime != default ? request.ArrivalPointTime : request.ArrivalTime;
+        var departureTime = request.DepartureTime != default ? request.DepartureTime : boardingTime;
         var boardingTimeStr = boardingTime != default ? boardingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
         var droppingTimeStr = droppingTime != default ? droppingTime.ToString("ddd, dd MMM yyyy hh:mm tt") : "-";
         var departureTimeStr = departureTime != default ? departureTime.ToString("hh:mm tt") : "-";
         var effectiveCancelDate = request.CancelledAtUtc.HasValue 
             ? request.CancelledAtUtc.Value 
             : (request.BookedAtUtc != default ? request.BookedAtUtc : DateTime.UtcNow);
-        var cancellationDateStr = IndiaTimeHelper.FormatIst(effectiveCancelDate, "dd MMM yyyy, hh:mm tt");
+        var cancellationDateStr = effectiveCancelDate.ToString("dd MMM yyyy, hh:mm tt");
 
         // =========================================
         // DYNAMIC CANCELLATION POLICY ROWS
@@ -1164,10 +1170,14 @@ public class TicketEmailService : ITicketEmailService
           <div style=""font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;"">Refund &amp; Fare Breakdown</div>
           <table style=""width: 100%; border-collapse: collapse; font-size: 12px;"">
             <tr>
-              <td style=""padding: 3px 0; color: #64748b;"">Total Ticket Fare:</td>
-              <td style=""padding: 3px 0; text-align: right; color: #0f172a; font-weight: 600;"">&#8377;{request.Price:0.00}</td>
+              <td style=""padding: 3px 0; color: #64748b;"">Total Fare:</td>
+              <td style=""padding: 3px 0; text-align: right; color: #0f172a; font-weight: 600;"">&#8377;{grossFare:0.00}</td>
             </tr>
             {discountRow}
+            <tr>
+              <td style=""padding: 3px 0; color: #64748b;"">Original Paid:</td>
+              <td style=""padding: 3px 0; text-align: right; color: #0f172a; font-weight: 600;"">&#8377;{request.Price:0.00}</td>
+            </tr>
             <tr>
               <td style=""padding: 3px 0; color: #dc2626;"">Cancellation Charges:</td>
               <td style=""padding: 3px 0; text-align: right; color: #dc2626; font-weight: 600;"">- &#8377;{cancellationCharge:0.00}</td>

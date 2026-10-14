@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PickNBook.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0e110b77fb1f3606c3a6b523ab5072ca42d0344e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d8f96dad620c72a6174792ad17048a37a68901d5")]
 [assembly: System.Reflection.AssemblyProductAttribute("PickNBook.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PickNBook.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
