@@ -191,11 +191,11 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       bookingPayloadJson = JSON.stringify(buildBusBookingPayload(flowState));
     } else if (bookingType === "Hotel") {
       // Inline Hotel Payload mapping
-      const { guestName, guestTitle, guestPhone, guestEmail, blockRoomResponse, hotel, offer, checkInDate, checkOutDate } = flowState;
+      const { guestName, guestTitle, guestGender, guestAge, guestPhone, guestEmail, blockRoomResponse, hotel, offer, checkInDate, checkOutDate } = flowState;
       const firstName = guestName?.split(" ")[0] || "";
       const lastName = guestName?.split(" ").slice(1).join(" ") || "";
-      const cleanPhone = String(guestPhone || "9876543210").replace(/\D/g, "").slice(-10);
-      const cleanEmail = String(guestEmail || "guest@gopickandbook.in").trim();
+      const rawPhone = String(guestPhone || "").trim();
+      const rawEmail = String(guestEmail || "").trim();
 
       const rawCheckIn = offer?.checkInDate || flowState.searchContext?.checkInDate || checkInDate || "";
       const rawCheckOut = offer?.checkOutDate || flowState.searchContext?.checkOutDate || checkOutDate || "";
@@ -218,8 +218,11 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         ClientReferenceNo: "0",
         IsVoucherBooking: true,
         GuestName: `${firstName} ${lastName}`,
-        GuestEmail: cleanEmail,
-        GuestPhone: cleanPhone,
+        GuestTitle: guestTitle || "",
+        GuestGender: guestGender || "",
+        GuestAge: Number(guestAge),
+        GuestEmail: rawEmail,
+        GuestPhone: rawPhone,
         CouponCode: flowState.couponCode || flowState.appliedCouponCode || "",
         Price: Number(totalPayable || 0),
         EndUserIp: "192.168.10.10",

@@ -2242,16 +2242,15 @@ function formatBlogDate(dateValue) {
 }
 
 const formatFlightDate = (dateStr) => {
-  if (!dateStr) return { date: "DD/MM/YYYY", day: "" };
+  if (!dateStr) return { date: "DD/MM/YYYY" };
   try {
     const dateObj = new Date(dateStr);
-    if (isNaN(dateObj.getTime())) return { date: dateStr, day: "" };
+    if (isNaN(dateObj.getTime())) return { date: dateStr };
     const options = { day: "numeric", month: "short", year: "numeric" };
     const formattedDate = dateObj.toLocaleDateString("en-GB", options);
-    const weekday = dateObj.toLocaleDateString("en-GB", { weekday: "long" });
-    return { date: formattedDate, day: weekday };
+    return { date: formattedDate };
   } catch (e) {
-    return { date: dateStr, day: "" };
+    return { date: dateStr };
   }
 };
 
@@ -7846,11 +7845,6 @@ export default function HomePage() {
                                 <span className={leg.departureDate ? "date-main-bold" : "date-placeholder"}>
                                   {leg.departureDate ? formatFlightDate(leg.departureDate).date : "DD/MM/YYYY"}
                                 </span>
-                                {leg.departureDate && (
-                                  <span className="date-sub-day">
-                                    / {formatFlightDate(leg.departureDate).day}
-                                  </span>
-                                )}
                               </div>
                             </div>
                             {activeCalendarField === `leg-${leg.id}` && (
@@ -7952,11 +7946,6 @@ export default function HomePage() {
                             <span className={flightDepartureDate ? "date-main-bold" : "date-placeholder"}>
                               {flightDepartureDate ? formatFlightDate(flightDepartureDate).date : "DD/MM/YYYY"}
                             </span>
-                            {flightDepartureDate && (
-                              <span className="date-sub-day">
-                                / {formatFlightDate(flightDepartureDate).day}
-                              </span>
-                            )}
                           </div>
                         </div>
                         {activeCalendarField === "flight-dep" && (
@@ -7990,11 +7979,6 @@ export default function HomePage() {
                               <span className={flightReturnDate ? "date-main-bold" : "date-placeholder"}>
                                 {flightReturnDate ? formatFlightDate(flightReturnDate).date : "DD/MM/YYYY"}
                               </span>
-                              {flightReturnDate && (
-                                <span className="date-sub-day">
-                                  / {formatFlightDate(flightReturnDate).day}
-                                </span>
-                              )}
                             </div>
                           </div>
                           {activeCalendarField === "flight-ret" && (

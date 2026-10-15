@@ -20,6 +20,8 @@ import {
 import '../../STYLES/Topbar.css';
 import '../../STYLES/Notifications.css';
 import { clearUserAuthSession, subscribeAuthSession } from "../../services/authSession";
+import { getNotificationActionPath } from "../../utils/notificationActionPath";
+import { formatNotificationDate } from "../../utils/formatNotificationDate";
 import {
   getNotifications,
   getUnreadNotificationCount,
@@ -285,9 +287,8 @@ export default function Topbar() {
         setNotificationCount((count) => Math.max(0, count - 1));
       }
       setNotificationOpen(false);
-      if (typeof item.actionUrl === "string" && item.actionUrl.startsWith("/") && !item.actionUrl.startsWith("//")) {
-        navigate(item.actionUrl);
-      }
+      const actionPath = getNotificationActionPath(item);
+      if (actionPath) navigate(actionPath);
     } catch (error) {
       setNotificationError(error.message || "Could not mark notification as read.");
     }
@@ -305,12 +306,6 @@ export default function Topbar() {
     } finally {
       setNotificationBusy(false);
     }
-  };
-
-  const notificationDate = (value) => {
-    if (!value) return "";
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString();
   };
 
   const handleLogoClick = (e) => {
@@ -462,8 +457,9 @@ export default function Topbar() {
                           onClick={() => handleNotificationClick(item)}
                         >
                           <strong>{item.title}</strong>
-                          <span>{item.message}</span>
-                          <time dateTime={item.createdAtUtc}>{notificationDate(item.createdAtUtc)}</time>
+                          {!item.isRead && <span className="notification-popover-unread-label">NEW</span>}
+                          <span className="notification-popover-message">{item.message}</span>
+                          <time dateTime={item.createdAtUtc}>{formatNotificationDate(item.createdAtUtc)}</time>
                         </button>
                       ))}
                     </div>

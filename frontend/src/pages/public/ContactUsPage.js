@@ -147,7 +147,7 @@ export default function ContactUsPage() {
           background-color: #f5f6fa;
           min-height: 100vh;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          padding-bottom: 60px;
+          padding-bottom: 24px;
           margin-top: -35px;
         }
 
@@ -474,67 +474,17 @@ export default function ContactUsPage() {
                   {loading ? "Sending..." : "Send Message"}
                 </button>
 
-                <div className="contact-privacy-note" style={{ marginBottom: "16px" }}>
+                <div className="contact-privacy-note">
                   <Shield size={14} style={{ color: "#10b981" }} />
                   <span>We respect your privacy. Your information is safe with us.</span>
-                </div>
-
-                {/* Inner Badges row inside left container */}
-                <div className="contact-badges-row-inner" style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
-                  gap: "10px",
-                  borderTop: "1px solid #f1eeed",
-                  paddingTop: "20px",
-                  marginTop: "10px"
-                }}>
-                  <div className="contact-badge-card" style={{ padding: "10px", gap: "8px", borderRadius: "8px", border: "1px solid #f3eff0" }}>
-                    <div className="contact-badge-icon-box" style={{ width: "32px", height: "32px" }}>
-                      <Headphones size={14} />
-                    </div>
-                    <div className="contact-badge-info">
-                      <h5 style={{ fontSize: "0.72rem", margin: "0 0 2px 0" }}>24/7 Support</h5>
-                      <p style={{ fontSize: "0.6rem", margin: 0, color: "#777777", lineHeight: "1.2" }}>We are here to help you anytime</p>
-                    </div>
-                  </div>
-
-                  <div className="contact-badge-card" style={{ padding: "10px", gap: "8px", borderRadius: "8px", border: "1px solid #f3eff0" }}>
-                    <div className="contact-badge-icon-box" style={{ width: "32px", height: "32px" }}>
-                      <ShieldCheck size={14} />
-                    </div>
-                    <div className="contact-badge-info">
-                      <h5 style={{ fontSize: "0.72rem", margin: "0 0 2px 0" }}>Secure & Safe</h5>
-                      <p style={{ fontSize: "0.6rem", margin: 0, color: "#777777", lineHeight: "1.2" }}>Your information is 100% protected</p>
-                    </div>
-                  </div>
-
-                  <div className="contact-badge-card" style={{ padding: "10px", gap: "8px", borderRadius: "8px", border: "1px solid #f3eff0" }}>
-                    <div className="contact-badge-icon-box" style={{ width: "32px", height: "32px" }}>
-                      <Clock3 size={14} />
-                    </div>
-                    <div className="contact-badge-info">
-                      <h5 style={{ fontSize: "0.72rem", margin: "0 0 2px 0" }}>Quick Response</h5>
-                      <p style={{ fontSize: "0.6rem", margin: 0, color: "#777777", lineHeight: "1.2" }}>We respond to all queries within 24 hrs</p>
-                    </div>
-                  </div>
-
-                  <div className="contact-badge-card" style={{ padding: "10px", gap: "8px", borderRadius: "8px", border: "1px solid #f3eff0" }}>
-                    <div className="contact-badge-icon-box" style={{ width: "32px", height: "32px" }}>
-                      <User size={14} />
-                    </div>
-                    <div className="contact-badge-info">
-                      <h5 style={{ fontSize: "0.72rem", margin: "0 0 2px 0" }}>Customer First</h5>
-                      <p style={{ fontSize: "0.6rem", margin: 0, color: "#777777", lineHeight: "1.2" }}>Your satisfaction is our top priority</p>
-                    </div>
-                  </div>
                 </div>
               </form>
             )}
           </div>
 
           {/* Right Panel: Contact Information */}
-          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-            <div className="contact-card-box" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <div>
+            <div className="contact-card-box">
               <h3 className="contact-card-title">Contact Information</h3>
               <p className="contact-card-subtitle">Reach us through any of the channels below.</p>
 
@@ -584,8 +534,8 @@ export default function ContactUsPage() {
                 </div>
               </div>
 
-              {/* Suitcase Illustration inside the same card box - pushed to bottom */}
-              <div style={{ marginTop: "auto", paddingTop: "24px", borderRadius: "8px", overflow: "hidden" }}>
+              {/* Suitcase Illustration inside the same card box */}
+              <div style={{ marginTop: "20px", borderRadius: "8px", overflow: "hidden" }}>
                 <div style={{ borderRadius: "8px", overflow: "hidden", border: "1px solid #f1eeed" }}>
                   <img src={journeyIllustration} alt="Journey Suitcase Illustration" style={{ width: "100%", height: "auto", display: "block" }} />
                 </div>

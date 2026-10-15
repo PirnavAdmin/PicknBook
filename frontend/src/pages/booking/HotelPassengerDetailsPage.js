@@ -92,8 +92,28 @@ function getPromotionSubHeading(item) {
   return cleanedTitle || rawTitle;
 }
 const calculateNights = (inDate, outDate) => (!inDate || !outDate ? 1 : Math.ceil(Math.abs(new Date(outDate) - new Date(inDate)) / 86400000) || 1);
-const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(String(email || "").trim());
-const isValidMobile = (mobile) => String(mobile || "").replace(/\D/g, "").length >= 10 && String(mobile || "").replace(/\D/g, "").length <= 13;
+const isValidEmail = (email) => {
+  const value = String(email || "").trim();
+  return value.length <= 254 &&
+    !value.includes("..") &&
+    /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)*\.[A-Z]{2,24}$/i.test(value);
+};
+const isValidGuestName = (name) => {
+  const value = String(name || "").trim();
+  return value.length <= 50 && /^[A-Za-z]+([ '-][A-Za-z]+)*$/.test(value);
+};
+const invalidGuestMobileNumbers = new Set([
+  "0000000000", "1111111111", "2222222222", "3333333333",
+  "4444444444", "5555555555", "6666666666", "7777777777",
+  "8888888888", "9999999999", "1234567890", "9876543210",
+]);
+const isValidMobile = (mobile) => {
+  let digits = String(mobile || "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+  return /^[6-9]\d{9}$/.test(digits) &&
+    !invalidGuestMobileNumbers.has(digits);
+};
 const getTitleGenderError = (title, gender) => {
   if (!title || !gender || gender === "Other" || title === "Dr") return "";
   const femaleTitles = ["Ms", "Mrs", "Miss"];
@@ -1088,12 +1108,14 @@ export default function HotelPassengerDetailsPage() {
   const isPrimaryAdultValid = useMemo(() => {
     const primary = guests[0];
     if (!primary) return false;
-    const fullNameOk = !!primary.fullName?.trim();
-    const ageOk = !!primary.age && Number(primary.age) >= 18;
+    const fullNameOk = isValidGuestName(primary.fullName);
+    const age = Number(primary.age);
+    const ageOk = Number.isInteger(age) && age >= 18 && age <= 120;
     const genderOk = !!primary.gender;
+    const titleOk = !!primary.title;
     const emailOk = !!primary.email?.trim() && isValidEmail(primary.email);
     const phoneOk = !!primary.mobile?.trim() && isValidMobile(primary.mobile);
-    return fullNameOk && ageOk && genderOk && emailOk && phoneOk;
+    return fullNameOk && ageOk && genderOk && titleOk && emailOk && phoneOk;
   }, [guests]);
 
   const selectExistingTraveler = (travelerId) => {
@@ -1103,6 +1125,59 @@ export default function HotelPassengerDetailsPage() {
     applyTravellerToGuest(found, 0);
   };
 
+  const validateGuestField = (index, field) => {
+    const guest = guests[index];
+    if (!guest) return;
+
+    const guestStarted = Boolean(guest.fullName?.trim() || guest.age || guest.title);
+    const required = index === 0 || guest.type === "child" || guestStarted;
+    let message = "";
+
+    if (field === "title" && required && !guest.title) {
+      message = "Please select a title.";
+    } else if (field === "title" && guest.title && !["Mr", "Mrs", "Ms", "Dr", "Mstr", "Miss"].includes(guest.title)) {
+      message = "Select a valid title.";
+    } else if (field === "fullName") {
+      const name = String(guest.fullName || "").trim();
+      if (required && !name) message = "Full name is required.";
+      else if (name && !isValidGuestName(name)) message = "Enter a valid name using letters, spaces, hyphens, or apostrophes (max 50 characters).";
+    } else if (field === "age") {
+      const age = Number(guest.age);
+      if (required && String(guest.age ?? "").trim() === "") {
+        message = guest.type === "child" ? "Child age is required." : "Age is required.";
+      } else if (String(guest.age ?? "").trim() !== "" && (!Number.isInteger(age) || age < 0 || age > 120)) {
+        message = "Enter a whole-number age between 0 and 120.";
+      } else if (String(guest.age ?? "").trim() !== "" && guest.type === "adult" && age < 18) {
+        message = "Adult guests must be 18 years or older.";
+      } else if (guest.type === "child" && age > 17) {
+        message = "Child age must be between 0 and 17.";
+      }
+    } else if (field === "gender" && (index === 0 || (required && guest.type === "adult"))) {
+      if (!guest.gender) message = "Please select gender.";
+      else if (!["Male", "Female", "Other"].includes(guest.gender)) message = "Select a valid gender.";
+    } else if (field === "email" && index === 0) {
+      if (!guest.email?.trim()) message = "Please enter email.";
+      else if (!isValidEmail(guest.email)) message = "Enter a valid email.";
+    } else if (field === "mobile" && index === 0) {
+      if (!guest.mobile?.trim()) message = "Please enter phone number.";
+      else if (!isValidMobile(guest.mobile)) message = "Enter a valid 10-digit Indian mobile number.";
+    }
+
+    const updatedGuest = { ...guest, [field]: guest[field] };
+    const titleGenderError = getTitleGenderError(updatedGuest.title, updatedGuest.gender);
+    setErrors((current) => {
+      const next = { ...current };
+      const errorKey = `guest_${index}_${field}`;
+      delete next[errorKey];
+      if (message) next[errorKey] = message;
+      if (field === "title" || field === "gender") {
+        delete next[`guest_${index}_titleGender`];
+        if (titleGenderError) next[`guest_${index}_titleGender`] = titleGenderError;
+      }
+      return next;
+    });
+  };
+
   const validateForm = () => {
     const nextErrors = {};
     
@@ -1110,16 +1185,27 @@ export default function HotelPassengerDetailsPage() {
     const primary = guests[0];
     if (!primary) return false;
 
+    if (!primary.title) {
+      nextErrors.guest_0_title = "Please select a title.";
+    } else if (!["Mr", "Mrs", "Ms", "Dr", "Mstr", "Miss"].includes(primary.title)) {
+      nextErrors.guest_0_title = "Select a valid title.";
+    }
     if (!primary.fullName?.trim()) {
       nextErrors.guest_0_fullName = "Full name is required.";
+    } else if (!isValidGuestName(primary.fullName)) {
+      nextErrors.guest_0_fullName = "Enter a valid name using letters, spaces, hyphens, or apostrophes (max 50 characters).";
     }
-    if (!primary.age) {
+    if (String(primary.age ?? "").trim() === "") {
       nextErrors.guest_0_age = "Please enter age.";
+    } else if (!Number.isInteger(Number(primary.age)) || Number(primary.age) > 120 || Number(primary.age) < 0) {
+      nextErrors.guest_0_age = "Enter a whole-number age between 0 and 120.";
     } else if (Number(primary.age) < 18) {
       nextErrors.guest_0_age = "Primary guest must be 18 years or older.";
     }
     if (!primary.gender) {
       nextErrors.guest_0_gender = "Please select gender.";
+    } else if (!["Male", "Female", "Other"].includes(primary.gender)) {
+      nextErrors.guest_0_gender = "Select a valid gender.";
     }
     const primaryTitleGenderError = getTitleGenderError(primary.title, primary.gender);
     if (primaryTitleGenderError) {
@@ -1133,11 +1219,13 @@ export default function HotelPassengerDetailsPage() {
     if (!primary.mobile?.trim()) {
       nextErrors.guest_0_mobile = "Please enter phone number.";
     } else if (!isValidMobile(primary.mobile)) {
-      nextErrors.guest_0_mobile = "Enter a valid mobile.";
+      nextErrors.guest_0_mobile = "Enter a valid 10-digit Indian mobile number.";
     }
 
     // Co-Travelers validation (mandatory for children, optional for additional adults)
     guests.forEach((guest, idx) => {
+      const guestStarted = Boolean(guest.fullName?.trim() || guest.age || guest.title);
+      const guestRequired = guest.type === "child" || guestStarted;
       if (idx > 0) {
         if (guest.type === "child") {
           if (!guest.title) {
@@ -1145,20 +1233,28 @@ export default function HotelPassengerDetailsPage() {
           }
           if (!guest.fullName?.trim()) {
             nextErrors[`guest_${idx}_fullName`] = "Full name is required.";
+          } else if (!isValidGuestName(guest.fullName)) {
+            nextErrors[`guest_${idx}_fullName`] = "Enter a valid name using letters, spaces, hyphens, or apostrophes (max 50 characters).";
           }
-          if (!guest.age) {
+          if (String(guest.age ?? "").trim() === "") {
             nextErrors[`guest_${idx}_age`] = "Enter child age.";
+          } else if (!Number.isInteger(Number(guest.age)) || Number(guest.age) < 0 || Number(guest.age) > 17) {
+            nextErrors[`guest_${idx}_age`] = "Child age must be a whole number between 0 and 17.";
           }
         } else {
-          if (guest.firstName?.trim() || guest.lastName?.trim()) {
+          if (guestRequired) {
             if (!guest.title) {
               nextErrors[`guest_${idx}_title`] = "Select title.";
             }
             if (!guest.fullName?.trim()) {
               nextErrors[`guest_${idx}_fullName`] = "Full name is required.";
+            } else if (!isValidGuestName(guest.fullName)) {
+              nextErrors[`guest_${idx}_fullName`] = "Enter a valid name using letters, spaces, hyphens, or apostrophes (max 50 characters).";
             }
-            if (!guest.age) {
+            if (String(guest.age ?? "").trim() === "") {
               nextErrors[`guest_${idx}_age`] = "Enter age.";
+            } else if (!Number.isInteger(Number(guest.age)) || Number(guest.age) < 18 || Number(guest.age) > 120) {
+              nextErrors[`guest_${idx}_age`] = "Adult guests must be between 18 and 120 years old.";
             }
             if (!guest.gender) {
               nextErrors[`guest_${idx}_gender`] = "Select gender.";
@@ -1242,10 +1338,11 @@ export default function HotelPassengerDetailsPage() {
       searchContext, 
       bookingFlowId: incomingState.bookingFlowId,
       guestTitle: guests[0]?.title || "Mr",
+      guestGender: guests[0]?.gender || "",
       guestName: guests[0]?.fullName?.trim() || "Primary Guest", 
       guestEmail: guests[0]?.email?.trim() || "", 
       guestPhone: guests[0]?.mobile?.trim() || "", 
-      guestAge: guests[0]?.age || 26,
+      guestAge: guests[0]?.age || "",
       guests, 
       agreedToTerms, 
       blockRoomResponse,
@@ -1650,8 +1747,10 @@ export default function HotelPassengerDetailsPage() {
                     <select
                       value={guests[0]?.title || ""}
                       onChange={(e) => updateGuest(0, "title", e.target.value)}
-                      className={errors.guest_0_title ? "is-error" : ""}
-                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                      onBlur={() => validateGuestField(0, "title")}
+                      className={errors.guest_0_title || errors.guest_0_titleGender ? "is-error" : ""}
+                      aria-invalid={Boolean(errors.guest_0_title || errors.guest_0_titleGender)}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: errors.guest_0_title || errors.guest_0_titleGender ? "1.5px solid red" : "1px solid #cbd5e1" }}
                     >
                       <option value="">Select</option>
                       <option value="Mr">Mr.</option>
@@ -1671,8 +1770,10 @@ export default function HotelPassengerDetailsPage() {
                       placeholder="Enter full name"
                       value={guests[0]?.fullName || ""}
                       onChange={(e) => updateGuest(0, "fullName", e.target.value)}
+                      onBlur={() => validateGuestField(0, "fullName")}
                       className={errors.guest_0_fullName ? "is-error" : ""}
-                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1", textTransform: "capitalize" }}
+                      aria-invalid={Boolean(errors.guest_0_fullName)}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: errors.guest_0_fullName ? "1.5px solid red" : "1px solid #cbd5e1", textTransform: "capitalize" }}
                     />
                     {errors.guest_0_fullName && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_fullName}</span>}
                   </div>
@@ -1683,8 +1784,10 @@ export default function HotelPassengerDetailsPage() {
                     <select
                       value={guests[0]?.gender || ""}
                       onChange={(e) => updateGuest(0, "gender", e.target.value)}
-                      className={errors.guest_0_gender ? "is-error" : ""}
-                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                      onBlur={() => validateGuestField(0, "gender")}
+                      className={errors.guest_0_gender || errors.guest_0_titleGender ? "is-error" : ""}
+                      aria-invalid={Boolean(errors.guest_0_gender || errors.guest_0_titleGender)}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: errors.guest_0_gender || errors.guest_0_titleGender ? "1.5px solid red" : "1px solid #cbd5e1" }}
                     >
                       <option value="">Select</option>
                       <option value="Male">Male</option>
@@ -1703,8 +1806,10 @@ export default function HotelPassengerDetailsPage() {
                       placeholder="Age"
                       value={guests[0]?.age || ""}
                       onChange={(e) => updateGuest(0, "age", e.target.value)}
+                      onBlur={() => validateGuestField(0, "age")}
                       className={errors.guest_0_age ? "is-error" : ""}
-                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                      aria-invalid={Boolean(errors.guest_0_age)}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: errors.guest_0_age ? "1.5px solid red" : "1px solid #cbd5e1" }}
                     />
                     {errors.guest_0_age && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_age}</span>}
                   </div>
@@ -1717,8 +1822,10 @@ export default function HotelPassengerDetailsPage() {
                       placeholder="Enter email address"
                       value={guests[0]?.email || ""}
                       onChange={(e) => updateGuest(0, "email", e.target.value)}
+                      onBlur={() => validateGuestField(0, "email")}
                       className={errors.guest_0_email ? "is-error" : ""}
-                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                      aria-invalid={Boolean(errors.guest_0_email)}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: errors.guest_0_email ? "1.5px solid red" : "1px solid #cbd5e1" }}
                     />
                     {errors.guest_0_email && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_email}</span>}
                   </div>
@@ -1731,8 +1838,10 @@ export default function HotelPassengerDetailsPage() {
                       placeholder="10-digit mobile number"
                       value={guests[0]?.mobile || ""}
                       onChange={(e) => updateGuest(0, "mobile", e.target.value)}
+                      onBlur={() => validateGuestField(0, "mobile")}
                       className={errors.guest_0_mobile ? "is-error" : ""}
-                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: "1px solid #cbd5e1" }}
+                      aria-invalid={Boolean(errors.guest_0_mobile)}
+                      style={{ width: "100%", height: "42px", padding: "8px 12px", borderRadius: "10px", border: errors.guest_0_mobile ? "1.5px solid red" : "1px solid #cbd5e1" }}
                     />
                     {errors.guest_0_mobile && <span className="field-error" style={{ color: "red", fontSize: "0.72rem", display: "block", marginTop: "4px" }}>{errors.guest_0_mobile}</span>}
                   </div>
@@ -1801,7 +1910,9 @@ export default function HotelPassengerDetailsPage() {
                                 <select
                                   value={guest.title || ""}
                                   onChange={(e) => updateGuest(actualIdx, "title", e.target.value)}
-                                  style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_title`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
+                                  onBlur={() => validateGuestField(actualIdx, "title")}
+                                  aria-invalid={Boolean(errors[`guest_${actualIdx}_title`] || errors[`guest_${actualIdx}_titleGender`])}
+                                  style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_title`] || errors[`guest_${actualIdx}_titleGender`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
                                 >
                                   <option value="">Select</option>
                                   {guest.type === "child" ? (
@@ -1829,8 +1940,11 @@ export default function HotelPassengerDetailsPage() {
                                   placeholder="Name"
                                   value={guest.fullName || ""}
                                   onChange={(e) => updateGuest(actualIdx, "fullName", e.target.value)}
+                                  onBlur={() => validateGuestField(actualIdx, "fullName")}
+                                  aria-invalid={Boolean(errors[`guest_${actualIdx}_fullName`])}
                                   style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_fullName`] ? "1.5px solid red" : "1px solid #cbd5e1", textTransform: "capitalize" }}
                                 />
+                                {errors[`guest_${actualIdx}_fullName`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_fullName`]}</span>}
                               </div>
                               <div>
                                 <label style={{ fontSize: "0.7rem", color: "var(--hotel-muted)", fontWeight: 700, display: "block", marginBottom: "4px" }}>
@@ -1847,8 +1961,11 @@ export default function HotelPassengerDetailsPage() {
                                       updateGuest(actualIdx, "age", e.target.value);
                                     }
                                   }}
+                                  onBlur={() => validateGuestField(actualIdx, "age")}
+                                  aria-invalid={Boolean(errors[`guest_${actualIdx}_age`])}
                                   style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_age`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
                                 />
+                                {errors[`guest_${actualIdx}_age`] && <span className="field-error" style={{ color: "red", fontSize: "0.68rem", display: "block", marginTop: "4px" }}>{errors[`guest_${actualIdx}_age`]}</span>}
                               </div>
                               {guest.type === "adult" && (
                                 <div>
@@ -1856,7 +1973,9 @@ export default function HotelPassengerDetailsPage() {
                                   <select
                                     value={guest.gender || "Male"}
                                     onChange={(e) => updateGuest(actualIdx, "gender", e.target.value)}
-                                    style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: "1px solid #cbd5e1" }}
+                                    onBlur={() => validateGuestField(actualIdx, "gender")}
+                                    aria-invalid={Boolean(errors[`guest_${actualIdx}_gender`] || errors[`guest_${actualIdx}_titleGender`])}
+                                    style={{ width: "100%", height: "38px", padding: "6px 10px", borderRadius: "8px", border: errors[`guest_${actualIdx}_gender`] || errors[`guest_${actualIdx}_titleGender`] ? "1.5px solid red" : "1px solid #cbd5e1" }}
                                   >
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
@@ -2583,8 +2702,11 @@ export default function HotelPassengerDetailsPage() {
                   ClientReferenceNo: 0,
                   IsVoucherBooking: true,
                   GuestName: `${firstName} ${lastName}`,
-                  GuestEmail: cleanEmail,
-                  GuestPhone: cleanPhone,
+                  GuestTitle: checkoutPayload.guestTitle || "",
+                  GuestGender: checkoutPayload.guestGender || "",
+                  GuestAge: Number(checkoutPayload.guestAge),
+                  GuestEmail: String(checkoutPayload.guestEmail || "").trim(),
+                  GuestPhone: String(checkoutPayload.guestPhone || "").trim(),
                   CouponCode: checkoutPayload.couponCode || checkoutPayload.appliedCouponCode || "",
                   Price: Number(totalPayable || 0),
                   EndUserIp: "192.168.10.10",

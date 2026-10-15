@@ -7,6 +7,8 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "../../services/notificationsService";
+import { getNotificationActionPath } from "../../utils/notificationActionPath";
+import { formatNotificationDate } from "../../utils/formatNotificationDate";
 import "../../STYLES/Notifications.css";
 
 const CATEGORIES = ["Flight", "Bus", "Hotel", "Wallet", "System"];
@@ -16,18 +18,6 @@ function severityClass(severity) {
   return String(severity || "info").toLowerCase();
 }
 
-function safeActionPath(actionUrl) {
-  return typeof actionUrl === "string" && actionUrl.startsWith("/") && !actionUrl.startsWith("//")
-    ? actionUrl
-    : "";
-}
-
-function formatDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleString();
-}
-
 export default function NotificationsPage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({ unreadOnly: false, category: "", severity: "" });
@@ -35,6 +25,7 @@ export default function NotificationsPage() {
   const [data, setData] = useState({ items: [], totalPages: 1, unreadCount: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   const loadPage = useCallback(async () => {
@@ -71,6 +62,7 @@ export default function NotificationsPage() {
   const handleMarkRead = async (item) => {
     try {
       if (!item.isRead) await markNotificationRead(item.id);
+      setStatusMessage(item.isRead ? "" : "Notification marked as read.");
       setData((current) => ({
         ...current,
         items: filters.unreadOnly && !item.isRead
@@ -78,7 +70,7 @@ export default function NotificationsPage() {
           : current.items.map((entry) => entry.id === item.id ? { ...entry, isRead: true } : entry),
         unreadCount: item.isRead ? current.unreadCount : Math.max(0, current.unreadCount - 1),
       }));
-      const actionPath = safeActionPath(item.actionUrl);
+      const actionPath = getNotificationActionPath(item);
       if (actionPath) navigate(actionPath);
     } catch (requestError) {
       setError(requestError.message || "Could not mark notification as read.");
@@ -88,8 +80,10 @@ export default function NotificationsPage() {
   const handleMarkAll = async () => {
     setBusy(true);
     setError("");
+    setStatusMessage("");
     try {
       await markAllNotificationsRead();
+      setStatusMessage("All notifications marked as read.");
       setData((current) => ({
         ...current,
         items: filters.unreadOnly ? [] : current.items.map((item) => ({ ...item, isRead: true })),
@@ -152,6 +146,7 @@ export default function NotificationsPage() {
       </div>
 
       {error && <div className="b2c-notifications-error" role="alert">{error}</div>}
+      {statusMessage && <div className="b2c-notifications-status" role="status">{statusMessage}</div>}
       <section className="b2c-notifications-list" aria-live="polite">
         {loading ? (
           <div className="b2c-notifications-state">Loading notifications...</div>
@@ -173,7 +168,7 @@ export default function NotificationsPage() {
                 <span className="b2c-notification-meta">
                   {item.category && <span>{item.category}</span>}
                   {item.severity && <span className={`b2c-notification-severity-label ${severityClass(item.severity)}`}>{item.severity}</span>}
-                  <time dateTime={item.createdAtUtc}>{formatDate(item.createdAtUtc)}</time>
+                  <time dateTime={item.createdAtUtc}>{formatNotificationDate(item.createdAtUtc)}</time>
                 </span>
               </span>
             </button>
