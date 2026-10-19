@@ -1,5 +1,12 @@
 const normalize = (value) => String(value ?? "").trim().toLowerCase();
-export const getBusBookingStatus = (booking) => normalize(booking?.tripState);
+export const getBusBookingStatus = (booking) => {
+  const state = booking?.tripState || booking?.TripState || booking?.status || booking?.Status;
+  const normalized = normalize(state);
+  if (normalized === "success" || normalized === "confirmed") {
+    return "booked";
+  }
+  return normalized;
+};
 
 export function matchesBusFilters(booking, filters) {
   const requestedStatus = normalize(filters.status) || "all";

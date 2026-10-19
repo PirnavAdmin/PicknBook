@@ -1184,10 +1184,11 @@ const TicketPreviewPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const requestedPnr = typeof location.state?.pnr === "string" ? location.state.pnr.trim() : "";
-  const requestedEmail = typeof location.state?.email === "string" ? location.state.email.trim() : "";
-  const requestedMobile = typeof location.state?.mobile === "string" ? location.state.mobile.trim() : "";
-  const requestedType = normalizeBookingType(location.state?.bookingType, TICKET_TYPES.BUS);
+  const searchParams = new URLSearchParams(location.search);
+  const requestedPnr = (typeof location.state?.pnr === "string" ? location.state.pnr.trim() : "") || searchParams.get("pnr") || searchParams.get("bookingReference") || "";
+  const requestedEmail = (typeof location.state?.email === "string" ? location.state.email.trim() : "") || searchParams.get("email") || "";
+  const requestedMobile = (typeof location.state?.mobile === "string" ? location.state.mobile.trim() : "") || searchParams.get("mobile") || "";
+  const requestedType = normalizeBookingType(location.state?.bookingType || searchParams.get("bookingType") || searchParams.get("type"), TICKET_TYPES.BUS);
 
   // Support both single ticket (legacy) and multiple tickets (new)
   const providedTickets = useMemo(() => {
@@ -1250,8 +1251,8 @@ const TicketPreviewPage = () => {
 
     if (!shouldFetch) return;
 
-    if (!requestedMobile && !requestedEmail) {
-      setFetchError("Booking contact is missing. Please fetch the ticket using mobile or email.");
+    if (!requestedMobile && !requestedEmail && !requestedPnr) {
+      setFetchError("Booking contact is missing. Please fetch the ticket using mobile, email, or booking reference.");
       return;
     }
 
@@ -1264,6 +1265,7 @@ const TicketPreviewPage = () => {
       email: requestedEmail,
       bookingType: requestedType,
       bookingReference: requestedPnr,
+      activeOnly: false,
     })
       .then((fetchedTickets) => {
         if (!isCurrent) return;

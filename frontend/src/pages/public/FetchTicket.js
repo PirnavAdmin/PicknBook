@@ -48,23 +48,36 @@ const CATEGORIES = {
 const FetchTicket = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
 
   // State mapping
   const [bookingType, setBookingType] = useState(
-    normalizeBookingType(location.state?.bookingType, "hotel")
+    normalizeBookingType(
+      location.state?.bookingType || searchParams.get("bookingType") || searchParams.get("type"),
+      "hotel"
+    )
   );
-  const [mobile, setMobile] = useState(location.state?.mobile || "");
-  const [email, setEmail] = useState(location.state?.email || "");
-  const [filterType] = useState(location.state?.filterType || "all");
+  const [mobile, setMobile] = useState(location.state?.mobile || searchParams.get("mobile") || "");
+  const [email, setEmail] = useState(location.state?.email || searchParams.get("email") || "");
+  const [bookingReference, setBookingReference] = useState(
+    location.state?.bookingReference || location.state?.pnr || searchParams.get("bookingReference") || searchParams.get("pnr") || ""
+  );
+  const [filterType] = useState(location.state?.filterType || searchParams.get("filterType") || "all");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const validateForm = () => {
     let nextError = "";
     const mobileDigits = mobile.replace(/\D/g, "");
+    const trimmedRef = bookingReference.trim();
+
+    if (trimmedRef) {
+      setError("");
+      return true;
+    }
 
     if (!mobileDigits) {
-      nextError = "Mobile number is required";
+      nextError = "Mobile number or Booking Reference / PNR is required";
     } else if (mobileDigits.length < 10 || mobileDigits.length > 15) {
       nextError = "Enter a valid mobile number";
     }
@@ -86,12 +99,14 @@ const FetchTicket = () => {
     setLoading(true);
     const trimmedMobile = mobile.replace(/\D/g, "");
     const trimmedEmail = email.trim();
+    const trimmedRef = bookingReference.trim();
 
     try {
       const resolvedTickets = await fetchTicketByContact({
         mobile: trimmedMobile,
         email: trimmedEmail,
         bookingType,
+        bookingReference: trimmedRef,
         activeOnly: filterType === "upcoming",
       });
 
@@ -117,7 +132,8 @@ const FetchTicket = () => {
       setError("");
       navigate("/print-ticket", {
         state: {
-          pnr: "",
+          pnr: trimmedRef,
+          bookingReference: trimmedRef,
           mobile: trimmedMobile,
           email: trimmedEmail,
           bookingType: selectedBookingType,
@@ -259,6 +275,24 @@ const FetchTicket = () => {
                   }}
                   placeholder="Enter your email address"
                   className={error.toLowerCase().includes("email") ? "error-input" : ""}
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="fetch-input-group">
+              <label htmlFor="fetch-ref-input">Booking Reference or PNR <span style={{ fontSize: "0.85em", color: "#64748b" }}>(Optional)</span></label>
+              <div className="fetch-input-field-wrap">
+                <Ticket size={18} className="fetch-input-icon" />
+                <input
+                  id="fetch-ref-input"
+                  type="text"
+                  value={bookingReference}
+                  onChange={(e) => {
+                    setBookingReference(e.target.value.trim());
+                    if (error) setError("");
+                  }}
+                  placeholder="e.g. BS-20261016... or PNR"
                   disabled={loading}
                 />
               </div>

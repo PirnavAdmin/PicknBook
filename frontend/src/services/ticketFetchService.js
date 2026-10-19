@@ -206,13 +206,16 @@ export async function fetchTicketByContact({
   mobile,
   email,
   bookingType,
-  activeOnly = true,
+  bookingReference,
+  activeOnly,
 }) {
+  const isRefLookup = Boolean(String(bookingReference || "").trim());
   const request = {
     mobile: String(mobile || "").trim(),
     email: String(email || "").trim(),
     bookingType: String(bookingType || "").trim().toLowerCase(),
-    activeOnly: activeOnly !== false,
+    bookingReference: String(bookingReference || "").trim(),
+    activeOnly: isRefLookup ? false : (activeOnly !== undefined ? Boolean(activeOnly) : false),
   };
 
   const response = await fetch(toApiUrl(TICKET_FETCH_ENDPOINT), {

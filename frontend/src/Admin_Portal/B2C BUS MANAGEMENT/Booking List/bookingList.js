@@ -1151,7 +1151,7 @@ export default function AdminB2CBookingListPage() {
       }
 
       const statusFromFilter = mapBookingFilterStatusToApi(filters.status);
-      if (statusFromFilter && safeValue(booking.status, "").toLowerCase() !== statusFromFilter.toLowerCase()) {
+      if (statusFromFilter && resolvedStatus.toLowerCase() !== statusFromFilter.toLowerCase()) {
         return false;
       }
 
