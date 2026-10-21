@@ -453,7 +453,7 @@ export default function HotelBookings() {
               <header className="hotel-modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h3>Hotel Stay Details</h3>
                 <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  {selectedBooking.status !== "Cancelled" && (
+                  {selectedBooking.status === "Confirmed" && (
                     <button
                       type="button"
                       className="hotel-bookings-btn"
