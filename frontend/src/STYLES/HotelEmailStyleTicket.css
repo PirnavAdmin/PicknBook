@@ -1,0 +1,462 @@
+.pb-hotel-email-ticket {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.pb-hotel-email-ticket *,
+.pb-hotel-email-ticket *::before,
+.pb-hotel-email-ticket *::after {
+  box-sizing: border-box;
+}
+
+.pb-hotel-email-ticket-header,
+.pb-hotel-email-ticket-property,
+.pb-hotel-email-ticket-details,
+.pb-hotel-email-ticket-policies {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 1. HEADER */
+.pb-hotel-email-ticket-header {
+  min-height: 104px;
+  padding: 18px 22px;
+  align-items: center;
+  gap: 16px;
+  border-top: 4px solid #dc2626;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.pb-hotel-email-ticket-logo {
+  display: block;
+  width: auto;
+  height: 34px;
+  max-width: 140px;
+  object-fit: contain;
+}
+
+.pb-hotel-email-ticket-heading {
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-hotel-email-ticket-booked {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.pb-hotel-email-ticket-booked strong {
+  color: #1e293b;
+}
+
+.pb-hotel-email-ticket-reference {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  text-align: right;
+}
+
+.pb-hotel-email-ticket-reference div {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pb-hotel-email-ticket-reference div:first-child strong {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.pb-hotel-email-ticket-reference div strong {
+  color: #1e293b;
+}
+
+.pb-hotel-status-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pb-hotel-status-badge.confirmed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pb-hotel-status-badge.cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* 2. PROPERTY */
+.pb-hotel-email-ticket-property {
+  padding: 16px 22px;
+  gap: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pb-hotel-email-ticket-property > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.pb-hotel-name {
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 800;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.pb-hotel-room-line {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pb-hotel-stay-nights-badge {
+  display: inline-block;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.pb-hotel-timing-note {
+  color: #64748b;
+  font-size: 11px;
+}
+
+.pb-hotel-voucher-meta {
+  justify-items: end;
+  align-content: start;
+  text-align: right;
+  display: grid;
+  gap: 3px;
+}
+
+.pb-hotel-voucher-meta strong {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.pb-hotel-voucher-meta span {
+  color: #64748b;
+  font-size: 11px;
+}
+
+/* 3. STAY TIMELINE & QR */
+.pb-hotel-email-ticket-stay {
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.pb-hotel-stay-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 100px;
+  gap: 16px;
+  align-items: start;
+}
+
+.pb-hotel-stay-col label {
+  display: block;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-hotel-stay-col strong {
+  display: block;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.pb-hotel-stay-col span {
+  display: block;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.pb-hotel-stay-col small {
+  display: block;
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.pb-hotel-qr-box {
+  text-align: center;
+  border-left: 1px dashed #cbd5e1;
+  padding-left: 14px;
+}
+
+.pb-hotel-qr-box img {
+  width: 72px;
+  height: 72px;
+  display: block;
+  margin: 0 auto;
+}
+
+.pb-hotel-qr-box span {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.pb-hotel-stay-banner {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.pb-hotel-stay-banner.confirmed {
+  background-color: #fffbeb;
+  border: 1px solid #fef3c7;
+  color: #92400e;
+}
+
+.pb-hotel-stay-banner.cancelled {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #991b1b;
+}
+
+/* 4. GUEST & PAYMENT */
+.pb-hotel-email-ticket-details {
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pb-hotel-email-ticket-details > div {
+  padding: 16px 20px;
+}
+
+.pb-hotel-email-ticket-details > div:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.pb-hotel-email-ticket-details h3,
+.pb-hotel-email-ticket-important h3,
+.pb-hotel-email-ticket-policies h3 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-hotel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.pb-hotel-table td {
+  padding: 3px 0;
+  color: #334155;
+  vertical-align: top;
+}
+
+.pb-hotel-table td:first-child {
+  color: #64748b;
+}
+
+.pb-hotel-table td:last-child {
+  text-align: right;
+  font-weight: 500;
+}
+
+.pb-hotel-table tr.total-row td {
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e1;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pb-hotel-table tr.total-row td:last-child {
+  font-size: 13px;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.pb-hotel-table tr.refund-row td:last-child {
+  font-size: 13px;
+  font-weight: 800;
+  color: #15803d;
+}
+
+/* 5. IMPORTANT INFORMATION */
+.pb-hotel-email-ticket-important {
+  padding: 16px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.pb-hotel-email-ticket-important ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pb-hotel-email-ticket-important a {
+  color: #0284c7;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* 6. POLICIES & TERMS */
+.pb-hotel-email-ticket-policies {
+  background: #f8fafc;
+}
+
+.pb-hotel-email-ticket-policies > div {
+  padding: 16px 20px;
+}
+
+.pb-hotel-email-ticket-policies > div:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.pb-hotel-email-ticket-policies ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #64748b;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.pb-hotel-email-ticket-policies a {
+  color: #0284c7;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.pb-hotel-policy-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  color: #334155;
+}
+
+.pb-hotel-policy-table th {
+  padding: 4px 2px;
+  border-bottom: 1px solid #cbd5e1;
+  color: #64748b;
+  font-weight: 700;
+  text-align: left;
+}
+
+.pb-hotel-policy-table th:nth-child(2) {
+  text-align: center;
+}
+
+.pb-hotel-policy-table th:last-child {
+  text-align: right;
+}
+
+.pb-hotel-policy-table td {
+  padding: 5px 2px;
+  border-bottom: 1px solid #e2e8f0;
+  word-break: break-word;
+}
+
+.pb-hotel-policy-table td:nth-child(2) {
+  text-align: center;
+  font-weight: 600;
+}
+
+.pb-hotel-policy-table td:last-child {
+  text-align: right;
+  font-weight: 700;
+}
+
+.pb-hotel-policy-note {
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* RESPONSIVE */
+@media (max-width: 680px) {
+  .pb-hotel-email-ticket-header,
+  .pb-hotel-email-ticket-property,
+  .pb-hotel-email-ticket-details,
+  .pb-hotel-email-ticket-policies {
+    grid-template-columns: 1fr;
+  }
+
+  .pb-hotel-email-ticket-reference,
+  .pb-hotel-voucher-meta {
+    justify-items: start;
+    text-align: left;
+    margin-top: 8px;
+  }
+
+  .pb-hotel-stay-columns {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .pb-hotel-qr-box {
+    border-left: none;
+    border-top: 1px dashed #cbd5e1;
+    padding-left: 0;
+    padding-top: 12px;
+  }
+
+  .pb-hotel-email-ticket-details > div:first-child,
+  .pb-hotel-email-ticket-policies > div:first-child {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
+
+@media print {
+  .pb-hotel-email-ticket {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+}

@@ -23,6 +23,7 @@ import { listTravelers } from "../../services/travelerService";
 import { buildGuestSummary, buildStayFacts, buildStayHighlights, formatNightLabel, getHotelVisuals } from "./hotelPresentation";
 
 import HotelDetail from "./HotelDetail";
+import CancellationPolicySection from "../../components/booking/CancellationPolicySection";
 import "../../STYLES/HotelCheckoutExperience.css";
 import { clearHotelBookingFlowState, readHotelBookingFlowState, writeHotelBookingFlowState } from "./hotelBookingFlowStore";
 
@@ -769,6 +770,37 @@ export default function HotelPassengerDetailsPage() {
                           (typeof priceObj === 'number' ? priceObj : 0)
                         );
 
+                        const cancellationObj = r.cancellation || r.Cancellation || null;
+                        const lastCancelDate = r.lastCancellationDate || r.LastCancellationDate || cancellationObj?.freeCancellationUntil || "";
+                        const isFullRefund = r.fullRefundAllowed ?? r.FullRefundAllowed ?? (cancelPolicies.some(p => Number(p.charge || p.Charge || 0) === 0));
+                        
+                        // Compute customer-friendly cancellation policy summary
+                        let policySummary = "Cancellation terms apply";
+                        const freeSlab = cancelPolicies.find(p => Number(p.charge || p.Charge || 0) === 0);
+                        if (freeSlab && freeSlab.toDate) {
+                          try {
+                            const d = new Date(freeSlab.toDate);
+                            const dateFormatted = isNaN(d.getTime()) ? freeSlab.toDate : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+                            policySummary = `Free cancellation until ${dateFormatted}`;
+                          } catch {
+                            policySummary = `Free cancellation until ${freeSlab.toDate}`;
+                          }
+                        } else if (lastCancelDate) {
+                          try {
+                            const d = new Date(lastCancelDate);
+                            const dateFormatted = isNaN(d.getTime()) ? lastCancelDate : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+                            policySummary = `Free cancellation until ${dateFormatted}`;
+                          } catch {
+                            policySummary = `Free cancellation until ${lastCancelDate}`;
+                          }
+                        } else if (isFullRefund) {
+                          policySummary = "Free cancellation available";
+                        } else if (r.cancellationPolicy) {
+                          policySummary = r.cancellationPolicy;
+                        } else {
+                          policySummary = "Non-refundable / Cancellation charges apply";
+                        }
+
                         return {
                             ...r,
                           offerId: r.roomId || r.RatePlanCode || `room-${i}`,
@@ -777,8 +809,13 @@ export default function HotelPassengerDetailsPage() {
                             originalPrice: priceObj,
                             currency: priceObj.currencyCode || priceObj.CurrencyCode || "INR",
                             roomCategory: r.roomTypeName || r.RoomTypeName || r.roomTypeCategory || r.RoomTypeCategory || r._categoryName || "Room",
-                            cancellationPolicy: cancelPolicies?.[0]?.charge || cancelPolicies?.[0]?.Charge ? `Charge: ${cancelPolicies[0].charge || cancelPolicies[0].Charge}` : "Refundable thresholds apply",
+                            cancellationPolicy: policySummary,
+                            cancellationPolicies: cancelPolicies,
                             cancellationPoliciesData: cancelPolicies,
+                            cancellation: cancellationObj,
+                            lastCancellationDate: lastCancelDate,
+                            fullRefundAllowed: isFullRefund,
+                            isRefundable: isFullRefund,
                             bedType: r.bedTypes || r.BedTypes || "",
                             amenities: r.amenities || r.Amenities || [],
                             hotelSupplements: r.hotelSupplements || r.HotelSupplements || "",
@@ -2067,6 +2104,17 @@ export default function HotelPassengerDetailsPage() {
                         </button>
                       )}
                     </span>
+                  </div>
+                )}
+
+                {/* Hotel Cancellation Policy Section */}
+                {offer && (
+                  <div style={{ marginBottom: "16px" }}>
+                    <CancellationPolicySection
+                      booking={offer}
+                      bookingType="hotel"
+                      policyData={offer?.cancellationPolicies || offer?.cancellationPoliciesData}
+                    />
                   </div>
                 )}
 

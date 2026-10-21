@@ -1,6 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { BedDouble, ChevronDown, Loader2, Info } from 'lucide-react';
 import { getAmenityIcon, getAmenityName } from '../../utils/amenityIconMap';
+import CancellationPolicySection from './CancellationPolicySection';
+
+const getRefundability = (roomOffer) => {
+  if (roomOffer.isRefundable !== undefined) return Boolean(roomOffer.isRefundable);
+  if (roomOffer.IsRefundable !== undefined) return Boolean(roomOffer.IsRefundable);
+  if (roomOffer.cancellation?.isRefundable !== undefined) return Boolean(roomOffer.cancellation.isRefundable);
+  if (roomOffer.Cancellation?.IsRefundable !== undefined) return Boolean(roomOffer.Cancellation.IsRefundable);
+  if (roomOffer.fullRefundAllowed !== undefined) return Boolean(roomOffer.fullRefundAllowed);
+  if (roomOffer.FullRefundAllowed !== undefined) return Boolean(roomOffer.FullRefundAllowed);
+  const policies = roomOffer.cancellationPolicies || roomOffer.CancellationPolicies || roomOffer.cancellationPoliciesData || [];
+  if (policies.length > 0) {
+    return policies.some(p => Number(p.charge || p.Charge || 0) === 0);
+  }
+  return true;
+};
 
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-IN', {
@@ -41,8 +56,7 @@ export default function RoomCategoryAccordion({
       // Apply filters to the nested options
       const filteredOptions = options.filter(({ offer: roomOffer }) => {
         // Refundable filter
-        // Refundable filter
-        const isRefundable = roomOffer.IsRefundable !== undefined ? roomOffer.IsRefundable : (roomOffer.isRefundable !== undefined ? roomOffer.isRefundable : true);
+        const isRefundable = getRefundability(roomOffer);
         if (refundableOnly && !isRefundable) return false;
 
         // Meal plan filter
@@ -250,29 +264,35 @@ export default function RoomCategoryAccordion({
                               <BedDouble size={14} /> {roomOffer.bedType || "Bed type not specified"}
                             </span>
                             
-                            <span 
-                              style={{ 
-                                fontSize: "0.68rem", 
-                                fontWeight: 600, 
-                                padding: "2px 6px", 
-                                borderRadius: "4px", 
-                                background: (roomOffer.IsRefundable === false || roomOffer.isRefundable === false) ? "#ffebee" : "#e8f5e9", 
-                                color: (roomOffer.IsRefundable === false || roomOffer.isRefundable === false) ? "#d32f2f" : "#2e7d32",
-                                cursor: "pointer",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "4px",
-                                border: (roomOffer.IsRefundable === false || roomOffer.isRefundable === false) ? "1px solid #ffcdd2" : "1px solid #c8e6c9"
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setOpenPolicyIndex(openPolicyIndex === option.originalIndex ? null : option.originalIndex);
-                              }}
-                              title="View cancellation timeline"
-                            >
-                              {(roomOffer.IsRefundable === false || roomOffer.isRefundable === false) ? "Non-Refundable" : "Refundable"}
-                              <Info size={13} style={{ opacity: 0.9 }} />
-                            </span>
+                            {(() => {
+                              const isOptionRefundable = getRefundability(roomOffer);
+                              return (
+                                <span 
+                                  style={{ 
+                                    fontSize: "0.68rem", 
+                                    fontWeight: 600, 
+                                    padding: "3px 8px", 
+                                    borderRadius: "6px", 
+                                    background: isOptionRefundable ? "#e8f5e9" : "#ffebee", 
+                                    color: isOptionRefundable ? "#2e7d32" : "#d32f2f",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    border: isOptionRefundable ? "1px solid #c8e6c9" : "1px solid #ffcdd2",
+                                    transition: "all 0.2s ease"
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenPolicyIndex(openPolicyIndex === option.originalIndex ? null : option.originalIndex);
+                                  }}
+                                  title="Click to view cancellation terms & refund policy"
+                                >
+                                  {isOptionRefundable ? "✓ Refundable" : "⊗ Non-Refundable"}
+                                  <Info size={13} style={{ opacity: 0.9 }} />
+                                </span>
+                              );
+                            })()}
                             
                             {mealPlan && (
                               <span style={{ 
@@ -332,23 +352,15 @@ export default function RoomCategoryAccordion({
                           </div>
 
                           {openPolicyIndex === option.originalIndex && (
-                            <div style={{ marginTop: "12px", padding: "10px", background: "#f8fafc", borderRadius: "6px", border: "1px solid #e2e8f0", width: "100%" }}>
-                              <h5 style={{ margin: "0 0 6px 0", fontSize: "0.75rem", fontWeight: 600, color: "var(--hotel-ink)" }}>Cancellation Timeline</h5>
-                              
-                              {roomOffer.Cancellation?.Penalties?.length > 0 || roomOffer.cancellation?.penalties?.length > 0 ? (
-                                <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
-                                  {(roomOffer.Cancellation?.Penalties || roomOffer.cancellation?.penalties).map((penalty, pIdx) => (
-                                    <li key={pIdx} style={{ marginBottom: "4px", lineHeight: "1.3" }}>
-                                      If cancelled between <strong>{new Date(penalty.From || penalty.from).toLocaleDateString()}</strong> and <strong>{new Date(penalty.To || penalty.to).toLocaleDateString()}</strong>:
-                                      <strong style={{ color: "#d32f2f" }}> ₹{penalty.Amount || penalty.amount} Penalty</strong>
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p style={{ margin: 0, fontSize: "0.7rem", color: "var(--hotel-muted)" }}>
-                                  Cancellation timeline details not provided by supplier for this room.
-                                </p>
-                              )}
+                            <div 
+                              style={{ width: "100%", marginTop: "10px" }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <CancellationPolicySection
+                                booking={roomOffer}
+                                bookingType="hotel"
+                                policyData={roomOffer.cancellationPolicies || roomOffer.cancellationPoliciesData || roomOffer.CancellationPolicies}
+                              />
                             </div>
                           )}
                         </div>

@@ -104,7 +104,13 @@ export default function CancellationPolicySection({
     String(booking?.tripState || "").toLowerCase().includes("cancel");
 
   const totalPaid = Number(
-    parsedPolicy.totalPaid ?? booking?.customerFareInr ?? booking?.totalPriceInr ?? 0
+    parsedPolicy.totalPaid ??
+    booking?.totalPayable ??
+    booking?.price ??
+    booking?.Price ??
+    booking?.customerFareInr ??
+    booking?.totalPriceInr ??
+    0
   );
 
   const estFee =
@@ -166,9 +172,9 @@ export default function CancellationPolicySection({
             <h5 className="policy-compact-title">Cancellation & Refund Policy</h5>
             <span
               className="policy-compact-sub"
-              title={`${operatorName ? `${operatorName} • ` : ""}${bookingRef ? `Ref: ${bookingRef}` : `${displayType} Ticket`}${formattedDeparture ? ` • Dep: ${formattedDeparture}` : ""}`}
+              title={`${operatorName ? `${operatorName} • ` : ""}${bookingRef ? `Ref: ${bookingRef}` : `${booking?.roomCategory || booking?.roomTypeName || booking?.RoomTypeName || displayType} Terms`}${formattedDeparture ? ` • Dep: ${formattedDeparture}` : ""}`}
             >
-              {operatorName ? `${operatorName} • ` : ""}{bookingRef ? `Ref: ${bookingRef}` : `${displayType} Ticket`}
+              {operatorName ? `${operatorName} • ` : ""}{bookingRef ? `Ref: ${bookingRef}` : `${booking?.roomCategory || booking?.roomTypeName || booking?.RoomTypeName || displayType} Terms`}
               {formattedDeparture ? ` • Dep: ${formattedDeparture}` : ""}
             </span>
           </div>
@@ -179,54 +185,69 @@ export default function CancellationPolicySection({
             <span className="policy-pill cancelled">Cancelled</span>
           ) : isZeroRefund ? (
             <span className="policy-pill nonref">Non-Refundable</span>
-          ) : estRefund !== null && estRefund > 0 ? (
+          ) : (estRefund !== null && estRefund > 0) || parsedPolicy.isRefundable ? (
             <span className="policy-pill success">Refundable</span>
           ) : null}
         </div>
       </div>
 
-      {/* ── Compact 1-Row Calculation Card ── */}
-      <div className={`policy-calc-card ${isAlreadyCancelled ? "is-cancelled" : isZeroRefund ? "is-zero" : "is-refundable"}`}>
-        <div className="policy-calc-grid">
-          <div className="calc-col">
-            <span className="calc-lbl">Ticket Paid</span>
-            <span className="calc-val">₹{totalPaid.toFixed(2)}</span>
+      {/* ── Compact 1-Row Calculation Card (shown when price/fare is known) ── */}
+      {totalPaid > 0 && (
+        <div className={`policy-calc-card ${isAlreadyCancelled ? "is-cancelled" : isZeroRefund ? "is-zero" : "is-refundable"}`}>
+          <div className="policy-calc-grid">
+            <div className="calc-col">
+              <span className="calc-lbl">{bookingRef ? "Ticket Paid" : displayType === "Hotel" ? "Room Fare" : "Ticket Paid"}</span>
+              <span className="calc-val">₹{totalPaid.toFixed(2)}</span>
+            </div>
+            <span className="calc-operator">-</span>
+            <div className="calc-col">
+              <span className="calc-lbl">Cancellation Fee</span>
+              <span className="calc-val text-danger">
+                ₹{(settledFee !== null ? settledFee : estFee !== null ? estFee : totalPaid).toFixed(2)}
+              </span>
+            </div>
+            <span className="calc-operator">=</span>
+            <div className={`calc-col result ${isAlreadyCancelled ? "success" : isZeroRefund ? "zero" : "success"}`}>
+              <span className="calc-lbl">{isAlreadyCancelled ? "Refund Settled" : "Est. Refund"}</span>
+              <span className={`calc-val ${isAlreadyCancelled || (estRefund !== null && estRefund > 0) ? "text-success" : "text-muted"}`}>
+                ₹{(settledRefund !== null ? settledRefund : estRefund !== null ? estRefund : 0).toFixed(2)}
+              </span>
+            </div>
           </div>
-          <span className="calc-operator">-</span>
-          <div className="calc-col">
-            <span className="calc-lbl">Cancellation Fee</span>
-            <span className="calc-val text-danger">
-              ₹{(settledFee !== null ? settledFee : estFee !== null ? estFee : totalPaid).toFixed(2)}
-            </span>
-          </div>
-          <span className="calc-operator">=</span>
-          <div className={`calc-col result ${isAlreadyCancelled ? "success" : isZeroRefund ? "zero" : "success"}`}>
-            <span className="calc-lbl">{isAlreadyCancelled ? "Refund Settled" : "Est. Refund"}</span>
-            <span className={`calc-val ${isAlreadyCancelled || (estRefund !== null && estRefund > 0) ? "text-success" : "text-muted"}`}>
-              ₹{(settledRefund !== null ? settledRefund : estRefund !== null ? estRefund : 0).toFixed(2)}
-            </span>
-          </div>
-        </div>
 
-        {/* 1-Line Explanation */}
-        <div className="policy-calc-note">
-          {isAlreadyCancelled ? (
-            <span>
-              ✓ Refund of ₹{(settledRefund || 0).toFixed(2)} settled to payment source
-              {parsedPolicy.cancellationAudit?.refundId ? ` (Ref: ${parsedPolicy.cancellationAudit.refundId})` : ""}.
-            </span>
-          ) : isZeroRefund ? (
-            <span className="text-danger">
-              ⚠️ 100% cancellation fee applies before departure
-              {parsedPolicy.hoursUntilDeparture !== null ? ` (${parsedPolicy.hoursUntilDeparture} hrs left)` : ""}. Zero refund will be credited.
-            </span>
-          ) : estRefund !== null && estRefund > 0 ? (
-            <span className="text-success">
-              ✓ Eligible refund of ₹{estRefund.toFixed(2)} will be credited to payment source within 3–5 working days.
-            </span>
-          ) : null}
+          {/* 1-Line Explanation */}
+          <div className="policy-calc-note">
+            {isAlreadyCancelled ? (
+              <span>
+                ✓ Refund of ₹{(settledRefund || 0).toFixed(2)} settled to payment source
+                {parsedPolicy.cancellationAudit?.refundId ? ` (Ref: ${parsedPolicy.cancellationAudit.refundId})` : ""}.
+              </span>
+            ) : parsedPolicy.summaryText ? (
+              <span className={isZeroRefund ? "text-danger" : "text-success"}>
+                {parsedPolicy.summaryText}
+              </span>
+            ) : isZeroRefund ? (
+              <span className="text-danger">
+                ⚠️ 100% cancellation fee applies before departure
+                {parsedPolicy.hoursUntilDeparture !== null ? ` (${parsedPolicy.hoursUntilDeparture} hrs left)` : ""}. Zero refund will be credited.
+              </span>
+            ) : estRefund !== null && estRefund > 0 ? (
+              <span className="text-success">
+                ✓ Eligible refund of ₹{estRefund.toFixed(2)} will be credited to payment source within 3–5 working days.
+              </span>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* If totalPaid is 0 but summaryText exists */}
+      {totalPaid <= 0 && parsedPolicy.summaryText && (
+        <div className="policy-calc-note" style={{ marginBottom: "10px" }}>
+          <span className={isZeroRefund ? "text-danger" : "text-success"}>
+            {parsedPolicy.summaryText}
+          </span>
+        </div>
+      )}
 
       {/* ── Per-Seat Breakdown: ONLY shown if MULTIPLE passengers exist (>1) ── */}
       {filteredPassengerEstimates.length > 1 && !isAlreadyCancelled && (

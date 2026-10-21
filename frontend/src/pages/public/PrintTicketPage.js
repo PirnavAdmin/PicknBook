@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fetchTicketByContact, normalizeBookingType } from "../../services/ticketService";
 import BusEmailStyleTicket from "../../components/BusEmailStyleTicket";
+import HotelEmailStyleTicket from "../../components/HotelEmailStyleTicket";
 import "../../STYLES/PrintTicket.css";
 
 const TICKET_TYPES = { BUS: "bus", FLIGHT: "flight", HOTEL: "hotel" };
@@ -1501,18 +1502,28 @@ const TicketPreviewPage = () => {
             if (activeTicketType === TICKET_TYPES.HOTEL) {
               const hotelData = mapTicketToHotel(rawTicket);
               return (
-                <TicketSection
-                  key={frontId}
-                  icon="H"
-                  label="Hotel Ticket"
-                  sub={`${hotelData.hotelName} - Ref: ${hotelData.pnr}`}
-                  accent="#059669"
-                  onPrint={() => printById(frontId, backId, 'Hotel Ticket')}
-                  onDownload={() => downloadTicketAsImage(frontId, backId, `hotel-ticket-${index + 1}`)}
-                  backElement={<GenericBackSide id={backId} title="Hotel Ticket" ticket={rawTicket} />}
-                >
-                  <HotelTicket data={hotelData} id={frontId} rawTicket={rawTicket} />
-                </TicketSection>
+                <section className="pb-ticket-section pb-email-ticket-section" key={frontId}>
+                  <div className="no-print pb-ticket-toolbar">
+                    <div className="pb-ticket-title">
+                      <span className="pb-ticket-icon">H</span>
+                      <div>
+                        <strong>{hotelData.status.includes("CANCEL") ? "Hotel Booking Cancelled" : "Hotel Ticket"}</strong>
+                        <small>{`${hotelData.hotelName} - Conf: ${hotelData.confirmationNo || hotelData.pnr}`}</small>
+                      </div>
+                    </div>
+                    <div className="pb-ticket-actions">
+                      <button type="button" onClick={() => printTicketElement(frontId, "Hotel Ticket")}>Print</button>
+                      <button
+                        type="button"
+                        className="pb-secondary-action"
+                        onClick={() => downloadTicketAsImage(frontId, null, `hotel-ticket-${index + 1}`)}
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                  <HotelEmailStyleTicket ticket={rawTicket} data={hotelData} id={frontId} />
+                </section>
               );
             }
 

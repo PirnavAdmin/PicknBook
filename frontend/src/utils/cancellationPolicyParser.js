@@ -874,11 +874,31 @@ function parseHotelPolicy(booking, extraPolicyData) {
     booking?.cancelPolicy ||
     booking?.note;
 
+  const freeCancellationUntilDate =
+    booking?.cancellation?.freeCancellationUntil ||
+    booking?.Cancellation?.FreeCancellationUntil ||
+    booking?.lastCancellationDate ||
+    booking?.LastCancellationDate ||
+    extraPolicyData?.freeCancellationUntil ||
+    extraPolicyData?.lastCancellationDate;
+
+  const totalPaidVal = Number(
+    booking?.customerFareInr ??
+    booking?.totalPriceInr ??
+    booking?.totalPayable ??
+    booking?.price ??
+    booking?.Price ??
+    booking?.b2cFinalFare ??
+    0
+  );
+
+  const now = new Date();
+
   if (Array.isArray(raw) && raw.length > 0) {
     const slabs = raw.map((item, idx) => {
       let condition = item.policyText || item.PolicyText || item.condition;
-      const fromDate = item.fromDate || item.FromDate;
-      const toDate = item.toDate || item.ToDate;
+      const fromDate = item.fromDate || item.FromDate || item.from || item.From;
+      const toDate = item.toDate || item.ToDate || item.to || item.To;
       const deadline = item.cancellationDeadline || item.CancellationDeadline;
 
       if (!condition) {
@@ -896,9 +916,23 @@ function parseHotelPolicy(booking, extraPolicyData) {
       let charge = "As per policy";
       let refund = "As per policy";
       let chargeType = "partial";
+      let chargePct = null;
+      let flatFee = null;
 
-      const rawCharge = item.charge !== undefined && item.charge !== null ? item.charge : item.Charge;
-      const rawChargeType = item.chargeType !== undefined && item.chargeType !== null ? item.chargeType : item.ChargeType;
+      const rawCharge = item.charge !== undefined && item.charge !== null 
+        ? item.charge 
+        : (item.Charge !== undefined && item.Charge !== null 
+            ? item.Charge 
+            : (item.amount !== undefined && item.amount !== null 
+                ? item.amount 
+                : item.Amount));
+
+      const rawChargeType = item.chargeType !== undefined && item.chargeType !== null 
+        ? item.chargeType 
+        : item.ChargeType;
+
+      const currency = item.currency || item.Currency || "INR";
+      const currSymbol = currency === "INR" ? "₹" : `${currency} `;
 
       if (rawCharge !== undefined && rawCharge !== null) {
         const numCharge = Number(rawCharge);
@@ -906,25 +940,131 @@ function parseHotelPolicy(booking, extraPolicyData) {
           charge = "No Charge (Free Cancellation)";
           refund = "100% Refund";
           chargeType = "free";
+          chargePct = 0;
+          flatFee = 0;
         } else {
-          const isPercent = Number(rawChargeType) === 1 || String(rawChargeType || "").toLowerCase() === "percentage" || numCharge <= 100;
-          charge = isPercent ? `${numCharge}% Charge` : `INR ${numCharge.toLocaleString("en-IN")} Charge`;
-          refund = isPercent ? `${Math.max(0, 100 - numCharge)}% Refund` : "Balance Refunded";
-          chargeType = isPercent && numCharge >= 100 ? "non_refundable" : "partial";
+          // If charge > 100, it cannot be a percentage (e.g. ₹5,308)
+          const isPercent = numCharge <= 100 && (
+            Number(rawChargeType) === 1 ||
+            String(rawChargeType || "").toLowerCase().includes("percent")
+          );
+
+          if (isPercent) {
+            chargePct = numCharge;
+            charge = `${numCharge}% Charge`;
+            refund = `${Math.max(0, 100 - numCharge)}% Refund`;
+            chargeType = numCharge >= 100 ? "non_refundable" : "partial";
+          } else {
+            flatFee = numCharge;
+            charge = `${currSymbol}${numCharge.toLocaleString("en-IN")} Fee`;
+            refund = totalPaidVal > 0 ? `${currSymbol}${Math.max(0, totalPaidVal - numCharge).toLocaleString("en-IN")} Refund` : "Balance Refunded";
+            chargeType = "partial";
+          }
         }
       } else if (item.refundPercentage !== undefined && item.refundPercentage !== null) {
-        charge = `${100 - Number(item.refundPercentage)}% Charge`;
-        refund = `${item.refundPercentage}% Refund`;
-        chargeType = Number(item.refundPercentage) === 100 ? "free" : "partial";
+        const refPct = Number(item.refundPercentage);
+        chargePct = 100 - refPct;
+        charge = `${chargePct}% Charge`;
+        refund = `${refPct}% Refund`;
+        chargeType = refPct === 100 ? "free" : refPct === 0 ? "non_refundable" : "partial";
       } else if (item.CancellationCharge !== undefined) {
-        charge = `INR ${Number(item.CancellationCharge).toLocaleString("en-IN")} Charge`;
+        flatFee = Number(item.CancellationCharge);
+        charge = `${currSymbol}${flatFee.toLocaleString("en-IN")} Fee`;
         chargeType = "partial";
       }
 
-      return { condition, charge, refund, chargeType, raw: item };
+      // Determine if slab is active based on current time
+      let isActive = false;
+      if (fromDate) {
+        const fd = new Date(fromDate);
+        const td = toDate ? new Date(toDate) : null;
+        if (!isNaN(fd.getTime())) {
+          if (td && !isNaN(td.getTime())) {
+            isActive = now >= fd && now <= td;
+          } else {
+            isActive = now >= fd;
+          }
+        }
+      }
+
+      return {
+        condition,
+        charge,
+        refund,
+        chargeType,
+        chargePct,
+        flatFee,
+        fromDate,
+        toDate,
+        isActive,
+        raw: item,
+      };
     });
 
-    return { available: true, slabs };
+    // Ensure exactly one slab is marked active if time ranges exist
+    let activeSlab = slabs.find((s) => s.isActive);
+    if (!activeSlab && slabs.length > 0) {
+      const firstFrom = slabs[0].fromDate ? new Date(slabs[0].fromDate) : null;
+      const lastTo = slabs[slabs.length - 1].toDate ? new Date(slabs[slabs.length - 1].toDate) : null;
+
+      if (firstFrom && !isNaN(firstFrom.getTime()) && now < firstFrom) {
+        slabs[0].isActive = true;
+        activeSlab = slabs[0];
+      } else if (lastTo && !isNaN(lastTo.getTime()) && now > lastTo) {
+        slabs[slabs.length - 1].isActive = true;
+        activeSlab = slabs[slabs.length - 1];
+      } else {
+        slabs[0].isActive = true;
+        activeSlab = slabs[0];
+      }
+    }
+
+    const hasFreeCancellation = slabs.some((s) => s.chargeType === "free");
+    const allNonRefundable = slabs.length > 0 && slabs.every((s) => s.chargeType === "non_refundable");
+
+    let estimatedCancellationCharge = null;
+    let estimatedRefundAmount = null;
+
+    if (activeSlab) {
+      if (activeSlab.chargeType === "free") {
+        estimatedCancellationCharge = 0;
+        estimatedRefundAmount = totalPaidVal;
+      } else if (activeSlab.chargePct !== null && totalPaidVal > 0) {
+        estimatedCancellationCharge = (totalPaidVal * activeSlab.chargePct) / 100;
+        estimatedRefundAmount = Math.max(0, totalPaidVal - estimatedCancellationCharge);
+      } else if (activeSlab.flatFee !== null) {
+        estimatedCancellationCharge = totalPaidVal > 0 ? Math.min(totalPaidVal, activeSlab.flatFee) : activeSlab.flatFee;
+        estimatedRefundAmount = totalPaidVal > 0 ? Math.max(0, totalPaidVal - estimatedCancellationCharge) : null;
+      }
+    }
+
+    // Determine free cancellation deadline
+    const freeSlab = slabs.find((s) => s.chargeType === "free");
+    const cutoffDateStr = freeCancellationUntilDate || (freeSlab ? freeSlab.toDate : null);
+
+    let summaryText = null;
+    if (cutoffDateStr) {
+      const cutoff = new Date(cutoffDateStr);
+      if (!isNaN(cutoff.getTime()) && cutoff > now) {
+        summaryText = `Free cancellation available until ${formatHotelDate(cutoffDateStr)}. 100% refund guaranteed.`;
+      } else if (allNonRefundable) {
+        summaryText = "This room reservation is non-refundable as per hotel policy.";
+      }
+    } else if (allNonRefundable) {
+      summaryText = "This room reservation is non-refundable as per hotel policy.";
+    }
+
+    return {
+      available: true,
+      slabs,
+      summaryText,
+      isNonRefundable: allNonRefundable || (activeSlab?.chargeType === "non_refundable"),
+      isRefundable: !allNonRefundable && hasFreeCancellation,
+      freeCancellationUntil: cutoffDateStr,
+      estimatedCancellationCharge,
+      estimatedRefundAmount,
+      totalPaid: totalPaidVal,
+    };
   }
 
   if (singlePolicyStr && typeof singlePolicyStr === "string" && singlePolicyStr.trim()) {

@@ -603,10 +603,24 @@ export default function HotelDetail({
                 marginBottom: "10px"
               }}
             >
-              <div style={{ fontSize: "0.72rem", padding: "4px 8px", background: hotel.offers[0].cancellationPolicy?.includes("Charge") ? "#fef2f2" : "#f0fdf4", color: hotel.offers[0].cancellationPolicy?.includes("Charge") ? "#b91c1c" : "#15803d", borderRadius: "6px", border: `1px solid ${hotel.offers[0].cancellationPolicy?.includes("Charge") ? "#fecaca" : "#bbf7d0"}`, display: "flex", alignItems: "center", gap: "4px" }}>
-                <span style={{ fontSize: "0.8rem", lineHeight: "1" }}>{hotel.offers[0].cancellationPolicy?.includes("Charge") ? "⊗" : "✓"}</span> 
-                <span style={{ fontWeight: 600 }}>{hotel.offers[0].cancellationPolicy?.includes("Charge") ? "Non-refundable" : "Free Cancellation"}</span>
-              </div>
+              {(() => {
+                const firstOffer = hotel.offers && hotel.offers[0];
+                const isFirstOfferRefundable = firstOffer ? (
+                  firstOffer.isRefundable ??
+                  firstOffer.cancellation?.isRefundable ??
+                  firstOffer.Cancellation?.IsRefundable ??
+                  firstOffer.fullRefundAllowed ??
+                  firstOffer.FullRefundAllowed ??
+                  (firstOffer.cancellationPolicies?.some(p => Number(p.charge || p.Charge || 0) === 0) ?? true)
+                ) : true;
+
+                return (
+                  <div style={{ fontSize: "0.72rem", padding: "4px 8px", background: isFirstOfferRefundable ? "#f0fdf4" : "#fef2f2", color: isFirstOfferRefundable ? "#15803d" : "#b91c1c", borderRadius: "6px", border: `1px solid ${isFirstOfferRefundable ? "#bbf7d0" : "#fecaca"}`, display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span style={{ fontSize: "0.8rem", lineHeight: "1" }}>{isFirstOfferRefundable ? "✓" : "⊗"}</span> 
+                    <span style={{ fontWeight: 600 }}>{isFirstOfferRefundable ? "Free Cancellation Available" : "Non-refundable"}</span>
+                  </div>
+                );
+              })()}
               
               {hotel.offers[0].amenities && hotel.offers[0].amenities.slice(0, 2).map((a, i) => {
                 const amenityName = getAmenityName(a);
