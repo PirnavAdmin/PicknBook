@@ -826,10 +826,14 @@ namespace PickNBook.Api.Services.Implementations
                 // 3. Save Tracking Records (Local Persistence)
                 var operatorPnr = !string.IsNullOrWhiteSpace(srdvTravelOperatorPnr)
                     ? srdvTravelOperatorPnr.Trim()
-                    : (!string.IsNullOrWhiteSpace(srdvTicketNo) ? srdvTicketNo.Trim() : (!string.IsNullOrWhiteSpace(srdvPnr) ? srdvPnr : reservation.Pnr));
+                    : (!string.IsNullOrWhiteSpace(srdvTicketNo) ? srdvTicketNo.Trim() : null);
 
-                reservation.Pnr = operatorPnr.Length > 100 ? operatorPnr[..100] : operatorPnr;
-                reservation.SrdvBookingId = srdvPnr ?? srdvTravelOperatorPnr;
+                var shortPnr = !string.IsNullOrWhiteSpace(srdvPnr)
+                    ? srdvPnr.Trim()
+                    : (operatorPnr ?? reservation.Pnr);
+
+                reservation.Pnr = shortPnr.Length > 100 ? shortPnr[..100] : shortPnr;
+                reservation.SrdvBookingId = operatorPnr ?? (srdvPnr ?? reservation.Pnr);
                 reservation.SrdvTicketNo = srdvTicketNo;
                 reservation.Status = "Booked";
                 reservation.SrdvBookingResponseJson = srdvResponseJson;
@@ -1148,6 +1152,25 @@ namespace PickNBook.Api.Services.Implementations
                 var bookingRef = $"HT-{DateTime.UtcNow:yyyyMMddHHmmss}-{Random.Shared.Next(100, 1000)}";
                 var firstRoom = request.HotelRoomsDetails?.FirstOrDefault();
 
+                // Lookup locked dynamic room cancellation policy from HotelBlockedPrices if not in payload
+                PickNBook.Api.Models.Entities.HotelBlockedPrice? blockedPrice = null;
+                if (!string.IsNullOrWhiteSpace(request.ResultIndex))
+                {
+                    var traceIdStr = request.TraceId.ToString();
+                    blockedPrice = await _dbContext.HotelBlockedPrices
+                        .Where(b => b.ResultIndex == request.ResultIndex && (b.TraceId == traceIdStr || string.IsNullOrEmpty(b.TraceId)))
+                        .OrderByDescending(b => b.CreatedAt)
+                        .FirstOrDefaultAsync();
+                }
+
+                var dynamicLastCancellationDate = (DateTime.TryParse(firstRoom?.LastCancellationDate, out var lcd) ? IndiaTimeHelper.ToUtcFromIst(lcd) : (DateTime?)null)
+                    ?? blockedPrice?.LastCancellationDate;
+
+                var dynamicCancellationPolicyJson = (firstRoom?.CancellationPolicies != null && firstRoom.CancellationPolicies.Count > 0 
+                        ? JsonSerializer.Serialize(firstRoom.CancellationPolicies) 
+                        : null)
+                    ?? blockedPrice?.CancellationPolicyJson;
+
                 var reservation = new HotelReservation
                 {
                     BookingReference = bookingRef,
@@ -1179,15 +1202,15 @@ namespace PickNBook.Api.Services.Implementations
                     WalletPaidAmount = payment.WalletUsedAmount,
                     GatewayPaidAmount = payment.GatewayPaidAmount > 0 || payment.WalletUsedAmount > 0 ? payment.GatewayPaidAmount : payment.FinalPayableAmount,
                     
-                    SrdvGstAmount = firstRoom?.Price?.TotalGSTAmount ?? 0m,
+                    SrdvGstAmount = firstRoom?.Price?.TotalGSTAmount ?? blockedPrice?.Tax ?? 0m,
                     SrdvCgstAmount = firstRoom?.Price?.GST?.CGSTAmount ?? 0m,
                     SrdvSgstAmount = firstRoom?.Price?.GST?.SGSTAmount ?? 0m,
                     SrdvIgstAmount = firstRoom?.Price?.GST?.IGSTAmount ?? 0m,
                     
                     RatePlanCode = request.RatePlanCode,
                     RoomTypeCode = request.RoomTypeCode,
-                    LastCancellationDate = DateTime.TryParse(firstRoom?.LastCancellationDate, out var lcd) ? lcd : null,
-                    CancellationPolicyJson = firstRoom?.CancellationPolicies != null ? JsonSerializer.Serialize(firstRoom.CancellationPolicies) : null,
+                    LastCancellationDate = dynamicLastCancellationDate,
+                    CancellationPolicyJson = dynamicCancellationPolicyJson,
                     
                     CouponCode = payment.CouponCode,
                     CouponDiscount = payment.DiscountAmount,
@@ -1290,6 +1313,7 @@ namespace PickNBook.Api.Services.Implementations
                         await _dbContext.SaveChangesAsync();
 
                         payment.BookingReferenceId = reservation.Id;
+                        payment.BookingId = reservation.Id;
                     }
                     catch (Exception pEx)
                     {
@@ -1388,6 +1412,7 @@ namespace PickNBook.Api.Services.Implementations
                 
                 payment.FulfillmentStatus = isPending ? "Pending_Reconciliation" : "Success";
                 payment.BookingReferenceId = reservation.Id;
+                payment.BookingId = reservation.Id;
 
                 await ProcessCouponConsumptionAsync(payment.CouponCode, payment.UserId, reservation.Id, payment.FinalPayableAmount, payment.DiscountAmount, "Hotel");
 

@@ -1,10 +1,15 @@
 /* eslint-disable */
 import React, { useEffect, useState, useMemo } from "react";
-import { listHotelBookings, cancelHotelBookingByAdmin } from "../../../services/adminHotelService";
+import {
+  listHotelBookings,
+  cancelHotelBookingByAdmin,
+  downloadAdminHotelVoucher,
+  resendAdminHotelConfirmationEmail,
+} from "../../../services/adminHotelService";
 import { formatDateTime } from "../../../utils/apiDateFormat";
 import AdminPagination from "../../../components/AdminPagination";
 import { getAdminItemsPerPage } from "../../../utils/adminPortalStorage";
-import { Filter, Download } from "lucide-react";
+import { Filter, Download, Mail, Loader2 } from "lucide-react";
 import "./HotelBookingList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
 
@@ -15,6 +20,36 @@ export default function HotelBookingList() {
   const [error, setError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [downloadingVoucherId, setDownloadingVoucherId] = useState(null);
+  const [resendingEmailId, setResendingEmailId] = useState(null);
+
+  const handleDownloadVoucher = async (b) => {
+    const id = b.bookingId || b.id;
+    if (!id) return;
+    try {
+      setDownloadingVoucherId(id);
+      await downloadAdminHotelVoucher(id, b.bookingReference);
+      setActionSuccess(`Voucher PDF downloaded for ${b.bookingReference || id}.`);
+    } catch (err) {
+      setError(err.message || "Failed to download voucher.");
+    } finally {
+      setDownloadingVoucherId(null);
+    }
+  };
+
+  const handleResendEmail = async (b) => {
+    const id = b.bookingId || b.id;
+    if (!id) return;
+    try {
+      setResendingEmailId(id);
+      const res = await resendAdminHotelConfirmationEmail(id);
+      setActionSuccess(res?.message || "Voucher confirmation email sent to guest.");
+    } catch (err) {
+      setError(err.message || "Failed to resend confirmation email.");
+    } finally {
+      setResendingEmailId(null);
+    }
+  };
 
   const resolveGuestName = (b) => {
     const val = b?.guestName || b?.GuestName || b?.passengerName || b?.PassengerName || b?.customerName || b?.CustomerName || b?.userName || b?.UserName || b?.name || b?.Name || b?.leadGuestName || b?.leadPassengerName;
@@ -622,7 +657,9 @@ export default function HotelBookingList() {
                 onChange={(e) => setTempStatus(e.target.value)}
               >
                 <option value="all">All Statuses</option>
-                <option value="Booked">Booked</option>
+                <option value="Booked">Booked / Confirmed</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="CancellationPending">Cancellation Pending</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
             </div>
@@ -762,7 +799,7 @@ export default function HotelBookingList() {
                     </span>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
+                  <div className="admin-table-cell admin-cell-centered" style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
                     <button
                       type="button"
                       className="admin-action-btn admin-view-button"
@@ -770,6 +807,22 @@ export default function HotelBookingList() {
                     >
                       View
                     </button>
+                    {b.status !== "Cancelled" && (
+                      <button
+                        type="button"
+                        className="admin-action-btn"
+                        title="Download Voucher PDF"
+                        onClick={() => handleDownloadVoucher(b)}
+                        disabled={downloadingVoucherId === (b.bookingId || b.id)}
+                        style={{ padding: "4px 8px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 4, cursor: "pointer", color: "#334155" }}
+                      >
+                        {downloadingVoucherId === (b.bookingId || b.id) ? (
+                          <Loader2 size={13} className="hotel-spin" />
+                        ) : (
+                          <Download size={13} />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </article>
               );
@@ -821,23 +874,79 @@ export default function HotelBookingList() {
                   </span>
                 </div>
               </div>
-              <button data-admin-close
-                type="button"
-                onClick={() => setSelectedBooking(null)}
-                style={{
-                  padding: "6px 18px",
-                  fontSize: "0.85rem",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#A51C49",
-                  color: "#ffffff",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  boxShadow: "0 2px 6px rgba(165, 28, 73, 0.3)"
-                }}
-              >
-                Close
-              </button>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                {selectedBooking.status !== "Cancelled" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadVoucher(selectedBooking)}
+                      disabled={downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.id)}
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "0.85rem",
+                        borderRadius: "8px",
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        color: "#1e293b",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6
+                      }}
+                    >
+                      {downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.id) ? (
+                        <Loader2 size={14} className="hotel-spin" />
+                      ) : (
+                        <Download size={14} />
+                      )}
+                      <span>Download Voucher</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleResendEmail(selectedBooking)}
+                      disabled={resendingEmailId === (selectedBooking.bookingId || selectedBooking.id)}
+                      style={{
+                        padding: "6px 14px",
+                        fontSize: "0.85rem",
+                        borderRadius: "8px",
+                        border: "1px solid #cbd5e1",
+                        background: "#ffffff",
+                        color: "#1e293b",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6
+                      }}
+                    >
+                      {resendingEmailId === (selectedBooking.bookingId || selectedBooking.id) ? (
+                        <Loader2 size={14} className="hotel-spin" />
+                      ) : (
+                        <Mail size={14} />
+                      )}
+                      <span>Resend Email</span>
+                    </button>
+                  </>
+                )}
+                <button data-admin-close
+                  type="button"
+                  onClick={() => setSelectedBooking(null)}
+                  style={{
+                    padding: "6px 18px",
+                    fontSize: "0.85rem",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#A51C49",
+                    color: "#ffffff",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(165, 28, 73, 0.3)"
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </header>
 
             <div style={{ maxHeight: "72vh", overflowY: "auto", paddingRight: "4px" }}>
@@ -982,6 +1091,18 @@ export default function HotelBookingList() {
                       <span className={`admin-ps-pill ${getAdminStatusClass(selectedBooking.paymentStatus || selectedBooking.status) === "success" ? "ps-success" : "ps-na"}`}>
                         {safeValue(selectedBooking.paymentStatus || selectedBooking.status || "N/A")}
                       </span>
+                    </td>
+                    <th>Payment ID / Txn Ref</th>
+                    <td>
+                      <strong style={{ fontSize: "0.82rem", color: "#1e293b" }}>
+                        {safeValue(selectedBooking.paymentId || selectedBooking.PaymentId || selectedBooking.payment?.id || selectedBooking.paymentReference || selectedBooking.PaymentReference || selectedBooking.payment?.paymentReference, "--")}
+                      </strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Payment Method</th>
+                    <td>
+                      {safeValue(selectedBooking.paymentMethod || selectedBooking.PaymentMethod || selectedBooking.payment?.paymentMethod, "Online / Gateway")}
                     </td>
                     <th>Refund Status</th>
                     <td>

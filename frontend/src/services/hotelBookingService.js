@@ -510,3 +510,56 @@ export async function validateHotelCoupon(payload) {
   }
 }
 
+export async function getHotelBookingById(id) {
+  let cleanId = id;
+  if (typeof id === "string") {
+    cleanId = id.replace(/\D/g, "");
+  }
+  return await requestHotelJson(`/api/Hotels/bookings/${cleanId}`, { method: "GET" }, "Unable to fetch hotel booking details.");
+}
+
+export async function getHotelCancellationQuote(id) {
+  let cleanId = id;
+  if (typeof id === "string") {
+    cleanId = id.replace(/\D/g, "");
+  }
+  return await requestHotelJson(`/api/Hotels/bookings/${cleanId}/cancellation-quote`, { method: "GET" }, "Unable to calculate cancellation quote.");
+}
+
+export async function downloadHotelVoucher(id, bookingRef) {
+  let cleanId = id;
+  if (typeof id === "string") {
+    cleanId = id.replace(/\D/g, "");
+  }
+  const token = (typeof window !== "undefined" && window.sessionStorage.getItem("active_portal") === "b2b"
+    ? window.localStorage.getItem("b2b_token") : "") || (typeof window !== "undefined" ? window.localStorage.getItem("token") || window.localStorage.getItem("b2b_token") : "");
+  const response = await fetch(toAuthUrl(`/api/Hotels/bookings/${cleanId}/voucher`), {
+    method: "GET",
+    headers: {
+      Accept: "application/pdf",
+      "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    }
+  });
+  if (!response.ok) {
+    throw new Error("Failed to download hotel voucher.");
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `hotel-voucher-${bookingRef || cleanId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function resendHotelConfirmationEmail(id) {
+  let cleanId = id;
+  if (typeof id === "string") {
+    cleanId = id.replace(/\D/g, "");
+  }
+  return await requestHotelJson(`/api/Hotels/bookings/${cleanId}/resend-confirmation-email`, { method: "POST" }, "Unable to resend hotel confirmation email.");
+}
+

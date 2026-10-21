@@ -537,6 +537,9 @@ function normalizeBusBookingRecord(record) {
     pnr: String(
       getFieldValue(["pnr", "PNR", "Pnr", "pnrNumber", "PnrNumber"], "")
     ),
+    operatorPnr: String(
+      getFieldValue(["operatorPnr", "OperatorPnr", "travelOperatorPNR", "TravelOperatorPNR"], "")
+    ),
     tripType: String(getFieldValue(["tripType", "TripType"], "Bus")),
     tripId: getFieldValue(["tripId", "TripId"], null),
     passengerName: resolvePassengerName(record),
@@ -995,11 +998,21 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     ""
   );
 
+  const operatorPnr = normalizeText(
+    record?.operatorPnr ||
+    record?.OperatorPnr ||
+    record?.travelOperatorPNR ||
+    record?.TravelOperatorPNR ||
+    (record?.pnr && String(record.pnr).startsWith("TS") ? record.pnr : ""),
+    ""
+  );
+
   return {
     id: bookingId || bookingReference || pnrValue || "--",
     bookingId,
     bookingReference,
     pnr: pnrValue || bookingReference || tripNumber || bookingId || "--",
+    operatorPnr: operatorPnr || "",
     ticketNo: ticketNo || bookingReference || "--",
     tripType: safeSourceType,
     createdAt: toDateKey(bookedAtValue),
@@ -1578,9 +1591,22 @@ export default function AdminB2CBookingListPage() {
 
                 <div className="admin-table-cell">
                   <strong>{safeValue(booking.pnr)}</strong>
-                  {booking.ticketNo && booking.ticketNo !== "--" && booking.ticketNo !== booking.pnr && (
-                    <small style={{ display: "block", color: "#475569", fontWeight: "600", fontSize: "0.72rem", marginTop: "1px" }}>
-                      Tkt No: {safeValue(booking.ticketNo)}
+                  {booking.operatorPnr && booking.operatorPnr !== "--" && booking.operatorPnr !== booking.pnr && (
+                    <small
+                      style={{
+                        display: "block",
+                        color: "#475569",
+                        fontWeight: "600",
+                        fontSize: "0.72rem",
+                        marginTop: "1px",
+                        maxWidth: "160px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}
+                      title={`Operator PNR: ${booking.operatorPnr}`}
+                    >
+                      Op PNR: {safeValue(booking.operatorPnr)}
                     </small>
                   )}
                   <span className={`admin-status-pill ${mapAdminStatusClass(booking.status)}`}>
@@ -1714,6 +1740,14 @@ export default function AdminB2CBookingListPage() {
                     <th>Booking Date (B.D.)</th>
                     <td>{formatAdminDate(selectedBooking.createdAt)}</td>
                   </tr>
+                  {selectedBooking.operatorPnr && selectedBooking.operatorPnr !== "--" && selectedBooking.operatorPnr !== selectedBooking.pnr && (
+                    <tr>
+                      <th>Operator PNR</th>
+                      <td colSpan="3" style={{ wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                        {safeValue(selectedBooking.operatorPnr)}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
                     <th>Booking Status</th>
                     <td>

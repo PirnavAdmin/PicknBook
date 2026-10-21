@@ -11,10 +11,15 @@ import {
   SlidersHorizontal,
   X,
   XCircle,
+  Download,
 } from "lucide-react";
 import {
   getMyHotelBookings,
   cancelHotelBooking,
+  getHotelBookingById,
+  getHotelCancellationQuote,
+  downloadHotelVoucher,
+  resendHotelConfirmationEmail,
 } from "../../services/hotelBookingService";
 import { getHotelVisuals } from "./hotelPresentation";
 import "../../STYLES/HotelBookings.css";
@@ -125,13 +130,53 @@ export default function HotelBookings() {
     setActionMessage("");
   };
 
-  const handleViewDetails = (booking) => {
+  const [downloadingVoucherId, setDownloadingVoucherId] = useState(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  const handleViewDetails = async (booking) => {
     setSelectedBooking(booking);
     setSelectedHotelItems([]);
+    const actualId = booking.id || booking.Id || booking.bookingId;
+    if (actualId) {
+      try {
+        setIsLoadingDetails(true);
+        const details = await getHotelBookingById(actualId);
+        if (details) {
+          setSelectedBooking((prev) => ({ ...prev, ...details }));
+        }
+      } catch (err) {
+        console.warn("Could not fetch full details, showing summary:", err);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    }
   };
 
-  const triggerCancelBooking = (booking) => {
-    setCancelModalBookingId(booking);
+  const handleDownloadVoucher = async (booking) => {
+    const actualId = booking.id || booking.Id || booking.bookingId;
+    if (!actualId) return;
+    try {
+      setDownloadingVoucherId(actualId);
+      await downloadHotelVoucher(actualId, booking.bookingReference);
+      setActionMessage(`Voucher downloaded for ${booking.bookingReference || actualId}.`);
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to download voucher.");
+    } finally {
+      setDownloadingVoucherId(null);
+    }
+  };
+
+  const triggerCancelBooking = async (booking) => {
+    let quote = null;
+    const actualId = booking.id || booking.Id || booking.bookingId;
+    if (actualId) {
+      try {
+        quote = await getHotelCancellationQuote(actualId);
+      } catch (e) {
+        console.warn("Could not pre-fetch cancellation quote:", e);
+      }
+    }
+    setCancelModalBookingId({ ...booking, ...(quote || {}) });
     setIsCancelModalOpen(true);
   };
 
@@ -358,6 +403,21 @@ export default function HotelBookings() {
                             >
                               <Eye size={15} />
                             </button>
+                            {booking.status !== "Cancelled" && (
+                              <button
+                                type="button"
+                                className="ops-btn-action"
+                                title="Download Voucher PDF"
+                                onClick={() => handleDownloadVoucher(booking)}
+                                disabled={downloadingVoucherId === (booking.id || booking.Id || booking.bookingId)}
+                              >
+                                {downloadingVoucherId === (booking.id || booking.Id || booking.bookingId) ? (
+                                  <Loader2 size={15} className="hotel-spin" />
+                                ) : (
+                                  <Download size={15} />
+                                )}
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="ops-btn-action"
@@ -390,11 +450,25 @@ export default function HotelBookings() {
         {selectedBooking && (
           <div className="hotel-modal-backdrop" onClick={() => setSelectedBooking(null)}>
             <div className="hotel-modal" onClick={(event) => event.stopPropagation()}>
-              <header className="hotel-modal-header">
+              <header className="hotel-modal-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <h3>Hotel Stay Details</h3>
-                <button type="button" onClick={() => setSelectedBooking(null)}>
-                  <X size={18} />
-                </button>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  {selectedBooking.status !== "Cancelled" && (
+                    <button
+                      type="button"
+                      className="hotel-bookings-btn"
+                      onClick={() => handleDownloadVoucher(selectedBooking)}
+                      disabled={downloadingVoucherId === (selectedBooking.id || selectedBooking.Id || selectedBooking.bookingId)}
+                      style={{ padding: "4px 10px", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: 5 }}
+                    >
+                      <Download size={13} />
+                      <span>Voucher</span>
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setSelectedBooking(null)}>
+                    <X size={18} />
+                  </button>
+                </div>
               </header>
               <div className="hotel-modal-body">
                 <BookingLifecycle booking={selectedBooking} />
@@ -460,6 +534,16 @@ export default function HotelBookings() {
                 <div className="hotel-modal-field">
                   <label>Payment Transaction ID</label>
                   <strong>{selectedBooking.paymentId ?? "--"}</strong>
+                </div>
+                <div className="hotel-modal-field">
+                  <label>Payment Status</label>
+                  <strong style={{ textTransform: "capitalize" }}>
+                    {selectedBooking.paymentStatus || selectedBooking.paymentBreakdown?.status || selectedBooking.lifecycleHierarchy?.paymentStatus || "Completed"}
+                  </strong>
+                </div>
+                <div className="hotel-modal-field">
+                  <label>Payment Method</label>
+                  <strong>{selectedBooking.paymentMethod || "Online / Gateway"}</strong>
                 </div>
                 {selectedBooking.cancellationReason && (
                   <div className="hotel-modal-field full-width">

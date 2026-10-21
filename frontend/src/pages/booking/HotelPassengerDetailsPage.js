@@ -2686,6 +2686,12 @@ export default function HotelPassengerDetailsPage() {
 
                 const totalPayable = checkoutPayload?.payableAmount || checkoutPayload?.finalPayableAmount || 0;
 
+                const blockedRoom = blockRoomResponse?.BlockRoomResult?.HotelRoomsDetails?.[0] || 
+                                    blockRoomResponse?.blockRoomResult?.hotelRoomsDetails?.[0] || 
+                                    blockRoomResponse?.HotelRoomsDetails?.[0] || {};
+                const cancelPolicies = blockedRoom?.CancellationPolicies || blockedRoom?.cancellationPolicies || offer?.cancellationPoliciesData || [];
+                const lastCancellationDate = blockedRoom?.LastCancellationDate || blockedRoom?.lastCancellationDate || "";
+
                 const bookPayload = {
                   CheckInDate: checkInStr,
                   CheckOutDate: checkOutStr,
@@ -2701,16 +2707,38 @@ export default function HotelPassengerDetailsPage() {
                   NoOfRooms: 1,
                   ClientReferenceNo: 0,
                   IsVoucherBooking: true,
-                  GuestName: `${firstName} ${lastName}`,
-                  GuestTitle: checkoutPayload.guestTitle || "",
-                  GuestGender: checkoutPayload.guestGender || "",
-                  GuestAge: Number(checkoutPayload.guestAge),
+                  GuestName: `${firstName} ${lastName}`.trim(),
+                  GuestTitle: checkoutPayload.guestTitle || "Mr",
+                  GuestGender: checkoutPayload.guestGender || "Male",
+                  GuestAge: Number(checkoutPayload.guestAge) || 30,
                   GuestEmail: String(checkoutPayload.guestEmail || "").trim(),
                   GuestPhone: String(checkoutPayload.guestPhone || "").trim(),
                   CouponCode: checkoutPayload.couponCode || checkoutPayload.appliedCouponCode || "",
                   Price: Number(totalPayable || 0),
                   EndUserIp: "192.168.10.10",
-                  PaymentMethod: res.paymentMethod
+                  PaymentMethod: res.paymentMethod,
+                  HotelRoomsDetails: [
+                    {
+                      RoomIndex: "1",
+                      RoomTypeCode: String(offer?.roomTypeCode || offer?.RoomTypeCode || "1"),
+                      RoomTypeName: offer?.roomCategory || offer?.roomTypeName || "Room",
+                      RatePlanCode: offer?.ratePlanCode || offer?.RatePlanCode || "",
+                      LastCancellationDate: lastCancellationDate,
+                      CancellationPolicies: cancelPolicies,
+                      HotelPassenger: [
+                        {
+                          Title: checkoutPayload.guestTitle || "Mr",
+                          FirstName: firstName,
+                          LastName: lastName || firstName,
+                          Phoneno: cleanPhone,
+                          Email: cleanEmail,
+                          PaxType: "1",
+                          Age: Number(checkoutPayload.guestAge) || 30,
+                          LeadPassenger: true
+                        }
+                      ]
+                    }
+                  ]
                 };
                 
                 const bookRes = await bookHotelRoom(bookPayload);

@@ -23,17 +23,23 @@ public class AdminHotelController : AdminApiController
     private readonly IHotelService _hotelService;
     private readonly ILogger<AdminHotelController> _logger;
     private readonly PickNBook.Api.Services.Notifications.Interfaces.INotificationService _notificationService;
+    private readonly ITicketPdfService _ticketPdfService;
+    private readonly ITicketEmailService _ticketEmailService;
 
     public AdminHotelController(
         AppDbContext context, 
         IHotelService hotelService, 
         ILogger<AdminHotelController> logger,
-        PickNBook.Api.Services.Notifications.Interfaces.INotificationService notificationService)
+        PickNBook.Api.Services.Notifications.Interfaces.INotificationService notificationService,
+        ITicketPdfService ticketPdfService,
+        ITicketEmailService ticketEmailService)
     {
         _context = context;
         _hotelService = hotelService;
         _logger = logger;
         _notificationService = notificationService;
+        _ticketPdfService = ticketPdfService;
+        _ticketEmailService = ticketEmailService;
     }
 
     // 1. List All Bookings: GET /api/admin/hotel/bookings
@@ -77,26 +83,53 @@ public class AdminHotelController : AdminApiController
                     b.TotalPrice,
                     b.Currency,
                     b.Status,
-                    b.CreatedAt
+                    b.CreatedAt,
+                    b.CancelledAt,
+                    b.CancellationReason,
+                    b.CancellationCharges,
+                    b.RefundAmount
                 })
                 .ToListAsync();
 
             var bookingIds = queryResult.Select(b => b.Id).ToList();
+            var bookingRefs = queryResult.Select(b => b.BookingReference).Where(r => !string.IsNullOrEmpty(r)).ToList();
 
             var payments = await _context.Payments
                 .AsNoTracking()
-                .Where(p => p.BookingType == "Hotel" && p.BookingReferenceId != null && bookingIds.Contains(p.BookingReferenceId.Value))
+                .Where(p => (p.BookingType == "Hotel" || p.BookingType.ToLower() == "hotel") &&
+                            ((p.BookingReferenceId != null && bookingIds.Contains(p.BookingReferenceId.Value)) ||
+                             (p.BookingId != null && bookingIds.Contains(p.BookingId.Value)) ||
+                             (p.PaymentReference != null && bookingRefs.Contains(p.PaymentReference))))
                 .ToListAsync();
 
-            var paymentsByBooking = payments
+            var paymentMapByRefId = payments
+                .Where(p => p.BookingReferenceId.HasValue)
                 .GroupBy(p => p.BookingReferenceId!.Value)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(p => p.CreatedAt).FirstOrDefault());
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.Id).First());
+
+            var paymentMapById = payments
+                .Where(p => p.BookingId.HasValue)
+                .GroupBy(p => p.BookingId!.Value)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.Id).First());
+
+            var paymentMapByPaymentRef = payments
+                .Where(p => !string.IsNullOrEmpty(p.PaymentReference))
+                .GroupBy(p => p.PaymentReference!)
+                .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.Id).First());
 
             var list = queryResult.Select(b => 
             {
-                paymentsByBooking.TryGetValue(b.Id, out var payment);
+                PickNBook.Api.Models.Payments.Payment? payment = null;
+                if (!paymentMapByRefId.TryGetValue(b.Id, out payment))
+                {
+                    if (!paymentMapById.TryGetValue(b.Id, out payment))
+                    {
+                        if (!string.IsNullOrEmpty(b.BookingReference))
+                        {
+                            paymentMapByPaymentRef.TryGetValue(b.BookingReference, out payment);
+                        }
+                    }
+                }
 
                 return new
                 {
@@ -128,16 +161,32 @@ public class AdminHotelController : AdminApiController
                         payment?.Status,
                         payment?.FulfillmentStatus,
                         b.CheckOutDate),
+                    PaymentId = payment?.Id,
+                    PaymentReference = payment?.PaymentReference,
+                    PaymentMethod = payment?.PaymentMethod,
+                    CashfreePaymentId = payment?.CashfreePaymentId,
+                    CashfreeOrderId = payment?.CashfreeOrderId,
                     PaymentStatus = payment?.Status,
                     RefundStatus = payment?.RefundStatus,
                     FulfillmentStatus = payment?.FulfillmentStatus,
                     CreatedAt = DateTime.SpecifyKind(b.CreatedAt, DateTimeKind.Utc),
+                    CreatedAtIst = IndiaTimeHelper.ToIst(b.CreatedAt),
+                    BookedAtDisplay = IndiaTimeHelper.FormatIst(b.CreatedAt, "dd MMM yyyy, hh:mm tt"),
+                    CancelledAt = b.CancelledAt.HasValue ? DateTime.SpecifyKind(b.CancelledAt.Value, DateTimeKind.Utc) : (DateTime?)null,
+                    CancelledAtIst = b.CancelledAt.HasValue ? IndiaTimeHelper.ToIst(b.CancelledAt.Value) : (DateTime?)null,
+                    CancelledAtDisplay = b.CancelledAt.HasValue ? IndiaTimeHelper.FormatIst(b.CancelledAt.Value, "dd MMM yyyy, hh:mm tt") : null,
+                    CancellationReason = b.CancellationReason,
+                    CancellationCharges = b.CancellationCharges,
+                    RefundAmount = b.RefundAmount,
                     BookedAt = b.CreatedAt != DateTime.MinValue ? b.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss") : ""
                 };
             })
             .Where(b => !string.IsNullOrWhiteSpace(status)
-                ? b.Status.Equals(status.Trim(), StringComparison.OrdinalIgnoreCase)
-                : (b.Status == "Booked" || b.Status == "Cancelled"))
+                ? (status.Trim().Equals("all", StringComparison.OrdinalIgnoreCase) ||
+                   b.Status.Equals(status.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                   (status.Trim().Equals("Booked", StringComparison.OrdinalIgnoreCase) && (b.Status == "Booked" || b.Status == "Confirmed" || b.Status == "SUCCESS")) ||
+                   (status.Trim().Equals("Confirmed", StringComparison.OrdinalIgnoreCase) && (b.Status == "Booked" || b.Status == "Confirmed" || b.Status == "SUCCESS")))
+                : (b.Status == "Booked" || b.Status == "Confirmed" || b.Status == "SUCCESS" || b.Status == "Cancelled" || b.Status == "CancellationPending" || b.Status == "PartiallyCancelled" || b.Status == "Partially Cancelled"))
             .ToList();
 
             return Ok(list);
@@ -157,8 +206,8 @@ public class AdminHotelController : AdminApiController
 
         var cancellationsDb = await _context.HotelReservations
             .AsNoTracking()
-            .Where(b => b.Status == "Cancelled")
-            .OrderByDescending(b => b.CancelledAt)
+            .Where(b => b.Status == "Cancelled" || b.Status == "CancellationPending" || b.Status == "PartiallyCancelled" || b.Status == "Partially Cancelled")
+            .OrderByDescending(b => b.CancelledAt ?? b.UpdatedAt ?? b.CreatedAt)
             .ToListAsync();
 
         var bookingReferences = cancellationsDb
@@ -197,6 +246,8 @@ public class AdminHotelController : AdminApiController
                 BookingId = b.Id,
                 BookingReference = b.BookingReference,
                 RequestDateUtc = b.CancelledAt.HasValue ? DateTime.SpecifyKind(b.CancelledAt.Value, DateTimeKind.Utc) : (DateTime?)null,
+                RequestDateIst = b.CancelledAt.HasValue ? IndiaTimeHelper.ToIst(b.CancelledAt.Value) : (DateTime?)null,
+                RequestDateDisplay = b.CancelledAt.HasValue ? IndiaTimeHelper.FormatIst(b.CancelledAt.Value, "dd MMM yyyy, hh:mm tt") : null,
                 HotelName = b.HotelName,
                 RoomType = roomType,
                 CheckInDate = DateOnly.FromDateTime(b.CheckInDate),
@@ -331,7 +382,7 @@ public class AdminHotelController : AdminApiController
         booking.UpdatedAt = DateTime.UtcNow;
 
         // Synchronize Payment and BookingCancellation lifecycle
-        var payment = await _context.Payments.FirstOrDefaultAsync(p => p.BookingType == "Hotel" && p.BookingId == bookingId);
+        var payment = await _context.Payments.FirstOrDefaultAsync(p => p.BookingType == "Hotel" && (p.BookingReferenceId == bookingId || p.BookingId == bookingId || (booking.BookingReference != null && p.PaymentReference == booking.BookingReference)));
         if (payment != null)
         {
             payment.RefundStatus = finalRefund > 0 ? "Pending" : "NotRequired";
@@ -370,6 +421,15 @@ public class AdminHotelController : AdminApiController
 
         await _context.SaveChangesAsync();
 
+        try
+        {
+            await _ticketEmailService.SendHotelCancellationAsync(booking);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send hotel cancellation email for booking {BookingId}", booking.Id);
+        }
+
         return Ok(new
         {
             BookingId = booking.Id,
@@ -383,6 +443,122 @@ public class AdminHotelController : AdminApiController
                 ? "Booking cancelled successfully at provider and locally." 
                 : "Booking cancelled locally. Provider API cancellation was unavailable or returned error."
         });
+    }
+
+    // 3b. Single Booking Details: GET /api/admin/hotel/bookings/{id:int}
+    [HttpGet("bookings/{id:int}")]
+    public async Task<IActionResult> GetBookingDetails(int id)
+    {
+        var booking = await _context.HotelReservations.FirstOrDefaultAsync(b => b.Id == id);
+        if (booking == null) return NotFound(new { message = "Booking not found." });
+
+        var payment = await _context.Payments.AsNoTracking().FirstOrDefaultAsync(p => p.BookingType == "Hotel" && (p.BookingReferenceId == id || p.BookingId == id || (booking.BookingReference != null && p.PaymentReference == booking.BookingReference)));
+        var cancellation = await _context.BookingCancellations.AsNoTracking().FirstOrDefaultAsync(c => c.BookingType == "Hotel" && c.BookingReference == booking.BookingReference);
+
+        return Ok(new
+        {
+            booking.Id,
+            booking.BookingReference,
+            booking.ProviderBookingId,
+            booking.ConfirmationNo,
+            booking.InvoiceNumber,
+            booking.SrdvOfferedPrice,
+            booking.SrdvGstAmount,
+            booking.HotelId,
+            booking.HotelName,
+            booking.RoomTypeName,
+            booking.GuestName,
+            booking.GuestEmail,
+            booking.GuestPhone,
+            booking.CheckInDate,
+            booking.CheckOutDate,
+            booking.Adults,
+            booking.Children,
+            booking.Rooms,
+            booking.TotalPrice,
+            booking.NetPrice,
+            booking.Currency,
+            booking.Status,
+            CancellationPolicy = booking.CancellationPolicyJson,
+            CancellationPolicyJson = booking.CancellationPolicyJson,
+            EvaluatedCancellationCharges = SrdvHotelService.EvaluateCancellationFee(booking).CancellationCharges,
+            booking.CancellationReason,
+            booking.CancellationCharges,
+            booking.RefundAmount,
+            CancelledAt = booking.CancelledAt.HasValue ? DateTime.SpecifyKind(booking.CancelledAt.Value, DateTimeKind.Utc) : (DateTime?)null,
+            CancelledAtIst = booking.CancelledAt.HasValue ? IndiaTimeHelper.ToIst(booking.CancelledAt.Value) : (DateTime?)null,
+            CancelledAtDisplay = booking.CancelledAt.HasValue ? IndiaTimeHelper.FormatIst(booking.CancelledAt.Value, "dd MMM yyyy, hh:mm tt") : null,
+            CreatedAt = DateTime.SpecifyKind(booking.CreatedAt, DateTimeKind.Utc),
+            CreatedAtIst = IndiaTimeHelper.ToIst(booking.CreatedAt),
+            CreatedAtDisplay = IndiaTimeHelper.FormatIst(booking.CreatedAt, "dd MMM yyyy, hh:mm tt"),
+            LastCancellationDate = booking.LastCancellationDate.HasValue ? DateTime.SpecifyKind(booking.LastCancellationDate.Value, DateTimeKind.Utc) : (DateTime?)null,
+            LastCancellationDateIst = booking.LastCancellationDate.HasValue ? IndiaTimeHelper.ToIst(booking.LastCancellationDate.Value) : (DateTime?)null,
+            LastCancellationDateDisplay = booking.LastCancellationDate.HasValue ? IndiaTimeHelper.FormatIst(booking.LastCancellationDate.Value, "dd MMM yyyy, hh:mm tt") : null,
+            PaymentId = payment?.Id,
+            PaymentStatus = payment?.Status,
+            PaymentReference = payment?.PaymentReference,
+            PaymentMethod = payment?.PaymentMethod,
+            Payment = payment != null ? new
+            {
+                payment.Id,
+                payment.PaymentReference,
+                payment.PaymentMethod,
+                payment.Status,
+                Amount = payment.TotalAmount,
+                payment.FinalPayableAmount,
+                payment.RefundStatus,
+                payment.RefundReason,
+                payment.FulfillmentStatus
+            } : null,
+            Cancellation = cancellation != null ? new
+            {
+                cancellation.Id,
+                cancellation.Status,
+                cancellation.RefundStatus,
+                cancellation.CustomerRefundAmount,
+                cancellation.SupplierCancellationCharge,
+                cancellation.CreatedAtUtc
+            } : null
+        });
+    }
+
+    // 3c. Download PDF Voucher: GET /api/admin/hotel/bookings/{id:int}/voucher
+    [HttpGet("bookings/{id:int}/voucher")]
+    public async Task<IActionResult> DownloadVoucher(int id)
+    {
+        var booking = await _context.HotelReservations.FirstOrDefaultAsync(b => b.Id == id);
+        if (booking == null) return NotFound(new { message = "Booking not found." });
+
+        try
+        {
+            var pdfBytes = _ticketPdfService.GenerateHotelTicketPdf(booking);
+            var filename = $"hotel-voucher-{(string.IsNullOrWhiteSpace(booking.BookingReference) ? id.ToString() : booking.BookingReference)}.pdf";
+            return File(pdfBytes, "application/pdf", filename);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate hotel ticket PDF for booking {Id}", id);
+            return StatusCode(500, new { message = "Failed to generate voucher PDF: " + ex.Message });
+        }
+    }
+
+    // 3d. Resend Confirmation Email: POST /api/admin/hotel/bookings/{id:int}/resend-confirmation-email
+    [HttpPost("bookings/{id:int}/resend-confirmation-email")]
+    public async Task<IActionResult> ResendConfirmationEmail(int id)
+    {
+        var booking = await _context.HotelReservations.FirstOrDefaultAsync(b => b.Id == id);
+        if (booking == null) return NotFound(new { message = "Booking not found." });
+
+        try
+        {
+            await _ticketEmailService.SendHotelTicketAsync(booking);
+            return Ok(new { message = $"Hotel confirmation voucher sent successfully to {booking.GuestEmail}" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send hotel confirmation email for booking {Id}", id);
+            return StatusCode(500, new { message = "Failed to send email: " + ex.Message });
+        }
     }
 
     // 4. Search History Logs: GET /api/admin/hotel/search-history

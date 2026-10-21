@@ -3002,6 +3002,38 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "PickNBook.Api.Controllers.AdminHotelController",
+    "Method": "GetBalance",
+    "RelativePath": "api/admin/hotel/v8/Balance",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BalanceRequestDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.AdminHotelController",
+    "Method": "GetBalanceLog",
+    "RelativePath": "api/admin/hotel/v8/BalanceLog",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BalanceLogRequestDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "PickNBook.Api.Controllers.AdminMasterDataController",
     "Method": "ImportAll",
     "RelativePath": "api/admin/master-data/import/all",
@@ -7041,6 +7073,38 @@
   },
   {
     "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBalance",
+    "RelativePath": "api/Hotels/Balance",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BalanceRequestDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBalanceLog",
+    "RelativePath": "api/Hotels/BalanceLog",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BalanceLogRequestDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
     "Method": "PostBlockRoom",
     "RelativePath": "api/Hotels/block-room",
     "HttpMethod": "POST",
@@ -9372,6 +9436,158 @@
         "Name": "pageSize",
         "Type": "System.Int32",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBalance",
+    "RelativePath": "v8/Balance",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BalanceRequestDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBalanceLog",
+    "RelativePath": "v8/BalanceLog",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BalanceLogRequestDto",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBlockRoom",
+    "RelativePath": "v8/BlockRoom",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BlockRoomRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBlockRoom",
+    "RelativePath": "v8/BlockRoom",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.BlockRoomRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBlockRoom",
+    "RelativePath": "v8/BlockRoom",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "resultIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "optionId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "roomTypeCode",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "roomIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "GetBlockRoom",
+    "RelativePath": "v8/BlockRoom",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "traceId",
+        "Type": "System.Int64",
+        "IsRequired": false
+      },
+      {
+        "Name": "resultIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "optionId",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "roomTypeCode",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "roomIndex",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "PickNBook.Api.Controllers.HotelsController",
+    "Method": "PostBookRoom",
+    "RelativePath": "v8/Book",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "PickNBook.Api.Models.DTOs.HotelBookRequestDto",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []

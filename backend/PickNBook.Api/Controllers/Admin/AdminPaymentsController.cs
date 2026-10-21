@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 using PickNBook.Api.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using PickNBook.Api.Helpers;
 
 namespace PickNBook.Api.Controllers.Admin
 {
@@ -323,8 +324,12 @@ namespace PickNBook.Api.Controllers.Admin
                     CancellationReason = isCancelled ? cancelReason : null,
                     RefundId = p.RefundId ?? cancel?.CashfreeRefundId,
                     CashfreeRefundId = cancel?.CashfreeRefundId ?? p.RefundId,
-                    p.CreatedAt,
-                    p.PaidAt,
+                    CreatedAt = DateTime.SpecifyKind(p.CreatedAt, DateTimeKind.Utc),
+                    CreatedAtIst = IndiaTimeHelper.ToIst(p.CreatedAt),
+                    CreatedAtDisplay = IndiaTimeHelper.FormatIst(p.CreatedAt, "dd MMM yyyy, hh:mm tt"),
+                    PaidAt = p.PaidAt.HasValue ? DateTime.SpecifyKind(p.PaidAt.Value, DateTimeKind.Utc) : (DateTime?)null,
+                    PaidAtIst = p.PaidAt.HasValue ? IndiaTimeHelper.ToIst(p.PaidAt.Value) : (DateTime?)null,
+                    PaidAtDisplay = p.PaidAt.HasValue ? IndiaTimeHelper.FormatIst(p.PaidAt.Value, "dd MMM yyyy, hh:mm tt") : null,
                     p.FailureReason,
                     SupplierError = exec?.LastError,
 

@@ -843,12 +843,27 @@ function parseFlightPolicy(booking, extraPolicyData) {
 }
 
 function parseHotelPolicy(booking, extraPolicyData) {
-  const raw =
+  let raw =
     booking?.cancellationPolicies ||
     booking?.CancellationPolicies ||
     booking?.cancellationPoliciesData ||
     extraPolicyData?.cancellationPolicies ||
     extraPolicyData?.CancellationPolicies;
+
+  const rawJson =
+    booking?.cancellationPolicyJson ||
+    booking?.CancellationPolicyJson ||
+    extraPolicyData?.cancellationPolicyJson ||
+    extraPolicyData?.CancellationPolicyJson ||
+    extraPolicyData?.cancellationPolicy;
+
+  if (!raw && typeof rawJson === "string" && rawJson.trim().startsWith("[")) {
+    try {
+      raw = JSON.parse(rawJson);
+    } catch {
+      // ignore
+    }
+  }
 
   const singlePolicyStr =
     booking?.cancellationPolicy ||
@@ -862,11 +877,17 @@ function parseHotelPolicy(booking, extraPolicyData) {
   if (Array.isArray(raw) && raw.length > 0) {
     const slabs = raw.map((item, idx) => {
       let condition = item.policyText || item.PolicyText || item.condition;
+      const fromDate = item.fromDate || item.FromDate;
+      const toDate = item.toDate || item.ToDate;
+      const deadline = item.cancellationDeadline || item.CancellationDeadline;
+
       if (!condition) {
-        if (item.fromDate && item.toDate) {
-          condition = `From ${formatHotelDate(item.fromDate)} to ${formatHotelDate(item.toDate)}`;
-        } else if (item.cancellationDeadline || item.CancellationDeadline) {
-          condition = `Cancellation before ${formatHotelDate(item.cancellationDeadline || item.CancellationDeadline)}`;
+        if (fromDate && toDate) {
+          condition = `From ${formatHotelDate(fromDate)} to ${formatHotelDate(toDate)}`;
+        } else if (deadline) {
+          condition = `Cancellation before ${formatHotelDate(deadline)}`;
+        } else if (fromDate) {
+          condition = `Cancellation after ${formatHotelDate(fromDate)}`;
         } else {
           condition = `Stay Policy Window ${idx + 1}`;
         }
@@ -876,23 +897,27 @@ function parseHotelPolicy(booking, extraPolicyData) {
       let refund = "As per policy";
       let chargeType = "partial";
 
-      if (item.charge !== undefined && item.charge !== null) {
-        if (Number(item.charge) === 0) {
+      const rawCharge = item.charge !== undefined && item.charge !== null ? item.charge : item.Charge;
+      const rawChargeType = item.chargeType !== undefined && item.chargeType !== null ? item.chargeType : item.ChargeType;
+
+      if (rawCharge !== undefined && rawCharge !== null) {
+        const numCharge = Number(rawCharge);
+        if (numCharge === 0) {
           charge = "No Charge (Free Cancellation)";
           refund = "100% Refund";
           chargeType = "free";
         } else {
-          const isPercent = String(item.chargeType || "").toLowerCase() === "percentage" || Number(item.charge) <= 100;
-          charge = isPercent ? `${item.charge}% Charge` : `INR ${item.charge} Charge`;
-          refund = isPercent ? `${100 - Number(item.charge)}% Refund` : "Balance Refunded";
-          chargeType = isPercent && Number(item.charge) === 100 ? "non_refundable" : "partial";
+          const isPercent = Number(rawChargeType) === 1 || String(rawChargeType || "").toLowerCase() === "percentage" || numCharge <= 100;
+          charge = isPercent ? `${numCharge}% Charge` : `INR ${numCharge.toLocaleString("en-IN")} Charge`;
+          refund = isPercent ? `${Math.max(0, 100 - numCharge)}% Refund` : "Balance Refunded";
+          chargeType = isPercent && numCharge >= 100 ? "non_refundable" : "partial";
         }
       } else if (item.refundPercentage !== undefined && item.refundPercentage !== null) {
         charge = `${100 - Number(item.refundPercentage)}% Charge`;
         refund = `${item.refundPercentage}% Refund`;
         chargeType = Number(item.refundPercentage) === 100 ? "free" : "partial";
       } else if (item.CancellationCharge !== undefined) {
-        charge = `${item.CancellationCharge} Charge`;
+        charge = `INR ${Number(item.CancellationCharge).toLocaleString("en-IN")} Charge`;
         chargeType = "partial";
       }
 

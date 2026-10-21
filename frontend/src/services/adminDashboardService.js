@@ -256,6 +256,7 @@ export function deriveAdminMetrics(summary) {
   const pendingWorks = summary.pendingWorks || {};
   const bus = summary.busBookings || {};
   const flight = summary.flightBookings || {};
+  const hotel = summary.hotelBookings || {};
   const revenue = summary.revenueSnapshot || {};
   const pending = summary.pendingActions || {};
 
@@ -266,21 +267,21 @@ export function deriveAdminMetrics(summary) {
         ? Number(todayStatus.totalBookings)
         : summary.totalBookings !== undefined && summary.totalBookings !== null
           ? Number(summary.totalBookings)
-          : (bus.total || 0) + (flight.total || 0);
+          : (bus.total || 0) + (flight.total || 0) + (hotel.total || 0);
 
   const successful =
     todayStatus.successfulBookings !== undefined
       ? Number(todayStatus.successfulBookings)
       : bookings.successfulToday !== undefined
         ? Number(bookings.successfulToday)
-        : (flight.completed || 0) + (bus.completed || 0) || (summary.totalBookings || 0);
+        : (flight.completed || 0) + (bus.completed || 0) + (hotel.completed || 0) || (summary.totalBookings || 0);
 
   const failed =
     todayStatus.failedBookings !== undefined
       ? Number(todayStatus.failedBookings)
       : bookings.failedToday !== undefined
         ? Number(bookings.failedToday)
-        : (flight.cancelled || 0) + (bus.cancelled || 0) || (pending.cancellations || 0);
+        : (flight.cancelled || 0) + (bus.cancelled || 0) + (hotel.cancelled || 0) || (pending.cancellations || 0);
 
   const totalRevenue =
     m.totalRevenue !== undefined && m.totalRevenue !== null
@@ -303,7 +304,7 @@ export function deriveAdminMetrics(summary) {
   const activeBookings =
     m.activeBookings !== undefined && m.activeBookings !== null
       ? Number(m.activeBookings)
-      : (flight.upcoming || 0) + (bus.upcoming || 0);
+      : (flight.upcoming || 0) + (bus.upcoming || 0) + (hotel.upcoming || 0);
 
   const cancelledBookings =
     m.cancelledBookings !== undefined && m.cancelledBookings !== null
@@ -365,6 +366,7 @@ export function deriveAdminMetrics(summary) {
 
     flightBookings: flight,
     busBookings: bus,
+    hotelBookings: hotel,
   };
 }
 
@@ -382,10 +384,11 @@ export function deriveAdminChartData(summary) {
 
   const bus = summary.busBookings || {};
   const flight = summary.flightBookings || {};
+  const hotel = summary.hotelBookings || {};
 
-  const completed = (flight.completed || 0) + (bus.completed || 0) || (summary.totalBookings || 0);
-  const cancelled = (flight.cancelled || 0) + (bus.cancelled || 0);
-  const upcoming = (flight.upcoming || 0) + (bus.upcoming || 0);
+  const completed = (flight.completed || 0) + (bus.completed || 0) + (hotel.completed || 0) || (summary.totalBookings || 0);
+  const cancelled = (flight.cancelled || 0) + (bus.cancelled || 0) + (hotel.cancelled || 0);
+  const upcoming = (flight.upcoming || 0) + (bus.upcoming || 0) + (hotel.upcoming || 0);
 
   return {
     successful: [0.12, 0.15, 0.13, 0.16, 0.18, 0.14, 0.12].map(p =>

@@ -202,6 +202,12 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       const checkInStr = typeof rawCheckIn === "string" ? rawCheckIn.split("T")[0] : "";
       const checkOutStr = typeof rawCheckOut === "string" ? rawCheckOut.split("T")[0] : "";
 
+      const blockedRoom = blockRoomResponse?.BlockRoomResult?.HotelRoomsDetails?.[0] || 
+                          blockRoomResponse?.blockRoomResult?.hotelRoomsDetails?.[0] || 
+                          blockRoomResponse?.HotelRoomsDetails?.[0] || {};
+      const cancelPolicies = blockedRoom?.CancellationPolicies || blockedRoom?.cancellationPolicies || offer?.cancellationPoliciesData || [];
+      const lastCancellationDate = blockedRoom?.LastCancellationDate || blockedRoom?.lastCancellationDate || "";
+
       bookingPayloadJson = JSON.stringify({
         CheckInDate: checkInStr,
         CheckOutDate: checkOutStr,
@@ -214,18 +220,40 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         HotelCode: String(hotel?.hotelId || hotel?.hotelCode || hotel?.HotelCode || ""),
         HotelName: hotel?.name || "",
         GuestNationality: "IN",
-        NoOfRooms: 1, // simplified for fallback
+        NoOfRooms: 1,
         ClientReferenceNo: "0",
         IsVoucherBooking: true,
-        GuestName: `${firstName} ${lastName}`,
-        GuestTitle: guestTitle || "",
-        GuestGender: guestGender || "",
-        GuestAge: Number(guestAge),
+        GuestName: `${firstName} ${lastName}`.trim(),
+        GuestTitle: guestTitle || "Mr",
+        GuestGender: guestGender || "Male",
+        GuestAge: Number(guestAge) || 30,
         GuestEmail: rawEmail,
         GuestPhone: rawPhone,
         CouponCode: flowState.couponCode || flowState.appliedCouponCode || "",
         Price: Number(totalPayable || 0),
         EndUserIp: "192.168.10.10",
+        HotelRoomsDetails: [
+          {
+            RoomIndex: "1",
+            RoomTypeCode: String(offer?.roomTypeCode || offer?.RoomTypeCode || "1"),
+            RoomTypeName: offer?.roomCategory || offer?.roomTypeName || "Room",
+            RatePlanCode: offer?.ratePlanCode || offer?.RatePlanCode || "",
+            LastCancellationDate: lastCancellationDate,
+            CancellationPolicies: cancelPolicies,
+            HotelPassenger: [
+              {
+                Title: guestTitle || "Mr",
+                FirstName: firstName,
+                LastName: lastName || firstName,
+                Phoneno: rawPhone,
+                Email: rawEmail,
+                PaxType: "1",
+                Age: Number(guestAge) || 30,
+                LeadPassenger: true
+              }
+            ]
+          }
+        ]
       });
     }
 

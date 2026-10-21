@@ -488,3 +488,45 @@ export function formatStayInfo(log) {
     guests: `${guests.join(", ")} in ${r} Room${r > 1 ? "s" : ""}`
   };
 }
+
+export async function downloadAdminHotelVoucher(id, bookingRef) {
+  const token = typeof window !== "undefined"
+    ? window.localStorage.getItem("adminToken") || window.localStorage.getItem("token")
+    : "";
+  const response = await fetch(toApiUrl(`/api/admin/hotel/bookings/${id}/voucher`), {
+    method: "GET",
+    headers: {
+      Accept: "application/pdf",
+      "ngrok-skip-browser-warning": "true",
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    }
+  });
+  if (!response.ok) {
+    throw new Error("Failed to download hotel voucher.");
+  }
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `hotel-voucher-${bookingRef || id}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function resendAdminHotelConfirmationEmail(id) {
+  const response = await fetch(toApiUrl(`/api/admin/hotel/bookings/${id}/resend-confirmation-email`), {
+    method: "POST",
+    headers: getAdminAuthHeaders(true),
+  });
+  return handleResponse(response);
+}
+
+export async function getAdminHotelBookingDetails(id) {
+  const response = await fetch(toApiUrl(`/api/admin/hotel/bookings/${id}`), {
+    method: "GET",
+    headers: getAdminAuthHeaders(false),
+  });
+  return handleResponse(response);
+}

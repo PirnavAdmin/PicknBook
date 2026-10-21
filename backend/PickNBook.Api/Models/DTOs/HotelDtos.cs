@@ -204,6 +204,8 @@ namespace PickNBook.Api.Models.DTOs
 
         // Payment & Contact Identifiers
         public int? PaymentId { get; set; }
+        public string? PaymentStatus { get; set; }
+        public string? PaymentMethod { get; set; }
         public string? CashfreePaymentId { get; set; }
         public string? CashfreeOrderId { get; set; }
         public string? PaymentReference { get; set; }
@@ -236,6 +238,8 @@ namespace PickNBook.Api.Models.DTOs
         public int BookingId { get; set; }
         public string BookingReference { get; set; } = string.Empty;
         public DateTime? RequestDateUtc { get; set; }
+        public DateTime? RequestDateIst { get; set; }
+        public string? RequestDateDisplay { get; set; }
         public string HotelName { get; set; } = string.Empty;
         public string RoomType { get; set; } = string.Empty;
         public DateOnly? CheckInDate { get; set; }

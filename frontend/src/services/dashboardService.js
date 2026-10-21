@@ -199,6 +199,7 @@ function normalizeDashboardSummary(payload) {
     {}
   );
   const busBookings = pickFirst(safePayload, ["busBookings", "BusBookings"], {});
+  const hotelBookings = pickFirst(safePayload, ["hotelBookings", "HotelBookings"], {});
 
   return {
     totalBookings: toNumber(pickFirst(safePayload, ["totalBookings", "TotalBookings"], 0)),
@@ -222,6 +223,12 @@ function normalizeDashboardSummary(payload) {
       upcoming: toNumber(pickFirst(busBookings, ["upcoming", "Upcoming"], 0)),
       cancelled: toNumber(pickFirst(busBookings, ["cancelled", "Cancelled"], 0)),
       total: toNumber(pickFirst(busBookings, ["total", "Total"], 0)),
+    },
+    hotelBookings: {
+      completed: toNumber(pickFirst(hotelBookings, ["completed", "Completed"], 0)),
+      upcoming: toNumber(pickFirst(hotelBookings, ["upcoming", "Upcoming"], 0)),
+      cancelled: toNumber(pickFirst(hotelBookings, ["cancelled", "Cancelled"], 0)),
+      total: toNumber(pickFirst(hotelBookings, ["total", "Total"], 0)),
     },
   };
 }

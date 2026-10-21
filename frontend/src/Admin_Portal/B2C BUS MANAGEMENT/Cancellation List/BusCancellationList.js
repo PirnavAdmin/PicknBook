@@ -153,6 +153,7 @@ function mapRawBusCancellationRecord(c) {
   const bookingId = c?.bookingId ?? raw?.bookingId ?? id;
   const ticketNo = c?.ticketNo || raw?.ticketNo || c?.bookingReference || raw?.bookingReference || c?.pnr || raw?.pnr || "--";
   const pnr = c?.pnr || raw?.pnr || ticketNo;
+  const operatorPnr = c?.operatorPnr || raw?.operatorPnr || (pnr && String(pnr).startsWith("TS") ? pnr : "");
   const requestDateUtc = c?.requestDateUtc || raw?.requestDateUtc || c?.createdAt || raw?.createdAt || c?.requestDate || raw?.requestDate || "--";
   const segment = c?.segment || raw?.segment || (c?.fromCity && c?.toCity ? `${c.fromCity} - ${c.toCity}` : "--");
   const journeyDate = c?.journeyDate || raw?.journeyDate || c?.journeyDateIst || raw?.journeyDateIst || details?.journeyDate || "--";
@@ -184,6 +185,7 @@ function mapRawBusCancellationRecord(c) {
     bookingId,
     ticketNo,
     pnr,
+    operatorPnr,
     requestDateUtc,
     segment,
     journeyDate,
@@ -702,9 +704,22 @@ export default function BusCancellationList() {
 
                   <div className="admin-table-cell admin-cell-centered">
                     <strong style={{ fontSize: "0.82rem", marginBottom: "2px" }}>{item.pnr || "--"}</strong>
-                    {item.ticketNo && item.ticketNo !== "--" && item.ticketNo !== item.pnr && (
-                      <small style={{ display: "block", color: "#475569", fontWeight: "600", fontSize: "0.72rem", marginBottom: "3px" }}>
-                        Tkt No: {item.ticketNo}
+                    {item.operatorPnr && item.operatorPnr !== "--" && item.operatorPnr !== item.pnr && (
+                      <small
+                        style={{
+                          display: "block",
+                          color: "#475569",
+                          fontWeight: "600",
+                          fontSize: "0.72rem",
+                          marginBottom: "3px",
+                          maxWidth: "160px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                        title={`Operator PNR: ${item.operatorPnr}`}
+                      >
+                        Op PNR: {item.operatorPnr}
                       </small>
                     )}
                     <small style={{ display: "block", color: "#64748b", fontSize: "0.68rem" }}>
@@ -782,6 +797,9 @@ export default function BusCancellationList() {
                 </h3>
                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
                   ID: <strong>#{selectedCancellation.id}</strong> | PNR: <strong>{selectedCancellation.pnr}</strong> | Ref: <strong>{selectedCancellation.ticketNo}</strong>
+                  {selectedCancellation.operatorPnr && selectedCancellation.operatorPnr !== "--" && selectedCancellation.operatorPnr !== selectedCancellation.pnr && (
+                    <span> | Op PNR: <strong style={{ fontFamily: "monospace" }}>{selectedCancellation.operatorPnr}</strong></span>
+                  )}
                 </div>
                 <div className="admin-view-meta-row">
                   <span className="admin-view-meta-chip">Status: {selectedCancellation.status}</span>
