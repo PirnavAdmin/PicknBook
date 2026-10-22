@@ -136,13 +136,19 @@ export default function HotelBookings() {
   const handleViewDetails = async (booking) => {
     setSelectedBooking(booking);
     setSelectedHotelItems([]);
-    const actualId = booking.id || booking.Id || booking.bookingId;
+    const actualId = booking.id || booking.Id || (typeof booking.bookingId === 'string' && booking.bookingId.startsWith('bk-') ? booking.bookingId.slice(3) : booking.bookingId) || booking.bookingReference;
     if (actualId) {
       try {
         setIsLoadingDetails(true);
         const details = await getHotelBookingById(actualId);
         if (details) {
-          setSelectedBooking((prev) => ({ ...prev, ...details }));
+          setSelectedBooking((prev) => ({
+            ...prev,
+            ...details,
+            lifecycleHierarchy: details?.lifecycleHierarchy?.stages?.length ? details.lifecycleHierarchy : prev?.lifecycleHierarchy,
+            paymentBreakdown: details?.paymentBreakdown || prev?.paymentBreakdown,
+            timeline: details?.timeline?.length ? details.timeline : prev?.timeline
+          }));
         }
       } catch (err) {
         console.warn("Could not fetch full details, showing summary:", err);
@@ -536,7 +542,9 @@ export default function HotelBookings() {
                 </div>
                 <div className="hotel-modal-field">
                   <label>Payment Transaction ID</label>
-                  <strong>{selectedBooking.paymentId ?? "--"}</strong>
+                  <strong>
+                    {selectedBooking.cashfreePaymentId || selectedBooking.paymentReference || selectedBooking.paymentBreakdown?.cashfreePaymentId || selectedBooking.paymentBreakdown?.paymentReference || selectedBooking.paymentId || "--"}
+                  </strong>
                 </div>
                 <div className="hotel-modal-field">
                   <label>Payment Status</label>
@@ -546,12 +554,12 @@ export default function HotelBookings() {
                 </div>
                 <div className="hotel-modal-field">
                   <label>Payment Method</label>
-                  <strong>{selectedBooking.paymentMethod || "Online / Gateway"}</strong>
+                  <strong>{selectedBooking.paymentMethod || selectedBooking.paymentBreakdown?.paymentMethod || "Online / Gateway"}</strong>
                 </div>
-                {selectedBooking.cancellationReason && (
+                {(selectedBooking.cancellationReason || selectedBooking.cancellationAudit?.cancellationReason) && (
                   <div className="hotel-modal-field full-width">
                     <label>Cancellation Reason</label>
-                    <strong>{selectedBooking.cancellationReason}</strong>
+                    <strong>{selectedBooking.cancellationReason || selectedBooking.cancellationAudit?.cancellationReason}</strong>
                   </div>
                 )}
               </div>
