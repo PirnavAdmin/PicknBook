@@ -1204,13 +1204,14 @@ namespace PickNBook.Api.Controllers
                                         payload: new
                                         {
                                             Reference = reservation.BookingReference,
-                                            Status = "Confirmed",
+                                            Status = "Cancelled",
                                             Var1 = reservation.BookingReference,
-                                            Var2 = "Confirmed"
+                                            Var2 = "Cancelled"
                                         },
                                         bookingId: reservation.Id.ToString(),
                                         userId: reservation.UserId
                                     );
+                                    await _dbContext.SaveChangesAsync();
                                 }
                                 catch (Exception smsEx)
                                 {
@@ -1414,13 +1415,14 @@ namespace PickNBook.Api.Controllers
                                     payload: new
                                     {
                                         Reference = reservation.BookingReference,
-                                        Status = "Confirmed",
+                                        Status = "Cancelled",
                                         Var1 = reservation.BookingReference,
-                                        Var2 = "Confirmed"
+                                        Var2 = "Cancelled"
                                     },
                                     bookingId: reservation.Id.ToString(),
                                     userId: reservation.UserId
                                 );
+                                await _dbContext.SaveChangesAsync();
                             }
                             catch (Exception smsEx)
                             {
@@ -1822,6 +1824,8 @@ namespace PickNBook.Api.Controllers
             {
                 string? userPhone = null;
                 string? userEmail = null;
+                var phoneCandidates = new List<string>();
+
                 if (int.TryParse(userId, out int parsedUserId))
                 {
                     var userEntity = await _dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == parsedUserId);
@@ -1829,13 +1833,30 @@ namespace PickNBook.Api.Controllers
                     {
                         userPhone = userEntity.PhoneNumber?.Trim();
                         userEmail = userEntity.Email?.Trim();
+
+                        if (!string.IsNullOrWhiteSpace(userPhone))
+                        {
+                            phoneCandidates.Add(userPhone);
+                            var digits = new string(userPhone.Where(char.IsDigit).ToArray());
+                            if (!string.IsNullOrWhiteSpace(digits))
+                            {
+                                phoneCandidates.Add(digits);
+                                var last10 = digits.Length >= 10 ? digits.Substring(digits.Length - 10) : digits;
+                                phoneCandidates.Add(last10);
+                                phoneCandidates.Add("+91" + last10);
+                                phoneCandidates.Add("91" + last10);
+                                phoneCandidates.Add("0" + last10);
+                            }
+                        }
                     }
                 }
 
+                phoneCandidates = phoneCandidates.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct().ToList();
+
                 var query = _dbContext.HotelReservations.Where(x =>
                     x.UserId == userId ||
-                    (!string.IsNullOrEmpty(userPhone) && x.GuestPhone == userPhone) ||
-                    (!string.IsNullOrEmpty(userEmail) && x.GuestEmail == userEmail));
+                    (phoneCandidates.Count > 0 && phoneCandidates.Contains(x.GuestPhone)) ||
+                    (!string.IsNullOrEmpty(userEmail) && x.GuestEmail != null && x.GuestEmail.ToLower() == userEmail.ToLower()));
 
                 if (!string.IsNullOrWhiteSpace(status))
                 {
@@ -1914,6 +1935,7 @@ namespace PickNBook.Api.Controllers
                     .GroupBy(c => c.PaymentId)
                     .ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.Id).FirstOrDefault());
                 var cancelMapByRef = cancellations
+                    .Where(c => !string.IsNullOrEmpty(c.BookingReference))
                     .GroupBy(c => c.BookingReference)
                     .ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.Id).FirstOrDefault());
 
@@ -2537,7 +2559,7 @@ namespace PickNBook.Api.Controllers
                         _logger.LogError(mailEx, "Failed to send hotel booking cancellation email for booking {BookingReference}", booking.BookingReference);
                     }
 
-                    if (providerCancelled &&
+                    if ((providerCancelled || booking.Status == "Cancelled") &&
                         !string.IsNullOrEmpty(booking.ProviderBookingId) &&
                         !booking.ProviderBookingId.StartsWith("MOCK-BK-", StringComparison.OrdinalIgnoreCase) &&
                         !string.IsNullOrWhiteSpace(booking.GuestPhone))
@@ -2552,13 +2574,14 @@ namespace PickNBook.Api.Controllers
                                 payload: new
                                 {
                                     Reference = booking.BookingReference,
-                                    Status = "Confirmed",
+                                    Status = "Cancelled",
                                     Var1 = booking.BookingReference,
-                                    Var2 = "Confirmed"
+                                    Var2 = "Cancelled"
                                 },
                                 bookingId: booking.Id.ToString(),
                                 userId: booking.UserId
                             );
+                            await _dbContext.SaveChangesAsync();
                         }
                         catch (Exception smsEx)
                         {
