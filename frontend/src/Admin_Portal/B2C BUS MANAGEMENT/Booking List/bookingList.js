@@ -1837,11 +1837,6 @@ export default function AdminB2CBookingListPage() {
                     <td>{adminProfitFormatter.format(Number(selectedBooking.convenienceFeeInr) || 0)}</td>
                     <td>Platform convenience fee</td>
                   </tr>
-                  <tr>
-                    <td><strong>GST Percent / Amount</strong></td>
-                    <td>{selectedBooking.gstPercent ? `${selectedBooking.gstPercent}%` : "0.00%"} / {adminProfitFormatter.format(Number(selectedBooking.gstAmountInr) || 0)}</td>
-                    <td>Applicable GST taxes</td>
-                  </tr>
                   <tr className="admin-view-highlight-row">
                     <td><strong>Calculated Profit / Loss</strong></td>
                     <td>

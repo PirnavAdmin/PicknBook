@@ -279,7 +279,7 @@ export default function HotelBookings() {
                     bookingReference: event.target.value,
                   }))
                 }
-                placeholder="HT-2026..."
+                placeholder="Enter Booking ID or Ref No"
               />
             </label>
 
@@ -365,7 +365,10 @@ export default function HotelBookings() {
                     return (
                       <tr key={booking.id || booking.bookingReference}>
                         <td>
-                          <strong>{booking.bookingReference || booking.id}</strong>
+                          <strong>{booking.providerBookingId || booking.bookingId || booking.bookingReference}</strong>
+                          {booking.bookingReference && booking.bookingReference !== (booking.providerBookingId || booking.bookingId) && (
+                            <small style={{ color: "#64748b", display: "block" }}>Ref: {booking.bookingReference}</small>
+                          )}
                           {bookedAt && <small>Booked: {bookedAt}</small>}
                         </td>
                         <td>

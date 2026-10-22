@@ -150,20 +150,19 @@ export default function HotelTicketFormat({
               }}
             >
               #
-              {ticket.bookingReference ||
-                ticket.confirmationNo ||
-                ticket.bookingRefNo ||
+              {ticket.providerBookingId ||
                 ticket.bookingId ||
-                ticket.pnr ||
-                "PNB458921"}
+                ticket.bookingReference ||
+                ticket.confirmationNo ||
+                ""}
               <span
                 style={{ fontSize: "0.8rem", cursor: "pointer" }}
                 onClick={() =>
                   navigator.clipboard.writeText(
-                    ticket.bookingReference ||
-                      ticket.confirmationNo ||
-                      ticket.bookingRefNo ||
+                    ticket.providerBookingId ||
                       ticket.bookingId ||
+                      ticket.bookingReference ||
+                      ticket.confirmationNo ||
                       ""
                   )
                 }
@@ -346,7 +345,7 @@ export default function HotelTicketFormat({
           >
             <img
               src={`https://api.qrserver.com/v1/create-qr-code/?size=64x64&data=${
-                ticket.bookingReference || "PNB458921"
+                ticket.providerBookingId || ticket.bookingReference || ticket.confirmationNo || ""
               }`}
               alt="QR Code"
               style={{ width: "55px", height: "55px" }}

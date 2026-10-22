@@ -715,17 +715,26 @@ export default function HotelBookingList() {
         ) : (
           <div className="admin-table-body">
             {paginatedBookings.map((b) => {
-              const statusClass = getAdminStatusClass(b.paymentStatus || b.status);
-              const profitVal = (b.srdvOfferedPrice !== undefined && b.srdvOfferedPrice !== null)
-                ? (Number(b.totalPrice || 0) - Number(b.srdvOfferedPrice || 0))
-                : (Number(b.profit || b.calculatedProfit || Math.round(Number(b.totalPrice || 0) * 0.06)) || 0);
+              const displayStatus = (b.status === "Cancelled" || b.status === "Partially Cancelled")
+                ? "Cancelled"
+                : (b.status || b.paymentStatus);
+              const statusClass = getAdminStatusClass(displayStatus);
+              const profitVal = (b.profit !== undefined && b.profit !== null)
+                ? Number(b.profit)
+                : (b.calculatedProfit !== undefined && b.calculatedProfit !== null)
+                  ? Number(b.calculatedProfit)
+                  : (b.netFare !== undefined && b.netFare !== null)
+                    ? (Number(b.totalPrice || 0) - Number(b.netFare || 0))
+                    : (b.srdvOfferedPrice !== undefined && b.srdvOfferedPrice !== null)
+                      ? (Number(b.totalPrice || 0) - Number(b.srdvOfferedPrice || 0))
+                      : 0;
 
               const isLossOrZero = profitVal <= 0;
 
               return (
                 <article key={b.bookingId || b.id} className="admin-table-row" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr" }}>
                   <div className="admin-table-cell">
-                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.80rem", wordBreak: "break-all" }}>{safeValue(b.bookingId || b.id || b.bookingReference)}</strong>
+                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.80rem", wordBreak: "break-all" }}>{safeValue(b.providerBookingId || b.bookingId || b.id)}</strong>
                     <div className="admin-date-badge">
                       <span className="admin-calendar-emoji">🗓️</span>
                       <span>{formatDateCell(b.createdAt || b.bookedAt)}</span>
@@ -764,10 +773,10 @@ export default function HotelBookingList() {
 
                   <div className="admin-table-cell admin-cell-centered">
                     <strong style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, marginBottom: "3px", wordBreak: "break-all" }}>
-                      {safeValue(b.bookingReference || b.confirmationNo || b.providerBookingId || b.bookingId)}
+                      {safeValue(b.bookingReference || b.confirmationNo || b.providerBookingId)}
                     </strong>
                     <span className={`admin-status-pill ${statusClass}`}>
-                      {safeValue(b.paymentStatus || b.status)}
+                      {safeValue(displayStatus)}
                     </span>
                   </div>
 
@@ -858,7 +867,7 @@ export default function HotelBookingList() {
               <div className="admin-view-header-main">
                 <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: "700", color: "#1e293b" }}>Hotel Booking Detail View</h2>
                 <p className="admin-view-header-subtitle" style={{ fontSize: "0.82rem", margin: 0, color: "#64748b" }}>
-                  ID: <strong>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</strong> | Ref: <strong>{safeValue(selectedBooking.bookingReference, "--")}</strong>
+                  ID: <strong>{safeValue(selectedBooking.providerBookingId || selectedBooking.bookingId || selectedBooking.id)}</strong> | Ref: <strong>{safeValue(selectedBooking.bookingReference, "--")}</strong>
                 </p>
                 <div className="admin-view-meta-row" style={{ marginTop: "8px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <span className="admin-view-meta-chip">
@@ -959,7 +968,7 @@ export default function HotelBookingList() {
                 <tbody>
                   <tr>
                     <th>Booking ID</th>
-                    <td>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</td>
+                    <td>{safeValue(selectedBooking.providerBookingId || selectedBooking.bookingId || selectedBooking.id)}</td>
                     <th>Booking Reference</th>
                     <td>{safeValue(selectedBooking.bookingReference, "--")}</td>
                   </tr>
@@ -996,10 +1005,8 @@ export default function HotelBookingList() {
                     <td>{formatAdminDate(selectedBooking.lastCancellationDate)}</td>
                   </tr>
                   <tr>
-                    <th>Invoice No</th>
-                    <td>{safeValue(selectedBooking.invoiceNumber, "--")}</td>
                     <th>Booked By</th>
-                    <td>{safeValue(selectedBooking.bookedBy || selectedBooking.guestName, "--")}</td>
+                    <td colSpan="3">{safeValue(selectedBooking.bookedBy || selectedBooking.guestName, "--")}</td>
                   </tr>
                   <tr>
                     <th>Guest Name</th>
@@ -1031,48 +1038,38 @@ export default function HotelBookingList() {
                   </tr>
                   <tr>
                     <td>Net Fare</td>
-                    <td>{selectedBooking.srdvOfferedPrice ? formatCurrency(selectedBooking.srdvOfferedPrice) : formatCurrency(selectedBooking.totalPrice)}</td>
+                    <td>{formatCurrency(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice)}</td>
                     <td>Net payable fare amount</td>
                   </tr>
                   <tr>
                     <td>Base Fare</td>
-                    <td>{formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}</td>
+                    <td>{formatCurrency(selectedBooking.baseFare || selectedBooking.totalPrice || selectedBooking.totalPaid)}</td>
                     <td>Base room tariff cost</td>
                   </tr>
                   <tr>
-                    <td>Taxable Fare</td>
-                    <td>₹0.00</td>
-                    <td>Fare amount subject to taxes</td>
-                  </tr>
-                  <tr>
                     <td>Markup Amount</td>
-                    <td>₹0.00</td>
+                    <td>{formatCurrency(selectedBooking.markupAmount || 0)}</td>
                     <td>Admin markup added</td>
                   </tr>
                   <tr>
                     <td>Discount Amount</td>
-                    <td>₹0.00</td>
+                    <td>{formatCurrency(selectedBooking.discountAmount || 0)}</td>
                     <td>Applied coupon / promo discount</td>
                   </tr>
                   <tr>
                     <td>Convenience Fee</td>
-                    <td>₹0.00</td>
+                    <td>{formatCurrency(selectedBooking.convenienceFee || 0)}</td>
                     <td>Platform convenience fee</td>
-                  </tr>
-                  <tr>
-                    <td>GST Percent / Amount</td>
-                    <td>0.00% / ₹0.00</td>
-                    <td>Applicable GST taxes</td>
                   </tr>
                   <tr className="admin-view-highlight-row" style={{ background: "#f8fafc" }}>
                     <td><strong>Calculated Profit / Loss</strong></td>
                     <td>
-                      <strong style={{ color: (Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0 ? "#ef4444" : "#10b981" }}>
-                        {formatCurrency(Number(selectedBooking.profit || selectedBooking.calculatedProfit || Math.round(Number(selectedBooking.totalPrice || 0) * 0.06)))}
+                      <strong style={{ color: (Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0)))) < 0 ? "#ef4444" : "#10b981" }}>
+                        {formatCurrency(Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0))))}
                       </strong>
                     </td>
-                    <td style={{ color: (Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0 ? "#ef4444" : "#10b981", fontWeight: "700" }}>
-                      {(Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0 ? "Loss" : "Profit"}
+                    <td style={{ color: (Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0)))) < 0 ? "#ef4444" : "#10b981", fontWeight: "700" }}>
+                      {(Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0)))) < 0 ? "Loss" : "Profit"}
                     </td>
                   </tr>
                 </tbody>
