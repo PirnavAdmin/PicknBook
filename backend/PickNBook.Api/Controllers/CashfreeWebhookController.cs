@@ -79,9 +79,12 @@ namespace PickNBook.Api.Controllers
                     }
 
                     string refundId = payload.Data.Refund.RefundId;
+                    string cfRefundId = payload.Data.Refund.CfRefundId;
                     string refundStatus = payload.Data.Refund.RefundStatus;
+                    string? refundOrderId = payload.Data.Order?.OrderId ?? payload.Data.Refund.OrderId;
+                    decimal refundAmount = payload.Data.Refund.RefundAmount;
 
-                    bool refundProcessed = await _paymentService.ProcessRefundWebhookAsync(refundId, refundStatus);
+                    bool refundProcessed = await _paymentService.ProcessRefundWebhookAsync(refundId, refundStatus, cfRefundId, refundOrderId, refundAmount);
                     return Ok(new { message = refundProcessed ? "Refund webhook processed" : "Refund webhook ignored" });
                 }
 
