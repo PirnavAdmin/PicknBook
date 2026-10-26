@@ -32,6 +32,7 @@ export async function createCashfreeOrder({
   promotionId,
   useWallet = false,
   walletAmount = null,
+  paymentMethod = null,
 }) {
   let origin = typeof window !== "undefined" ? window.location.origin : "";
   if (origin && origin.startsWith("http://localhost")) {
@@ -61,6 +62,7 @@ export async function createCashfreeOrder({
     selectedFeaturedOfferId: promotionId || null,
     useWallet: Boolean(useWallet),
     walletAmount: walletAmount == null ? null : Number(walletAmount),
+    paymentMethod: paymentMethod || null,
   };
 
   const url = toApiUrl(CASHFREE_CREATE_ORDER_PATH);

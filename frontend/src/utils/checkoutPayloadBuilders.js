@@ -28,11 +28,19 @@ function formatBusPointTime(value, baseDateValue) {
 // Extracted payload builders
 function buildFlightBookingPayload(flowState) {
   const flight = flowState.flight || {};
+  const rawResultIndex = flowState.resultIndex ?? flowState.ResultIndex ??
+    (Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 1
+      ? flowState.selectedLegs.map(l => l.resultIndex || l.ResultIndex).filter(Boolean).join(",")
+      : (flight.resultIndex || flight.ResultIndex));
   const identity = flightIdentity({ flight,
     traceId: flowState.traceId ?? flight.traceId,
-    resultIndex: flowState.resultIndex ?? flowState.ResultIndex ?? flight.resultIndex });
+    resultIndex: rawResultIndex });
   const quote = flowState.fareQuote;
-  if (!quote?.success || quote.identity?.TraceId !== identity.TraceId || quote.identity?.ResultIndex !== identity.ResultIndex) {
+  const quoteResultIndex = String(quote?.identity?.ResultIndex || "").trim();
+  const identityResultIndex = String(identity?.ResultIndex || "").trim();
+  const isResultIndexMatching = quoteResultIndex === identityResultIndex ||
+    (quoteResultIndex && identityResultIndex && (quoteResultIndex.includes(identityResultIndex) || identityResultIndex.includes(quoteResultIndex)));
+  if (!quote?.success || String(quote.identity?.TraceId) !== String(identity.TraceId) || !isResultIndexMatching) {
     throw new Error("A matching fare quote is required. Return to traveller details and refresh the fare.");
   }
   const isLcc = supplierBoolean(quote.results.IsLCC ?? flight.isLCC ?? flight.isLcc);

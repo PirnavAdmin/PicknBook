@@ -537,6 +537,15 @@ function normalizeFlightBookingRecord(record) {
       pickFirst(record?.raw, ["flightNumber", "FlightNumber", "tripNumber", "TripNumber"], "") ||
       ""
     ),
+    srdvBookingId: pickFirst(record, ["srdvBookingId", "SrdvBookingId"], "--"),
+    returnPnr: pickFirst(record, ["returnPnr", "ReturnPnr"], ""),
+    gdsPnr: pickFirst(record, ["gdsPnr", "GdsPnr"], ""),
+    nonRefundable: Boolean(pickFirst(record, ["nonRefundable", "NonRefundable"], false)),
+    cancellationPolicyJson: pickFirst(record, ["cancellationPolicyJson", "CancellationPolicyJson"], ""),
+    fareRulesJson: pickFirst(record, ["fareRulesJson", "FareRulesJson"], ""),
+    cancelledAtIst: pickFirst(record, ["cancelledAtIst", "CancelledAtIst"], null),
+    departureTimeIst: pickFirst(record, ["departureTimeIst", "DepartureTimeIst"], null),
+    arrivalTimeIst: pickFirst(record, ["arrivalTimeIst", "ArrivalTimeIst"], null),
     segments,
     passengers,
     profit: Number(pickFirst(record, ["profitInr", "ProfitInr", "profit", "Profit"], 0)),
@@ -672,9 +681,13 @@ async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDat
     }
   }
 
-  // Merge locally cached flight tickets from localStorage so recent bookings appear in Admin immediately
+  if (fetchedList.length > 0) {
+    return fetchedList;
+  }
+
+  // Fallback to genuine user bookings in storage only if API returned 0 results
   const localBookings = [];
-  const localKeys = ["my_flight_bookings", "user_flight_tickets", "mock_tickets", "stored_tickets", "latest_ticket", "pnb_flight_bookings"];
+  const localKeys = ["my_flight_bookings", "pnb_flight_bookings"];
   localKeys.forEach((key) => {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
@@ -692,19 +705,7 @@ async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDat
     } catch (e) {}
   });
 
-  const mergedMap = new Map();
-  fetchedList.forEach((b) => {
-    const key = String(b.bookingReference || b.bookingId || "").trim().toLowerCase();
-    if (key) mergedMap.set(key, b);
-  });
-  localBookings.forEach((b) => {
-    const key = String(b.bookingReference || b.bookingId || "").trim().toLowerCase();
-    if (key && !mergedMap.has(key)) {
-      mergedMap.set(key, b);
-    }
-  });
-
-  return Array.from(mergedMap.values());
+  return localBookings;
 }
 
 const parseNumber = (value, fallback = 0) => {
@@ -967,6 +968,15 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     ssrAmountInr: parseNumber(record?.ssrAmountInr, 0),
     route: normalizeText(record?.route || record?.segment, "--"),
     segments: Array.isArray(record?.segments) ? record.segments : [],
+    srdvBookingId: record?.srdvBookingId || record?.SrdvBookingId || "--",
+    returnPnr: record?.returnPnr || record?.ReturnPnr || "",
+    gdsPnr: record?.gdsPnr || record?.GdsPnr || "",
+    nonRefundable: Boolean(record?.nonRefundable ?? record?.NonRefundable),
+    cancellationPolicyJson: record?.cancellationPolicyJson || record?.CancellationPolicyJson || "",
+    fareRulesJson: record?.fareRulesJson || record?.FareRulesJson || "",
+    cancelledAtIst: record?.cancelledAtIst || record?.CancelledAtIst || null,
+    departureTimeIst: record?.departureTimeIst || record?.DepartureTimeIst || null,
+    arrivalTimeIst: record?.arrivalTimeIst || record?.ArrivalTimeIst || null,
     paymentStatus: record?.paymentStatus || null,
     refundStatus: record?.refundStatus || null,
     fulfillmentStatus: record?.fulfillmentStatus || null,
@@ -1759,6 +1769,22 @@ export default function AdminFlightBookingListPage() {
                     <th>Booked By</th>
                     <td>{safeValue(selectedBooking.bookedBy, "--")}</td>
                   </tr>
+                  <tr>
+                    <th>SRDV Booking ID</th>
+                    <td>{safeValue(selectedBooking.srdvBookingId, "--")}</td>
+                    <th>Refundable Policy</th>
+                    <td style={{ color: selectedBooking.nonRefundable ? "#ef4444" : "#10b981", fontWeight: "600" }}>
+                      {selectedBooking.nonRefundable ? "Non-Refundable" : "Refundable as per airline policy"}
+                    </td>
+                  </tr>
+                  {(selectedBooking.returnPnr || selectedBooking.gdsPnr) && (
+                    <tr>
+                      <th>GDS PNR</th>
+                      <td>{safeValue(selectedBooking.gdsPnr, "--")}</td>
+                      <th>Return PNR</th>
+                      <td>{safeValue(selectedBooking.returnPnr, "--")}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 

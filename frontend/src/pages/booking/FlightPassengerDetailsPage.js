@@ -11,6 +11,7 @@ import { navigateWithAuth } from "../../utils/authNavigation";
 import { isTokenExpired } from "../../services/authSession";
 import { getFlightPricingPreview, getFareRule, getFareQuote, getSSR } from "../../services/flightBookingService";
 import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
+import { getWalletSummary } from "../../services/walletService";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import BookingTimer from "./BookingTimer";
 
@@ -245,6 +246,14 @@ export default function FlightPassengerDetailsPage() {
   const [featuredOffers, setFeaturedOffers] = useState([]);
   const [pricingBreakdown, setPricingBreakdown] = useState(null);
 
+  const [walletSummary, setWalletSummary] = useState(null);
+  const [walletAmountInput, setWalletAmountInput] = useState(
+    flowState.walletAppliedAmount != null && Number(flowState.walletAppliedAmount) > 0
+      ? String(flowState.walletAppliedAmount)
+      : ""
+  );
+  const [isWalletExpanded, setIsWalletExpanded] = useState(false);
+
   const [isApplying, setIsApplying] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
@@ -420,18 +429,16 @@ export default function FlightPassengerDetailsPage() {
 
         let quoteRes;
         
-        // Determine if this is a standard JourneyType-3 multicity (all legs share the same TraceId)
-        // vs. true MixAPI independent itineraries (each leg has its own TraceId).
+        // Determine if all legs share the same TraceId (standard OneWay, RoundTrip, or MultiCity search)
+        // vs. true MixAPI independent itineraries with distinct TraceIds.
         const uniqueTraceIds = new Set(
-          uniqueItineraries.map(leg => leg.traceId || leg.TraceId || flowState.traceId || flowState.TraceId || "")
+          uniqueItineraries.map(leg => leg.traceId || leg.TraceId || flowState.traceId || flowState.TraceId || "").filter(Boolean)
         );
-        const isSharedTraceIdMultiCity = isMultiCityNormalized && uniqueTraceIds.size <= 1;
+        const isSharedSearch = uniqueTraceIds.size <= 1;
 
-        // If we have mixed independent itineraries with DIFFERENT TraceIds (e.g., true MixAPI multi-city),
+        // If we have mixed independent itineraries with DIFFERENT TraceIds (true MixAPI multi-search),
         // quote them individually as OneWay legs.
-        // Standard JourneyType-3 multicity (shared TraceId) must NOT take this path — it needs a single
-        // FareQuote call with JourneyType=3.
-        if (uniqueItineraries.length > 1 && !isSharedTraceIdMultiCity) {
+        if (uniqueItineraries.length > 1 && !isSharedSearch) {
           const promises = uniqueItineraries.map(leg => getFareQuote({
             flight: leg,
             traceId: leg.traceId || leg.TraceId || flowState.traceId || flowState.TraceId,
@@ -479,16 +486,18 @@ export default function FlightPassengerDetailsPage() {
             };
           }
         } else {
-          // Standard single FareQuote
+          // Standard single FareQuote (OneWay, RoundTrip with shared TraceId, or MultiCity with shared TraceId)
+          const combinedResultIndex = uniqueItineraries.map(leg => leg.resultIndex || leg.ResultIndex).filter(Boolean).join(',');
+          const resolvedResultIndex = (isMultiCityNormalized || isTwoWayNormalized || uniqueItineraries.length > 1)
+            ? combinedResultIndex 
+            : (uniqueItineraries[0]?.resultIndex || uniqueItineraries[0]?.ResultIndex);
           quoteRes = await getFareQuote({
             flight,
             returnFlight: returnFlightNormalized,
             legs: selectedLegs,
             selectedLegs: selectedLegs,
             traceId: flight.traceId || flowState.traceId || flowState.TraceId,
-            resultIndex: isMultiCityNormalized 
-              ? uniqueItineraries.map(leg => leg.resultIndex || leg.ResultIndex).join(',') 
-              : (uniqueItineraries[0].resultIndex || uniqueItineraries[0].ResultIndex),
+            resultIndex: resolvedResultIndex,
             srdvType: flight.srdvType,
             srdvIndex: flight.srdvIndex,
             journeyType: isMultiCityNormalized ? 3 : (isTwoWayNormalized ? 2 : 1),
@@ -501,7 +510,11 @@ export default function FlightPassengerDetailsPage() {
           console.log("FareQuote API validated successfully:", quoteRes);
           setFareQuoteData(quoteRes);
           setFareQuoteError("");
-          writeFlightBookingFlowState({ fareQuote: quoteRes });
+          writeFlightBookingFlowState({
+            fareQuote: quoteRes,
+            resultIndex: quoteRes.identity?.ResultIndex || flowState.resultIndex,
+            ResultIndex: quoteRes.identity?.ResultIndex || flowState.ResultIndex,
+          });
 
           const fqRes = quoteRes.results || quoteRes.rawResponse?.Results || quoteRes.rawResponse?.Response?.Results || {};
           const fqF = fqRes?.Fare || quoteRes.fare || {};
@@ -692,6 +705,20 @@ export default function FlightPassengerDetailsPage() {
     loadPromoData();
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+    getWalletSummary()
+      .then((summary) => {
+        if (isMounted) setWalletSummary(summary);
+      })
+      .catch(() => {
+        if (isMounted) setWalletSummary(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Sync pricing preview from backend
   const loadPricing = async (code = "", offerId = null) => {
     if (!flight) return;
@@ -859,6 +886,61 @@ export default function FlightPassengerDetailsPage() {
     : Number(preservedFareSummary.discount || flowState.couponDiscount || 0);
   const tripSecureFee = 0;
   const finalPayable = fareQuoteData?.totalFare ?? 0;
+
+  const walletBalance = Number(
+    walletSummary?.availableBalance ??
+    walletSummary?.AvailableBalance ??
+    walletSummary?.walletBalance ??
+    walletSummary?.WalletBalance ??
+    walletSummary?.balance ??
+    walletSummary?.Balance ??
+    0,
+  ) || 0;
+  const walletStatus = walletSummary?.walletStatus || walletSummary?.WalletStatus || walletSummary?.status || walletSummary?.Status || "Inactive";
+
+  const parseWalletAmount = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return 0;
+    const amount = Number(raw);
+    return Number.isFinite(amount) ? amount : NaN;
+  };
+
+  const getWalletValidationMessage = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const amount = parseWalletAmount(raw);
+    if (!Number.isFinite(amount)) return "Please enter a valid wallet amount.";
+    if (amount < 0) return "Wallet amount cannot be negative.";
+    if (amount > walletBalance) return "Wallet amount cannot exceed your available balance.";
+    if (amount > finalPayable) return "Wallet amount cannot exceed the final payable amount.";
+    if (amount > 0 && walletStatus !== "Active") return `Wallet is currently ${walletStatus}.`;
+    return "";
+  };
+
+  const walletValidationMessage = getWalletValidationMessage(walletAmountInput);
+  const walletAppliedAmount = walletValidationMessage
+    ? 0
+    : Math.round((Math.max(0, parseWalletAmount(walletAmountInput)) + Number.EPSILON) * 100) / 100;
+  const walletAmountForBalance = walletValidationMessage
+    ? null
+    : Math.min(walletBalance, Math.max(0, parseWalletAmount(walletAmountInput) || 0));
+  const balanceAfterBooking = walletAmountForBalance == null
+    ? null
+    : Math.max(0, walletBalance - walletAmountForBalance);
+  const gatewayPayableAmount = Math.round((Math.max(0, finalPayable - walletAppliedAmount) + Number.EPSILON) * 100) / 100;
+  const selectedPaymentMethod =
+    walletAppliedAmount <= 0
+      ? "Cashfree"
+      : walletAppliedAmount >= finalPayable
+        ? "Wallet"
+        : "Hybrid";
+
+  const handleWalletAmountChange = (event) => {
+    const nextValue = event.target.value.replace(/,/g, "").trim();
+    if (nextValue === "" || /^-?\d*(?:\.\d{0,2})?$/.test(nextValue)) {
+      setWalletAmountInput(nextValue);
+    }
+  };
 
   const initialFareReference = Number(
     flowState.fareSummary?.totalFare ??
@@ -1085,6 +1167,13 @@ export default function FlightPassengerDetailsPage() {
       assuredSecured: secured,
       tripSecureAdded,
       tripSecureFee,
+      walletAppliedAmount,
+      walletAmount: walletAppliedAmount,
+      gatewayPayableAmount,
+      paymentMethod: selectedPaymentMethod,
+      useWallet: walletAppliedAmount > 0,
+      walletAvailableBalance: walletBalance,
+      walletStatus,
     };
 
     setIsApplying(true);
@@ -1097,7 +1186,16 @@ export default function FlightPassengerDetailsPage() {
         journeyType: isMultiCityNormalized ? 3 : isTwoWayNormalized ? 2 : 1,
         adults: travellers.adults, children: travellers.children, infants: travellers.infants });
       payload.fareQuote = currentQuote;
-      payload.payableAmount = currentQuote.totalFare;
+      const refreshedTotal = currentQuote.totalFare + assuredFee;
+      const refreshedWalletApplied = Math.min(walletAppliedAmount, refreshedTotal);
+      const refreshedGatewayPayable = Math.max(0, refreshedTotal - refreshedWalletApplied);
+      const refreshedPaymentMethod = refreshedWalletApplied <= 0 ? "Cashfree" : refreshedGatewayPayable <= 0 ? "Wallet" : "Hybrid";
+      payload.payableAmount = refreshedTotal;
+      payload.walletAppliedAmount = refreshedWalletApplied;
+      payload.walletAmount = refreshedWalletApplied;
+      payload.gatewayPayableAmount = refreshedGatewayPayable;
+      payload.paymentMethod = refreshedPaymentMethod;
+      payload.useWallet = refreshedWalletApplied > 0;
       payload.fareSummary = { ...payload.fareSummary, baseFare: currentQuote.baseFare,
         tax: currentQuote.tax, totalFare: currentQuote.totalFare, markup: 0, convenienceFee: 0,
         discount: currentQuote.pickNBookDiscount };
@@ -1566,6 +1664,92 @@ export default function FlightPassengerDetailsPage() {
               <span>Total Amount</span>
               <span>₹ {finalPayable.toLocaleString("en-IN")}</span>
             </div>
+
+            <section className="wallet-payment-box">
+              <div
+                className="wallet-payment-heading"
+                onClick={() => setIsWalletExpanded(!isWalletExpanded)}
+                style={{ cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span className="wallet-payment-icon" aria-hidden="true">₹</span>
+                  <span>Wallet payment</span>
+                </div>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: isWalletExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s ease"
+                  }}
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+
+              {isWalletExpanded && (
+                <>
+                  <div className="wallet-payment-divider" />
+                  <div className="wallet-payment-entry-row">
+                    <label className="wallet-amount-field">
+                      <span>Amount to use</span>
+                      <div className={`wallet-amount-input ${walletValidationMessage ? "field-has-error" : ""}`}>
+                        <b aria-hidden="true">₹</b>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={walletAmountInput}
+                          onChange={handleWalletAmountChange}
+                          placeholder="Enter amount"
+                          disabled={!walletSummary || walletStatus !== "Active" || walletBalance <= 0}
+                          aria-invalid={Boolean(walletValidationMessage)}
+                          aria-describedby={walletValidationMessage ? "flight-wallet-amount-error" : undefined}
+                        />
+                      </div>
+                    </label>
+                    <div className="wallet-balance-summary">
+                      <span>Available balance</span>
+                      <strong>₹ {walletBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      {walletSummary && walletStatus !== "Active" && (
+                        <span>Wallet is {walletStatus.toLowerCase()}.</span>
+                      )}
+                    </div>
+                  </div>
+                  {walletValidationMessage && (
+                    <span id="flight-wallet-amount-error" className="field-error-text" style={{ color: "#e31b23", fontSize: "0.8rem", padding: "0 12px 6px", display: "block" }}>
+                      {walletValidationMessage}
+                    </span>
+                  )}
+                  <div className="wallet-payment-divider" />
+                  {walletAppliedAmount > 0 && (
+                    <div style={{ padding: "8px 12px", fontSize: "0.85rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", color: "#16a34a", fontWeight: "600", marginBottom: "4px" }}>
+                        <span>Wallet applied</span>
+                        <span>− ₹ {walletAppliedAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", color: "#6b7280" }}>
+                        <span>Pay via Cashfree</span>
+                        <strong>₹ {gatewayPayableAmount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ padding: "6px 12px 10px", fontSize: "0.82rem", display: "flex", justifyContent: "space-between", borderTop: "1px dashed #eadfe0", color: "#4b5563" }}>
+                    <span>Balance after booking</span>
+                    <strong>
+                      {walletAppliedAmount <= 0 || balanceAfterBooking == null
+                        ? "—"
+                        : `₹ ${balanceAfterBooking.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    </strong>
+                  </div>
+                </>
+              )}
+            </section>
 
             <button
               type="button"

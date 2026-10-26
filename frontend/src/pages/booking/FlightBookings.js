@@ -260,7 +260,7 @@ export default function FlightBookings() {
     }
   };
 
-  const handleCancelBooking = async (reason, refundPreference = "Original") => {
+  const handleCancelBooking = async (reason, refundPreference = "Original", selectedItems = []) => {
     const targetBooking = cancelModalBooking;
     const bookingId = targetBooking?.bookingId || targetBooking?.bookingReference;
     if (!bookingId) return;
@@ -271,7 +271,11 @@ export default function FlightBookings() {
     setActionMessage("");
 
     try {
-      const result = await cancelFlightBooking(targetBooking || bookingId, reason || undefined, { refundPreference });
+      const options = { refundPreference };
+      if (Array.isArray(selectedItems) && selectedItems.length > 0) {
+        options.selectedPassengerIds = selectedItems;
+      }
+      const result = await cancelFlightBooking(targetBooking || bookingId, reason || undefined, options);
       setActionMessage(result.message);
       setSelectedBooking(result);
       await fetchBookings();
@@ -409,8 +413,8 @@ export default function FlightBookings() {
               </thead>
               <tbody>
                 {paginated.rows.map((booking) => {
-                  const dep = formatSplitDeparture(booking.departureTimeUtc || booking.departureDate);
-                  const bookedAt = formatBookedAt(booking.bookingTime ?? booking.bookedAtUtc ?? booking.createdAt ?? booking.createdAtUtc ?? booking.bookingDate ?? booking.bookedAt ?? booking.entryDate ?? booking.entryDateUtc);
+                  const dep = booking.departureTimeDisplay ? { date: booking.departureTimeDisplay.split(",")[0], time: booking.departureTimeDisplay.split(",")[1]?.trim() } : formatSplitDeparture(booking.departureTimeUtc || booking.departureDate);
+                  const bookedAt = booking.bookedAtDisplay || formatBookedAt(booking.bookingTime ?? booking.bookedAtUtc ?? booking.createdAt ?? booking.createdAtUtc ?? booking.bookingDate ?? booking.bookedAt ?? booking.entryDate ?? booking.entryDateUtc);
                   const totalFormatted = Number(booking.totalFare ?? booking.totalPriceInr ?? booking.totalAmount ?? 0).toLocaleString("en-IN");
                   return (
                   <tr key={booking.bookingId || booking.bookingReference}>
@@ -605,17 +609,17 @@ export default function FlightBookings() {
                   </strong>
                 </div>
               )}
-              {(selectedBooking.cancellationChargeInr > 0 || selectedBooking.cancellationCharge > 0 || selectedBooking?.CancellationCharge > 0 || selectedBooking?.RefundDetails?.CancellationCharge > 0 || bookingCategory(selectedBooking) === "cancelled") && (
+              {(selectedBooking.cancellationChargeInr > 0 || selectedBooking.cancellationCharge > 0 || selectedBooking?.CancellationCharge > 0 || selectedBooking?.RefundDetails?.CancellationCharge > 0) && (
                 <div>
                   <span style={{ color: "#ff0000", fontWeight: 700 }}>Cancellation Fee</span>
                   <strong style={{ color: "#ff0000" }}>
-                    {formatCurrency(selectedBooking.cancellationChargeInr ?? selectedBooking.cancellationCharge ?? selectedBooking?.CancellationCharge ?? selectedBooking?.RefundDetails?.CancellationCharge ?? Math.round(Number(selectedBooking.totalPriceInr || 0) * 0.15))}
+                    {formatCurrency(selectedBooking.cancellationChargeInr ?? selectedBooking.cancellationCharge ?? selectedBooking?.CancellationCharge ?? selectedBooking?.RefundDetails?.CancellationCharge ?? 0)}
                   </strong>
                 </div>
               )}
               <div>
-                <span>Booked At</span>
-                <strong>{formatDateTime(selectedBooking.bookedAtUtc)}</strong>
+                <span>Booked At (IST)</span>
+                <strong>{selectedBooking.bookedAtDisplay || formatDateTime(selectedBooking.bookedAtUtc)}</strong>
               </div>
                 <div className="booking-payment-field">
                   <span>Payment Transaction ID</span>
@@ -763,16 +767,14 @@ export default function FlightBookings() {
                   </table>
                 </div>
 
-                {(selectedLegIndexes.length > 0 || selectedPassengerIds.length > 0) && (
-                  <CancellationPolicySection
-                    booking={selectedBooking}
-                    bookingType="flight"
-                    policyData={cancelCharges}
-                    isLoading={isFetchingCharges}
-                    selectedLegIndexes={selectedLegIndexes}
-                    selectedPassengerIds={selectedPassengerIds}
-                  />
-                )}
+                <CancellationPolicySection
+                  booking={selectedBooking}
+                  bookingType="flight"
+                  policyData={cancelCharges || selectedBooking?.cancellationPolicyJson || selectedBooking?.fareRulesJson}
+                  isLoading={isFetchingCharges}
+                  selectedLegIndexes={selectedLegIndexes}
+                  selectedPassengerIds={selectedPassengerIds}
+                />
 
                 {(selectedLegIndexes.length > 0 || selectedPassengerIds.length > 0) && (
                   <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 14, marginTop: 12 }}>

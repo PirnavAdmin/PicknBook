@@ -891,6 +891,7 @@ const FlightTicket = ({ data, id, rawTicket }) => (
       { label: "Class", value: data.travelClass },
       { label: "Duration", value: data.duration },
       { label: "Fare", value: data.fare },
+      { label: "Refund Status", value: rawTicket?.nonRefundable ? "Non-Refundable" : "Refundable as per airline policy" },
     ]}
     qrLines={[
       "Ticket Type: Flight",
@@ -1072,7 +1073,14 @@ const GenericBackSide = ({ id, title, ticket }) => {
           <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#66758d', lineHeight: 1.7 }}>
             <li>Carry a valid government-issued photo ID.</li>
             <li>Keep this booking reference available during check-in.</li>
-            <li>Cancellation and refund rules follow the service provider policy.</li>
+            {ticket?.nonRefundable ? (
+              <li style={{ color: '#dc2626', fontWeight: 600 }}>This ticket is Non-Refundable as per airline rules.</li>
+            ) : (
+              <li>Cancellation and refund rules follow the dynamic airline policy booked.</li>
+            )}
+            {ticket?.cancelledAtIst && (
+              <li style={{ color: '#b91c1c' }}>Cancelled on: {ticket.cancelledAtDisplay || ticket.cancelledAtIst}</li>
+            )}
           </ul>
         </div>
         <div>

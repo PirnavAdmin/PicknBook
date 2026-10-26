@@ -706,6 +706,11 @@ export default function FlightSeatSelectionPage() {
       })
       : [];
 
+    const prevWallet = Number(flowState.walletAppliedAmount ?? flowState.walletAmount ?? 0);
+    const updatedWalletApplied = Math.min(prevWallet, totalFare);
+    const updatedGatewayPayable = Math.max(0, totalFare - updatedWalletApplied);
+    const updatedPaymentMethod = updatedWalletApplied <= 0 ? "Cashfree" : updatedGatewayPayable <= 0 ? "Wallet" : "Hybrid";
+
     const flowPayload = {
       ...flowState,
       flight,
@@ -735,6 +740,11 @@ export default function FlightSeatSelectionPage() {
         totalFare,
       },
       payableAmount: totalFare,
+      walletAppliedAmount: updatedWalletApplied,
+      walletAmount: updatedWalletApplied,
+      gatewayPayableAmount: updatedGatewayPayable,
+      paymentMethod: updatedPaymentMethod,
+      useWallet: updatedWalletApplied > 0,
     };
 
     writeFlightBookingFlowState(flowPayload);

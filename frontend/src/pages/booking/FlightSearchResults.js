@@ -207,6 +207,18 @@ function formatCurrency(value) {
   }).format(Math.round(Number(value) || 0))}`;
 }
 
+const KNOWN_AIRPORT_CODES = {
+  hyderabad: "HYD", delhi: "DEL", "new delhi": "DEL", mumbai: "BOM", bombay: "BOM",
+  bengaluru: "BLR", bangalore: "BLR", chennai: "MAA", madras: "MAA", kolkata: "CCU", calcutta: "CCU",
+  pune: "PNQ", ahmedabad: "AMD", jaipur: "JAI", goa: "GOI", "north goa": "GOX", mopa: "GOX", dabolim: "GOI",
+  kochi: "COK", cochin: "COK", lucknow: "LKO", varanasi: "VNS", patna: "PAT", chandigarh: "IXC",
+  srinagar: "SXR", guwahati: "GAU", bhubaneswar: "BBI", visakhapatnam: "VTZ", vizag: "VTZ", indore: "IDR",
+  coimbatore: "CJB", amritsar: "ATQ", thiruvananthapuram: "TRV", trivandrum: "TRV", mangalore: "IXE",
+  mangaluru: "IXE", madurai: "IXM", tiruchirappalli: "TRZ", trichy: "TRZ", nagpur: "NAG", surat: "STV",
+  vadodara: "BDQ", bhopal: "BHO", dubai: "DXB", sharjah: "SHJ", doha: "DOH", singapore: "SIN",
+  bangkok: "BKK", london: "LHR", heathrow: "LHR"
+};
+
 function cityCode(name, fallback) {
   if (!name) return fallback || "";
   const cleanInput = String(name).trim().toLowerCase();
@@ -218,6 +230,16 @@ function cityCode(name, fallback) {
 
   if (cleanInput.length === 3) {
     return cleanInput.toUpperCase();
+  }
+
+  if (KNOWN_AIRPORT_CODES[cleanInput]) {
+    return KNOWN_AIRPORT_CODES[cleanInput];
+  }
+
+  for (const [key, code] of Object.entries(KNOWN_AIRPORT_CODES)) {
+    if (cleanInput.includes(key)) {
+      return code;
+    }
   }
 
   return fallback || "";
@@ -1656,6 +1678,10 @@ export default function FlightSearchResults() {
       isTwoWay: false,
       isMultiCity: true,
       selectedLegs: allSelectedLegs,
+      resultIndex: allSelectedLegs.map(l => l.resultIndex || l.ResultIndex).filter(Boolean).join(","),
+      ResultIndex: allSelectedLegs.map(l => l.resultIndex || l.ResultIndex).filter(Boolean).join(","),
+      traceId: sharedMultiCityTraceId || firstLegFlight?.traceId || "",
+      TraceId: sharedMultiCityTraceId || firstLegFlight?.traceId || "",
       searchContext: {
         source: sourceName,
         destination: destinationName,

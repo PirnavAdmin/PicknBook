@@ -169,7 +169,7 @@ export default function FlightCancelRequest() {
     }
   };
 
-  const handleCancelBooking = async (reason) => {
+  const handleCancelBooking = async (reason, refundPreference = "Original", selectedItems = []) => {
     const bookingId = cancelModalBookingId;
     if (!bookingId) return;
     setIsCancelModalOpen(false);
@@ -179,7 +179,11 @@ export default function FlightCancelRequest() {
     setActionMessage("");
 
     try {
-      const result = await cancelFlightBooking(bookingId, reason || undefined);
+      const options = { refundPreference };
+      if (Array.isArray(selectedItems) && selectedItems.length > 0) {
+        options.selectedPassengerIds = selectedItems;
+      }
+      const result = await cancelFlightBooking(cancelModalBooking || bookingId, reason || undefined, options);
       setActionMessage(result.message);
       setSelectedBooking(result);
       await fetchBookings();
@@ -368,7 +372,7 @@ export default function FlightCancelRequest() {
                   <tr key={booking.bookingId}>
                     <td>
                       <strong>{booking.bookingId}</strong>
-                      <small>{formatDateTime(booking.bookedAtUtc)}</small>
+                      <small>{booking.bookedAtDisplay || formatDateTime(booking.bookedAtUtc)}</small>
                     </td>
                     <td>
                       <strong>
@@ -516,13 +520,13 @@ export default function FlightCancelRequest() {
                 </div>
               )}
               <div>
-                <span>Booked At</span>
-                <strong>{formatDateTime(selectedBooking.bookedAtUtc)}</strong>
+                <span>Booked At (IST)</span>
+                <strong>{selectedBooking.bookedAtDisplay || formatDateTime(selectedBooking.bookedAtUtc)}</strong>
               </div>
               {selectedBooking.status === "Cancelled" && (
                 <div>
-                  <span>Cancelled At</span>
-                  <strong>{formatDateTime(selectedBooking.cancelledAtUtc || new Date().toISOString())}</strong>
+                  <span>Cancelled At (IST)</span>
+                  <strong>{selectedBooking.cancelledAtDisplay || formatDateTime(selectedBooking.cancelledAtUtc || new Date().toISOString())}</strong>
                 </div>
               )}
               <div>
@@ -545,7 +549,7 @@ export default function FlightCancelRequest() {
         message="Are you sure you want to cancel this ticket?"
         booking={cancelModalBooking || bookings.find(b => b.bookingId === cancelModalBookingId || b.bookingReference === cancelModalBookingId) || { bookingId: cancelModalBookingId }}
         bookingType="flight"
-        policyData={cancelCharges}
+        policyData={cancelCharges || cancelModalBooking?.cancellationPolicyJson || cancelModalBooking?.fareRulesJson}
         isLoadingPolicy={isFetchingCharges}
       />
     </div>

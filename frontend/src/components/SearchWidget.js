@@ -169,9 +169,13 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
   };
 
   const handleSelect = (item) => {
-    const name = typeof item === "string" ? item : item.cityName;
+    const rawName = typeof item === "string" ? item : (item.cityName || "");
+    const airportCode = typeof item === "object" ? (item.airportCode || item.AirportCode || "") : "";
+    const name = airportCode && !rawName.includes(`(${airportCode})`)
+      ? `${rawName} (${airportCode})`
+      : rawName;
     setInputValue(name);
-    onChange(name, item.cityId);
+    onChange(name, airportCode || item.cityId);
     setOpen(false);
   };
 
@@ -340,8 +344,12 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
   const changeHotelAdults = (delta) => setHotelAdults((p) => Math.min(16, Math.max(1, p + delta)));
   const changeHotelChildren = (delta) => setHotelChildren((p) => Math.min(8, Math.max(0, p + delta)));
 
-  const updateMultiCityLeg = (id, field, val) =>
-    setMultiCityLegs((prev) => prev.map((leg) => (leg.id === id ? { ...leg, [field]: val } : leg)));
+  const updateMultiCityLeg = (id, field, val, code) =>
+    setMultiCityLegs((prev) => prev.map((leg) => (leg.id === id ? {
+      ...leg,
+      [field]: val,
+      ...(code ? { [`${field}Code`]: code } : {})
+    } : leg)));
 
   const addMultiCityLeg = () =>
     setMultiCityLegs((prev) => {
@@ -615,8 +623,8 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                 <div className="multi-city-list">
                   {multiCityLegs.map((leg, idx) => (
                     <div className="multi-city-row" key={leg.id}>
-                      <PlaceAutocomplete label={`Leg ${idx + 1} – From`} value={leg.from} onChange={(v) => updateMultiCityLeg(leg.id, "from", v)} tripType="flight" field="from" placeholder="Source" />
-                      <PlaceAutocomplete label={`Leg ${idx + 1} – To`} value={leg.to} onChange={(v) => updateMultiCityLeg(leg.id, "to", v)} tripType="flight" field="to" placeholder="Destination" />
+                      <PlaceAutocomplete label={`Leg ${idx + 1} – From`} value={leg.from} onChange={(v, code) => updateMultiCityLeg(leg.id, "from", v, code)} tripType="flight" field="from" placeholder="Source" />
+                      <PlaceAutocomplete label={`Leg ${idx + 1} – To`} value={leg.to} onChange={(v, code) => updateMultiCityLeg(leg.id, "to", v, code)} tripType="flight" field="to" placeholder="Destination" />
                       <div className="field field-with-icon" style={{ position: "relative" }}>
                         <label>Departure</label>
                         <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === `leg-dep-${leg.id}` ? null : `leg-dep-${leg.id}`)}>

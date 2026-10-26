@@ -168,6 +168,18 @@ function normalizeFetchedTicket(ticket, request) {
     fare: normalizedFare,
     totalFare: ticket.totalFare ?? ticket.TotalFare ?? toFareNumber(fareValue),
     totalPaid: ticket.totalPaid ?? ticket.TotalPaid ?? toFareNumber(fareValue),
+    cancellationPolicyJson: ticket.cancellationPolicyJson ?? ticket.CancellationPolicyJson ?? "",
+    fareRulesJson: ticket.fareRulesJson ?? ticket.FareRulesJson ?? "",
+    nonRefundable: ticket.nonRefundable ?? ticket.NonRefundable ?? false,
+    cancellationCharges: ticket.cancellationCharges ?? ticket.CancellationCharges ?? null,
+    departureTimeDisplay: ticket.departureTimeDisplay ?? ticket.DepartureTimeDisplay ?? "",
+    arrivalTimeDisplay: ticket.arrivalTimeDisplay ?? ticket.ArrivalTimeDisplay ?? "",
+    bookedAtIst: ticket.bookedAtIst ?? ticket.BookedAtIst ?? "",
+    bookedAtDisplay: ticket.bookedAtDisplay ?? ticket.BookedAtDisplay ?? "",
+    cancelledAtIst: ticket.cancelledAtIst ?? ticket.CancelledAtIst ?? "",
+    cancelledAtDisplay: ticket.cancelledAtDisplay ?? ticket.CancelledAtDisplay ?? "",
+    srdvBookingId: ticket.srdvBookingId ?? ticket.SrdvBookingId ?? "",
+    returnPnr: ticket.returnPnr ?? ticket.ReturnPnr ?? "",
     fetchVerified: true,
   };
 }

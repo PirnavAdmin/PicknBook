@@ -716,27 +716,94 @@ function parseBusPolicy(booking, extraPolicyData) {
   };
 }
 
+function safeJsonParse(val) {
+  if (!val) return null;
+  if (typeof val === "object") return val;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        return JSON.parse(trimmed);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
 function parseFlightPolicy(booking, extraPolicyData) {
-  const miniRules =
+  const isNonRefundable = Boolean(
+    booking?.nonRefundable ||
+    booking?.NonRefundable ||
+    extraPolicyData?.nonRefundable ||
+    extraPolicyData?.NonRefundable
+  );
+
+  const totalPaid = Number(
+    booking?.totalPriceInr ||
+    booking?.TotalPriceInr ||
+    booking?.totalFare ||
+    booking?.TotalFare ||
+    booking?.customerFareInr ||
+    0
+  );
+
+  if (isNonRefundable) {
+    return {
+      available: true,
+      isNonRefundable: true,
+      slabs: [
+        {
+          condition: "Cancellation at any time after ticketing",
+          charge: "100% Cancellation Fee (Non-Refundable)",
+          refund: "INR 0 Refund",
+          chargeType: "non_refundable",
+        },
+      ],
+      summaryText: "This flight ticket is strictly non-refundable as per airline fare rules.",
+      estimatedCancellationCharge: totalPaid > 0 ? totalPaid : null,
+      estimatedRefundAmount: 0,
+      totalPaid,
+    };
+  }
+
+  const rawMini =
     extraPolicyData?.miniFareRules ||
     extraPolicyData?.MiniFareRules ||
     booking?.miniFareRules ||
-    booking?.MiniFareRules;
+    booking?.MiniFareRules ||
+    extraPolicyData?.rawResponse?.MiniFareRules;
+  const miniRules = Array.isArray(rawMini) ? rawMini : (safeJsonParse(rawMini) || []);
 
-  const fareRules =
+  const rawFare =
     extraPolicyData?.results ||
     extraPolicyData?.Results ||
     extraPolicyData?.FareRules ||
+    extraPolicyData?.fareRules ||
     booking?.fareRules ||
-    booking?.FareRules;
+    booking?.FareRules ||
+    booking?.fareRulesJson ||
+    booking?.FareRulesJson ||
+    extraPolicyData?.fareRulesJson ||
+    extraPolicyData?.FareRulesJson;
+  const parsedFare = safeJsonParse(rawFare);
+  const fareRules = Array.isArray(rawFare) ? rawFare : (Array.isArray(parsedFare) ? parsedFare : (parsedFare?.FareRules || []));
 
   const rawPolicy =
     booking?.cancellationPolicy ||
     booking?.CancellationPolicy ||
     booking?.cancellationPolicies ||
     booking?.CancellationPolicies ||
+    booking?.cancellationPolicyJson ||
+    booking?.CancellationPolicyJson ||
+    booking?.cancellationCharges ||
+    booking?.CancellationCharges ||
     extraPolicyData?.cancellationPolicy ||
-    extraPolicyData?.CancellationPolicy;
+    extraPolicyData?.CancellationPolicy ||
+    extraPolicyData?.cancellationPolicyJson ||
+    extraPolicyData?.CancellationPolicyJson;
+  const parsedPolicyObj = safeJsonParse(rawPolicy);
 
   const cancellationCharge =
     extraPolicyData?.CancellationCharge ??
@@ -779,27 +846,36 @@ function parseFlightPolicy(booking, extraPolicyData) {
         raw: m,
       };
     });
-    return { available: true, slabs };
+    return { available: true, slabs, summaryText: "Dynamic cancellation rules fetched from airline fare quotes.", totalPaid };
   }
 
   if (cancellationCharge !== undefined && cancellationCharge !== null && Number(cancellationCharge) >= 0) {
+    const chargeVal = Number(cancellationCharge);
+    const refundVal = refundAmount !== undefined && refundAmount !== null ? Number(refundAmount) : Math.max(0, totalPaid - chargeVal);
     const slabs = [
       {
-        condition: "Airline Cancellation Charge",
-        charge: `INR ${Number(cancellationCharge).toLocaleString("en-IN")}`,
-        refund: refundAmount ? `INR ${Number(refundAmount).toLocaleString("en-IN")}` : "Balance Refunded",
-        chargeType: "partial",
+        condition: "Airline Supplier Cancellation Charge",
+        charge: `INR ${chargeVal.toLocaleString("en-IN")}`,
+        refund: `INR ${refundVal.toLocaleString("en-IN")}`,
+        chargeType: chargeVal === 0 ? "free" : "partial",
       },
     ];
-    if (refundAmount !== undefined && refundAmount !== null && Number(refundAmount) > 0) {
+    if (refundVal > 0) {
       slabs.push({
         condition: "Estimated Refund Balance",
-        charge: `INR ${Number(refundAmount).toLocaleString("en-IN")}`,
-        refund: "Processed to account",
+        charge: `INR ${refundVal.toLocaleString("en-IN")}`,
+        refund: "Settled to payment method / wallet",
         chargeType: "free",
       });
     }
-    return { available: true, slabs, summaryText: "Cancellation charges returned directly by airline supplier." };
+    return {
+      available: true,
+      slabs,
+      summaryText: "Cancellation charges calculated dynamically from live airline response.",
+      estimatedCancellationCharge: chargeVal,
+      estimatedRefundAmount: refundVal,
+      totalPaid,
+    };
   }
 
   if (Array.isArray(fareRules) && fareRules.length > 0) {
@@ -814,20 +890,21 @@ function parseFlightPolicy(booking, extraPolicyData) {
         raw: f,
       };
     });
-    return { available: true, slabs };
+    return { available: true, slabs, summaryText: "Cancellation policies dynamic from booked fare rules.", totalPaid };
   }
 
-  if (rawPolicy) {
-    if (Array.isArray(rawPolicy)) {
-      const slabs = rawPolicy.map((p, idx) => ({
+  const effectivePolicy = parsedPolicyObj || rawPolicy;
+  if (effectivePolicy) {
+    if (Array.isArray(effectivePolicy)) {
+      const slabs = effectivePolicy.map((p, idx) => ({
         condition: p.condition || p.policyText || p.PolicyString || `Rule ${idx + 1}`,
-        charge: p.charge || p.CancellationCharge || p.cancellationCharge || "As per policy",
+        charge: p.charge || p.CancellationCharge || p.cancellationCharge || "As per airline policy",
         chargeType: "standard",
       }));
-      return { available: true, slabs };
+      return { available: true, slabs, totalPaid };
     }
-    if (typeof rawPolicy === "string") {
-      const parts = rawPolicy.split(/[\n;]/).map((s) => s.trim()).filter(Boolean);
+    if (typeof effectivePolicy === "string") {
+      const parts = effectivePolicy.split(/[\n;]/).map((s) => s.trim()).filter(Boolean);
       const slabs = parts.map((part, idx) => {
         if (part.includes(":") || part.includes("=")) {
           const [c, ch] = part.split(/[:=]/);
@@ -835,11 +912,11 @@ function parseFlightPolicy(booking, extraPolicyData) {
         }
         return { condition: `Airline Policy ${idx + 1}`, charge: part, chargeType: "standard" };
       });
-      return { available: true, slabs };
+      return { available: true, slabs, totalPaid };
     }
   }
 
-  return { available: false, message: "Cancellation policy is not available for this booking.", slabs: [] };
+  return { available: false, message: "Cancellation policy is not available for this booking.", slabs: [], totalPaid };
 }
 
 function parseHotelPolicy(booking, extraPolicyData) {

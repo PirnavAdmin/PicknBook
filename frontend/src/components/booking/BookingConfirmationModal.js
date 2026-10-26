@@ -138,8 +138,8 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   ));
   const walletAppliedAmount = isBusBooking
     ? requestedWalletAmount
-    : useWallet && walletStatus === "Active"
-      ? Math.min(walletBalance, totalPayable)
+    : (requestedWalletAmount > 0 || useWallet) && walletStatus === "Active"
+      ? Math.min(walletBalance, totalPayable, requestedWalletAmount > 0 ? requestedWalletAmount : walletBalance)
       : 0;
   const gatewayPayableAmount = roundCurrency(Math.max(
     0,
@@ -287,11 +287,10 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
     }
 
     const sessionData = await initializePaymentSession({
-      orderAmount: bookingType === "Flight" ? totalPayable : gatewayPayableAmount,
-      useWallet: isBusBooking
-        ? walletAppliedAmount > 0
-        : bookingType === "Flight" && useWallet,
-      walletAmount: isBusBooking ? walletAppliedAmount : null,
+      orderAmount: gatewayPayableAmount,
+      useWallet: walletAppliedAmount > 0,
+      walletAmount: walletAppliedAmount > 0 ? walletAppliedAmount : null,
+      paymentMethod: selectedPaymentMethod,
       customerId,
       customerName,
       customerEmail,
@@ -302,8 +301,8 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         walletAppliedAmount,
         walletAmount: walletAppliedAmount,
         gatewayPayableAmount,
+        paymentMethod: selectedPaymentMethod,
         ...(isBusBooking ? {
-          paymentMethod: selectedPaymentMethod,
           originalBookingTotal,
           offerDiscount: offerDiscountAmount,
           discountedBookingTotal,
@@ -420,6 +419,18 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
             <span>Total Payable</span>
             <span>₹ {formatCurrency(totalPayable)}</span>
           </div>
+          {walletBalance > 0 && walletStatus === "Active" && (
+            <div style={{ marginTop: "12px", padding: "10px 12px", background: "#fffafa", border: "1px solid #f1c4c4", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontWeight: "600", fontSize: "0.92rem", color: "#111827" }}>
+                <input
+                  type="checkbox"
+                  checked={walletAppliedAmount > 0 || useWallet}
+                  onChange={(e) => setUseWallet(e.target.checked)}
+                />
+                <span>Use Wallet Balance (Available: ₹ {formatCurrency(walletBalance)})</span>
+              </label>
+            </div>
+          )}
           {walletAppliedAmount > 0 && (
             <div style={{ display: "grid", gap: "4px", marginTop: "12px", color: "#555" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>Wallet applied</span><span>- ₹ {formatCurrency(walletAppliedAmount)}</span></div>

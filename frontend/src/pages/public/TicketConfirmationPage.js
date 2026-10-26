@@ -19,6 +19,7 @@ import { getHotelVisuals } from "../booking/hotelPresentation";
 import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.png";
 import "../../STYLES/TicketConfirmation.css";
 import HotelTicketFormat from "./HotelTicketFormat";
+import CancellationPolicySection from "../../components/booking/CancellationPolicySection";
 
 function formatCurrency(value) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -471,7 +472,7 @@ export default function TicketConfirmationPage() {
                           <span className="detail-lbl">DATE</span>
                           <span className="detail-val">
                             {(() => {
-                              const depTime = ticket.departureTime || ticket.departureDateTime || "";
+                              const depTime = ticket.departureTimeDisplay || ticket.departureTimeIst || ticket.departureTime || ticket.departureDateTime || "";
                               const match = depTime.match(/^\d+\s+[A-Za-z]+\s+\d+/);
                               return match ? match[0] : depTime.split(",")[0] || "--";
                             })()}
@@ -492,7 +493,7 @@ export default function TicketConfirmationPage() {
                           <span className="detail-lbl">BOARDING TIME</span>
                           <span className="detail-val highlight-val">
                             {(() => {
-                              const depTime = ticket.departureTime || ticket.departureDateTime || "";
+                              const depTime = ticket.departureTimeDisplay || ticket.departureTimeIst || ticket.departureTime || ticket.departureDateTime || "";
                               const timeMatch = depTime.match(/\d+:\d+\s*(?:AM|PM|am|pm)/);
                               if (timeMatch) {
                                 return `${timeMatch[0]} (Boarding: 40m prior)`;
@@ -606,14 +607,14 @@ export default function TicketConfirmationPage() {
 
                 <article>
                   <span>Departure</span>
-                  <strong>{ticket.departureTime || ticket.departureDateTime || "--"}</strong>
-                  <p>Arrival: {ticket.arrivalTime || "--"}</p>
+                  <strong>{ticket.departureTimeDisplay || ticket.departureTimeIst || ticket.departureTime || ticket.departureDateTime || "--"}</strong>
+                  <p>Arrival: {ticket.arrivalTimeDisplay || ticket.arrivalTimeIst || ticket.arrivalTime || "--"}</p>
                 </article>
 
                 <article>
                   <span>Status</span>
                   <strong>{ticket.status || "Booked"}</strong>
-                  <p>Booked at {formatDateTime(ticket.bookedAt)}</p>
+                  <p>Booked at {ticket.bookedAtDisplay || ticket.bookedAtIst || formatDateTime(ticket.bookedAt)}</p>
                 </article>
               </section>
             )}
@@ -729,6 +730,13 @@ export default function TicketConfirmationPage() {
                 <span>Total Paid</span>
                 <strong>{formatCurrency(totalPaid)}</strong>
               </div>
+            </section>
+
+            <section className="ticket-panel ticket-cancellation-policy" style={{ marginTop: 16 }}>
+              <CancellationPolicySection
+                booking={ticket}
+                bookingType={ticket.ticketType || "flight"}
+              />
             </section>
           </div>
         </article>
