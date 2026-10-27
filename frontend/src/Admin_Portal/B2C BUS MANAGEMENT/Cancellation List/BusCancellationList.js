@@ -139,12 +139,14 @@ function mapRawBusCancellationRecord(c) {
   const customerCancellationChargeInr = Number(details?.customerCancellationChargeInr ?? c?.cancellationChargeInr ?? raw?.cancellationChargeInr ?? 0);
   const adminCancellationChargeInr = Number(details?.adminCancellationChargeInr ?? customerCancellationChargeInr);
   
-  const customerServiceChargeInr = Number(details?.customerServiceChargeInr ?? 0);
-  const adminServiceChargeInr = Number(details?.adminServiceChargeInr ?? 0);
+  const customerServiceChargeInr = Number(details?.customerServiceChargeInr ?? c?.serviceChargeInr ?? raw?.serviceChargeInr ?? 35);
+  const adminServiceChargeInr = Number(details?.adminServiceChargeInr ?? c?.adminServiceChargeInr ?? raw?.adminServiceChargeInr ?? 35);
   
   const fare = Number(c?.totalPriceInr ?? raw?.totalPriceInr ?? c?.fare ?? raw?.fare ?? (customerRefundAmountInr + customerCancellationChargeInr));
 
-  const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) + (customerCancellationChargeInr - adminCancellationChargeInr);
+  const calculatedProfit = (c?.calculatedProfit !== undefined && c?.calculatedProfit !== null) 
+    ? Number(c.calculatedProfit)
+    : (adminRefundAmountInr - customerRefundAmountInr) + (customerCancellationChargeInr - adminCancellationChargeInr);
 
   return {
     id,
