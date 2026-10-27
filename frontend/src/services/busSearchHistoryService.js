@@ -417,7 +417,7 @@ function aggregatePopularRoutes(records) {
     });
 }
 
-export async function getPopularBusRoutesFromSearchHistory({ limit = 12 } = {}) {
+export async function getPopularBusRoutesFromSearchHistory({ limit = 12, startDate, endDate } = {}) {
   let apiRecords = [];
   let apiError = null;
 
@@ -428,7 +428,18 @@ export async function getPopularBusRoutesFromSearchHistory({ limit = 12 } = {}) 
   }
 
   const localRecords = apiRecords.length > 0 ? [] : readLocalSearchHistoryEntries();
-  const routes = aggregatePopularRoutes([...apiRecords, ...localRecords]).slice(0, limit);
+  const allRecords = [...apiRecords, ...localRecords];
+  const startTime = startDate ? parseDateValue(startDate)?.getTime() : null;
+  const endTime = endDate ? parseDateValue(endDate)?.getTime() : null;
+  const filteredRecords = startTime || endTime
+    ? allRecords.filter((record) => {
+        const searchedAt = parseDateValue(record?.searchDateUtc)?.getTime();
+        return Number.isFinite(searchedAt) &&
+          (startTime === null || searchedAt >= startTime) &&
+          (endTime === null || searchedAt <= endTime);
+      })
+    : allRecords;
+  const routes = aggregatePopularRoutes(filteredRecords).slice(0, limit);
 
   if (!routes.length && apiError) {
     throw apiError;

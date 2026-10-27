@@ -845,6 +845,10 @@
   grid-column: span 2 !important;
 }
 
+.modal-field.discount-status-field {
+  grid-column: 2 !important;
+}
+
 .modal-field span {
   font-size: 10px !important;
   font-weight: 700 !important;

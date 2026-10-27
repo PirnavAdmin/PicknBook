@@ -25,7 +25,8 @@ const DEFAULT_FILTERS = {
   passengerName: "",
   passengerPhone: "",
   customerEmail: "",
-  status: "ALL",
+  cancellationStatus: "ALL",
+  refundStatus: "ALL",
 };
 
 const normalizeText = (value, fallback = "") => {
@@ -110,41 +111,6 @@ function extractListFromPayload(payload) {
   return [];
 }
 
-const FALLBACK_BUS_CANCELLATIONS = [
-  {
-    id: 15,
-    bookingId: 15,
-    ticketNo: "PNB-BUS-99120",
-    pnr: "BUS123XYZ",
-    requestDateUtc: "2026-08-21T08:15:30Z",
-    segment: "HYD - BLR",
-    journeyDate: "2026-08-25",
-    busOperator: "Kaveri Travels",
-    busType: "AC Sleeper (2+1)",
-    customer: "Rakesh Sharma",
-    customerPhone: "9515204358",
-    customerEmail: "rakesh03hi@gmail.com",
-    status: "Cancelled",
-    customerRefundAmountInr: 1200.00,
-    adminRefundAmountInr: 1200.00,
-    remark: "Bus travel plan changed due to emergency",
-    details: {
-      cancellationStatus: "Cancelled",
-      customerRefundStatus: "Refunded",
-      adminRefundStatus: "Refunded",
-      customerRefundAmountInr: 1200.00,
-      customerCancellationChargeInr: 300.00,
-      customerServiceChargeInr: 0.00,
-      adminRefundAmountInr: 1200.00,
-      adminCancellationChargeInr: 300.00,
-      adminServiceChargeInr: 0.00,
-      supplierRemark: null,
-      customerRemark: "Bus travel plan changed due to emergency",
-      adminRemark: null
-    }
-  }
-];
-
 function mapRawBusCancellationRecord(c) {
   const raw = c?.raw || c || {};
   const details = c?.details || raw?.details || {};
@@ -173,14 +139,12 @@ function mapRawBusCancellationRecord(c) {
   const customerCancellationChargeInr = Number(details?.customerCancellationChargeInr ?? c?.cancellationChargeInr ?? raw?.cancellationChargeInr ?? 0);
   const adminCancellationChargeInr = Number(details?.adminCancellationChargeInr ?? customerCancellationChargeInr);
   
-  const customerServiceChargeInr = Number(details?.customerServiceChargeInr ?? c?.serviceChargeInr ?? raw?.serviceChargeInr ?? 35);
-  const adminServiceChargeInr = Number(details?.adminServiceChargeInr ?? c?.adminServiceChargeInr ?? raw?.adminServiceChargeInr ?? 35);
+  const customerServiceChargeInr = Number(details?.customerServiceChargeInr ?? 0);
+  const adminServiceChargeInr = Number(details?.adminServiceChargeInr ?? 0);
   
   const fare = Number(c?.totalPriceInr ?? raw?.totalPriceInr ?? c?.fare ?? raw?.fare ?? (customerRefundAmountInr + customerCancellationChargeInr));
 
-  const calculatedProfit = (c?.calculatedProfit !== undefined && c?.calculatedProfit !== null) 
-    ? Number(c.calculatedProfit)
-    : (adminRefundAmountInr - customerRefundAmountInr) + (customerCancellationChargeInr - adminCancellationChargeInr);
+  const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) + (customerCancellationChargeInr - adminCancellationChargeInr);
 
   return {
     id,
@@ -274,15 +238,11 @@ export default function BusCancellationList() {
         }
       }
 
-      if (!rawData || rawData.length === 0) {
-        rawData = FALLBACK_BUS_CANCELLATIONS;
-      }
-
       const mapped = rawData.map(mapRawBusCancellationRecord);
       setCancellationBookings(mapped);
     } catch (error) {
       setErrorMessage("Failed to load bus cancellation requests.");
-      setCancellationBookings(FALLBACK_BUS_CANCELLATIONS.map(mapRawBusCancellationRecord));
+      setCancellationBookings([]);
     } finally {
       setIsLoading(false);
     }
@@ -406,10 +366,13 @@ export default function BusCancellationList() {
         const q = filters.customerEmail.toLowerCase();
         if (!String(c.customerEmail).toLowerCase().includes(q)) return false;
       }
-      if (filters.status && filters.status !== "ALL") {
-        const statusQuery = filters.status.toLowerCase();
-        const itemStatus = String(c.details?.customerRefundStatus || c.status || "").toLowerCase();
-        if (!itemStatus.includes(statusQuery)) return false;
+      if (filters.cancellationStatus !== "ALL") {
+        const itemStatus = String(c.details?.cancellationStatus || c.status || "").trim().toLowerCase();
+        if (itemStatus !== filters.cancellationStatus.toLowerCase()) return false;
+      }
+      if (filters.refundStatus !== "ALL") {
+        const itemRefundStatus = String(c.details?.customerRefundStatus || "").trim().toLowerCase();
+        if (itemRefundStatus !== filters.refundStatus.toLowerCase()) return false;
       }
       return true;
     });
@@ -617,13 +580,27 @@ export default function BusCancellationList() {
           <label>
             <span>Status</span>
             <select
-              value={draftFilters.status || "ALL"}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
+              value={draftFilters.cancellationStatus}
+              onChange={(e) => handleFilterChange("cancellationStatus", e.target.value)}
             >
               <option value="ALL">All Status</option>
               <option value="Pending">Pending</option>
-              <option value="Refunded">Refunded / Approved</option>
+              <option value="Approved">Approved</option>
               <option value="Cancelled">Cancelled</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Refund Status</span>
+            <select
+              value={draftFilters.refundStatus}
+              onChange={(e) => handleFilterChange("refundStatus", e.target.value)}
+            >
+              <option value="ALL">All Refund Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Completed">Completed</option>
+              <option value="Refunded">Refunded</option>
               <option value="Rejected">Rejected</option>
             </select>
           </label>
@@ -672,7 +649,7 @@ export default function BusCancellationList() {
                 >
                   <div className="admin-table-cell admin-cell-centered" style={{ cursor: "pointer" }} onClick={() => openDetailsModal(item)}>
                     <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.68rem", wordBreak: "break-all" }}>
-                      #{item.id}
+                      {item.id}
                     </strong>
                     <div className="admin-date-badge">
                       <span className="admin-calendar-emoji">🗓️</span>
@@ -798,7 +775,7 @@ export default function BusCancellationList() {
                   Bus Cancellation Detail View
                 </h3>
                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                  ID: <strong>#{selectedCancellation.id}</strong> | PNR: <strong>{selectedCancellation.pnr}</strong> | Ref: <strong>{selectedCancellation.ticketNo}</strong>
+                  ID: <strong>{selectedCancellation.id}</strong> | PNR: <strong>{selectedCancellation.pnr}</strong> | Ref: <strong>{selectedCancellation.ticketNo}</strong>
                   {selectedCancellation.operatorPnr && selectedCancellation.operatorPnr !== "--" && selectedCancellation.operatorPnr !== selectedCancellation.pnr && (
                     <span> | Op PNR: <strong style={{ fontFamily: "monospace" }}>{selectedCancellation.operatorPnr}</strong></span>
                   )}
@@ -823,7 +800,7 @@ export default function BusCancellationList() {
                 <tbody>
                   <tr>
                     <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px", width: "22%" }}>Cancellation ID</td>
-                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", width: "28%" }}>#{selectedCancellation.id}</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", width: "28%" }}>{selectedCancellation.id}</td>
                     <td style={{ background: "#A51C49", color: "#fff", fontWeight: "700", padding: "6px 10px", width: "22%" }}>Booking Reference</td>
                     <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", width: "28%" }}>{selectedCancellation.ticketNo}</td>
                   </tr>
@@ -1034,7 +1011,7 @@ export default function BusCancellationList() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           <div style={{ background: "#0f172a", color: "#38bdf8", borderRadius: "12px", width: "100%", maxWidth: "700px", maxHeight: "80vh", overflowY: "auto", padding: "20px", fontFamily: "monospace", fontSize: "12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", color: "#ffffff", marginBottom: "12px" }}>
-              <strong>Raw Bus Cancellation Response (ID #{selectedCancellation.id})</strong>
+              <strong>Raw Bus Cancellation Response (ID {selectedCancellation.id})</strong>
               <button type="button" className="close-x" onClick={() => setShowRawJsonModal(false)} title="Close">
                 <X size={14} />
               </button>

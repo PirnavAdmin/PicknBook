@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./AddPage.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createAdminPage, updateAdminPage, resolveCmsImageUrl } from "../../../services/cmsPageService";
+import { createAdminPage, updateAdminPage, getAdminPages, resolveCmsImageUrl } from "../../../services/cmsPageService";
 
 const DEFAULT_FORM = {
   title: "",
@@ -246,6 +246,29 @@ const AddPage = () => {
     }
 
     const slug = formData.slug?.trim() ? formData.slug.trim() : buildSlug(title);
+
+    try {
+      const existingResponse = await getAdminPages();
+      const existingPages = Array.isArray(existingResponse)
+        ? existingResponse
+        : (existingResponse?.data || existingResponse?.pages || existingResponse?.list || []);
+      const normalizedSlug = buildSlug(slug);
+      const normalizedTitle = title.toLowerCase();
+      const duplicate = existingPages.find((page) => {
+        if (editingPage?.id && String(page.id) === String(editingPage.id)) return false;
+        const pageSlug = buildSlug(page.slug || "");
+        const pageTitle = String(page.title || "").trim().toLowerCase();
+        const sameModule = String(page.module || "All").trim().toLowerCase() === String(formData.module || "All").trim().toLowerCase();
+        return sameModule && (pageSlug === normalizedSlug || pageTitle === normalizedTitle);
+      });
+      if (duplicate) {
+        setFormError(`A page with this title or URL slug already exists in the ${duplicate.module || "All"} module.`);
+        return;
+      }
+    } catch (error) {
+      setFormError(error.response?.data?.message || error.message || "Could not verify duplicate pages. Please retry.");
+      return;
+    }
 
     const data = new FormData();
     data.append("Title", title);

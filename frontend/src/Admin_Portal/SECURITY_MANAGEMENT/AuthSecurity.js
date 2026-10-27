@@ -429,7 +429,6 @@ export default function AuthSecurity() {
               <table className="sd-mini-table">
                 <thead>
                   <tr>
-                    <th width="50">#</th>
                     <th>Policy Name</th>
                     <th>Policy Type</th>
                     <th>Applies To</th>
@@ -442,14 +441,13 @@ export default function AuthSecurity() {
                 <tbody>
                   {paginatedPolicies.length === 0 ? (
                     <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '24px 0', color: '#64748b' }}>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '24px 0', color: '#64748b' }}>
                         No policies found
                       </td>
                     </tr>
                   ) : (
                     paginatedPolicies.map((p, idx) => (
                       <tr key={p.id}>
-                        <td>{(currentPage - 1) * pageSize + idx + 1}</td>
                         <td style={{ fontWeight: 600 }}>{p.name}</td>
                         <td>
                           <span className={`badge-custom badge-action-${p.type === 'MFA' ? 'block' : p.type === 'Session' ? 'terminate' : 'none'}`}>

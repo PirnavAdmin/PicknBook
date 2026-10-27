@@ -21,6 +21,11 @@ const adminProfitFormatter = new Intl.NumberFormat("en-IN", {
 const getProfitClassName = (profit) =>
   Number(profit) < 0 ? "admin-profit-value loss" : "admin-profit-value gain";
 
+const formatProfitValue = (profit) => {
+  const value = Number(profit);
+  return adminProfitFormatter.format(value < 0 ? Math.abs(value) : (value || 0));
+};
+
 const DEFAULT_FILTERS = {
   status: "all",
   bookingReference: "",
@@ -537,15 +542,6 @@ function normalizeFlightBookingRecord(record) {
       pickFirst(record?.raw, ["flightNumber", "FlightNumber", "tripNumber", "TripNumber"], "") ||
       ""
     ),
-    srdvBookingId: pickFirst(record, ["srdvBookingId", "SrdvBookingId"], "--"),
-    returnPnr: pickFirst(record, ["returnPnr", "ReturnPnr"], ""),
-    gdsPnr: pickFirst(record, ["gdsPnr", "GdsPnr"], ""),
-    nonRefundable: Boolean(pickFirst(record, ["nonRefundable", "NonRefundable"], false)),
-    cancellationPolicyJson: pickFirst(record, ["cancellationPolicyJson", "CancellationPolicyJson"], ""),
-    fareRulesJson: pickFirst(record, ["fareRulesJson", "FareRulesJson"], ""),
-    cancelledAtIst: pickFirst(record, ["cancelledAtIst", "CancelledAtIst"], null),
-    departureTimeIst: pickFirst(record, ["departureTimeIst", "DepartureTimeIst"], null),
-    arrivalTimeIst: pickFirst(record, ["arrivalTimeIst", "ArrivalTimeIst"], null),
     segments,
     passengers,
     profit: Number(pickFirst(record, ["profitInr", "ProfitInr", "profit", "Profit"], 0)),
@@ -681,13 +677,9 @@ async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDat
     }
   }
 
-  if (fetchedList.length > 0) {
-    return fetchedList;
-  }
-
-  // Fallback to genuine user bookings in storage only if API returned 0 results
+  // Merge locally cached flight tickets from localStorage so recent bookings appear in Admin immediately
   const localBookings = [];
-  const localKeys = ["my_flight_bookings", "pnb_flight_bookings"];
+  const localKeys = ["my_flight_bookings", "user_flight_tickets", "mock_tickets", "stored_tickets", "latest_ticket", "pnb_flight_bookings"];
   localKeys.forEach((key) => {
     try {
       const raw = typeof window !== "undefined" ? localStorage.getItem(key) : null;
@@ -705,7 +697,19 @@ async function listAdminFlightBookings({ passengerPhone, status, pnr, journeyDat
     } catch (e) {}
   });
 
-  return localBookings;
+  const mergedMap = new Map();
+  fetchedList.forEach((b) => {
+    const key = String(b.bookingReference || b.bookingId || "").trim().toLowerCase();
+    if (key) mergedMap.set(key, b);
+  });
+  localBookings.forEach((b) => {
+    const key = String(b.bookingReference || b.bookingId || "").trim().toLowerCase();
+    if (key && !mergedMap.has(key)) {
+      mergedMap.set(key, b);
+    }
+  });
+
+  return Array.from(mergedMap.values());
 }
 
 const parseNumber = (value, fallback = 0) => {
@@ -968,15 +972,6 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     ssrAmountInr: parseNumber(record?.ssrAmountInr, 0),
     route: normalizeText(record?.route || record?.segment, "--"),
     segments: Array.isArray(record?.segments) ? record.segments : [],
-    srdvBookingId: record?.srdvBookingId || record?.SrdvBookingId || "--",
-    returnPnr: record?.returnPnr || record?.ReturnPnr || "",
-    gdsPnr: record?.gdsPnr || record?.GdsPnr || "",
-    nonRefundable: Boolean(record?.nonRefundable ?? record?.NonRefundable),
-    cancellationPolicyJson: record?.cancellationPolicyJson || record?.CancellationPolicyJson || "",
-    fareRulesJson: record?.fareRulesJson || record?.FareRulesJson || "",
-    cancelledAtIst: record?.cancelledAtIst || record?.CancelledAtIst || null,
-    departureTimeIst: record?.departureTimeIst || record?.DepartureTimeIst || null,
-    arrivalTimeIst: record?.arrivalTimeIst || record?.ArrivalTimeIst || null,
     paymentStatus: record?.paymentStatus || null,
     refundStatus: record?.refundStatus || null,
     fulfillmentStatus: record?.fulfillmentStatus || null,
@@ -1610,7 +1605,7 @@ export default function AdminFlightBookingListPage() {
                       color: profit < 0 ? "#dc2626" : "#16a34a",
                       lineHeight: "1.15"
                     }}>
-                      {profit < 0 ? `-₹${Math.abs(profit).toFixed(2)}` : `₹${profit.toFixed(2)}`}
+                      {formatProfitValue(profit)}
                     </span>
                     <span style={{
                       fontSize: "0.62rem",
@@ -1618,7 +1613,7 @@ export default function AdminFlightBookingListPage() {
                       fontWeight: "500",
                       marginTop: "1px"
                     }}>
-                      {profit < 0 ? "Loss" : "Profit"}
+                      {profit < 0 ? "Loss" : profit > 0 ? "Profit" : ""}
                     </span>
                   </div>
 
@@ -1676,9 +1671,9 @@ export default function AdminFlightBookingListPage() {
                     Customer Fare: {adminCurrencyFormatter.format(Number(selectedBooking.fare) || 0)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    {Number(selectedBooking.profit) < 0
-                      ? `Loss: -₹${Math.abs(Number(selectedBooking.profit)).toLocaleString("en-IN")}`
-                      : `Profit: ${adminCurrencyFormatter.format(Number(selectedBooking.profit) || 0)}`}
+                    {Number(selectedBooking.profit) === 0 || !Number.isFinite(Number(selectedBooking.profit))
+                      ? adminProfitFormatter.format(0)
+                      : `${formatProfitValue(selectedBooking.profit)} ${Number(selectedBooking.profit) < 0 ? "Loss" : "Profit"}`}
                   </span>
                 </div>
               </div>
@@ -1769,22 +1764,6 @@ export default function AdminFlightBookingListPage() {
                     <th>Booked By</th>
                     <td>{safeValue(selectedBooking.bookedBy, "--")}</td>
                   </tr>
-                  <tr>
-                    <th>SRDV Booking ID</th>
-                    <td>{safeValue(selectedBooking.srdvBookingId, "--")}</td>
-                    <th>Refundable Policy</th>
-                    <td style={{ color: selectedBooking.nonRefundable ? "#ef4444" : "#10b981", fontWeight: "600" }}>
-                      {selectedBooking.nonRefundable ? "Non-Refundable" : "Refundable as per airline policy"}
-                    </td>
-                  </tr>
-                  {(selectedBooking.returnPnr || selectedBooking.gdsPnr) && (
-                    <tr>
-                      <th>GDS PNR</th>
-                      <td>{safeValue(selectedBooking.gdsPnr, "--")}</td>
-                      <th>Return PNR</th>
-                      <td>{safeValue(selectedBooking.returnPnr, "--")}</td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
 
@@ -1846,11 +1825,11 @@ export default function AdminFlightBookingListPage() {
                     <td><strong>Calculated Profit / Loss</strong></td>
                     <td>
                       <strong style={{ color: Number(selectedBooking.profit) < 0 ? "#ef4444" : "#10b981" }}>
-                        {adminProfitFormatter.format(Number(selectedBooking.profit) || 0)}
+                        {formatProfitValue(selectedBooking.profit)}
                       </strong>
                     </td>
                     <td style={{ color: Number(selectedBooking.profit) < 0 ? "#ef4444" : "#10b981", fontWeight: "700" }}>
-                      {Number(selectedBooking.profit) < 0 ? "Loss" : "Profit"}
+                      {Number(selectedBooking.profit) === 0 ? "" : Number(selectedBooking.profit) < 0 ? "Loss" : "Profit"}
                     </td>
                   </tr>
                 </tbody>

@@ -186,26 +186,17 @@ function calculateBookingProfit(record) {
     return Number(directProfit);
   }
 
-  const status = String(record?.status || "").toLowerCase();
-  const totalPriceInr = pickFinancialNumber(record, ["totalPriceInr", "TotalPriceInr", "fare", "customerFareInr"], 0);
-  const refundAmountInr = pickFinancialNumber(record, ["refundAmountInr", "RefundAmountInr"], 0);
   const netFareInr = getNetFareInr(record);
-
-  if (status === "cancelled") {
-    const customerRetained = totalPriceInr - refundAmountInr;
-    const supplierRetained = Math.max(0, netFareInr - refundAmountInr);
-    return Math.max(0, customerRetained - supplierRetained);
-  }
-
-  // Active bookings: Customer Paid - Net Fare (SRDV debit)
-  if (totalPriceInr > 0 && netFareInr > 0) {
-    return Math.max(0, totalPriceInr - netFareInr);
-  }
-
   const discountAmountInr = getDiscountAmountInr(record);
-  const markupAmountInr = pickFinancialNumber(record, ["markupAmountInr", "MarkupAmountInr"], 0);
-  const convenienceFeeInr = pickFinancialNumber(record, ["convenienceFeeInr", "ConvenienceFeeInr"], 0);
-  return Math.max(0, markupAmountInr + convenienceFeeInr - discountAmountInr);
+  const baseFareInr = getBaseFareInr(record);
+
+  // If netFareInr is not present or zero, fallback to taxableFareInr - baseFareInr
+  if (netFareInr <= 0) {
+    const taxableFareInr = getTaxableFareInr(record);
+    return taxableFareInr - baseFareInr;
+  }
+
+  return (netFareInr - discountAmountInr) - baseFareInr;
 }
 
 function normalizeBusPassenger(passenger, index = 0) {
@@ -1084,6 +1075,11 @@ const getProfitClassName = (profit) =>
 
 const getProfitLabel = (profit) => (Number(profit) < 0 ? "Loss" : "Profit");
 
+const formatProfitValue = (profit) => {
+  const value = Number(profit);
+  return adminProfitFormatter.format(value < 0 ? Math.abs(value) : (value || 0));
+};
+
 export default function AdminB2CBookingListPage() {
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -1641,9 +1637,7 @@ export default function AdminB2CBookingListPage() {
                     color: Number(booking.calculatedProfit) < 0 ? "#dc2626" : "#16a34a",
                     lineHeight: "1.2"
                   }}>
-                    {Number(booking.calculatedProfit) < 0
-                      ? `-₹${Math.abs(Number(booking.calculatedProfit)).toFixed(2)}`
-                      : `₹${Number(booking.calculatedProfit || 0).toFixed(2)}`}
+                    {formatProfitValue(booking.calculatedProfit)}
                   </span>
                   <span style={{
                     fontSize: "0.68rem",
@@ -1651,7 +1645,7 @@ export default function AdminB2CBookingListPage() {
                     fontWeight: "500",
                     marginTop: "2px"
                   }}>
-                    {Number(booking.calculatedProfit) < 0 ? "Loss" : "Profit"}
+                    {Number(booking.calculatedProfit) < 0 ? "Loss" : Number(booking.calculatedProfit) > 0 ? "Profit" : ""}
                   </span>
                 </div>
 
@@ -1708,8 +1702,9 @@ export default function AdminB2CBookingListPage() {
                     Customer Fare: {adminProfitFormatter.format(Number(selectedBooking.customerFareInr || selectedBooking.fare) || 0)}
                   </span>
                   <span className={`admin-view-meta-chip ${getProfitClassName(selectedBooking.calculatedProfit)}`}>
-                    {getProfitLabel(selectedBooking.calculatedProfit)}:{" "}
-                    {adminProfitFormatter.format(Number(selectedBooking.calculatedProfit) || 0)}
+                    {Number(selectedBooking.calculatedProfit) === 0 || !Number.isFinite(Number(selectedBooking.calculatedProfit))
+                      ? adminProfitFormatter.format(0)
+                      : `${formatProfitValue(selectedBooking.calculatedProfit)} ${getProfitLabel(selectedBooking.calculatedProfit)}`}
                   </span>
                 </div>
               </div>
@@ -1846,16 +1841,21 @@ export default function AdminB2CBookingListPage() {
                     <td>{adminProfitFormatter.format(Number(selectedBooking.convenienceFeeInr) || 0)}</td>
                     <td>Platform convenience fee</td>
                   </tr>
+                  <tr>
+                    <td><strong>GST Percent / Amount</strong></td>
+                    <td>{selectedBooking.gstPercent ? `${selectedBooking.gstPercent}%` : "0.00%"} / {adminProfitFormatter.format(Number(selectedBooking.gstAmountInr) || 0)}</td>
+                    <td>Applicable GST taxes</td>
+                  </tr>
                   <tr className="admin-view-highlight-row">
                     <td><strong>Calculated Profit / Loss</strong></td>
                     <td>
                       <strong className={getProfitClassName(selectedBooking.calculatedProfit)}>
-                        {adminProfitFormatter.format(Number(selectedBooking.calculatedProfit) || 0)}
+                        {formatProfitValue(selectedBooking.calculatedProfit)}
                       </strong>
                     </td>
                     <td>
                       <span className={getProfitClassName(selectedBooking.calculatedProfit)}>
-                        {getProfitLabel(selectedBooking.calculatedProfit)}
+                        {Number(selectedBooking.calculatedProfit) === 0 ? "" : getProfitLabel(selectedBooking.calculatedProfit)}
                       </span>
                     </td>
                   </tr>

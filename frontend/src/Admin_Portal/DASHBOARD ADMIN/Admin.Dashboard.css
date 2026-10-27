@@ -161,6 +161,7 @@
 .metric-card-header {
     display: flex;
     align-items: center;
+    min-height: 40px;
     gap: 12px;
 }
 
@@ -201,7 +202,7 @@
 .metric-title-text {
     font-size: 0.8rem;
     color: var(--admin-muted);
-    font-weight: 500;
+    font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -210,6 +211,8 @@
 .metric-card-body {
     display: flex;
     flex-direction: column;
+    min-height: 48px;
+    justify-content: flex-start;
     gap: 4px;
 }
 

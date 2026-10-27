@@ -236,7 +236,6 @@ export default function AccountSecurity() {
                 <table className="sd-mini-table">
                   <thead>
                     <tr>
-                      <th width="50">#</th>
                       <th>User Details</th>
                       <th>Lock Type</th>
                       <th>Remaining Time</th>
@@ -248,7 +247,7 @@ export default function AccountSecurity() {
                   <tbody>
                     {paginatedAccounts.length === 0 ? (
                       <tr>
-                        <td colSpan="7" style={{ textAlign: 'center', padding: '24px 0', color: '#10b981', fontWeight: 600 }}>
+                        <td colSpan="6" style={{ textAlign: 'center', padding: '24px 0', color: '#10b981', fontWeight: 600 }}>
                           ✅ No accounts are currently locked!
                         </td>
                       </tr>
@@ -257,7 +256,6 @@ export default function AccountSecurity() {
                         const is24Hr = acc.lockType === '24 Hours';
                         return (
                           <tr key={acc.id || acc.userId || index}>
-                            <td>{(currentPage - 1) * pageSize + index + 1}</td>
                             <td>
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px' }}>

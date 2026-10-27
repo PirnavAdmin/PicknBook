@@ -1920,7 +1920,7 @@ export default function AdminBusCouponListPage() {
                   />
                 </div>
 
-                <div className="modal-field">
+                <div className="modal-field discount-status-field">
                   <span>Status <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={generateForm.status}
@@ -2749,7 +2749,7 @@ export default function AdminBusCouponListPage() {
                   />
                 </div>
 
-                <div className="modal-field">
+                <div className="modal-field discount-status-field">
                   <span>Status <span data-admin-required className="admin-required-indicator">*</span></span>
                   <select
                     value={editCoupon.status || "Active"}

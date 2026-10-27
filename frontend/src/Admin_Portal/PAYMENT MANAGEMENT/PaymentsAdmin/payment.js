@@ -816,7 +816,7 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
                       <td>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", maxWidth: "160px", margin: "0 auto" }}>
                           <span style={{ fontWeight: "700", color: "#A51C49", fontSize: "11.5px" }}>
-                            #{p.id}
+                            Transaction ID: {p.id}
                           </span>
                           <span
                             title={orderIdText}

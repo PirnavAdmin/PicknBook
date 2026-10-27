@@ -14,79 +14,6 @@ import { csvCell, translateCityCode } from "../../../utils/adminPortalUtils";
 import { getPopularBusRoutesFromSearchHistory } from "../../../services/busSearchHistoryService";
 import { getAdminDashboardSummary } from "../../../services/adminDashboardService";
 
-const INITIAL_BUS_POPULAR_ROUTES = [
-  {
-    fromCity: "Hyderabad",
-    toCity: "Bangalore",
-    searches: 350,
-    bookingCount: 45,
-    score: 128,
-  },
-  {
-    fromCity: "Mumbai",
-    toCity: "Pune",
-    searches: 280,
-    bookingCount: 38,
-    score: 135,
-  },
-  {
-    fromCity: "Delhi",
-    toCity: "Jaipur",
-    searches: 210,
-    bookingCount: 25,
-    score: 119,
-  },
-  {
-    fromCity: "Chennai",
-    toCity: "Bangalore",
-    searches: 190,
-    bookingCount: 22,
-    score: 115,
-  },
-  {
-    fromCity: "Bangalore",
-    toCity: "Goa",
-    searches: 180,
-    bookingCount: 20,
-    score: 111,
-  },
-  {
-    fromCity: "Pune",
-    toCity: "Goa",
-    searches: 150,
-    bookingCount: 18,
-    score: 120,
-  },
-  {
-    fromCity: "Kolkata",
-    toCity: "Digha",
-    searches: 140,
-    bookingCount: 15,
-    score: 107,
-  },
-  {
-    fromCity: "Chennai",
-    toCity: "Coimbatore",
-    searches: 130,
-    bookingCount: 14,
-    score: 108,
-  },
-  {
-    fromCity: "Mumbai",
-    toCity: "Shirdi",
-    searches: 120,
-    bookingCount: 13,
-    score: 108,
-  },
-  {
-    fromCity: "Bangalore",
-    toCity: "Mangalore",
-    searches: 110,
-    bookingCount: 12,
-    score: 109,
-  },
-];
-
 export default function AdminBusPopularRoutesPage() {
   const [routes, setRoutes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -129,41 +56,41 @@ export default function AdminBusPopularRoutesPage() {
       }
 
       try {
-        const summary = await getAdminDashboardSummary();
-        let top5Buses = [];
-        if (summary?.topSellingRoutes?.buses && Array.isArray(summary.topSellingRoutes.buses)) {
-          top5Buses = summary.topSellingRoutes.buses.slice(0, 5).map((item, index) => {
-            const fromCity = translateCityCode(item.fromCity);
-            const toCity = translateCityCode(item.toCity);
-            const bookingCount = Number(item.bookingCount || item.count || 0);
-            const searchCount = Number(item.searches || item.searchCount || Math.round(bookingCount * 8.5) || 100);
-            const score = Number(item.score || Math.round((bookingCount / (searchCount || 1)) * 1000) || 0);
-            return {
-              id: `top-selling-bus-${index + 1}`,
-              fromCity,
-              toCity,
-              searches: searchCount,
-              searchCount,
-              bookingCount,
-              score,
-              isTopSelling: true,
-            };
-          });
-        }
+      const [summary, searchRoutes] = await Promise.all([
+        getAdminDashboardSummary(),
+        getPopularBusRoutesFromSearchHistory({ limit: 100, startDate, endDate }),
+      ]);
+      const topSellingRoutes = Array.isArray(summary?.topSellingRoutes?.buses)
+        ? summary.topSellingRoutes.buses
+        : [];
+      const topSellingByRoute = new Map(topSellingRoutes.map((item) => {
+        const key = `${translateCityCode(item.fromCity).trim().toLowerCase()}|${translateCityCode(item.toCity).trim().toLowerCase()}`;
+        return [key, item];
+      }));
+      const routesForRange = searchRoutes.map((item, index) => {
+        const fromCity = translateCityCode(item.fromCity);
+        const toCity = translateCityCode(item.toCity);
+        const booking = topSellingByRoute.get(`${fromCity.trim().toLowerCase()}|${toCity.trim().toLowerCase()}`);
+        const bookingCount = Number(booking?.bookingCount ?? booking?.count ?? 0);
+        return {
+          ...item,
+          id: item.id || `popular-route-${index + 1}`,
+          fromCity,
+          toCity,
+          searches: Number(item.searches ?? 0),
+          searchCount: Number(item.searches ?? 0),
+          bookingCount,
+          score: Number(item.score ?? booking?.score ?? 0),
+        };
+      });
 
-        if (isMounted) {
-          setRoutes(top5Buses);
-        }
+      if (isMounted) {
+        setRoutes(routesForRange);
+      }
       } catch (err) {
         if (isMounted) {
           console.error("Error fetching popular routes:", err);
-          const mappedRoutes = INITIAL_BUS_POPULAR_ROUTES.map(r => ({
-            ...r,
-            searchCount: r.searches,
-            bookingCount: r.bookingCount,
-            score: r.score,
-          }));
-          setRoutes(mappedRoutes);
+          setRoutes([]);
         }
       } finally {
         if (isMounted) {
@@ -202,7 +129,7 @@ export default function AdminBusPopularRoutesPage() {
     }
 
     const header = [
-      "Rank",
+      "Popularity Rank",
       "From City",
       "To City",
       "Search Count",
@@ -478,7 +405,7 @@ export default function AdminBusPopularRoutesPage() {
           <table className="admin-markup-popular-table">
             <thead>
               <tr>
-                <th>Rank</th>
+                <th>Popularity Rank</th>
                 <th>From City</th>
                 <th>To City</th>
                 <th>Searches</th>

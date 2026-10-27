@@ -13,6 +13,30 @@ import { Filter, Download, Mail, Loader2 } from "lucide-react";
 import "./HotelBookingList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
 
+const hotelProfitFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const formatProfitCurrency = (profit) => {
+  const value = Number(profit);
+  return hotelProfitFormatter.format(value < 0 ? Math.abs(value) : (value || 0));
+};
+
+const getHotelProfitValue = (booking) => {
+  const explicitProfit = booking?.profit;
+  if (explicitProfit !== undefined && explicitProfit !== null && explicitProfit !== "") {
+    return Number(explicitProfit) || 0;
+  }
+  const calculatedProfit = booking?.calculatedProfit;
+  if (calculatedProfit !== undefined && calculatedProfit !== null && calculatedProfit !== "") {
+    return Number(calculatedProfit) || 0;
+  }
+  return Math.round(Number(booking?.totalPrice || 0) * 0.06) || 0;
+};
+
 
 export default function HotelBookingList() {
   const [bookings, setBookings] = useState([]);
@@ -237,6 +261,7 @@ export default function HotelBookingList() {
   const [tempMobileNumber, setTempMobileNumber] = useState("");
   const [tempMail, setTempMail] = useState("");
   const [tempStatus, setTempStatus] = useState("all");
+  const [tempBookingPeriod, setTempBookingPeriod] = useState("all");
 
   // Applied filters (used in client-side filtering)
   const [appliedCheckInFrom, setAppliedCheckInFrom] = useState("");
@@ -245,6 +270,7 @@ export default function HotelBookingList() {
   const [appliedMobileNumber, setAppliedMobileNumber] = useState("");
   const [appliedMail, setAppliedMail] = useState("");
   const [appliedStatus, setAppliedStatus] = useState("all");
+  const [appliedBookingPeriod, setAppliedBookingPeriod] = useState("all");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -276,16 +302,14 @@ export default function HotelBookingList() {
     URL.revokeObjectURL(url);
   };
 
-  const fetchBookings = async (overridePhone, overrideStatus) => {
+  const fetchBookings = async (overridePhone) => {
     setLoading(true);
     setError("");
     setActionSuccess("");
     try {
       const phoneParam = overridePhone !== undefined ? overridePhone : (appliedMobileNumber || tempMobileNumber || undefined);
-      const statusParam = overrideStatus !== undefined ? overrideStatus : (appliedStatus !== "all" ? appliedStatus : undefined);
       const data = await listHotelBookings({
         passengerPhone: phoneParam ? String(phoneParam).trim() : undefined,
-        status: statusParam,
       });
       setBookings(Array.isArray(data) ? data : []);
       setCurrentPage(1);
@@ -340,8 +364,9 @@ export default function HotelBookingList() {
     setAppliedMobileNumber(tempMobileNumber);
     setAppliedMail(tempMail);
     setAppliedStatus(tempStatus);
+    setAppliedBookingPeriod(tempBookingPeriod);
     setCurrentPage(1);
-    fetchBookings(tempMobileNumber, tempStatus !== "all" ? tempStatus : undefined);
+    fetchBookings(tempMobileNumber);
   };
 
   const handleResetFilters = () => {
@@ -351,6 +376,7 @@ export default function HotelBookingList() {
     setTempMobileNumber("");
     setTempMail("");
     setTempStatus("all");
+    setTempBookingPeriod("all");
 
     setAppliedCheckInFrom("");
     setAppliedCheckInTo("");
@@ -358,6 +384,7 @@ export default function HotelBookingList() {
     setAppliedMobileNumber("");
     setAppliedMail("");
     setAppliedStatus("all");
+    setAppliedBookingPeriod("all");
     setCurrentPage(1);
     fetchBookings("", undefined);
   };
@@ -366,9 +393,6 @@ export default function HotelBookingList() {
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
       const s = String(b.status || "").toLowerCase();
-      if (s.includes("expir") || s.includes("fail") || s.includes("hold") || s.includes("pend")) {
-        return false;
-      }
 
       // 1. Search Term (ref, hotel, guest, email)
       if (searchTerm.trim()) {
@@ -384,16 +408,28 @@ export default function HotelBookingList() {
 
       // 2. Check-in Date From
       if (appliedCheckInFrom) {
-        const fromDate = new Date(appliedCheckInFrom);
-        const bookingDate = new Date(b.checkInDate);
-        if (bookingDate < fromDate) return false;
+        const bookingDate = String(resolveCheckInDate(b) || "").slice(0, 10);
+        if (!bookingDate || bookingDate < appliedCheckInFrom) return false;
       }
 
       // 3. Check-in Date To
       if (appliedCheckInTo) {
-        const toDate = new Date(appliedCheckInTo);
-        const bookingDate = new Date(b.checkInDate);
-        if (bookingDate > toDate) return false;
+        const bookingDate = String(resolveCheckInDate(b) || "").slice(0, 10);
+        if (!bookingDate || bookingDate > appliedCheckInTo) return false;
+      }
+
+      if (appliedBookingPeriod !== "all") {
+        const bookingDate = new Date(b.createdAt || b.bookedAt || b.bookingDate || "");
+        if (Number.isNaN(bookingDate.getTime())) return false;
+        const now = new Date();
+        const start = new Date(now);
+        start.setHours(0, 0, 0, 0);
+        if (appliedBookingPeriod === "week") {
+          start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+        } else if (appliedBookingPeriod === "month") {
+          start.setDate(1);
+        }
+        if (bookingDate < start || bookingDate > now) return false;
       }
 
       // 4. Guest (Passenger) Name
@@ -417,7 +453,11 @@ export default function HotelBookingList() {
       // 7. Status
       if (appliedStatus !== "all") {
         const statusTerm = appliedStatus.toLowerCase();
-        if (String(b.status || "").toLowerCase() !== statusTerm) return false;
+        const bookingStatus = String(b.status || "").toLowerCase();
+        const statusMatches = statusTerm === "booked"
+          ? bookingStatus.includes("book") || bookingStatus.includes("confirm") || bookingStatus.includes("success")
+          : bookingStatus === statusTerm;
+        if (!statusMatches) return false;
       }
 
       return true;
@@ -430,19 +470,21 @@ export default function HotelBookingList() {
     appliedPassengerName,
     appliedMobileNumber,
     appliedMail,
-    appliedStatus
+    appliedStatus,
+    appliedBookingPeriod
   ]);
 
   // Stats calculation
   const stats = useMemo(() => {
     const total = filteredBookings.length;
-    const active = filteredBookings.filter((b) => b.status !== "Cancelled").length;
+    const isCancelled = (b) => String(b.status || "").toLowerCase().includes("cancel");
+    const active = filteredBookings.filter((b) => !isCancelled(b)).length;
     const cancelled = total - active;
     const revenue = filteredBookings
-      .filter((b) => b.status !== "Cancelled")
+      .filter((b) => !isCancelled(b))
       .reduce((sum, b) => sum + (Number(b.totalPrice) || 0), 0);
     const profit = filteredBookings
-      .filter((b) => b.status !== "Cancelled")
+      .filter((b) => !isCancelled(b))
       .reduce((sum, b) => sum + (Number(b.profit || b.calculatedProfit || Math.round(Number(b.totalPrice || 0) * 0.06)) || 0), 0);
 
     return { total, active, cancelled, revenue, profit };
@@ -650,6 +692,19 @@ export default function HotelBookingList() {
               />
             </div>
             <div className="hbl-filter-field">
+              <label className="hbl-field-label">Booking Period</label>
+              <select
+                className="hbl-select-field"
+                value={tempBookingPeriod}
+                onChange={(e) => setTempBookingPeriod(e.target.value)}
+              >
+                <option value="all">All Dates</option>
+                <option value="day">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+            <div className="hbl-filter-field">
               <label className="hbl-field-label">Status</label>
               <select
                 className="hbl-select-field"
@@ -701,7 +756,7 @@ export default function HotelBookingList() {
           <span>Passenger Details</span>
           <span>Check-in / Check-out</span>
           <span>Rooms / Guests</span>
-          <span>PNR / Status</span>
+          <span>Booking Reference / Status</span>
           <span>Operator / Type</span>
           <span>Fare</span>
           <span>Calculated Profit</span>
@@ -715,26 +770,19 @@ export default function HotelBookingList() {
         ) : (
           <div className="admin-table-body">
             {paginatedBookings.map((b) => {
-              const displayStatus = (b.status === "Cancelled" || b.status === "Partially Cancelled")
-                ? "Cancelled"
-                : (b.status || b.paymentStatus);
+              const bookingStatus = String(b.status || "");
+              const displayStatus = bookingStatus.toLowerCase().includes("cancel") ? bookingStatus : (b.paymentStatus || bookingStatus);
               const statusClass = getAdminStatusClass(displayStatus);
-              const profitVal = (b.profit !== undefined && b.profit !== null)
-                ? Number(b.profit)
-                : (b.calculatedProfit !== undefined && b.calculatedProfit !== null)
-                  ? Number(b.calculatedProfit)
-                  : (b.netFare !== undefined && b.netFare !== null)
-                    ? (Number(b.totalPrice || 0) - Number(b.netFare || 0))
-                    : (b.srdvOfferedPrice !== undefined && b.srdvOfferedPrice !== null)
-                      ? (Number(b.totalPrice || 0) - Number(b.srdvOfferedPrice || 0))
-                      : 0;
+              const profitVal = (b.srdvOfferedPrice !== undefined && b.srdvOfferedPrice !== null)
+                ? (Number(b.totalPrice || 0) - Number(b.srdvOfferedPrice || 0))
+                : getHotelProfitValue(b);
 
               const isLossOrZero = profitVal <= 0;
 
               return (
                 <article key={b.bookingId || b.id} className="admin-table-row" style={{ gridTemplateColumns: "1.1fr 1.3fr 1.7fr 1.2fr 1.3fr 1.4fr 0.9fr 1.2fr 0.8fr" }}>
                   <div className="admin-table-cell">
-                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.80rem", wordBreak: "break-all" }}>{safeValue(b.providerBookingId || b.bookingId || b.id)}</strong>
+                    <strong style={{ color: "#A51C49", fontWeight: 700, fontSize: "0.80rem", wordBreak: "break-all" }}>{safeValue(b.bookingId || b.id || b.bookingReference)}</strong>
                     <div className="admin-date-badge">
                       <span className="admin-calendar-emoji">🗓️</span>
                       <span>{formatDateCell(b.createdAt || b.bookedAt)}</span>
@@ -773,7 +821,8 @@ export default function HotelBookingList() {
 
                   <div className="admin-table-cell admin-cell-centered">
                     <strong style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, marginBottom: "3px", wordBreak: "break-all" }}>
-                      {safeValue(b.bookingReference || b.confirmationNo || b.providerBookingId)}
+                      <small style={{ color: "#64748b", fontSize: "0.65rem" }}>Booking Ref</small>
+                      {safeValue(b.bookingReference || b.confirmationNo || b.providerBookingId, "--")}
                     </strong>
                     <span className={`admin-status-pill ${statusClass}`}>
                       {safeValue(displayStatus)}
@@ -796,7 +845,7 @@ export default function HotelBookingList() {
                       color: profitVal < 0 ? "#dc2626" : "#16a34a",
                       lineHeight: "1.2"
                     }}>
-                      {profitVal < 0 ? `-₹${Math.abs(profitVal).toFixed(2)}` : `₹${profitVal.toFixed(2)}`}
+                      {formatProfitCurrency(profitVal)}
                     </span>
                     <span style={{
                       fontSize: "0.68rem",
@@ -804,7 +853,7 @@ export default function HotelBookingList() {
                       fontWeight: "500",
                       marginTop: "2px"
                     }}>
-                      {profitVal < 0 ? "Loss" : "Profit"}
+                      {profitVal < 0 ? "Loss" : profitVal > 0 ? "Profit" : ""}
                     </span>
                   </div>
 
@@ -867,7 +916,7 @@ export default function HotelBookingList() {
               <div className="admin-view-header-main">
                 <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px", fontWeight: "700", color: "#1e293b" }}>Hotel Booking Detail View</h2>
                 <p className="admin-view-header-subtitle" style={{ fontSize: "0.82rem", margin: 0, color: "#64748b" }}>
-                  ID: <strong>{safeValue(selectedBooking.providerBookingId || selectedBooking.bookingId || selectedBooking.id)}</strong> | Ref: <strong>{safeValue(selectedBooking.bookingReference, "--")}</strong>
+                  ID: <strong>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</strong> | Ref: <strong>{safeValue(selectedBooking.bookingReference, "--")}</strong>
                 </p>
                 <div className="admin-view-meta-row" style={{ marginTop: "8px", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                   <span className="admin-view-meta-chip">
@@ -877,9 +926,12 @@ export default function HotelBookingList() {
                     Customer Fare: {formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    {(Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0
-                      ? `Loss: -₹${Math.abs(Number(selectedBooking.profit || selectedBooking.calculatedProfit)).toLocaleString("en-IN")}`
-                      : `Profit: ${formatCurrency(Number(selectedBooking.profit || selectedBooking.calculatedProfit || Math.round(Number(selectedBooking.totalPrice || 0) * 0.06)))}`}
+                    {(() => {
+                      const value = getHotelProfitValue(selectedBooking);
+                      return value === 0
+                        ? formatProfitCurrency(0)
+                        : `${formatProfitCurrency(value)} ${value < 0 ? "Loss" : "Profit"}`;
+                    })()}
                   </span>
                 </div>
               </div>
@@ -968,7 +1020,7 @@ export default function HotelBookingList() {
                 <tbody>
                   <tr>
                     <th>Booking ID</th>
-                    <td>{safeValue(selectedBooking.providerBookingId || selectedBooking.bookingId || selectedBooking.id)}</td>
+                    <td>{safeValue(selectedBooking.bookingId || selectedBooking.id)}</td>
                     <th>Booking Reference</th>
                     <td>{safeValue(selectedBooking.bookingReference, "--")}</td>
                   </tr>
@@ -1005,8 +1057,10 @@ export default function HotelBookingList() {
                     <td>{formatAdminDate(selectedBooking.lastCancellationDate)}</td>
                   </tr>
                   <tr>
+                    <th>Invoice No</th>
+                    <td>{safeValue(selectedBooking.invoiceNumber, "--")}</td>
                     <th>Booked By</th>
-                    <td colSpan="3">{safeValue(selectedBooking.bookedBy || selectedBooking.guestName, "--")}</td>
+                    <td>{safeValue(selectedBooking.bookedBy || selectedBooking.guestName, "--")}</td>
                   </tr>
                   <tr>
                     <th>Guest Name</th>
@@ -1038,38 +1092,50 @@ export default function HotelBookingList() {
                   </tr>
                   <tr>
                     <td>Net Fare</td>
-                    <td>{formatCurrency(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice)}</td>
+                    <td>{selectedBooking.srdvOfferedPrice ? formatCurrency(selectedBooking.srdvOfferedPrice) : formatCurrency(selectedBooking.totalPrice)}</td>
                     <td>Net payable fare amount</td>
                   </tr>
                   <tr>
                     <td>Base Fare</td>
-                    <td>{formatCurrency(selectedBooking.baseFare || selectedBooking.totalPrice || selectedBooking.totalPaid)}</td>
+                    <td>{formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}</td>
                     <td>Base room tariff cost</td>
                   </tr>
                   <tr>
+                    <td>Taxable Fare</td>
+                    <td>₹0.00</td>
+                    <td>Fare amount subject to taxes</td>
+                  </tr>
+                  <tr>
                     <td>Markup Amount</td>
-                    <td>{formatCurrency(selectedBooking.markupAmount || 0)}</td>
+                    <td>₹0.00</td>
                     <td>Admin markup added</td>
                   </tr>
                   <tr>
                     <td>Discount Amount</td>
-                    <td>{formatCurrency(selectedBooking.discountAmount || 0)}</td>
+                    <td>₹0.00</td>
                     <td>Applied coupon / promo discount</td>
                   </tr>
                   <tr>
                     <td>Convenience Fee</td>
-                    <td>{formatCurrency(selectedBooking.convenienceFee || 0)}</td>
+                    <td>₹0.00</td>
                     <td>Platform convenience fee</td>
+                  </tr>
+                  <tr>
+                    <td>GST Percent / Amount</td>
+                    <td>0.00% / ₹0.00</td>
+                    <td>Applicable GST taxes</td>
                   </tr>
                   <tr className="admin-view-highlight-row" style={{ background: "#f8fafc" }}>
                     <td><strong>Calculated Profit / Loss</strong></td>
                     <td>
-                      <strong style={{ color: (Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0)))) < 0 ? "#ef4444" : "#10b981" }}>
-                        {formatCurrency(Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0))))}
+                      <strong style={{ color: (Number(selectedBooking.profit || selectedBooking.calculatedProfit) || 0) < 0 ? "#ef4444" : "#10b981" }}>
+                        {formatProfitCurrency(getHotelProfitValue(selectedBooking))}
                       </strong>
                     </td>
-                    <td style={{ color: (Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0)))) < 0 ? "#ef4444" : "#10b981", fontWeight: "700" }}>
-                      {(Number(selectedBooking.profit ?? selectedBooking.calculatedProfit ?? (Number(selectedBooking.totalPrice || 0) - Number(selectedBooking.netFare || selectedBooking.srdvOfferedPrice || selectedBooking.totalPrice || 0)))) < 0 ? "Loss" : "Profit"}
+                    <td style={{ color: getHotelProfitValue(selectedBooking) < 0 ? "#ef4444" : "#10b981", fontWeight: "700" }}>
+                      {getHotelProfitValue(selectedBooking) < 0
+                        ? "Loss"
+                        : getHotelProfitValue(selectedBooking) > 0 ? "Profit" : ""}
                     </td>
                   </tr>
                 </tbody>

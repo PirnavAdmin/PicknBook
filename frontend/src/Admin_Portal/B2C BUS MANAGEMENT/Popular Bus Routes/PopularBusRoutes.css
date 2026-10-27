@@ -346,7 +346,7 @@ body .admin-markup-popular-shell .admin-markup-popular-btn.export:hover:not(:dis
   padding: 10px 16px;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -423,6 +423,13 @@ body .admin-markup-popular-shell .admin-markup-popular-btn.export:hover:not(:dis
   border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   font-size: 0.78rem !important;
+}
+
+.admin-markup-popular-table td:nth-child(n + 4),
+.admin-markup-popular-table th:nth-child(n + 4) {
+  min-width: 88px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .admin-markup-popular-table tr:last-child td {

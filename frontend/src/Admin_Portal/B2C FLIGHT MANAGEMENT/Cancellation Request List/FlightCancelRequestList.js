@@ -167,20 +167,18 @@ const formatAdminDate = (dateString) => {
 const formatRequestDate = (dateString) => {
   if (!dateString || dateString === "--") return "--";
   try {
-    const raw = String(dateString).trim();
-    const parsed = new Date(raw);
+    const parsed = new Date(dateString);
     if (Number.isNaN(parsed.getTime())) {
       return formatAdminDate(dateString);
     }
-    return parsed.toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const dateFormatted = formatAdminDate(dateString);
+    let hours = parsed.getHours();
+    const minutes = String(parsed.getMinutes()).padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const hoursStr = hours < 10 ? `0${hours}` : `${hours}`;
+    return `${dateFormatted}, ${hoursStr}:${minutes} ${ampm}`;
   } catch {
     return formatAdminDate(dateString);
   }
@@ -979,9 +977,6 @@ export default function AdminFlightCancellationRequestListPage() {
             supplierRemark,
             adminRemark,
             mainRemark: String(record?.remark || rawDetails?.remark || ""),
-            cancellationPolicyJson: record?.cancellationPolicyJson || rawDetails?.cancellationPolicyJson || "",
-            fareRulesJson: record?.fareRulesJson || rawDetails?.fareRulesJson || "",
-            nonRefundable: Boolean(record?.nonRefundable ?? rawDetails?.nonRefundable),
             details: rawDetails,
             raw: record,
           };

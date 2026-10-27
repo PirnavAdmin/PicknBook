@@ -69,6 +69,7 @@ function BlogCardCover({ src, title, category }) {
 
 export default function SiteFooter() {
   const navigate = useNavigate();
+  const [cmsPages, setCmsPages] = useState([]);
   const [footerConfig, setFooterConfig] = useState(() => {
     try {
       const cached = localStorage.getItem("b2c_layout_config");
@@ -90,6 +91,7 @@ export default function SiteFooter() {
   });
 
   useEffect(() => {
+    let active = true;
     const loadFooterConfig = async () => {
       try {
         const layout = await getActiveLayout();
@@ -105,6 +107,15 @@ export default function SiteFooter() {
       }
     };
     loadFooterConfig();
+    getPublicPages()
+      .then((response) => {
+        const pages = Array.isArray(response)
+          ? response
+          : (response?.data || response?.pages || response?.list || []);
+        if (active) setCmsPages(pages.filter((page) => String(page?.status || "Active").toLowerCase() === "active"));
+      })
+      .catch((error) => console.error("Unable to load public CMS pages for footer navigation:", error));
+    return () => { active = false; };
   }, []);
 
   const openFooterPage = (path) => {
@@ -290,6 +301,18 @@ export default function SiteFooter() {
                     <span className="pnb-link-chevron">›</span> Refund &amp; Cancellation Policy
                   </a>
                 </li>
+                {cmsPages.map((page) => (
+                  <li key={page.id || page.slug}>
+                    <a
+                      href={`/online/${encodeURIComponent(page.slug)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="pnb-footer-link"
+                    >
+                      <span className="pnb-link-chevron">›</span> {page.title}
+                    </a>
+                  </li>
+                ))}
               </ul>
             </div>
 

@@ -334,10 +334,10 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
   const searchDateUtc = pickFirst(
     record,
     [
-      "searchedAtIst",
-      "SearchedAtIst",
       "searchedAtUtc",
       "SearchedAtUtc",
+      "searchedAtIst",
+      "SearchedAtIst",
       "searchDateUtc",
       "SearchDateUtc",
       "createdAtUtc",
@@ -698,9 +698,7 @@ function parseUtcDate(value) {
     return null;
   }
 
-  // If backend sent ISO timestamp like 2026-10-04T12:09:31Z, strip trailing Z so 12:09:31 is treated as wall-clock IST time
-  const cleanText = text.replace(/Z$/i, "").replace(" ", "T");
-  const parsed = new Date(cleanText);
+  const parsed = new Date(text);
   if (!Number.isNaN(parsed.getTime())) {
     return parsed;
   }
@@ -720,6 +718,7 @@ function formatSearchTime(value) {
   }
 
   return parsed.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -732,9 +731,10 @@ function formatSearchDate(value) {
     return "--";
   }
 
-  const day = String(parsed.getDate()).padStart(2, "0");
-  const month = String(parsed.getMonth() + 1).padStart(2, "0");
-  const year = parsed.getFullYear();
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" }).formatToParts(parsed);
+  const day = parts.find((part) => part.type === "day").value;
+  const month = parts.find((part) => part.type === "month").value;
+  const year = parts.find((part) => part.type === "year").value;
   return `${day}-${month}-${year}`;
 }
 

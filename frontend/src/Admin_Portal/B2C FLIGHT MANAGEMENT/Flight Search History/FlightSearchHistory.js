@@ -394,10 +394,10 @@ function normalizeFlightSearchHistoryRecord(record, index = 0) {
   const searchDateUtc = pickFirst(
     record,
     [
-      "searchedAtIst",
-      "SearchedAtIst",
       "searchedAtUtc",
       "SearchedAtUtc",
+      "searchedAtIst",
+      "SearchedAtIst",
       "searchDateUtc",
       "SearchDateUtc",
       "createdAtUtc",
@@ -725,9 +725,8 @@ async function listAdminFlightSearchHistory({
 
 const parseUtcDate = (value) => {
   if (!value) return null;
-  let str = String(value).trim();
-  const cleanStr = str.replace(/Z$/i, "").replace(" ", "T");
-  const parsed = new Date(cleanStr);
+  const str = String(value).trim();
+  const parsed = new Date(str);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
@@ -743,6 +742,7 @@ const formatSearchTime = (value) => {
   }
 
   return parsed.toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
@@ -755,9 +755,10 @@ const formatSearchDate = (value) => {
     return "--";
   }
 
-  const day = String(parsed.getDate()).padStart(2, "0");
-  const month = String(parsed.getMonth() + 1).padStart(2, "0");
-  const year = parsed.getFullYear();
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", day: "2-digit", month: "2-digit", year: "numeric" }).formatToParts(parsed);
+  const day = parts.find((part) => part.type === "day").value;
+  const month = parts.find((part) => part.type === "month").value;
+  const year = parts.find((part) => part.type === "year").value;
   return `${day}-${month}-${year}`;
 };
 
