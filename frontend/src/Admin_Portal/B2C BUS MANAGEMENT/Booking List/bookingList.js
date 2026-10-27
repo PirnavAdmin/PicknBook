@@ -186,17 +186,26 @@ function calculateBookingProfit(record) {
     return Number(directProfit);
   }
 
+  const status = String(record?.status || "").toLowerCase();
+  const totalPriceInr = pickFinancialNumber(record, ["totalPriceInr", "TotalPriceInr", "fare", "customerFareInr"], 0);
+  const refundAmountInr = pickFinancialNumber(record, ["refundAmountInr", "RefundAmountInr"], 0);
   const netFareInr = getNetFareInr(record);
-  const discountAmountInr = getDiscountAmountInr(record);
-  const baseFareInr = getBaseFareInr(record);
 
-  // If netFareInr is not present or zero, fallback to taxableFareInr - baseFareInr
-  if (netFareInr <= 0) {
-    const taxableFareInr = getTaxableFareInr(record);
-    return taxableFareInr - baseFareInr;
+  if (status === "cancelled") {
+    const customerRetained = totalPriceInr - refundAmountInr;
+    const supplierRetained = Math.max(0, netFareInr - refundAmountInr);
+    return Math.max(0, customerRetained - supplierRetained);
   }
 
-  return (netFareInr - discountAmountInr) - baseFareInr;
+  // Active bookings: Customer Paid - Net Fare (SRDV debit)
+  if (totalPriceInr > 0 && netFareInr > 0) {
+    return Math.max(0, totalPriceInr - netFareInr);
+  }
+
+  const discountAmountInr = getDiscountAmountInr(record);
+  const markupAmountInr = pickFinancialNumber(record, ["markupAmountInr", "MarkupAmountInr"], 0);
+  const convenienceFeeInr = pickFinancialNumber(record, ["convenienceFeeInr", "ConvenienceFeeInr"], 0);
+  return Math.max(0, markupAmountInr + convenienceFeeInr - discountAmountInr);
 }
 
 function normalizeBusPassenger(passenger, index = 0) {
