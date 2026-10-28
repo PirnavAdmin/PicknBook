@@ -194,18 +194,23 @@ function calculateBookingProfit(record) {
   if (status === "cancelled") {
     const customerRetained = totalPriceInr - refundAmountInr;
     const supplierRetained = Math.max(0, netFareInr - refundAmountInr);
-    return Math.max(0, customerRetained - supplierRetained);
-  }
-
-  // Active bookings: Customer Paid - Net Fare (SRDV debit)
-  if (totalPriceInr > 0 && netFareInr > 0) {
-    return Math.max(0, totalPriceInr - netFareInr);
+    return customerRetained - supplierRetained;
   }
 
   const discountAmountInr = getDiscountAmountInr(record);
   const markupAmountInr = pickFinancialNumber(record, ["markupAmountInr", "MarkupAmountInr"], 0);
   const convenienceFeeInr = pickFinancialNumber(record, ["convenienceFeeInr", "ConvenienceFeeInr"], 0);
-  return Math.max(0, markupAmountInr + convenienceFeeInr - discountAmountInr);
+
+  if (markupAmountInr > 0 || convenienceFeeInr > 0 || discountAmountInr > 0) {
+    return (markupAmountInr + convenienceFeeInr) - discountAmountInr;
+  }
+
+  // Active bookings fallback: Customer Paid - Net Fare
+  if (totalPriceInr > 0 && netFareInr > 0 && totalPriceInr !== netFareInr) {
+    return totalPriceInr - netFareInr;
+  }
+
+  return 0;
 }
 
 function normalizeBusPassenger(passenger, index = 0) {
@@ -1045,7 +1050,7 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     vehicleType: normalizeText(record?.travelClass, safeSourceType),
     fare,
     customerFareInr: parseNumber(record?.customerFareInr, fare),
-    netFareInr: parseNumber(record?.netFareInr, fare),
+    netFareInr: parseNumber(record?.netFareInr, 0),
     baseFareInr: parseNumber(record?.baseFareInr, 0),
     taxableFareInr: parseNumber(record?.taxableFareInr, 0),
     discountAmountInr: parseNumber(record?.discountAmount, 0),

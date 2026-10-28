@@ -3213,6 +3213,40 @@ export async function listFlightBookings({ status = "all" } = {}) {
   }
 }
 
+export async function downloadFlightVoucher(bookingId, bookingRef) {
+  const cleanId = String(bookingId || "").trim();
+  if (!cleanId) return;
+
+  const url = toAbsoluteUrl(`${SRDV_ROOT}/bookings/${cleanId}/voucher`);
+  const resolvedToken = resolveAuthToken(url);
+  const headers = {
+    Accept: "application/pdf",
+    ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
+  };
+  if (shouldUseNgrokBypass(url)) {
+    headers["ngrok-skip-browser-warning"] = "true";
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to download flight voucher.");
+  }
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = `flight-voucher-${bookingRef || cleanId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(blobUrl);
+}
+
 export async function getFlightBookingById(bookingId, { userId } = {}) {
   const allBookings = await listFlightBookings();
   const found = allBookings.find(

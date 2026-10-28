@@ -2761,6 +2761,34 @@ export async function cancelBusBooking(bookingId, reason, refundPreference = "Or
   return normalizeBusActionResponse(data);
 }
 
+export async function downloadBusVoucher(bookingId, bookingRef) {
+  const cleanId = String(bookingId || "").trim();
+  if (!cleanId) return;
+
+  const url = toAbsoluteUrl(`${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${cleanId}/voucher`);
+  const headers = getAuthHeaders();
+  headers.Accept = "application/pdf";
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to download bus voucher.");
+  }
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = `bus-voucher-${bookingRef || cleanId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(blobUrl);
+}
+
 export async function listHotBusRoutes({ metric = "score" } = {}) {
   try {
     const url = buildUrl(`${BUS_BOOKINGS_ROOT}/hot-routes`, { metric });

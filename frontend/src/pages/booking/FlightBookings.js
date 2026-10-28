@@ -3,6 +3,7 @@ import BookingStatusTabs from "../../components/booking/BookingStatusTabs";
 import { bookingStatusOptions, bookingStatusLabel, bookingStatusClass, bookingCategory } from "../../utils/bookingStatus";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Download,
   Eye,
   Loader2,
   RefreshCw,
@@ -19,6 +20,7 @@ import {
   cancelFlightBooking,
   cancelFlightPartial,
   getCancellationCharges,
+  downloadFlightVoucher,
 } from "../../services/flightBookingService";
 import "../../STYLES/FlightOpsDashboard.css";
 import "../../STYLES/BookingDetailsScrollbar.css";
@@ -95,6 +97,21 @@ export default function FlightBookings() {
   const [cancelModalBooking, setCancelModalBooking] = useState(null);
   const [isFetchingCharges, setIsFetchingCharges] = useState(false);
   const [cancelCharges, setCancelCharges] = useState(null);
+  const [downloadingVoucherId, setDownloadingVoucherId] = useState(null);
+
+  const handleDownloadVoucher = async (booking) => {
+    const id = booking.bookingId || booking.bookingReference || booking.pnr || booking.id;
+    if (!id) return;
+    try {
+      setDownloadingVoucherId(id);
+      await downloadFlightVoucher(id, booking.bookingReference);
+      setActionMessage(`Voucher downloaded for ${booking.bookingReference || id}.`);
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to download flight voucher.");
+    } finally {
+      setDownloadingVoucherId(null);
+    }
+  };
 
   const bookingRequestId = useRef(0);
   const fetchBookings = async () => {
@@ -485,6 +502,21 @@ export default function FlightBookings() {
                             <Eye size={15} />
                           )}
                         </button>
+                        {bookingCategory(booking) !== "cancelled" && bookingCategory(booking) !== "payment failed" && (
+                          <button
+                            type="button"
+                            className="ops-btn-action"
+                            title="Download Voucher PDF"
+                            onClick={() => handleDownloadVoucher(booking)}
+                            disabled={downloadingVoucherId === (booking.bookingId || booking.bookingReference || booking.pnr || booking.id)}
+                          >
+                            {downloadingVoucherId === (booking.bookingId || booking.bookingReference || booking.pnr || booking.id) ? (
+                              <Loader2 size={15} className="spin" />
+                            ) : (
+                              <Download size={15} />
+                            )}
+                          </button>
+                        )}
                         {booking.status !== "Pending" && (
                           <button
                             type="button"
@@ -520,9 +552,38 @@ export default function FlightBookings() {
           <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
             <header>
               <h3>{bookingCategory(selectedBooking) === "cancelled" ? "Flight Cancellation Details" : "Flight Booking Details"}</h3>
-              <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
-                <X size={16} />
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {bookingCategory(selectedBooking) !== "cancelled" && bookingCategory(selectedBooking) !== "payment failed" && (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadVoucher(selectedBooking)}
+                    disabled={downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.bookingReference || selectedBooking.pnr || selectedBooking.id)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      background: "#2563eb",
+                      color: "#fff",
+                      border: "none",
+                      padding: "6px 12px",
+                      borderRadius: 6,
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                      cursor: "pointer"
+                    }}
+                  >
+                    {downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.bookingReference || selectedBooking.pnr || selectedBooking.id) ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : (
+                      <Download size={14} />
+                    )}
+                    <span>Download Voucher</span>
+                  </button>
+                )}
+                <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
+                  <X size={16} />
+                </button>
+              </div>
             </header>
             <div className="booking-details-body">
             <BookingLifecycle booking={selectedBooking} />
