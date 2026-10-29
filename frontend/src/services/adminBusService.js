@@ -381,3 +381,37 @@ export async function updateBusCancellation(id, data) {
   });
   return handleResponse(response);
 }
+
+export async function downloadAdminBusVoucher(bookingId, bookingRef) {
+  const cleanId = String(bookingId || "").trim();
+  if (!cleanId) return;
+
+  const url = toApiUrl(`/api/admin/bus/bookings/${cleanId}/voucher`);
+  const headers = getAdminAuthHeaders();
+  headers.Accept = "application/pdf";
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    let msg = "Failed to download bus voucher.";
+    try {
+      const err = await response.json();
+      if (err?.message) msg = err.message;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = `bus-voucher-${bookingRef || cleanId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(blobUrl);
+}
+

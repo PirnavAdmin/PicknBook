@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import "./FlightBookingList.css";
 import "../../B2C BUS MANAGEMENT/Booking List/BookingList.css";
-import { Filter, Download } from "lucide-react";
+import { Filter, Download, Loader2 } from "lucide-react";
 import { useAdminList, getAdminItemsPerPage } from "../../../utils/adminPortalStorage";
+import { downloadAdminFlightVoucher } from "../../../services/adminFlightService";
 import AdminPagination from "../../../components/AdminPagination";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
@@ -23,7 +24,9 @@ const getProfitClassName = (profit) =>
 
 const formatProfitValue = (profit) => {
   const value = Number(profit);
-  return adminProfitFormatter.format(value < 0 ? Math.abs(value) : (value || 0));
+  if (!Number.isFinite(value) || value === 0) return adminProfitFormatter.format(0);
+  if (value < 0) return `-${adminProfitFormatter.format(Math.abs(value))}`;
+  return `+${adminProfitFormatter.format(value)}`;
 };
 
 const DEFAULT_FILTERS = {
@@ -1033,6 +1036,20 @@ export default function AdminFlightBookingListPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(() => getAdminItemsPerPage(50));
+  const [downloadingVoucherId, setDownloadingVoucherId] = useState(null);
+
+  const handleDownloadVoucher = async (booking) => {
+    const id = booking.bookingId || booking.id || booking.bookingReference || booking.rawPnr || booking.pnr;
+    if (!id) return;
+    try {
+      setDownloadingVoucherId(id);
+      await downloadAdminFlightVoucher(id, booking.bookingReference);
+    } catch (err) {
+      alert(err.message || "Failed to download flight voucher.");
+    } finally {
+      setDownloadingVoucherId(null);
+    }
+  };
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1617,7 +1634,7 @@ export default function AdminFlightBookingListPage() {
                     </span>
                   </div>
 
-                  <div className="admin-table-cell admin-cell-centered">
+                  <div className="admin-table-cell admin-cell-centered" style={{ display: "flex", gap: "6px", justifyContent: "center", alignItems: "center" }}>
                     <button
                       type="button"
                       className="admin-action-btn admin-view-button"
@@ -1625,6 +1642,33 @@ export default function AdminFlightBookingListPage() {
                     >
                       View
                     </button>
+                    {String(booking.status || "").toLowerCase() !== "cancelled" && (
+                      <button
+                        type="button"
+                        className="admin-action-btn"
+                        title="Download Voucher PDF"
+                        onClick={() => handleDownloadVoucher(booking)}
+                        disabled={downloadingVoucherId === (booking.bookingId || booking.id || booking.bookingReference || booking.rawPnr || booking.pnr)}
+                        style={{
+                          padding: "4px 8px",
+                          background: "#f1f5f9",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                          color: "#334155",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          lineHeight: 1
+                        }}
+                      >
+                        {downloadingVoucherId === (booking.bookingId || booking.id || booking.bookingReference || booking.rawPnr || booking.pnr) ? (
+                          <Loader2 size={13} className="spin" />
+                        ) : (
+                          <Download size={13} />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </article>
               );
@@ -1677,23 +1721,53 @@ export default function AdminFlightBookingListPage() {
                   </span>
                 </div>
               </div>
-              <button data-admin-close
-                type="button"
-                onClick={() => setSelectedBooking(null)}
-                style={{
-                  padding: "6px 18px",
-                  fontSize: "0.85rem",
-                  borderRadius: "8px",
-                  border: "none",
-                  background: "#A51C49",
-                  color: "#ffffff",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  boxShadow: "0 2px 6px rgba(165, 28, 73, 0.3)"
-                }}
-              >
-                Close
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                {String(selectedBooking.status || "").toLowerCase() !== "cancelled" && (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadVoucher(selectedBooking)}
+                    disabled={downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.id || selectedBooking.bookingReference || selectedBooking.rawPnr || selectedBooking.pnr)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      background: "#2563eb",
+                      color: "#ffffff",
+                      border: "none",
+                      padding: "6px 14px",
+                      borderRadius: "8px",
+                      fontSize: "0.85rem",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)"
+                    }}
+                  >
+                    {downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.id || selectedBooking.bookingReference || selectedBooking.rawPnr || selectedBooking.pnr) ? (
+                      <Loader2 size={14} className="spin" />
+                    ) : (
+                      <Download size={14} />
+                    )}
+                    <span>Download Voucher</span>
+                  </button>
+                )}
+                <button data-admin-close
+                  type="button"
+                  onClick={() => setSelectedBooking(null)}
+                  style={{
+                    padding: "6px 18px",
+                    fontSize: "0.85rem",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#A51C49",
+                    color: "#ffffff",
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(165, 28, 73, 0.3)"
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </header>
 
             <div style={{ maxHeight: "72vh", overflowY: "auto", paddingRight: "4px" }}>
