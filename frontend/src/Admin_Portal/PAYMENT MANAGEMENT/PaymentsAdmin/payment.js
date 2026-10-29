@@ -338,8 +338,14 @@ export default function AdminPaymentsList({ initialStatus = "ALL" }) {
 
   const openRefundModal = (payment) => {
     setRefundPayment(payment);
-    setRefundAmount(String(payment.finalPayableAmount || payment.originalAmount || ""));
-    setRefundReason("Booking cancelled / Service failure");
+    const suggestedAmount =
+      payment.customerRefundAmount != null && Number(payment.customerRefundAmount) > 0
+        ? Math.round(Number(payment.customerRefundAmount))
+        : payment.refundAmount != null && Number(payment.refundAmount) > 0
+        ? Math.round(Number(payment.refundAmount))
+        : Math.round(Number(payment.finalPayableAmount || payment.originalAmount || 0));
+    setRefundAmount(String(suggestedAmount || ""));
+    setRefundReason(payment.cancellationReason || payment.refundReason || "Booking cancelled / Service failure");
     setRefundError("");
   };
 
