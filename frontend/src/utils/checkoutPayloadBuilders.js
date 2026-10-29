@@ -49,9 +49,15 @@ function buildFlightBookingPayload(flowState) {
   if (!rawPassengers.length) throw new Error("Passenger details are required.");
   const passengers = mapPassengersForApi(rawPassengers.map(p => {
     const paxType = p.PaxType ?? (p.passengerType === "Child" ? 2 : p.passengerType === "Infant" ? 3 : 1);
+    const addr = String(p.addressLine1 || p.AddressLine1 || p.address || flowState.contact?.addressLine1 || "Main Street").trim();
+    const city = String(p.city || p.City || flowState.contact?.city || flight.fromCity || "Hyderabad").trim();
     return { ...p, PaxType: paxType, Fare: passengerFare(quote, paxType, rawPassengers),
       dob: String(p.dob || "").replace(/^(\d{2})\/(\d{2})\/(\d{4})$/, "$3-$2-$1"),
       contactNo: flowState.contact?.mobile, email: flowState.contact?.email,
+      addressLine1: addr,
+      city: city,
+      countryCode: "IN",
+      countryName: "India",
       ...Object.fromEntries(Object.entries(flowState.gstInfo || {}).filter(([key]) => key.startsWith("GST"))) };
   }), null, null, flight);
   const sum = (key, priceKey) => passengers.reduce((total, p) => total + (p[key] || []).reduce((n, item) => n + Number(item[priceKey] ?? 0) * Number(item.Quantity ?? 1), 0), 0);
