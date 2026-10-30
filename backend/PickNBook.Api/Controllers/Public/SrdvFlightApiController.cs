@@ -3050,12 +3050,25 @@ namespace PickNBook.Api.Controllers.Public
                     });
                 }
 
-                // Status Guards per spec: "This booking is not confirmed yet, so it cannot be cancelled. Please contact the support team."
+                // Status Guards per spec:
+                if (string.Equals(reservation.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    return Ok(new SrdvV8ErrorResponseDto
+                    {
+                        Error = new SrdvV8ErrorDto
+                        {
+                            ErrorCode = 101,
+                            ErrorMessage = "This booking has already been cancelled."
+                        }
+                    });
+                }
+
                 if (!string.Equals(reservation.Status, "Booked", StringComparison.OrdinalIgnoreCase) &&
                     !string.Equals(reservation.Status, "Ticketed", StringComparison.OrdinalIgnoreCase) &&
                     !string.Equals(reservation.Status, "Confirmed", StringComparison.OrdinalIgnoreCase) &&
                     !string.Equals(reservation.Status, "Cancellation Requested", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(reservation.Status, "Partial Cancellation Requested", StringComparison.OrdinalIgnoreCase))
+                    !string.Equals(reservation.Status, "Partial Cancellation Requested", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(reservation.Status, "Partially Cancelled", StringComparison.OrdinalIgnoreCase))
                 {
                     return Ok(new SrdvV8ErrorResponseDto
                     {
@@ -3223,7 +3236,12 @@ namespace PickNBook.Api.Controllers.Public
                         CancelledPassengersJson = reqTickets
                     };
                     
-                    reservation.Status = isPartial ? "Partial Cancellation Requested" : "Cancellation Requested";
+                    reservation.Status = isPartial ? "Partially Cancelled" : "Cancelled";
+                    reservation.CancelledAtUtc = DateTime.UtcNow;
+                    if (!string.IsNullOrWhiteSpace(request.Remarks))
+                    {
+                        reservation.CancellationReason = request.Remarks.Trim();
+                    }
                     
                     _dbContext.FlightCancellationRequests.Add(cancelReq);
                     
