@@ -29,11 +29,15 @@ export function unwrapFlightResponse(data) {
 
 export function assertFlightResponse(data) {
   const response = unwrapFlightResponse(data);
-  const error = response?.Error || data?.Error;
+  const error = response?.Error || response?.error || data?.Error || data?.error;
+  const errCode = error?.ErrorCode ?? error?.errorCode;
+  const errMsg = error?.ErrorMessage ?? error?.errorMessage;
+  const respStatus = response?.ResponseStatus ?? response?.responseStatus;
+
   if (!response || typeof response !== "object" ||
-      (error?.ErrorCode != null && String(error.ErrorCode) !== "0") ||
-      (response.ResponseStatus != null && Number(response.ResponseStatus) !== 1)) {
-    throw new Error(error?.ErrorMessage || "The flight supplier could not complete the request.");
+      (errCode != null && String(errCode) !== "0") ||
+      (respStatus != null && Number(respStatus) !== 1 && String(respStatus) !== "1")) {
+    throw new Error(errMsg || "The flight supplier could not complete the request.");
   }
   return response;
 }

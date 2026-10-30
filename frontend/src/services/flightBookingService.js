@@ -1358,8 +1358,20 @@ function normalizeErrorMessage(payload) {
     return payload.message.trim();
   }
 
+  if (payload?.error?.errorMessage) {
+    return String(payload.error.errorMessage).trim();
+  }
+
+  if (payload?.error?.message) {
+    return String(payload.error.message).trim();
+  }
+
   if (payload?.Error?.ErrorMessage) {
     return String(payload.Error.ErrorMessage).trim();
+  }
+
+  if (payload?.title && typeof payload.title === "string") {
+    return payload.title.trim();
   }
 
   return "";
@@ -2793,11 +2805,21 @@ export async function sendCancelRequest(params = {}) {
     });
 
     logFlightApiResponse("POST", endpoint, 200, rawData);
-    assertFlightResponse(rawData);
+    const resolvedChangeId = String(
+      rawData.changeRequestId ||
+      rawData.ChangeRequestId ||
+      rawData.ticketCRInfo?.[0]?.changeRequestId ||
+      rawData.TicketCRInfo?.[0]?.ChangeRequestId ||
+      rawData.Response?.ChangeRequestId ||
+      rawData.Response?.changeRequestId ||
+      rawData.Response?.TicketCRInfo?.[0]?.ChangeRequestId ||
+      rawData.Response?.ticketCRInfo?.[0]?.changeRequestId ||
+      ""
+    );
     return {
       ...rawData,
       success: true,
-      changeRequestId: String(rawData.ChangeRequestId || rawData.TicketCRInfo?.[0]?.ChangeRequestId || ""),
+      changeRequestId: resolvedChangeId,
       rawResponse: rawData,
     };
   } catch (error) {
@@ -3290,9 +3312,10 @@ async function requestFlightCancellation(bookingIdOrObj, { selectedLegIndexes = 
         ticketId: "0"
       }];
 
-  const passengers = selectedPassengerIds.length
+  const matchedPassengers = selectedPassengerIds.length
     ? allPassengers.filter(p => selectedPassengerIds.some(id => String(id) === String(p.id)))
     : allPassengers;
+  const passengers = matchedPassengers.length > 0 ? matchedPassengers : allPassengers;
 
   if (!segments.length || !passengers.length) {
     throw new Error("The selected cancellation details are incomplete. Refresh this booking.");
@@ -3337,8 +3360,14 @@ async function requestFlightCancellation(bookingIdOrObj, { selectedLegIndexes = 
   });
   const response = assertFlightResponse(raw);
   const change = response.Results || response;
-  const changeRequestId = String(change.ChangeRequestId || change.TicketCRInfo?.[0]?.ChangeRequestId || "");
-  if (!/^[1-9]\d*$/.test(changeRequestId)) throw new Error("The supplier did not return a cancellation reference. Refresh your bookings before trying again.");
+  const changeRequestId = String(
+    change.changeRequestId || change.ChangeRequestId ||
+    change.ticketCRInfo?.[0]?.changeRequestId || change.TicketCRInfo?.[0]?.ChangeRequestId ||
+    raw.changeRequestId || raw.ChangeRequestId || ""
+  );
+  if (!changeRequestId || !/^[A-Za-z0-9_-]+$/.test(changeRequestId)) {
+    throw new Error("The supplier did not return a cancellation reference. Refresh your bookings before trying again.");
+  }
 
   let statusResponse;
   try { statusResponse = assertFlightResponse(await getCancelStatus({ changeRequestId })); }
