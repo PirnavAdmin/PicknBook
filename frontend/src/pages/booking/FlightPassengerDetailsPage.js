@@ -2236,7 +2236,7 @@ export default function FlightPassengerDetailsPage() {
             className="booking-modal-card fare-rule-modal"
             onClick={(event) => event.stopPropagation()}
             style={{
-              maxWidth: "650px",
+              maxWidth: "740px",
               width: "92%",
               backgroundColor: "#ffffff",
               borderRadius: "16px",
@@ -2277,82 +2277,10 @@ export default function FlightPassengerDetailsPage() {
                 </div>
               ) : (
                 <div className="fare-rule-details-container">
-                  {(activeFareRuleModal.data?.specialRule || activeFareRuleModal.data?.SpecialRule) && (
-                    <div
-                      style={{ background: "#fff8e1", borderLeft: "4px solid #ffa000", padding: "12px 14px", borderRadius: "6px", marginBottom: "16px", fontSize: "0.9rem", color: "#795548" }}
-                      dangerouslySetInnerHTML={{ __html: `<strong>Special Note:</strong> ${activeFareRuleModal.data?.specialRule || activeFareRuleModal.data?.SpecialRule}` }}
-                    />
-                  )}
-
-                  {(() => {
-                    const rules = activeFareRuleModal.data?.results || activeFareRuleModal.data?.Results || [];
-                    const miniFareRules = activeFareRuleModal.data?.miniFareRules || activeFareRuleModal.data?.MiniFareRules || [];
-                    const airlineRules = activeFareRuleModal.data?.airlineRules || activeFareRuleModal.data?.AirlineRules || null;
-                    const fl = activeFareRuleModal.flight || {};
-
-                    const hasRules = Array.isArray(rules) && rules.length > 0;
-                    const hasMiniRules = Array.isArray(miniFareRules) && miniFareRules.length > 0;
-                    const hasAirlineRules = Boolean(airlineRules && typeof airlineRules === "object");
-
-                    if (!hasRules && !hasMiniRules && !hasAirlineRules) {
-                      return (
-                        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "20px", textAlign: "center", color: "#64748b" }}>
-                          No detailed fare rules returned by the airline provider for this fare.
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        {hasRules && rules.map((rule, idx) => (
-                          <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontWeight: 700, color: "#0f172a", fontSize: "0.95rem" }}>
-                              <span>{rule.Airline || fl.airlineName || fl.airline || "Airline Fare Rules"}</span>
-                              <span style={{ color: "#d32f2f" }}>{rule.Origin || fl.sourceCode || "Origin"} ➔ {rule.Destination || fl.destinationCode || "Destination"}</span>
-                            </div>
-                            {rule.FareBasisCode && (
-                              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "10px" }}>
-                                Fare Basis: <code style={{ background: "#e2e8f0", padding: "2px 6px", borderRadius: "4px" }}>{rule.FareBasisCode}</code>
-                              </div>
-                            )}
-                            <div
-                              className="fare-rule-html-content"
-                              dangerouslySetInnerHTML={{
-                                __html: rule.FareRuleDetail || rule.FareRules || ""
-                              }}
-                            />
-                          </div>
-                        ))}
-
-                        {hasMiniRules && (
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
-                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Mini Fare Rules (API)</div>
-                            {miniFareRules.map((m, idx) => (
-                              <div key={idx} style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "6px" }}>
-                                <strong>{m.Type || m.Category || "Rule"}:</strong> {m.Details || m.Rule || JSON.stringify(m)}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {hasAirlineRules && (
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
-                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Airline Passenger Rules (API)</div>
-                            {airlineRules.FirstNameMinChar && (
-                              <div style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "4px" }}>
-                                <strong>First Name Minimum Length:</strong> {airlineRules.FirstNameMinChar} characters
-                              </div>
-                            )}
-                            {airlineRules.LastNameMinChar && (
-                              <div style={{ fontSize: "0.88rem", color: "#334155" }}>
-                                <strong>Last Name Minimum Length:</strong> {airlineRules.LastNameMinChar} characters
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                  <StructuredFareRules
+                    data={activeFareRuleModal.data}
+                    flight={activeFareRuleModal.flight}
+                  />
                 </div>
               )}
             </div>

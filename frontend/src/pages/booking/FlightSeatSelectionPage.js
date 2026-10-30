@@ -200,10 +200,14 @@ function buildCabinFromSeatMap(seatMap, travelClass) {
     parsedSeats.filter(s => s.isExit).map(s => s.rowNumber)
   );
 
-  // Fallback to standard commercial overwing exit rows if API doesn't explicitly flag them
-  if (extraLegroomRows.size === 0 && rows.length >= 18) {
+  // If supplier omitted explicit exit flags, commercial narrowbody aircraft exit rows are typically 12 & 13
+  if (extraLegroomRows.size === 0 && rows.length >= 15) {
     if (rows.includes(12)) extraLegroomRows.add(12);
     if (rows.includes(13)) extraLegroomRows.add(13);
+    if (extraLegroomRows.size === 0) {
+      const mid = rows[Math.floor(rows.length * 0.45)];
+      if (mid) extraLegroomRows.add(mid);
+    }
   }
 
   // Calculate wing rows (based on API wing flags or emergency exit rows)
@@ -423,8 +427,8 @@ export default function FlightSeatSelectionPage() {
   };
 
   const getSeatCategoryName = (seat) => {
-    if (seat.isExtraLegroom) {
-      return "Extra Legroom Seat";
+    if (seat.isExtraLegroom || seat.isExit) {
+      return "Emergency Exit (Extra Legroom)";
     }
     if (seat.rowNumber <= 12) {
       return "Preferred Seat";
@@ -1202,7 +1206,7 @@ export default function FlightSeatSelectionPage() {
                               <div className="fuselage-side-slot left header-slot" />
                               <div className="fuselage-wall-cap left" />
                               <div className="seatmap-row seatmap-col-header-row">
-                                <span className="seatmap-row-num" />
+                                <span className="seatmap-row-num left" />
                                 {cabinData.seatLetters.map((letter, idx) => {
                                   const items = [];
                                   if (idx === Math.ceil(cabinData.seatLetters.length / 2)) {
@@ -1219,6 +1223,7 @@ export default function FlightSeatSelectionPage() {
                                   );
                                   return items;
                                 })}
+                                <span className="seatmap-row-num right" />
                               </div>
                               <div className="fuselage-wall-cap right" />
                               <div className="fuselage-side-slot right header-slot" />
@@ -1246,21 +1251,26 @@ export default function FlightSeatSelectionPage() {
                                   }
                                   prevRow = rowNumber;
 
-                                  if (isExitRow) {
+                                  const isFirstExitRow = isExitRow && (!prevRow || !cabinData.extraLegroomRows.has(prevRow));
+                                  if (isFirstExitRow) {
                                     elements.push(
-                                      <div key={`exit-${rowNumber}`} className="seatmap-exit-divider">
-                                        <span className="seatmap-exit-line" />
-                                        <span className="seatmap-exit-label">
-                                          🚨 EMERGENCY EXIT WINDOW — OVERWING EXIT (Extra Legroom)
-                                        </span>
-                                        <span className="seatmap-exit-line" />
+                                      <div key={`exit-banner-${rowNumber}`} className="fuselage-row-container is-exit-banner-row">
+                                        <div className="seatmap-exit-section-banner">
+                                          <div className="exit-banner-glow-stripes" />
+                                          <div className="exit-banner-content">
+                                            <span className="exit-banner-sign left">🚨 EMERGENCY EXIT</span>
+                                            <span className="exit-banner-text">EXTRA LEGROOM SEATING — OVERWING ESCAPE ACCESS</span>
+                                            <span className="exit-banner-sign right">EMERGENCY EXIT 🚨</span>
+                                          </div>
+                                          <div className="exit-banner-glow-stripes" />
+                                        </div>
                                       </div>
                                     );
                                   }
 
                                   const rowSeats = [];
                                   rowSeats.push(
-                                    <span key={`rn-${rowNumber}`} className="seatmap-row-num">{rowNumber}</span>
+                                    <span key={`rn-left-${rowNumber}`} className="seatmap-row-num left">{rowNumber}</span>
                                   );
 
                                   cabinData.seatLetters.forEach((seatLetter, idx) => {
@@ -1311,13 +1321,27 @@ export default function FlightSeatSelectionPage() {
                                             <rect x="86" y="36" width="10" height="34" rx="5" className="sm-svg-arm" />
                                           </svg>
                                           <span className="seatmap-seat-lbl">{seatLetter}</span>
+                                          {(isExitRow || seat?.isExtraLegroom) && (
+                                            <span className="seatmap-extra-legroom-tag" title="Extra Legroom Emergency Exit Seat">XL</span>
+                                          )}
                                         </button>
                                         {seat && seat.amount > 0 && !isBooked && (
-                                          <span className="seatmap-price-dot">₹{Math.round(seat.amount)}</span>
+                                          <span className={`seatmap-price-dot ${isExitRow || seat?.isExtraLegroom ? "sm-exit-price" : ""}`}>
+                                            ₹{Math.round(seat.amount)}
+                                          </span>
+                                        )}
+                                        {seat && (!seat.amount || seat.amount === 0) && !isBooked && (isExitRow || seat?.isExtraLegroom) && (
+                                          <span className="seatmap-price-dot sm-exit-price free">
+                                            Free
+                                          </span>
                                         )}
                                       </div>
                                     );
                                   });
+
+                                  rowSeats.push(
+                                    <span key={`rn-right-${rowNumber}`} className="seatmap-row-num right">{rowNumber}</span>
+                                  );
 
                                   elements.push(
                                     <div

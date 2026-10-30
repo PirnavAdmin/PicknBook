@@ -189,6 +189,7 @@ const AdminDashboard = () => {
   // B2C Metrics State
   const [metrics, setMetrics] = useState({
     revenue: 0,
+    profit: 0,
     bookings: 0,
     users: 0,
     activeBookings: 0,
@@ -196,6 +197,7 @@ const AdminDashboard = () => {
     refundRequests: 0,
     trends: {
       revenue: 0,
+      profit: 0,
       bookings: 0,
       users: 0,
       activeBookings: 0,
@@ -286,6 +288,7 @@ const AdminDashboard = () => {
     const raw = apiTodayStatus || {};
     const totalBookings = Number(raw.totalBookings ?? metrics.bookings ?? 0);
     const revenueInr = Number(raw.revenueInr ?? metrics.revenue ?? 0);
+    const profitInr = Number(raw.profitInr ?? raw.marginProfitInr ?? metrics.profit ?? 0);
     const expectedRevenueInr = Number(raw.expectedRevenueInr ?? (revenueInr * 1.10));
     const successfulBookings = Number(raw.successfulBookings ?? (totalBookings > 0 ? Math.floor(totalBookings * 0.7) : 0));
     const failedBookings = Number(raw.failedBookings ?? Math.max(0, totalBookings - successfulBookings));
@@ -319,6 +322,7 @@ const AdminDashboard = () => {
       failedBookings,
       pendingWorks,
       revenueInr,
+      profitInr,
       expectedRevenueInr,
       totalPayments,
       paymentBreakdown: pb,
@@ -357,6 +361,7 @@ const AdminDashboard = () => {
 
   // CountUp animations for B2C metrics
   const animatedRevenue = useCountUp(metrics.revenue);
+  const animatedProfit = useCountUp(metrics.profit);
   const animatedBookings = useCountUp(metrics.bookings);
   const animatedUsers = useCountUp(metrics.users);
   const animatedActiveBookings = useCountUp(metrics.activeBookings);
@@ -373,6 +378,7 @@ const AdminDashboard = () => {
 
   // Trend animations
   const animatedTrendRevenue = useCountUp(metrics.trends?.revenue || 0, 500, true);
+  const animatedTrendProfit = useCountUp(metrics.trends?.profit || 0, 500, true);
   const animatedTrendBookings = useCountUp(metrics.trends?.bookings || 0, 500, true);
   const animatedTrendUsers = useCountUp(metrics.trends?.users || 0, 500, true);
   const animatedTrendActiveBookings = useCountUp(metrics.trends?.activeBookings || 0, 500, true);
@@ -449,6 +455,11 @@ const AdminDashboard = () => {
               ? metricsResult.revenue
               : prev.revenue;
 
+          const finalProfit =
+            metricsResult.totalProfit !== undefined
+              ? metricsResult.totalProfit
+              : prev.profit;
+
           const finalBookings =
             metricsResult.totalBookings !== undefined
               ? metricsResult.totalBookings
@@ -483,6 +494,7 @@ const AdminDashboard = () => {
           return {
             ...prev,
             revenue: finalRevenue,
+            profit: finalProfit,
             bookings: finalBookings,
             users: finalUsers,
             activeBookings: finalActiveBookings,
@@ -490,6 +502,7 @@ const AdminDashboard = () => {
             refundRequests: finalRefundRequests,
             trends: {
               revenue: metricsResult.revenueGrowth ?? calculateTrend(finalRevenue, false),
+              profit: metricsResult.profitGrowthPercent ?? metricsResult.profitGrowth ?? calculateTrend(finalProfit, false),
               bookings: metricsResult.bookingsGrowth ?? calculateTrend(finalBookings, false),
               users: metricsResult.usersGrowth ?? calculateTrend(finalUsers, false),
               activeBookings: metricsResult.activeBookingsGrowth ?? calculateTrend(finalActiveBookings, false),
@@ -1139,6 +1152,33 @@ const AdminDashboard = () => {
             </div>
           </div>
 
+          {/* Total Profit */}
+          <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Total Profit", String(metrics.profit))}>
+            <div className="metric-card-header">
+              <div className="metric-icon-circle profit">
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1 }}>₹</span>
+              </div>
+              {isLoadingMetrics ? (
+                <div className="dash-skeleton-box" style={{ width: '85px', height: '14px' }}></div>
+              ) : (
+                <span className="metric-title-text">Total Profit</span>
+              )}
+            </div>
+            <div className="metric-card-body">
+              {isLoadingMetrics ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                  <div className="dash-skeleton-box" style={{ width: '80%', height: '22px' }}></div>
+                  <div className="dash-skeleton-box" style={{ width: '50%', height: '12px' }}></div>
+                </div>
+              ) : (
+                <>
+                  <span className="metric-value-huge" style={{ color: '#059669' }}>{formatCurrency(animatedProfit)}</span>
+                  {renderTrend(animatedTrendProfit, "vs last month")}
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Total Bookings */}
           <div className={`metric-card-premium ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`} style={getCardStyle("Total Bookings", String(metrics.bookings))}>
             <div className="metric-card-header">
@@ -1608,7 +1648,7 @@ const AdminDashboard = () => {
                       Bookings: <strong style={{ color: 'var(--admin-text)' }}>{todayStatusData.totalBookings}</strong>
                     </div>
                     <div style={{ fontSize: '0.68rem', color: 'var(--admin-muted)', fontWeight: 600, marginTop: '2px' }}>
-                      Attempts: <strong style={{ color: '#1e75ff' }}>{todayStatusData.totalPayments}</strong>
+                      Profit Today: <strong style={{ color: '#059669' }}>{formatCurrency(todayStatusData.profitInr || 0)}</strong>
                     </div>
                   </div>
                 </div>

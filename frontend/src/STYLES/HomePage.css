@@ -7228,14 +7228,16 @@ select.field-control option {
 }
 
 .homepage .popular-routes-marquee .pop-route-card {
-  width: 175px !important;
+  width: 230px !important;
+  min-width: 210px !important;
   margin: 0 !important;
 }
 
 /* ─── MOST BOOKED BUS ROUTES (Image 2 style - Compact) ─── */
 .homepage .popular-routes-marquee .pop-bus-card,
 .pop-bus-card {
-  width: 165px !important;
+  width: 220px !important;
+  min-width: 200px !important;
   border-radius: 12px !important;
   border: 1px solid rgba(226, 232, 240, 0.9) !important;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07) !important;
@@ -7399,27 +7401,30 @@ select.field-control option {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 2px;
+  gap: 6px;
 }
 
 .pop-bus-city {
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #1e293b;
   letter-spacing: -0.01em;
-  max-width: 90px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.1;
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  word-break: normal;
+  overflow-wrap: break-word;
+  line-height: 1.25;
+  flex: 1 1 0;
 }
 
 .pop-bus-city.from {
-  text-align: left;
+  text-align: right;
 }
 
 .pop-bus-city.to {
-  text-align: right;
+  text-align: left;
 }
 
 .pop-bus-connector {
@@ -15608,4 +15613,70 @@ button:focus-visible {
 .offer-proceed-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(225, 29, 72, 0.4);
+}
+
+/* Popular Route Card Enhancements - Complete City Names & Proper Alignment */
+.pop-route-card {
+  width: 230px !important;
+  min-width: 210px !important;
+}
+
+.pop-route-cities-row,
+.pop-bus-cities-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 6px !important;
+}
+
+.pop-route-city,
+.pop-bus-city {
+  font-size: 0.88rem !important;
+  font-weight: 800 !important;
+  color: #1e293b !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.25 !important;
+  max-width: none !important;
+  flex: 1 1 0 !important;
+}
+
+.pop-route-city.from,
+.pop-bus-city.from {
+  text-align: right !important;
+}
+
+.pop-route-city.to,
+.pop-bus-city.to {
+  text-align: left !important;
+}
+
+.pop-route-icon-circle,
+.pop-bus-icon-circle {
+  flex-shrink: 0 !important;
+  margin: 0 4px !important;
+}
+
+.pop-route-book-btn,
+.pop-bus-book-btn {
+  margin-top: auto !important;
+}
+
+@media (max-width: 640px) {
+  .pop-route-card {
+    width: 200px !important;
+    min-width: 180px !important;
+  }
+  .pop-bus-card {
+    width: 200px !important;
+    min-width: 180px !important;
+  }
+  .pop-route-city,
+  .pop-bus-city {
+    font-size: 0.8rem !important;
+  }
 }

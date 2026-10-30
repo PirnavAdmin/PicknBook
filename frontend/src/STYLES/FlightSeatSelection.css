@@ -253,23 +253,29 @@
 }
 
 .flight-seat-selection-page .seatmap-grid-wrapper {
+  width: 100%;
   max-width: 100%;
-  padding: 12px 6px;
+  padding: 16px 8px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
+  display: block;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── AUTHENTIC AIRPLANE FUSELAGE STAGE ── */
 .airplane-fuselage-wrapper {
   display: flex;
   justify-content: center;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
+  margin: 0 auto;
   position: relative;
-  overflow-x: auto;
   box-sizing: border-box;
+  padding: 0 10px;
 }
 
 .airplane-fuselage {
@@ -286,6 +292,41 @@
   isolation: isolate;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* The map container is block scrollable; airplane fuselage is centered with margin 0 auto */
+.flight-seat-selection-page .airplane-fuselage-wrapper {
+  min-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .flight-seat-selection-page .flight-booking-container {
+    padding: 0 12px;
+  }
+
+  .flight-seat-selection-page .flight-main-card,
+  .flight-seat-selection-page .seatmap-panel {
+    padding: 14px;
+  }
+
+  .flight-seat-selection-page .airplane-legend-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .flight-seat-selection-page .seatmap-grid-wrapper {
+    padding: 10px 4px;
+  }
+
+  .flight-seat-selection-page .airplane-legend-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .flight-seat-selection-page .seat-selection-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 .airplane-fuselage::before {
@@ -1076,4 +1117,173 @@
   .seat-selection-heading {
     flex-direction: column;
   }
+}
+
+
+/* ── SYMMETRICAL ROW NUMBERS (LEFT & RIGHT) ── */
+.seatmap-row-num {
+  width: 32px;
+  min-width: 32px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #94a3b8;
+  flex-shrink: 0;
+  user-select: none;
+  box-sizing: border-box;
+  display: inline-block;
+}
+
+/* ── EMERGENCY EXIT SECTION BANNER & EXTRA LEGROOM (Bug ID: PNB/FLT/UI_001) ── */
+.is-exit-banner-row {
+  margin: 12px 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  pointer-events: none;
+}
+
+.seatmap-exit-section-banner {
+  width: 100%;
+  max-width: 580px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 50%, #fef2f2 100%);
+  border: 1.5px solid #ef4444;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.exit-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.exit-banner-sign {
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #ffffff;
+  background: #dc2626;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.4);
+}
+
+.exit-banner-text {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #991b1b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.exit-banner-glow-stripes {
+  height: 3px;
+  width: 100%;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    45deg,
+    #ca8a04,
+    #ca8a04 8px,
+    #dc2626 8px,
+    #dc2626 16px
+  );
+}
+
+/* ── DISTINCT EMERGENCY EXIT SEATS VISUAL STYLING ── */
+.flight-seat-selection-page .seatmap-seat.sm-exit {
+  position: relative;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit .sm-svg-headrest {
+  fill: #fef08a !important;
+  stroke: #ca8a04 !important;
+  stroke-width: 2px;
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit .sm-svg-back {
+  fill: #fef9c3 !important;
+  stroke: #d97706 !important;
+  stroke-width: 2px;
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit .sm-svg-cushion {
+  fill: #fffbeb !important;
+  stroke: #eab308 !important;
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit .sm-svg-arm {
+  fill: #fde047 !important;
+  stroke: #ca8a04 !important;
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit .seatmap-seat-lbl {
+  color: #854d0e !important;
+  font-weight: 800 !important;
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit:hover:not(:disabled) {
+  filter: drop-shadow(0 0 7px rgba(202, 138, 4, 0.55));
+  transform: translateY(-2px);
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-selected .sm-svg-headrest,
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-selected .sm-svg-back,
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-selected .sm-svg-cushion {
+  fill: #16a34a !important;
+  stroke: #14532d !important;
+}
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-selected .seatmap-seat-lbl {
+  color: #ffffff !important;
+}
+
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-booked .sm-svg-headrest,
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-booked .sm-svg-back,
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-booked .sm-svg-cushion {
+  fill: #e2e8f0 !important;
+  stroke: #94a3b8 !important;
+}
+.flight-seat-selection-page .seatmap-seat.sm-exit.sm-booked .seatmap-seat-lbl {
+  color: #94a3b8 !important;
+}
+
+/* Extra Legroom XL Badge on Seat */
+.seatmap-extra-legroom-tag {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  background: #dc2626;
+  color: #ffffff;
+  font-size: 7.5px;
+  font-weight: 900;
+  padding: 1px 3.5px;
+  border-radius: 3px;
+  line-height: 1.1;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.flight-seat-selection-page .seatmap-price-dot.sm-exit-price {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+}
+.flight-seat-selection-page .seatmap-price-dot.sm-exit-price.free {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
 }

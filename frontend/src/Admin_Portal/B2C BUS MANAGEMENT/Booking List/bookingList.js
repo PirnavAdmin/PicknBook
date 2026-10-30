@@ -200,9 +200,10 @@ function calculateBookingProfit(record) {
   const discountAmountInr = getDiscountAmountInr(record);
   const markupAmountInr = pickFinancialNumber(record, ["markupAmountInr", "MarkupAmountInr"], 0);
   const convenienceFeeInr = pickFinancialNumber(record, ["convenienceFeeInr", "ConvenienceFeeInr"], 0);
+  const srdvMarginInr = pickFinancialNumber(record, ["srdvMarginInr", "SrdvMarginInr", "srdvMargin", "commercialMargin"], 0);
 
-  if (markupAmountInr > 0 || convenienceFeeInr > 0 || discountAmountInr > 0) {
-    return (markupAmountInr + convenienceFeeInr) - discountAmountInr;
+  if (srdvMarginInr > 0 || markupAmountInr > 0 || convenienceFeeInr > 0 || discountAmountInr > 0) {
+    return (srdvMarginInr + markupAmountInr + convenienceFeeInr) - discountAmountInr;
   }
 
   // Active bookings fallback: Customer Paid - Net Fare
@@ -1912,6 +1913,11 @@ export default function AdminB2CBookingListPage() {
                     <td><strong>Taxable Fare</strong></td>
                     <td>{adminProfitFormatter.format(Number(selectedBooking.taxableFareInr) || 0)}</td>
                     <td>Fare amount subject to taxes</td>
+                  </tr>
+                  <tr>
+                    <td><strong>SRDV Commercial Margin</strong></td>
+                    <td>{adminProfitFormatter.format(Number(selectedBooking.srdvMarginInr || 0))}</td>
+                    <td>Supplier commercial margin earned</td>
                   </tr>
                   <tr>
                     <td><strong>Markup Amount</strong></td>

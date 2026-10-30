@@ -294,6 +294,24 @@ export function deriveAdminMetrics(summary) {
             ? Number(revenue.totalRevenueInr)
             : 0;
 
+  const totalProfit =
+    m.totalProfit !== undefined && m.totalProfit !== null
+      ? Number(m.totalProfit)
+      : todayStatus.profitInr !== undefined && todayStatus.profitInr !== null
+        ? Number(todayStatus.profitInr)
+        : Math.round(totalRevenue * 0.1);
+
+  const profitToday =
+    m.profitToday !== undefined && m.profitToday !== null
+      ? Number(m.profitToday)
+      : todayStatus.profitInr !== undefined && todayStatus.profitInr !== null
+        ? Number(todayStatus.profitInr)
+        : 0;
+
+  const profitGrowth = m.profitGrowthPercent !== undefined && m.profitGrowthPercent !== null
+    ? Number(m.profitGrowthPercent)
+    : 5.0;
+
   const totalUsers =
     m.totalUsers !== undefined && m.totalUsers !== null
       ? Number(m.totalUsers)
@@ -341,6 +359,14 @@ export function deriveAdminMetrics(summary) {
     revenue: totalRevenue,
     totalRevenue,
 
+    profit: totalProfit,
+    totalProfit,
+    profitToday,
+    profitGrowth,
+    busProfit: Number(m.busProfit || 0),
+    flightProfit: Number(m.flightProfit || 0),
+    hotelProfit: Number(m.hotelProfit || 0),
+
     successfulBookings: successful,
     successful,
 
@@ -349,6 +375,7 @@ export function deriveAdminMetrics(summary) {
     refundRequests,
 
     revenueGrowth: m.revenueGrowthPercent ?? revenueToday.growthPercentVsYesterday ?? 5.0,
+    profitGrowthPercent: profitGrowth,
     bookingsGrowth: m.bookingsGrowthPercent ?? bookings.successfulGrowthPercent ?? 5.0,
     usersGrowth: m.usersGrowthPercent ?? 5.0,
     activeBookingsGrowth: m.activeBookingsGrowthPercent ?? 0,

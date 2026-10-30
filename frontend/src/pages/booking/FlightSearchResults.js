@@ -47,6 +47,8 @@ import FareCalendarModal from "../../components/FareCalendarModal";
 import FlightLoadingScreen from "../../components/FlightLoadingScreen";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
 import CustomDatePicker from "../../components/CustomDatePicker";
+import StructuredFareRules from "../../components/StructuredFareRules";
+import BookingPagination from "../../components/booking/BookingPagination";
 import "../../STYLES/FlightSearchResults.css";
 import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
 import { writeFlightBookingFlowState, clearFlightBookingFlowState } from "./flightBookingFlowStore";
@@ -120,6 +122,80 @@ const STOP_FILTERS = [
   { key: "nonStop", label: "Non Stop" },
   { key: "oneStop", label: "1 Stop" },
 ];
+
+
+const SORT_OPTIONS = [
+  { key: "price", label: "Price", Icon: LineChart },
+  { key: "departure", label: "Departure", Icon: Calendar },
+  { key: "arrival", label: "Arrival", Icon: MapPin },
+  { key: "duration", label: "Duration", Icon: Clock },
+  { key: "airline", label: "Airline", Icon: Activity },
+];
+
+function compareFlightsMultiCriteria(a, b, criteria) {
+  for (const criterion of criteria) {
+    let diff = 0;
+    if (criterion === "price") {
+      const fareA = Number(a.fare);
+      const fareB = Number(b.fare);
+      const validA = Number.isFinite(fareA);
+      const validB = Number.isFinite(fareB);
+      if (validA && validB) {
+        diff = fareA - fareB;
+      } else if (validA) {
+        diff = -1;
+      } else if (validB) {
+        diff = 1;
+      }
+    } else if (criterion === "departure") {
+      const depA = a.departureTimestamp ?? (Number.isFinite(a.departureMinutes) ? a.departureMinutes : null);
+      const depB = b.departureTimestamp ?? (Number.isFinite(b.departureMinutes) ? b.departureMinutes : null);
+      const validA = depA !== null && Number.isFinite(depA);
+      const validB = depB !== null && Number.isFinite(depB);
+      if (validA && validB) {
+        diff = depA - depB;
+      } else if (validA) {
+        diff = -1;
+      } else if (validB) {
+        diff = 1;
+      }
+    } else if (criterion === "arrival") {
+      const arrA = a.arrivalTimestamp ?? (Number.isFinite(a.arrivalMinutes) ? a.arrivalMinutes : null);
+      const arrB = b.arrivalTimestamp ?? (Number.isFinite(b.arrivalMinutes) ? b.arrivalMinutes : null);
+      const validA = arrA !== null && Number.isFinite(arrA);
+      const validB = arrB !== null && Number.isFinite(arrB);
+      if (validA && validB) {
+        diff = arrA - arrB;
+      } else if (validA) {
+        diff = -1;
+      } else if (validB) {
+        diff = 1;
+      }
+    } else if (criterion === "duration") {
+      const durA = Number(a.durationMinutes);
+      const durB = Number(b.durationMinutes);
+      const validA = Number.isFinite(durA);
+      const validB = Number.isFinite(durB);
+      if (validA && validB) {
+        diff = durA - durB;
+      } else if (validA) {
+        diff = -1;
+      } else if (validB) {
+        diff = 1;
+      }
+    } else if (criterion === "airline") {
+      const airA = String(a.airlineName || "");
+      const airB = String(b.airlineName || "");
+      diff = airA.localeCompare(airB, undefined, { sensitivity: "base" });
+    }
+
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+
+  return (a._originalIndex ?? 0) - (b._originalIndex ?? 0);
+}
 
 const CABIN_CLASS_FILTERS = [
   { key: "Economy", label: "Economy" },
@@ -262,6 +338,19 @@ function parseTimeValue(dateString) {
     return new Date(parseInt(wcfMatch[1], 10));
   }
 
+  // 12-hour AM/PM format (e.g. "06:30 PM", "6:30am", "12:00 AM")
+  const ampmMatch = str.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (ampmMatch) {
+    let hours = parseInt(ampmMatch[1], 10);
+    const mins = parseInt(ampmMatch[2], 10);
+    const isPm = ampmMatch[4].toUpperCase() === "PM";
+    if (isPm && hours < 12) hours += 12;
+    if (!isPm && hours === 12) hours = 0;
+    const now = new Date();
+    now.setHours(hours, mins, 0, 0);
+    return now;
+  }
+
   let normalizedStr = str;
   if (!str.includes("T") && str.includes(" ")) {
     normalizedStr = str.replace(" ", "T");
@@ -303,18 +392,28 @@ function durationLabel(totalMinutes) {
 }
 
 function getDurationInMinutes(flight) {
+  if (Number.isFinite(flight.durationMinutes) && flight.durationMinutes > 0) {
+    return Math.round(flight.durationMinutes);
+  }
+  if (Number.isFinite(flight.Duration) && flight.Duration > 0) {
+    return Math.round(flight.Duration);
+  }
+  if (Number.isFinite(flight.duration) && flight.duration > 0) {
+    return Math.round(flight.duration);
+  }
+
   const departureUtc = parseTimeValue(flight.departureTimeUtc);
   const arrivalUtc = parseTimeValue(flight.arrivalTimeUtc);
 
   if (departureUtc && arrivalUtc) {
     const minutes = Math.round((arrivalUtc - departureUtc) / 60000);
-    if (minutes >= 0) {
+    if (minutes > 0) {
       return minutes;
     }
   }
 
-  const departureIst = parseTimeValue(flight.departureTimeIst);
-  const arrivalIst = parseTimeValue(flight.arrivalTimeIst);
+  const departureIst = parseTimeValue(flight.departureTimeIst || flight.departureTime || flight.DepTime);
+  const arrivalIst = parseTimeValue(flight.arrivalTimeIst || flight.arrivalTime || flight.ArrTime);
 
   if (!departureIst || !arrivalIst) {
     return null;
@@ -325,7 +424,7 @@ function getDurationInMinutes(flight) {
     minutes += 24 * 60;
   }
 
-  return minutes;
+  return minutes > 0 ? minutes : null;
 }
 
 function normalizeClassOptions(flight) {
@@ -422,6 +521,18 @@ function getTravellerCounts(summary) {
 
 function getTimeDisplay(hour) {
   return `${String(hour).padStart(2, "0")}:00`;
+}
+
+function getMinutesSinceMidnight(date) {
+  return date instanceof Date && !Number.isNaN(date.getTime())
+    ? date.getHours() * 60 + date.getMinutes()
+    : null;
+}
+
+function formatTimeRange(minutes) {
+  if (!Number.isFinite(minutes)) return "--:--";
+  const normalized = Math.max(0, Math.min(1439, Math.round(minutes)));
+  return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
 }
 
 function getAirportName(code, city) {
@@ -533,7 +644,7 @@ export default function FlightSearchResults() {
   const [selectedDate, setSelectedDate] = useState(() =>
     parseDateInput(initialOnwardDateInput)
   );
-  const [selectedReturnDate] = useState(() =>
+  const [selectedReturnDate, setSelectedReturnDate] = useState(() =>
     parseDateInput(initialReturnDateInput)
   );
   const [searchVersion, setSearchVersion] = useState(0);
@@ -756,8 +867,10 @@ export default function FlightSearchResults() {
     setActiveFareDetailsModal({ isOpen: false, flight: null });
   };
 
-  const [priceMin, setPriceMin] = useState(0);
-  const [timeMin, setTimeMin] = useState(0);
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 0 });
+  const [departureRange, setDepartureRange] = useState({ min: 0, max: 1439 });
+  const [arrivalRange, setArrivalRange] = useState({ min: 0, max: 1439 });
+  const [durationRange, setDurationRange] = useState({ min: 0, max: 0 });
   const [departureWindows, setDepartureWindows] = useState(() => ({
     morning: true,
     afternoon: true,
@@ -772,7 +885,18 @@ export default function FlightSearchResults() {
     nonStop: true,
     oneStop: true,
   }));
-  const [sortBy, setSortBy] = useState("price");
+  const [activeSortCriteria, setActiveSortCriteria] = useState(["price"]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+
+  const handleToggleSortCriterion = (criterion) => {
+    setActiveSortCriteria((previous) => {
+      if (previous.includes(criterion)) {
+        return previous.filter((c) => c !== criterion);
+      }
+      return [...previous, criterion];
+    });
+  };
   const [airlineFilters, setAirlineFilters] = useState({});
   const [cabinClassFilters, setCabinClassFilters] = useState({});
 
@@ -812,6 +936,7 @@ export default function FlightSearchResults() {
       source: initialSourceName,
       destination: initialDestinationName,
       departureDate: initialOnwardDateInput,
+      returnDate: initialReturnDateInput,
       tripType: initialTripType,
       travellers: initialTravellerText,
       cabinClass: initialCabinClass,
@@ -823,6 +948,7 @@ export default function FlightSearchResults() {
     initialCabinClass,
     initialTravellerText,
     initialOnwardDateInput,
+    initialReturnDateInput,
   ]);
 
   useEffect(() => {
@@ -1069,9 +1195,19 @@ export default function FlightSearchResults() {
           departureTime: formatTime(departureIst),
           arrivalTime: formatTime(arrivalIst),
           departureHour: departureIst ? departureIst.getHours() : 0,
+          departureMinutes: getMinutesSinceMidnight(departureIst),
+          arrivalMinutes: getMinutesSinceMidnight(arrivalIst),
+          departureTimestamp: departureIst?.getTime() ?? null,
+          arrivalTimestamp: arrivalIst?.getTime() ?? null,
           duration: durationLabel(durationMinutes),
           durationMinutes,
           fare: selectedClassOption?.priceInr ?? flight.selectedTravelClassPriceInr ?? 0,
+          publishedFare: Number(
+            selectedClassOption?.b2cPublishedFare ??
+            flight.b2cPublishedFare ??
+            flight.publishedFare ??
+            0
+          ),
           isRefundable: supplierBoolean(flight.isRefundable),
           stops: Number(flight.stops || 0),
           className: travelClass,
@@ -1116,23 +1252,43 @@ export default function FlightSearchResults() {
     ]
   );
 
-  const minFare = useMemo(() => {
-    if (flights.length === 0) {
-      return 0;
-    }
-    return Math.min(...flights.map((flight) => Number(flight.fare) || 0));
+  const fareBounds = useMemo(() => {
+    const values = flights.map((flight) => Number(flight.fare)).filter((value) => Number.isFinite(value) && value >= 0);
+    return values.length ? { min: Math.min(...values), max: Math.max(...values) } : { min: 0, max: 0 };
   }, [flights]);
 
-  const maxFare = useMemo(() => {
-    if (flights.length === 0) {
-      return 0;
-    }
-    return Math.max(...flights.map((flight) => Number(flight.fare) || 0));
+  const durationBounds = useMemo(() => {
+    const values = flights.map((flight) => Number(flight.durationMinutes)).filter((value) => Number.isFinite(value) && value >= 0);
+    return values.length ? { min: Math.min(...values), max: Math.max(...values) } : { min: 0, max: 0 };
   }, [flights]);
 
   useEffect(() => {
-    setPriceMin(minFare);
-  }, [minFare]);
+    setPriceRange((current) => current.max === 0 && current.min === 0
+      ? fareBounds
+      : { min: Math.max(fareBounds.min, Math.min(current.min, fareBounds.max)), max: Math.max(fareBounds.min, Math.min(current.max, fareBounds.max)) });
+  }, [fareBounds]);
+
+  // Reset pagination to page 1 whenever filters or active sorting change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    priceRange,
+    departureRange,
+    arrivalRange,
+    durationRange,
+    departureWindows,
+    fareTypeFilters,
+    stopFilters,
+    airlineFilters,
+    cabinClassFilters,
+    activeSortCriteria,
+  ]);
+
+  useEffect(() => {
+    setDurationRange((current) => current.max === 0 && current.min === 0
+      ? durationBounds
+      : { min: Math.max(durationBounds.min, Math.min(current.min, durationBounds.max)), max: Math.max(durationBounds.min, Math.min(current.max, durationBounds.max)) });
+  }, [durationBounds]);
 
   useEffect(() => {
     const airlineNames = Array.from(
@@ -1153,56 +1309,134 @@ export default function FlightSearchResults() {
   const filteredFlights = useMemo(
     () =>
       flights.filter((flight) => {
-        if (flight.fare < priceMin) {
-          return false;
+        const fare = Number(flight.fare);
+        const departureMinutes = flight.departureMinutes;
+        const arrivalMinutes = flight.arrivalMinutes;
+        const durationMinutes = Number(flight.durationMinutes);
+
+        // 1. Price Range Filter (Bug PNB/FLT/FILTER_001)
+        if (fareBounds.max > 0) {
+          if (!Number.isFinite(fare) || fare < priceRange.min || fare > priceRange.max) {
+            return false;
+          }
         }
 
-        if (flight.departureHour < timeMin) {
-          return false;
+        // 2. Departure Time Range Slider (Bug PNB/FLT/FILTER_002)
+        if (departureRange.min > 0 || departureRange.max < 1439) {
+          if (
+            departureMinutes === null ||
+            !Number.isFinite(departureMinutes) ||
+            departureMinutes < departureRange.min ||
+            departureMinutes > departureRange.max
+          ) {
+            return false;
+          }
         }
 
-        // 1. Departure Window Filter
-        const hasAnyDepartureFilter = Object.values(departureWindows).some(Boolean);
-        if (hasAnyDepartureFilter) {
+        // 2B. Departure Time Window Chips (Bug PNB/FLT/FILTER_002)
+        const activeWindows = Object.entries(departureWindows).filter(([_, v]) => Boolean(v)).map(([k]) => k);
+        if (activeWindows.length === 0) {
+          return false;
+        }
+        if (activeWindows.length < 4) {
+          if (departureMinutes === null || !Number.isFinite(departureMinutes)) {
+            return false;
+          }
+          const depHour = Math.floor(departureMinutes / 60);
           const matchesWindow = DEPARTURE_WINDOWS.some((window) => {
-            return departureWindows[window.key] && hourInWindow(flight.departureHour, window);
+            return departureWindows[window.key] && hourInWindow(depHour, window);
           });
           if (!matchesWindow) return false;
         }
 
-        // 2. Fare Type Filter
-        const hasAnyFareTypeFilter = Object.values(fareTypeFilters).some(Boolean);
-        if (hasAnyFareTypeFilter) {
-          const fareTypeKey = flight.isRefundable ? "refundable" : "nonRefundable";
-          if (!fareTypeFilters[fareTypeKey]) return false;
+        // 3. Arrival Time Range Slider (Bug PNB/FLT/FILTER_003)
+        if (arrivalRange.min > 0 || arrivalRange.max < 1439) {
+          if (
+            arrivalMinutes === null ||
+            !Number.isFinite(arrivalMinutes) ||
+            arrivalMinutes < arrivalRange.min ||
+            arrivalMinutes > arrivalRange.max
+          ) {
+            return false;
+          }
         }
 
-        // 3. Stops Filter
-        const hasAnyStopFilter = Object.values(stopFilters).some(Boolean);
-        if (hasAnyStopFilter) {
-          const stopKey = flight.stops > 0 ? "oneStop" : "nonStop";
-          if (!stopFilters[stopKey]) return false;
+        // 4. Flight Duration Filter (Bug PNB/FLT/FILTER_004)
+        if (durationBounds.max > durationBounds.min) {
+          if (
+            !Number.isFinite(durationMinutes) ||
+            durationMinutes < durationRange.min ||
+            durationMinutes > durationRange.max
+          ) {
+            return false;
+          }
         }
 
-        // 4. Airlines Filter
-        const hasAnyAirlineFilter = Object.values(airlineFilters).some(Boolean);
-        if (hasAnyAirlineFilter) {
-          if (!airlineFilters[flight.airlineName]) return false;
+        // 5. Airline Filter (Bug PNB/FLT/FILTER_005)
+        const allAirlines = Object.keys(airlineFilters);
+        if (allAirlines.length > 0) {
+          const selectedAirlines = allAirlines.filter((k) => Boolean(airlineFilters[k]));
+          if (selectedAirlines.length === 0) {
+            return false;
+          }
+          if (selectedAirlines.length < allAirlines.length) {
+            if (!airlineFilters[flight.airlineName]) {
+              return false;
+            }
+          }
         }
 
-        // 5. Cabin Class Filter
-        const hasAnyCabinFilter = Object.values(cabinClassFilters).some(Boolean);
-        if (hasAnyCabinFilter) {
-          const flightClass = flight.className || flight.cabinClass || "Economy";
-          if (!cabinClassFilters[flightClass]) return false;
+        // 6. Stops Filter
+        const hasNonStop = Boolean(stopFilters.nonStop);
+        const hasOneStop = Boolean(stopFilters.oneStop);
+        if (!hasNonStop && !hasOneStop) {
+          return false;
+        }
+        if (hasNonStop && !hasOneStop && flight.stops !== 0) {
+          return false;
+        }
+        if (!hasNonStop && hasOneStop && flight.stops === 0) {
+          return false;
+        }
+
+        // 7. Fare Type Filter
+        const hasRefundable = Boolean(fareTypeFilters.refundable);
+        const hasNonRefundable = Boolean(fareTypeFilters.nonRefundable);
+        if (!hasRefundable && !hasNonRefundable) {
+          return false;
+        }
+        if (hasRefundable && !hasNonRefundable && !flight.isRefundable) {
+          return false;
+        }
+        if (!hasRefundable && hasNonRefundable && flight.isRefundable) {
+          return false;
+        }
+
+        // 8. Cabin Class Filter
+        const allCabins = Object.keys(cabinClassFilters);
+        if (allCabins.length > 0) {
+          const selectedCabins = allCabins.filter((k) => Boolean(cabinClassFilters[k]));
+          if (selectedCabins.length === 0) {
+            return false;
+          }
+          if (selectedCabins.length < allCabins.length) {
+            const flightClass = flight.className || flight.cabinClass || "Economy";
+            if (!cabinClassFilters[flightClass]) {
+              return false;
+            }
+          }
         }
 
         return true;
       }),
     [
       flights,
-      priceMin,
-      timeMin,
+      fareBounds,
+      durationBounds,
+      priceRange,
+      departureRange,
+      arrivalRange,
+      durationRange,
       departureWindows,
       fareTypeFilters,
       stopFilters,
@@ -1220,41 +1454,44 @@ export default function FlightSearchResults() {
     }));
   }, [selectedDate]);
 
+  // Priority-based multi-column deterministic sorting
   const sortedFlights = useMemo(() => {
-    const nextFlights = [...filteredFlights];
+    const listWithIndex = filteredFlights.map((flight, index) => ({
+      ...flight,
+      _originalIndex: index,
+    }));
 
-    nextFlights.sort((a, b) => {
-      if (sortBy === "price") {
-        return a.fare - b.fare;
-      }
+    if (activeSortCriteria.length === 0) {
+      return listWithIndex;
+    }
 
-      if (sortBy === "departure") {
-        return a.departureHour - b.departureHour || a.fare - b.fare;
-      }
+    listWithIndex.sort((a, b) => compareFlightsMultiCriteria(a, b, activeSortCriteria));
+    return listWithIndex;
+  }, [filteredFlights, activeSortCriteria]);
 
-      if (sortBy === "arrival") {
-        const arrHourA = parseTimeValue(a.arrivalTimeIst)?.getHours() || 0;
-        const arrHourB = parseTimeValue(b.arrivalTimeIst)?.getHours() || 0;
-        return arrHourA - arrHourB || a.fare - b.fare;
-      }
+  const totalPages = Math.max(1, Math.ceil(sortedFlights.length / pageSize));
+  const validCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
 
-      if (sortBy === "duration") {
-        return a.durationMinutes - b.durationMinutes || a.fare - b.fare;
-      }
+  const paginatedFlights = useMemo(() => {
+    const start = (validCurrentPage - 1) * pageSize;
+    return sortedFlights.slice(start, start + pageSize);
+  }, [sortedFlights, validCurrentPage, pageSize]);
 
-      if (sortBy === "airline") {
-        return a.airlineName.localeCompare(b.airlineName) || a.fare - b.fare;
-      }
-
-      return (
-        a.stops - b.stops ||
-        a.fare - b.fare ||
-        a.durationMinutes - b.durationMinutes
-      );
-    });
-
-    return nextFlights;
-  }, [filteredFlights, sortBy]);
+  // Summary cards use the same filtered result set as the list, but calculate
+  // each metric independently and ignore records without comparable values.
+  const flightSummaries = useMemo(() => {
+    const comparable = filteredFlights.filter((flight) =>
+      Number.isFinite(Number(flight.fare)) && Number(flight.fare) >= 0 &&
+      Number.isFinite(Number(flight.durationMinutes)) && Number(flight.durationMinutes) >= 0
+    );
+    const byFare = (a, b) => a.fare - b.fare || a.durationMinutes - b.durationMinutes;
+    const byDuration = (a, b) => a.durationMinutes - b.durationMinutes || a.fare - b.fare;
+    return {
+      cheapest: [...comparable].sort(byFare)[0] || null,
+      fastest: [...comparable].sort(byDuration)[0] || null,
+      nonStop: comparable.filter((flight) => flight.stops === 0).sort(byFare)[0] || null,
+    };
+  }, [filteredFlights]);
 
   const currentExpandedFlight = useMemo(() => {
     return activeFareSelectionModal.flight || null;
@@ -1286,6 +1523,7 @@ export default function FlightSearchResults() {
       source: sourceName,
       destination: destinationName,
       departureDate: formatDateInput(selectedDate),
+      returnDate: formatDateInput(selectedReturnDate),
       tripType,
       travellers: travellerText,
       cabinClass,
@@ -1322,6 +1560,9 @@ export default function FlightSearchResults() {
     setTravellerText(nextTravellerText);
     setCabinClass(nextCabinClass);
     setSelectedDate(parseDateInput(nextDateInput));
+    if (nextTripType === "twoway" && modifyForm.returnDate) {
+      setSelectedReturnDate(parseDateInput(modifyForm.returnDate));
+    }
     setSearchVersion((previous) => previous + 1);
     setIsModifySearchOpen(false);
 
@@ -1330,6 +1571,11 @@ export default function FlightSearchResults() {
     nextParams.set("destination", nextDestination);
     nextParams.set("tripType", nextTripType);
     nextParams.set("departureDate", nextDateInput);
+    if (nextTripType === "twoway" && modifyForm.returnDate) {
+      nextParams.set("returnDate", modifyForm.returnDate);
+    } else {
+      nextParams.delete("returnDate");
+    }
     nextParams.set("travellers", nextTravellerText);
     nextParams.set("cabinClass", nextCabinClass);
 
@@ -1343,12 +1589,39 @@ export default function FlightSearchResults() {
           destination: nextDestination,
           tripType: nextTripType,
           departureDate: nextDateInput,
+          returnDate: nextTripType === "twoway" ? modifyForm.returnDate : "",
           travellers: nextTravellerText,
           cabinClass: nextCabinClass,
         },
       }
     );
   };
+
+  const handleResetAllFilters = useCallback(() => {
+    setPriceRange(fareBounds);
+    setDepartureRange({ min: 0, max: 1439 });
+    setArrivalRange({ min: 0, max: 1439 });
+    setDurationRange(durationBounds);
+    setDepartureWindows({ morning: true, afternoon: true, evening: true, night: true });
+    setFareTypeFilters({ refundable: true, nonRefundable: true });
+    setStopFilters({ nonStop: true, oneStop: true });
+
+    const resetAirlines = {};
+    const airlineNames = Array.from(new Set(flights.map((f) => f.airlineName).filter(Boolean)));
+    airlineNames.forEach((name) => {
+      resetAirlines[name] = true;
+    });
+    setAirlineFilters(resetAirlines);
+
+    const resetCabins = {};
+    CABIN_CLASS_FILTERS.forEach((c) => {
+      resetCabins[c.key] = true;
+    });
+    setCabinClassFilters(resetCabins);
+
+    setActiveSortCriteria(["price"]);
+    setCurrentPage(1);
+  }, [fareBounds, durationBounds, flights]);
 
   const toggleDepartureWindow = (key) => {
     setDepartureWindows((previous) => ({ ...previous, [key]: !previous[key] }));
@@ -2104,6 +2377,7 @@ export default function FlightSearchResults() {
           <aside className="filters-rail">
             <header className="flights-count">
               <strong>{flightsFoundCount} Flights Found.</strong>
+              <button type="button" className="clear-flight-filters" onClick={handleResetAllFilters}>Clear filters</button>
             </header>
 
             <section className="filter-group">
@@ -2112,38 +2386,60 @@ export default function FlightSearchResults() {
                 <span>Price</span>
               </h3>
               <div className="range-head">
-                <span>{formatCurrency(priceMin)}</span>
-                <span>{formatCurrency(maxFare)}</span>
+                <span>{formatCurrency(priceRange.min)}</span>
+                <span>{formatCurrency(priceRange.max)}</span>
               </div>
               <div className="range-stack">
                 <input
                   type="range"
-                  min={minFare}
-                  max={maxFare}
-                  value={priceMin}
-                  disabled={minFare === maxFare}
-                  onChange={(event) => setPriceMin(Number(event.target.value))}
+                  aria-label="Minimum fare"
+                  min={fareBounds.min}
+                  max={fareBounds.max}
+                  value={priceRange.min}
+                  disabled={fareBounds.min === fareBounds.max}
+                  onChange={(event) => setPriceRange((range) => ({ ...range, min: Math.min(Number(event.target.value), range.max) }))}
                 />
+                <input type="range" aria-label="Maximum fare" min={fareBounds.min} max={fareBounds.max} value={priceRange.max} disabled={fareBounds.min === fareBounds.max} onChange={(event) => setPriceRange((range) => ({ ...range, max: Math.max(Number(event.target.value), range.min) }))} />
               </div>
             </section>
 
             <section className="filter-group">
               <h3>
                 <Clock3 size={17} />
-                <span>Time</span>
+                <span>Departure Time</span>
               </h3>
               <div className="range-head">
-                <span>{getTimeDisplay(timeMin)}</span>
-                <span>{getTimeDisplay(23)}</span>
+                <span>{formatTimeRange(departureRange.min)}</span>
+                <span>{formatTimeRange(departureRange.max)}</span>
               </div>
               <div className="range-stack">
                 <input
                   type="range"
+                  aria-label="Earliest departure time"
                   min={0}
-                  max={23}
-                  value={timeMin}
-                  onChange={(event) => setTimeMin(Number(event.target.value))}
+                  max={1439}
+                  value={departureRange.min}
+                  onChange={(event) => setDepartureRange((range) => ({ ...range, min: Math.min(Number(event.target.value), range.max) }))}
                 />
+                <input type="range" aria-label="Latest departure time" min={0} max={1439} value={departureRange.max} onChange={(event) => setDepartureRange((range) => ({ ...range, max: Math.max(Number(event.target.value), range.min) }))} />
+              </div>
+            </section>
+
+            <section className="filter-group">
+              <h3><Clock3 size={17} /><span>Arrival Time</span></h3>
+              <div className="range-head"><span>{formatTimeRange(arrivalRange.min)}</span><span>{formatTimeRange(arrivalRange.max)}</span></div>
+              <div className="range-stack">
+                <input type="range" aria-label="Earliest arrival time" min={0} max={1439} value={arrivalRange.min} onChange={(event) => setArrivalRange((range) => ({ ...range, min: Math.min(Number(event.target.value), range.max) }))} />
+                <input type="range" aria-label="Latest arrival time" min={0} max={1439} value={arrivalRange.max} onChange={(event) => setArrivalRange((range) => ({ ...range, max: Math.max(Number(event.target.value), range.min) }))} />
+              </div>
+            </section>
+
+            <section className="filter-group">
+              <h3><Clock3 size={17} /><span>Duration</span></h3>
+              <div className="range-head"><span>{durationLabel(durationRange.min)}</span><span>{durationLabel(durationRange.max)}</span></div>
+              <div className="range-stack">
+                <input type="range" aria-label="Shortest journey duration" min={durationBounds.min} max={durationBounds.max} value={durationRange.min} disabled={durationBounds.min === durationBounds.max} onChange={(event) => setDurationRange((range) => ({ ...range, min: Math.min(Number(event.target.value), range.max) }))} />
+                <input type="range" aria-label="Longest journey duration" min={durationBounds.min} max={durationBounds.max} value={durationRange.max} disabled={durationBounds.min === durationBounds.max} onChange={(event) => setDurationRange((range) => ({ ...range, max: Math.max(Number(event.target.value), range.min) }))} />
               </div>
             </section>
 
@@ -2252,10 +2548,7 @@ export default function FlightSearchResults() {
 
 
             {(() => {
-              const cheapestFlight = [...filteredFlights].sort((a, b) => a.fare - b.fare)[0];
-              const fastestFlight = [...filteredFlights].sort((a, b) => a.durationMinutes - b.durationMinutes)[0];
-              const nonStopFlights = filteredFlights.filter((f) => f.stops === 0);
-              const cheapestNonStopFlight = [...nonStopFlights].sort((a, b) => a.fare - b.fare)[0];
+              const { cheapest: cheapestFlight, fastest: fastestFlight, nonStop: cheapestNonStopFlight } = flightSummaries;
 
               const formatDuration = (mins) => {
                 const h = Math.floor(mins / 60);
@@ -2268,8 +2561,9 @@ export default function FlightSearchResults() {
                   <div className="top-metrics-row">
                     <button
                       type="button"
-                      className={`metric-chip ${sortBy === "price" ? "active" : ""}`}
-                      onClick={() => setSortBy("price")}
+                      className={`metric-chip ${activeSortCriteria.includes("price") ? "active" : ""}`}
+                      onClick={() => handleToggleSortCriterion("price")}
+                      title="Sort by lowest fare"
                     >
                       <div className="metric-icon-box"><LineChart size={18} /></div>
                       <div className="metric-content">
@@ -2282,8 +2576,9 @@ export default function FlightSearchResults() {
                     </button>
                     <button
                       type="button"
-                      className={`metric-chip ${sortBy === "duration" ? "active" : ""}`}
-                      onClick={() => setSortBy("duration")}
+                      className={`metric-chip ${activeSortCriteria.includes("duration") ? "active" : ""}`}
+                      onClick={() => handleToggleSortCriterion("duration")}
+                      title="Sort by shortest flight duration"
                     >
                       <div className="metric-icon-box"><Clock size={18} /></div>
                       <div className="metric-content">
@@ -2302,9 +2597,9 @@ export default function FlightSearchResults() {
                           setStopFilters({ nonStop: true, oneStop: true });
                         } else {
                           setStopFilters({ nonStop: true, oneStop: false });
-                          setSortBy("price");
                         }
                       }}
+                      title="Filter for Non-Stop flights"
                     >
                       <div className="metric-icon-box"><ArrowRight size={18} /></div>
                       <div className="metric-content">
@@ -2320,21 +2615,30 @@ export default function FlightSearchResults() {
                   <div className="bottom-sort-row">
                     <strong className="sort-by-label">SORT BY</strong>
                     <div className="sort-pills">
-                      <button type="button" className={`sort-pill ${sortBy === "price" ? "active" : ""}`} onClick={() => setSortBy("price")}>
-                        <LineChart size={14} /> Price {sortBy === "price" && "↑"}
-                      </button>
-                      <button type="button" className={`sort-pill ${sortBy === "departure" ? "active" : ""}`} onClick={() => setSortBy("departure")}>
-                        <Calendar size={14} /> Departure
-                      </button>
-                      <button type="button" className={`sort-pill ${sortBy === "arrival" ? "active" : ""}`} onClick={() => setSortBy("arrival")}>
-                        <MapPin size={14} /> Arrival
-                      </button>
-                      <button type="button" className={`sort-pill ${sortBy === "duration" ? "active" : ""}`} onClick={() => setSortBy("duration")}>
-                        <Clock size={14} /> Duration
-                      </button>
-                      <button type="button" className={`sort-pill ${sortBy === "airline" ? "active" : ""}`} onClick={() => setSortBy("airline")}>
-                        <Activity size={14} /> Airline
-                      </button>
+                      {SORT_OPTIONS.map(({ key, label, Icon }) => {
+                        const isSelected = activeSortCriteria.includes(key);
+                        const priorityIndex = isSelected ? activeSortCriteria.indexOf(key) + 1 : null;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            className={`sort-pill ${isSelected ? "active" : ""}`}
+                            onClick={() => handleToggleSortCriterion(key)}
+                            aria-pressed={isSelected}
+                            title={
+                              isSelected
+                                ? `Active sort priority #${priorityIndex}. Click to remove.`
+                                : `Click to add ${label} to active sort.`
+                            }
+                          >
+                            <Icon size={14} />
+                            <span>{label}</span>
+                            {isSelected && activeSortCriteria.length > 1 && (
+                              <span className="sort-priority-badge">{priorityIndex}</span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                     <div className="flights-found-badge">
                       <Plane size={13} />
@@ -2349,15 +2653,38 @@ export default function FlightSearchResults() {
 
             <div className="flight-list">
               {sortedFlights.length === 0 ? (
-                <div className="no-results">
-                  <PlaneTakeoff size={18} />
-                  <p>No flights match the selected filters for this date.</p>
+                <div className="no-results" style={{ textAlign: "center", padding: "40px 20px" }}>
+                  <PlaneTakeoff size={36} color="#d32f2f" style={{ marginBottom: "12px" }} />
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>
+                    No flights found for the selected filters.
+                  </h3>
+                  <p style={{ color: "#64748b", fontSize: "0.88rem", marginBottom: "18px" }}>
+                    Try loosening your price, time, duration, or airline filters to see available flights.
+                  </p>
+                  <button
+                    type="button"
+                    className="clear-flight-filters"
+                    style={{
+                      display: "inline-block",
+                      padding: "8px 18px",
+                      background: "var(--theme-primary, #ff0000)",
+                      color: "#ffffff",
+                      borderRadius: "6px",
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={handleResetAllFilters}
+                  >
+                    Clear all filters
+                  </button>
                 </div>
               ) : (
                 (() => {
-                  const globalCheapestFlightId = [...filteredFlights].sort((a, b) => a.fare - b.fare)[0]?.id;
+                  const globalCheapestFlightId = flightSummaries.cheapest?.id;
                   
-                  return sortedFlights.map((flight) => {
+                  return paginatedFlights.map((flight) => {
                   const isSelectedInTwoWay = tripType === "twoway" && (
                     (twoWayActiveTab === "onward" && selectedOnwardFlightId === flight.id) ||
                     (twoWayActiveTab === "return" && selectedReturnFlightId === flight.id)
@@ -2371,7 +2698,18 @@ export default function FlightSearchResults() {
                         {/* Top Bar */}
                         <div className="premium-top-bar">
                           <div className="premium-airline-info">
-                            <img src={flight.logo} alt={flight.airlineName} className="premium-logo" />
+                            {flight.logo ? (
+                              <img
+                                src={flight.logo}
+                                alt={`${flight.airlineName} logo`}
+                                className="premium-logo"
+                                onError={(event) => { event.currentTarget.style.display = "none"; }}
+                              />
+                            ) : (
+                              <span className="premium-logo premium-logo-fallback" aria-label={`${flight.airlineName || "Airline"} logo unavailable`}>
+                                <Plane size={18} aria-hidden="true" />
+                              </span>
+                            )}
                             <div className="premium-airline-details">
                               <div className="premium-airline-title-row">
                                 <span className="premium-airline-name">{flight.airlineName}</span>
@@ -2512,6 +2850,15 @@ export default function FlightSearchResults() {
                   return flightCardJsx;
                 });
               })()
+            )}
+            {totalPages > 1 && (
+              <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
+                <BookingPagination
+                  page={validCurrentPage}
+                  pageCount={totalPages}
+                  onChange={(p) => setCurrentPage(p)}
+                />
+              </div>
             )}
             </div>
           </section>
@@ -3027,7 +3374,7 @@ export default function FlightSearchResults() {
             className="booking-modal-card fare-rule-modal"
             onClick={(event) => event.stopPropagation()}
             style={{
-              maxWidth: "650px",
+              maxWidth: "740px",
               width: "92%",
               backgroundColor: "#ffffff",
               borderRadius: "16px",
@@ -3068,82 +3415,10 @@ export default function FlightSearchResults() {
                 </div>
               ) : (
                 <div className="fare-rule-details-container">
-                  {(activeFareRuleModal.data?.specialRule || activeFareRuleModal.data?.SpecialRule) && (
-                    <div
-                      style={{ background: "#fff8e1", borderLeft: "4px solid #ffa000", padding: "12px 14px", borderRadius: "6px", marginBottom: "16px", fontSize: "0.9rem", color: "#795548" }}
-                      dangerouslySetInnerHTML={{ __html: `<strong>Special Note:</strong> ${activeFareRuleModal.data?.specialRule || activeFareRuleModal.data?.SpecialRule}` }}
-                    />
-                  )}
-
-                  {(() => {
-                    const rules = activeFareRuleModal.data?.results || activeFareRuleModal.data?.Results || [];
-                    const miniFareRules = activeFareRuleModal.data?.miniFareRules || activeFareRuleModal.data?.MiniFareRules || [];
-                    const airlineRules = activeFareRuleModal.data?.airlineRules || activeFareRuleModal.data?.AirlineRules || null;
-                    const flight = activeFareRuleModal.flight || {};
-
-                    const hasRules = Array.isArray(rules) && rules.length > 0;
-                    const hasMiniRules = Array.isArray(miniFareRules) && miniFareRules.length > 0;
-                    const hasAirlineRules = Boolean(airlineRules && typeof airlineRules === "object");
-
-                    if (!hasRules && !hasMiniRules && !hasAirlineRules) {
-                      return (
-                        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "20px", textAlign: "center", color: "#64748b" }}>
-                          No detailed fare rules returned by the airline provider for this fare.
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                        {hasRules && rules.map((rule, idx) => (
-                          <div key={idx} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontWeight: 700, color: "#0f172a", fontSize: "0.95rem" }}>
-                              <span>{rule.Airline || flight.airlineName || "Airline Fare Rules"}</span>
-                              <span style={{ color: "#d32f2f" }}>{rule.Origin || flight.sourceCode || "Origin"} ➔ {rule.Destination || flight.destinationCode || "Destination"}</span>
-                            </div>
-                            {rule.FareBasisCode && (
-                              <div style={{ fontSize: "0.8rem", color: "#64748b", marginBottom: "10px" }}>
-                                Fare Basis: <code style={{ background: "#e2e8f0", padding: "2px 6px", borderRadius: "4px" }}>{rule.FareBasisCode}</code>
-                              </div>
-                            )}
-                            <div
-                              className="fare-rule-html-content"
-                              dangerouslySetInnerHTML={{
-                                __html: rule.FareRuleDetail || rule.FareRules || ""
-                              }}
-                            />
-                          </div>
-                        ))}
-
-                        {hasMiniRules && (
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
-                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Mini Fare Rules (API)</div>
-                            {miniFareRules.map((m, idx) => (
-                              <div key={idx} style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "6px" }}>
-                                <strong>{m.Type || m.Category || "Rule"}:</strong> {m.Details || m.Rule || JSON.stringify(m)}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {hasAirlineRules && (
-                          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "16px" }}>
-                            <div style={{ fontWeight: 700, color: "#0f172a", marginBottom: "8px" }}>Airline Passenger Rules (API)</div>
-                            {airlineRules.FirstNameMinChar && (
-                              <div style={{ fontSize: "0.88rem", color: "#334155", marginBottom: "4px" }}>
-                                <strong>First Name Minimum Length:</strong> {airlineRules.FirstNameMinChar} characters
-                              </div>
-                            )}
-                            {airlineRules.LastNameMinChar && (
-                              <div style={{ fontSize: "0.88rem", color: "#334155" }}>
-                                <strong>Last Name Minimum Length:</strong> {airlineRules.LastNameMinChar} characters
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                  <StructuredFareRules
+                    data={activeFareRuleModal.data}
+                    flight={activeFareRuleModal.flight}
+                  />
                 </div>
               )}
             </div>

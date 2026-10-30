@@ -131,7 +131,7 @@
 /* Metric Cards Grid */
 .dashboard-metrics-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 16px;
     width: 100%;
 }
@@ -177,6 +177,10 @@
 
 .metric-icon-circle.revenue {
     background: #ef4444;
+}
+
+.metric-icon-circle.profit {
+    background: #059669;
 }
 
 .metric-icon-circle.bookings {

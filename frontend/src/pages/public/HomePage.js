@@ -100,7 +100,7 @@ import CustomDatePicker from "../../components/CustomDatePicker";
 import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
 import { listHotBusRoutes, searchBusCities } from "../../services/busBookingService";
 import { getPopularBusRoutesFromSearchHistory } from "../../services/busSearchHistoryService";
-import { listHotFlightRoutes } from "../../services/flightBookingService";
+import { getPopularFlightRoutes } from "../../services/flightBookingService";
 import { searchHotels } from "../../services/hotelBookingService";
 import { toApiAssetUrl, toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
@@ -2368,6 +2368,7 @@ export default function HomePage() {
   const [popularFlights, setPopularFlights] = useState([]);
   const [popularFlightsLoading, setPopularFlightsLoading] = useState(false);
   const [popularFlightsError, setPopularFlightsError] = useState("");
+  const [popularFlightsRetry, setPopularFlightsRetry] = useState(0);
   const [popularHotels, setPopularHotels] = useState([]);
   const [popularHotelsLoading, setPopularHotelsLoading] = useState(false);
   const [popularHotelsError, setPopularHotelsError] = useState("");
@@ -3009,17 +3010,50 @@ export default function HomePage() {
     };
   }, []);
 
-  /* Popular Flight Routes — Static Curated Data */
+  // Routes are configuration data: do not fall back to a curated production list.
+  // A failed request must stay visible to the traveller instead of looking current.
   useEffect(() => {
-    setPopularFlightsLoading(false);
+    let isMounted = true;
+    setPopularFlightsLoading(true);
     setPopularFlightsError("");
-    setPopularFlights([
-      { id: "flight-hot-1", route: "Mumbai to Delhi", fromCity: "Mumbai", toCity: "Delhi", summary: "Daily direct flights with top airlines", searches: 3450 },
-      { id: "flight-hot-2", route: "Bengaluru to Hyderabad", fromCity: "Bengaluru", toCity: "Hyderabad", summary: "Short distance business travel corridor", searches: 2890 },
-      { id: "flight-hot-3", route: "Delhi to Goa", fromCity: "Delhi", toCity: "Goa", summary: "Popular vacation and beach destination", searches: 2640 },
-      { id: "flight-hot-4", route: "Chennai to Kolkata", fromCity: "Chennai", toCity: "Kolkata", summary: "Frequent non-stop flight connections", searches: 1980 },
-    ]);
-  }, []);
+
+    getPopularFlightRoutes()
+      .then((response) => {
+        const records = Array.isArray(response)
+          ? response
+          : (response?.data || response?.items || response?.routes || []);
+        const seenRoutes = new Set();
+        const routes = records.reduce((items, record, index) => {
+          const fromCity = String(record?.fromCity ?? record?.originCity ?? record?.source ?? record?.from ?? "").trim();
+          const toCity = String(record?.toCity ?? record?.destinationCity ?? record?.destination ?? record?.to ?? "").trim();
+          if (!fromCity || !toCity) return items;
+          const routeKey = `${record?.fromAirportCode ?? record?.sourceCode ?? fromCity}|${record?.toAirportCode ?? record?.destinationCode ?? toCity}`.toLowerCase();
+          if (seenRoutes.has(routeKey)) return items;
+          seenRoutes.add(routeKey);
+          items.push({
+            id: record?.id ?? record?._id ?? record?.routeId ?? routeKey ?? index,
+            route: record?.route,
+            fromCity,
+            toCity,
+            fromAirportCode: String(record?.fromAirportCode ?? record?.sourceCode ?? record?.originCode ?? "").trim(),
+            toAirportCode: String(record?.toAirportCode ?? record?.destinationCode ?? record?.destinationAirportCode ?? "").trim(),
+            image: record?.image ?? record?.imageUrl ?? record?.destinationImage,
+          });
+          return items;
+        }, []);
+        if (isMounted) setPopularFlights(routes);
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setPopularFlights([]);
+        setPopularFlightsError(error?.message || "Unable to load popular flights. Please try again.");
+      })
+      .finally(() => {
+        if (isMounted) setPopularFlightsLoading(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [popularFlightsRetry]);
 
   /* Popular Hotels — Static Curated Data */
   useEffect(() => {
@@ -3399,8 +3433,13 @@ export default function HomePage() {
 
   const handlePopularFlightBooking = (popularFlight) => {
     const [sourceRaw, destinationRaw] = String(popularFlight.route || "").split(/\s+to\s+/i);
-    const source = popularFlight.fromCity || sourceRaw?.trim() || "Delhi";
-    const destination = popularFlight.toCity || destinationRaw?.trim() || "Mumbai";
+    const sourceCity = popularFlight.fromCity || sourceRaw?.trim() || "";
+    const destinationCity = popularFlight.toCity || destinationRaw?.trim() || "";
+    // Keep the configured airport identifiers in the existing city input format.
+    const source = popularFlight.fromAirportCode ? `${sourceCity} (${popularFlight.fromAirportCode})` : sourceCity;
+    const destination = popularFlight.toAirportCode ? `${destinationCity} (${popularFlight.toAirportCode})` : destinationCity;
+
+    if (!source || !destination) return;
 
     navigateToFlightSearch({
       source,
@@ -3968,7 +4007,8 @@ export default function HomePage() {
            border: 1px solid rgba(225, 230, 235, 0.9);
            border-radius: 12px;
            overflow: hidden;
-           width: 175px;
+           width: 230px;
+           min-width: 200px;
            display: flex;
            flex-direction: column;
            box-shadow: 0 4px 12px rgba(6, 24, 44, 0.06);
@@ -4055,26 +4095,29 @@ export default function HomePage() {
            align-items: center;
            justify-content: space-between;
            width: 100%;
-           gap: 8px;
+           gap: 6px;
         }
 
         .pop-route-city {
-           font-size: 0.78rem;
-           font-weight: 700;
+           font-size: 0.88rem;
+           font-weight: 800;
            color: #1e2c3a;
-           white-space: nowrap;
-           overflow: hidden;
-           text-overflow: ellipsis;
-           flex: 1;
+           white-space: normal;
+           overflow: visible;
+           text-overflow: clip;
+           word-break: normal;
+           overflow-wrap: break-word;
+           flex: 1 1 0;
+           line-height: 1.25;
         }
 
         .pop-route-city.from {
-           text-align: left;
+           text-align: right;
            text-transform: capitalize;
         }
 
         .pop-route-city.to {
-           text-align: right;
+           text-align: left;
            text-transform: capitalize;
         }
 
@@ -5083,18 +5126,29 @@ export default function HomePage() {
            align-items: center !important;
            justify-content: space-between !important;
            width: 100% !important;
-           gap: 4px !important;
+           gap: 6px !important;
         }
 
         .pop-bus-city {
-           font-size: 0.95rem !important;
+           font-size: 0.9rem !important;
            font-weight: 800 !important;
            color: #0f172a !important;
-           white-space: nowrap !important;
-           overflow: hidden !important;
-           text-overflow: ellipsis !important;
-           max-width: 90px !important;
-           line-height: 1.2 !important;
+           white-space: normal !important;
+           overflow: visible !important;
+           text-overflow: clip !important;
+           word-break: normal !important;
+           overflow-wrap: break-word !important;
+           max-width: none !important;
+           line-height: 1.25 !important;
+           flex: 1 1 0 !important;
+        }
+
+        .pop-bus-city.from {
+           text-align: right !important;
+        }
+
+        .pop-bus-city.to {
+           text-align: left !important;
         }
 
         .pop-bus-connector {
@@ -8662,7 +8716,10 @@ export default function HomePage() {
               {popularFlightsLoading ? (
                 <div className="popular-routes-loading">Loading popular flights...</div>
               ) : popularFlightsError ? (
-                <div className="popular-routes-error">{popularFlightsError}</div>
+                <div className="popular-routes-error">
+                  <span>{popularFlightsError}</span>
+                  <button type="button" onClick={() => setPopularFlightsRetry((attempt) => attempt + 1)}>Retry</button>
+                </div>
               ) : popularFlights.length === 0 ? (
                 <div className="popular-routes-empty">No popular flights available.</div>
               ) : (
@@ -8681,7 +8738,7 @@ export default function HomePage() {
                     >
                       <div className="pop-route-img-wrap">
                         <img
-                          src={getCityImage(flight.toCity, "flight_default")}
+                          src={flight.image || getCityImage(flight.toCity, "flight_default")}
                           alt={`${flight.fromCity} to ${flight.toCity}`}
                           loading="lazy"
                           onError={(e) => { e.target.onerror = null; e.target.src = CITY_IMAGES.flight_default; }}
