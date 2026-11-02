@@ -861,7 +861,7 @@ export default function AdminFlightCancellationRequestListPage() {
           const rawPayload = record?.raw || record || {};
           const rawDetails = record?.details || record?.Details || rawPayload?.details || rawPayload?.Details || {};
 
-          const fare = Math.max(parseNumber(record?.totalPriceInr, 0), 0);
+          const fare = Math.max(parseNumber(record?.totalPriceInr ?? record?.fare ?? record?.TotalFareInr ?? record?.totalFare ?? rawDetails?.totalFare, 0), 0);
           const inferredProfit = Math.round(fare * 0.04);
           const profit = parseNumber(record?.profit, inferredProfit);
 
@@ -959,6 +959,8 @@ export default function AdminFlightCancellationRequestListPage() {
             operator: normalizeText(record?.providerName, "Flight Airlines"),
             vehicleType: normalizeText(record?.travelClass, "Economy"),
             fare,
+            totalFare: fare,
+            totalPriceInr: fare,
             profit,
             paymentMethod: record?.paymentMethod || rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || "--",
             paymentDetails: record?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--",
@@ -988,6 +990,7 @@ export default function AdminFlightCancellationRequestListPage() {
         .map((unifiedBooking) => {
           const fare = Math.max(parseNumber(unifiedBooking?.fare, 0), 0);
           const raw = unifiedBooking?.raw || {};
+          const rawDetails = unifiedBooking?.details || raw?.details || {};
 
           const customerRefundAmountInr = unifiedBooking.customerRefundAmountInr;
           const adminRefundAmountInr = unifiedBooking.adminRefundAmountInr;
@@ -1014,11 +1017,15 @@ export default function AdminFlightCancellationRequestListPage() {
             : Math.max(fare - cancellationCharge, 0);
 
           // Profit Calculation (+ or - amount)
-          // Difference between refund amounts and charge margins
-          const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) +
-            (customerCancellationChargeInr - adminCancellationChargeInr) +
-            (customerServiceChargeInr - adminServiceChargeInr) ||
-            unifiedBooking.profit || 0;
+          const serverCalculatedProfit = parseNumber(
+            raw.calculatedProfit ?? raw.CalculatedProfit ?? rawDetails?.calculatedProfit ?? unifiedBooking.profit,
+            null
+          );
+          const calculatedProfit = serverCalculatedProfit !== null
+            ? serverCalculatedProfit
+            : (adminRefundAmountInr > 0
+                ? (adminRefundAmountInr - customerRefundAmountInr)
+                : (unifiedBooking.profit || 0));
 
           return {
             ...unifiedBooking,
@@ -1087,7 +1094,7 @@ export default function AdminFlightCancellationRequestListPage() {
     const rawPayload = record?.raw || record || {};
     const rawDetails = record?.details || record?.Details || rawPayload?.details || rawPayload?.Details || {};
 
-    const fare = Math.max(parseNumber(record?.totalPriceInr, 0), 0);
+    const fare = Math.max(parseNumber(record?.totalPriceInr ?? record?.totalFare ?? record?.fare ?? record?.TotalFareInr ?? rawDetails?.totalFare, 0), 0);
     const inferredProfit = Math.round(fare * 0.04);
     const profit = parseNumber(record?.profit, inferredProfit);
 
@@ -1170,10 +1177,15 @@ export default function AdminFlightCancellationRequestListPage() {
       ? customerRefundAmountInr
       : Math.max(fare - cancellationCharge, 0);
 
-    const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) +
-      (customerCancellationChargeInr - adminCancellationChargeInr) +
-      (customerServiceChargeInr - adminServiceChargeInr) ||
-      profit || 0;
+    const serverCalculatedProfit = parseNumber(
+      record?.calculatedProfit ?? record?.CalculatedProfit ?? rawDetails?.calculatedProfit,
+      null
+    );
+    const calculatedProfit = serverCalculatedProfit !== null
+      ? serverCalculatedProfit
+      : (adminRefundAmountInr > 0 || adminCancellationChargeInr > 0
+          ? ((fare - customerRefundAmountInr) - (fare - adminRefundAmountInr) + (customerServiceChargeInr - adminServiceChargeInr))
+          : (profit || 0));
 
     return {
       id: cancelId,
@@ -1198,6 +1210,8 @@ export default function AdminFlightCancellationRequestListPage() {
       operator: normalizeText(record?.providerName, "Flight Airlines"),
       vehicleType: normalizeText(record?.travelClass, "Economy"),
       fare,
+      totalFare: fare,
+      totalPriceInr: fare,
       profit,
       paymentMethod: record?.paymentMethod || rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || "--",
       paymentDetails: record?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--",
@@ -1695,7 +1709,7 @@ export default function AdminFlightCancellationRequestListPage() {
                     Status: {safeValue(selectedCancellation.cancellationStatus || selectedCancellation.status)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    Customer Fare: {adminCurrencyFormatter.format(selectedCancellation.fare || 0)}
+                    Customer Fare: {adminCurrencyFormatter.format(selectedCancellation.totalFare || selectedCancellation.totalPriceInr || selectedCancellation.fare || 0)}
                   </span>
                   <span className="admin-view-meta-chip">
                     Refund Amount: {adminCurrencyFormatter.format(selectedCancellation.customerRefundAmountInr || 0)}
@@ -1789,7 +1803,7 @@ export default function AdminFlightCancellationRequestListPage() {
                 <tbody>
                   <tr>
                     <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "600" }}>Total Fare</td>
-                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700" }}>{adminCurrencyFormatter.format(selectedCancellation.fare || 0)}</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700" }}>{adminCurrencyFormatter.format(selectedCancellation.totalFare || selectedCancellation.totalPriceInr || selectedCancellation.fare || 0)}</td>
                     <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", color: "#475569" }}>Total fare charged to customer</td>
                   </tr>
                   <tr>

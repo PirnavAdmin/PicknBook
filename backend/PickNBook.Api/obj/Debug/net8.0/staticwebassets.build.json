@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "kLoOG46e4UytRw1dog7hatkaZ2wKnDYnmRJ6yXPdmzY=",
+  "Hash": "OQTsr8LFursYQ4U1kcquHgIr/2CTxI7HciHjq2AIwX0=",
   "Source": "PickNBook.Api",
   "BasePath": "_content/PickNBook.Api",
   "Mode": "Default",
@@ -10,17 +10,17 @@
     {
       "Name": "PickNBook.Api\\wwwroot",
       "Source": "PickNBook.Api",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "Pattern": "**"
     }
   ],
   "Assets": [
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\0a0ad831dfab4f1996ad2acc226ffabe.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\0a0ad831dfab4f1996ad2acc226ffabe.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/categories/0a0ad831dfab4f1996ad2acc226ffabe.png",
       "AssetKind": "All",
@@ -36,10 +36,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\categories\\0a0ad831dfab4f1996ad2acc226ffabe.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\0c9a9767f90249b1bf455875e17fa965.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\0c9a9767f90249b1bf455875e17fa965.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/categories/0c9a9767f90249b1bf455875e17fa965.jpg",
       "AssetKind": "All",
@@ -55,10 +55,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\categories\\0c9a9767f90249b1bf455875e17fa965.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\2348e41ef6404e4394bac08b90ae44c7.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\2348e41ef6404e4394bac08b90ae44c7.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/categories/2348e41ef6404e4394bac08b90ae44c7.png",
       "AssetKind": "All",
@@ -74,10 +74,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\categories\\2348e41ef6404e4394bac08b90ae44c7.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\9734b1469dd34c0f9af9128d4faf01fb.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\categories\\9734b1469dd34c0f9af9128d4faf01fb.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/categories/9734b1469dd34c0f9af9128d4faf01fb.png",
       "AssetKind": "All",
@@ -93,10 +93,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\categories\\9734b1469dd34c0f9af9128d4faf01fb.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\.gitkeep",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\.gitkeep",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/.gitkeep",
       "AssetKind": "All",
@@ -112,10 +112,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\.gitkeep"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\0352da884672432fbfd8ad31e10dfec9.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\0352da884672432fbfd8ad31e10dfec9.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/0352da884672432fbfd8ad31e10dfec9.jpg",
       "AssetKind": "All",
@@ -131,10 +131,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\0352da884672432fbfd8ad31e10dfec9.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\08bf9297b7f7460ab04dc68ca4bcb4b2.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\08bf9297b7f7460ab04dc68ca4bcb4b2.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/08bf9297b7f7460ab04dc68ca4bcb4b2.jpg",
       "AssetKind": "All",
@@ -150,10 +150,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\08bf9297b7f7460ab04dc68ca4bcb4b2.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\0e7db1adf9ee4f08aafb92f1f8ae03b1.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\0e7db1adf9ee4f08aafb92f1f8ae03b1.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/0e7db1adf9ee4f08aafb92f1f8ae03b1.jpg",
       "AssetKind": "All",
@@ -169,10 +169,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\0e7db1adf9ee4f08aafb92f1f8ae03b1.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\1025407cd8d74c6286944f6fdf1ea730.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\1025407cd8d74c6286944f6fdf1ea730.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/1025407cd8d74c6286944f6fdf1ea730.jpg",
       "AssetKind": "All",
@@ -188,10 +188,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\1025407cd8d74c6286944f6fdf1ea730.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\16343b9e5bf54903821c71f1d16764da.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\16343b9e5bf54903821c71f1d16764da.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/16343b9e5bf54903821c71f1d16764da.jpg",
       "AssetKind": "All",
@@ -207,10 +207,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\16343b9e5bf54903821c71f1d16764da.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\17ec83f1f63943b1a0310caf560ab4e2.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\17ec83f1f63943b1a0310caf560ab4e2.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/17ec83f1f63943b1a0310caf560ab4e2.jpg",
       "AssetKind": "All",
@@ -226,10 +226,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\17ec83f1f63943b1a0310caf560ab4e2.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\1861ebba43ac494f8423b185f4aad597.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\1861ebba43ac494f8423b185f4aad597.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/1861ebba43ac494f8423b185f4aad597.jpg",
       "AssetKind": "All",
@@ -245,10 +245,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\1861ebba43ac494f8423b185f4aad597.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\20176561f122471e811729273e7a9160.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\20176561f122471e811729273e7a9160.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/20176561f122471e811729273e7a9160.jpg",
       "AssetKind": "All",
@@ -264,10 +264,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\20176561f122471e811729273e7a9160.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\2492f2c3114048929b04dbd7bc491407.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\2492f2c3114048929b04dbd7bc491407.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/2492f2c3114048929b04dbd7bc491407.jpg",
       "AssetKind": "All",
@@ -283,10 +283,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\2492f2c3114048929b04dbd7bc491407.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\306052809dc84ef585d26ca9844f37d2.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\306052809dc84ef585d26ca9844f37d2.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/306052809dc84ef585d26ca9844f37d2.jpg",
       "AssetKind": "All",
@@ -302,10 +302,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\306052809dc84ef585d26ca9844f37d2.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\3164c1a11c6642e287cb8898044ba7c0.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\3164c1a11c6642e287cb8898044ba7c0.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/3164c1a11c6642e287cb8898044ba7c0.jpg",
       "AssetKind": "All",
@@ -321,10 +321,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\3164c1a11c6642e287cb8898044ba7c0.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\33f97faaf75e4798b4c00ba45fb5aea1.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\33f97faaf75e4798b4c00ba45fb5aea1.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/33f97faaf75e4798b4c00ba45fb5aea1.jpg",
       "AssetKind": "All",
@@ -340,10 +340,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\33f97faaf75e4798b4c00ba45fb5aea1.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\341e1d27a21d4815aeb03756e3752d73.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\341e1d27a21d4815aeb03756e3752d73.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/341e1d27a21d4815aeb03756e3752d73.jpg",
       "AssetKind": "All",
@@ -359,10 +359,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\341e1d27a21d4815aeb03756e3752d73.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\36de15ed2c1343b4ad0b8475cdc53fc7.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\36de15ed2c1343b4ad0b8475cdc53fc7.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/36de15ed2c1343b4ad0b8475cdc53fc7.jpg",
       "AssetKind": "All",
@@ -378,10 +378,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\36de15ed2c1343b4ad0b8475cdc53fc7.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\37ccd79e37394507a90db201580a278c.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\37ccd79e37394507a90db201580a278c.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/37ccd79e37394507a90db201580a278c.jpg",
       "AssetKind": "All",
@@ -397,10 +397,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\37ccd79e37394507a90db201580a278c.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\384e765c847f40bbac64f4e6bba9f241.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\384e765c847f40bbac64f4e6bba9f241.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/384e765c847f40bbac64f4e6bba9f241.jpg",
       "AssetKind": "All",
@@ -416,10 +416,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\384e765c847f40bbac64f4e6bba9f241.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\3c3d2f07d3e142daafc704cb747d3f74.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\3c3d2f07d3e142daafc704cb747d3f74.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/3c3d2f07d3e142daafc704cb747d3f74.jpg",
       "AssetKind": "All",
@@ -435,10 +435,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\3c3d2f07d3e142daafc704cb747d3f74.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\3f7df75786ec442fa4632e03596da543.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\3f7df75786ec442fa4632e03596da543.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/3f7df75786ec442fa4632e03596da543.jpg",
       "AssetKind": "All",
@@ -454,10 +454,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\3f7df75786ec442fa4632e03596da543.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\4476198ba2f54c5fa0ddc82e2400d5a7.jpeg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\4476198ba2f54c5fa0ddc82e2400d5a7.jpeg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/4476198ba2f54c5fa0ddc82e2400d5a7.jpeg",
       "AssetKind": "All",
@@ -473,10 +473,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\4476198ba2f54c5fa0ddc82e2400d5a7.jpeg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\4e32e8c0089142c5aebb465cbd80dd6f.jpeg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\4e32e8c0089142c5aebb465cbd80dd6f.jpeg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/4e32e8c0089142c5aebb465cbd80dd6f.jpeg",
       "AssetKind": "All",
@@ -492,10 +492,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\4e32e8c0089142c5aebb465cbd80dd6f.jpeg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\521d36b89c8a49d287206a95b6404519.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\521d36b89c8a49d287206a95b6404519.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/521d36b89c8a49d287206a95b6404519.png",
       "AssetKind": "All",
@@ -511,10 +511,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\521d36b89c8a49d287206a95b6404519.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\547fb2be7a324b5c8269ad7387d43933.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\547fb2be7a324b5c8269ad7387d43933.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/547fb2be7a324b5c8269ad7387d43933.jpg",
       "AssetKind": "All",
@@ -530,10 +530,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\547fb2be7a324b5c8269ad7387d43933.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\567cb9d1c6eb4b45945c09ea414c2225.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\567cb9d1c6eb4b45945c09ea414c2225.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/567cb9d1c6eb4b45945c09ea414c2225.png",
       "AssetKind": "All",
@@ -549,10 +549,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\567cb9d1c6eb4b45945c09ea414c2225.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\59c6570577a843de8ad1b6e0c17613f2.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\59c6570577a843de8ad1b6e0c17613f2.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/59c6570577a843de8ad1b6e0c17613f2.jpg",
       "AssetKind": "All",
@@ -568,10 +568,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\59c6570577a843de8ad1b6e0c17613f2.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\5b04376498fa4dfdbacb8c56d90a238a.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\5b04376498fa4dfdbacb8c56d90a238a.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/5b04376498fa4dfdbacb8c56d90a238a.jpg",
       "AssetKind": "All",
@@ -587,10 +587,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\5b04376498fa4dfdbacb8c56d90a238a.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\615df10be1dd42fd8bd4bbd033ac8307.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\615df10be1dd42fd8bd4bbd033ac8307.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/615df10be1dd42fd8bd4bbd033ac8307.jpg",
       "AssetKind": "All",
@@ -606,10 +606,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\615df10be1dd42fd8bd4bbd033ac8307.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\6db75c9504084c519c7691334540bd3f.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\6db75c9504084c519c7691334540bd3f.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/6db75c9504084c519c7691334540bd3f.jpg",
       "AssetKind": "All",
@@ -625,10 +625,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\6db75c9504084c519c7691334540bd3f.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\6f4a2da766ce49c29d57d5282c4289b1.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\6f4a2da766ce49c29d57d5282c4289b1.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/6f4a2da766ce49c29d57d5282c4289b1.jpg",
       "AssetKind": "All",
@@ -644,10 +644,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\6f4a2da766ce49c29d57d5282c4289b1.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\74f6fe5f1afc41008842daaa3e132d8a.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\74f6fe5f1afc41008842daaa3e132d8a.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/74f6fe5f1afc41008842daaa3e132d8a.jpg",
       "AssetKind": "All",
@@ -663,10 +663,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\74f6fe5f1afc41008842daaa3e132d8a.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\761c21f9d36a4713b3cae689755380c8.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\761c21f9d36a4713b3cae689755380c8.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/761c21f9d36a4713b3cae689755380c8.jpg",
       "AssetKind": "All",
@@ -682,10 +682,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\761c21f9d36a4713b3cae689755380c8.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\7c2b73e060674c918e49a5bde8f5e052.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\7c2b73e060674c918e49a5bde8f5e052.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/7c2b73e060674c918e49a5bde8f5e052.jpg",
       "AssetKind": "All",
@@ -701,10 +701,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\7c2b73e060674c918e49a5bde8f5e052.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\894f455737ee4f928b70cbf0344891d3.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\894f455737ee4f928b70cbf0344891d3.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/894f455737ee4f928b70cbf0344891d3.jpg",
       "AssetKind": "All",
@@ -720,10 +720,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\894f455737ee4f928b70cbf0344891d3.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\8f767a4f0880470db22ab3e68396a74d.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\8f767a4f0880470db22ab3e68396a74d.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/8f767a4f0880470db22ab3e68396a74d.jpg",
       "AssetKind": "All",
@@ -739,10 +739,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\8f767a4f0880470db22ab3e68396a74d.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\902b65f40d04478fa7b49fef91f69e00.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\902b65f40d04478fa7b49fef91f69e00.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/902b65f40d04478fa7b49fef91f69e00.jpg",
       "AssetKind": "All",
@@ -758,10 +758,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\902b65f40d04478fa7b49fef91f69e00.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\ae107295957141d4a566a23831187ce8.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\ae107295957141d4a566a23831187ce8.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/ae107295957141d4a566a23831187ce8.png",
       "AssetKind": "All",
@@ -777,10 +777,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\ae107295957141d4a566a23831187ce8.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\b1d10186029d4a6bb00f047a966409eb.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\b1d10186029d4a6bb00f047a966409eb.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/b1d10186029d4a6bb00f047a966409eb.jpg",
       "AssetKind": "All",
@@ -796,10 +796,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\b1d10186029d4a6bb00f047a966409eb.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\b7beb7681c2e479abf794e991d314877.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\b7beb7681c2e479abf794e991d314877.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/b7beb7681c2e479abf794e991d314877.jpg",
       "AssetKind": "All",
@@ -815,10 +815,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\b7beb7681c2e479abf794e991d314877.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\b7c2d9d929224bdc86c2100b67f183df.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\b7c2d9d929224bdc86c2100b67f183df.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/b7c2d9d929224bdc86c2100b67f183df.jpg",
       "AssetKind": "All",
@@ -834,10 +834,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\b7c2d9d929224bdc86c2100b67f183df.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\bdc62f7467a2476688bcfdf70f86d77c.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\bdc62f7467a2476688bcfdf70f86d77c.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/bdc62f7467a2476688bcfdf70f86d77c.jpg",
       "AssetKind": "All",
@@ -853,10 +853,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\bdc62f7467a2476688bcfdf70f86d77c.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\c3f7e2db90654e2cb423013ddd03158b.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\c3f7e2db90654e2cb423013ddd03158b.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/c3f7e2db90654e2cb423013ddd03158b.png",
       "AssetKind": "All",
@@ -872,10 +872,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\c3f7e2db90654e2cb423013ddd03158b.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\c63e3bd555474d17a218c9f3e1d40abb.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\c63e3bd555474d17a218c9f3e1d40abb.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/c63e3bd555474d17a218c9f3e1d40abb.jpg",
       "AssetKind": "All",
@@ -891,10 +891,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\c63e3bd555474d17a218c9f3e1d40abb.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\c87c7b8ef22b43df9c16b3d916470041.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\c87c7b8ef22b43df9c16b3d916470041.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/c87c7b8ef22b43df9c16b3d916470041.jpg",
       "AssetKind": "All",
@@ -910,10 +910,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\c87c7b8ef22b43df9c16b3d916470041.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\cc42a04036d74d0caf47c005d109bc2d.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\cc42a04036d74d0caf47c005d109bc2d.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/cc42a04036d74d0caf47c005d109bc2d.jpg",
       "AssetKind": "All",
@@ -929,10 +929,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\cc42a04036d74d0caf47c005d109bc2d.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\d6ddb5cbf8a546ac9aaf3f6924bef70c.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\d6ddb5cbf8a546ac9aaf3f6924bef70c.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/d6ddb5cbf8a546ac9aaf3f6924bef70c.jpg",
       "AssetKind": "All",
@@ -948,10 +948,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\d6ddb5cbf8a546ac9aaf3f6924bef70c.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\d9f3d5bfe10345959660ef236380f4d5.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\d9f3d5bfe10345959660ef236380f4d5.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/d9f3d5bfe10345959660ef236380f4d5.jpg",
       "AssetKind": "All",
@@ -967,10 +967,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\d9f3d5bfe10345959660ef236380f4d5.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\db8f5d6c8e9741bb8185f020092c82de.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\db8f5d6c8e9741bb8185f020092c82de.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/db8f5d6c8e9741bb8185f020092c82de.jpg",
       "AssetKind": "All",
@@ -986,10 +986,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\db8f5d6c8e9741bb8185f020092c82de.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\e240e7ebb4ed4d208a47b44bfa78cc71.jpeg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\e240e7ebb4ed4d208a47b44bfa78cc71.jpeg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/e240e7ebb4ed4d208a47b44bfa78cc71.jpeg",
       "AssetKind": "All",
@@ -1005,10 +1005,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\e240e7ebb4ed4d208a47b44bfa78cc71.jpeg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\e79e910422d3468eb55e51b72467a220.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\e79e910422d3468eb55e51b72467a220.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/e79e910422d3468eb55e51b72467a220.jpg",
       "AssetKind": "All",
@@ -1024,10 +1024,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\e79e910422d3468eb55e51b72467a220.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\e7a0f6c8cd9247779cd02d028e56f477.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\e7a0f6c8cd9247779cd02d028e56f477.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/e7a0f6c8cd9247779cd02d028e56f477.jpg",
       "AssetKind": "All",
@@ -1043,10 +1043,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\e7a0f6c8cd9247779cd02d028e56f477.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\eb472d8525754559b0b6fb8355a2b9c2.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\eb472d8525754559b0b6fb8355a2b9c2.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/eb472d8525754559b0b6fb8355a2b9c2.jpg",
       "AssetKind": "All",
@@ -1062,10 +1062,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\eb472d8525754559b0b6fb8355a2b9c2.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\ecdd7b669c1f4d9683dfb30f5444ed34.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\ecdd7b669c1f4d9683dfb30f5444ed34.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/ecdd7b669c1f4d9683dfb30f5444ed34.jpg",
       "AssetKind": "All",
@@ -1081,10 +1081,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\ecdd7b669c1f4d9683dfb30f5444ed34.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f3f081aa42e040f1b1d8e92c3088a260.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f3f081aa42e040f1b1d8e92c3088a260.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/f3f081aa42e040f1b1d8e92c3088a260.jpg",
       "AssetKind": "All",
@@ -1100,10 +1100,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\f3f081aa42e040f1b1d8e92c3088a260.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f58bd819476f4592be74aad94702c3da.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f58bd819476f4592be74aad94702c3da.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/f58bd819476f4592be74aad94702c3da.jpg",
       "AssetKind": "All",
@@ -1119,10 +1119,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\f58bd819476f4592be74aad94702c3da.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f5f62ec1d0864e46b68576a6a72a2b09.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f5f62ec1d0864e46b68576a6a72a2b09.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/f5f62ec1d0864e46b68576a6a72a2b09.jpg",
       "AssetKind": "All",
@@ -1138,10 +1138,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\f5f62ec1d0864e46b68576a6a72a2b09.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f8375def6e9b4cd5b8d20628037708f4.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\f8375def6e9b4cd5b8d20628037708f4.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/f8375def6e9b4cd5b8d20628037708f4.jpg",
       "AssetKind": "All",
@@ -1157,10 +1157,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\f8375def6e9b4cd5b8d20628037708f4.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\ffd5d08559944e61aa3ba67be115bb35.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\images\\ffd5d08559944e61aa3ba67be115bb35.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/images/ffd5d08559944e61aa3ba67be115bb35.jpg",
       "AssetKind": "All",
@@ -1176,10 +1176,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\images\\ffd5d08559944e61aa3ba67be115bb35.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\og-images\\.gitkeep",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\og-images\\.gitkeep",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/og-images/.gitkeep",
       "AssetKind": "All",
@@ -1195,10 +1195,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\og-images\\.gitkeep"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\og-images\\79d9e1792a3146a6b9b30c9dcf43ad9b.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\og-images\\79d9e1792a3146a6b9b30c9dcf43ad9b.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/og-images/79d9e1792a3146a6b9b30c9dcf43ad9b.png",
       "AssetKind": "All",
@@ -1214,10 +1214,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\og-images\\79d9e1792a3146a6b9b30c9dcf43ad9b.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\og-images\\c50571652e554562a1349b72c79b45cf.jpeg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\og-images\\c50571652e554562a1349b72c79b45cf.jpeg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/og-images/c50571652e554562a1349b72c79b45cf.jpeg",
       "AssetKind": "All",
@@ -1233,10 +1233,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\og-images\\c50571652e554562a1349b72c79b45cf.jpeg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\4639367d6bd94584a2e2ad7fe5030c55.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\4639367d6bd94584a2e2ad7fe5030c55.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/subcategories/4639367d6bd94584a2e2ad7fe5030c55.png",
       "AssetKind": "All",
@@ -1252,10 +1252,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\subcategories\\4639367d6bd94584a2e2ad7fe5030c55.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\50ad59369b5e44deb74d2a2b752caad7.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\50ad59369b5e44deb74d2a2b752caad7.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/subcategories/50ad59369b5e44deb74d2a2b752caad7.jpg",
       "AssetKind": "All",
@@ -1271,10 +1271,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\subcategories\\50ad59369b5e44deb74d2a2b752caad7.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\5acec48f0b614ae6b1b25ade468827ee.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\5acec48f0b614ae6b1b25ade468827ee.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/subcategories/5acec48f0b614ae6b1b25ade468827ee.png",
       "AssetKind": "All",
@@ -1290,10 +1290,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\subcategories\\5acec48f0b614ae6b1b25ade468827ee.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\5ed0704b7b174a92aa2326a79fc8466f.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\blogs\\subcategories\\5ed0704b7b174a92aa2326a79fc8466f.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "blogs/subcategories/5ed0704b7b174a92aa2326a79fc8466f.jpg",
       "AssetKind": "All",
@@ -1309,10 +1309,10 @@
       "OriginalItemSpec": "wwwroot\\blogs\\subcategories\\5ed0704b7b174a92aa2326a79fc8466f.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\.gitkeep",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\.gitkeep",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/.gitkeep",
       "AssetKind": "All",
@@ -1328,10 +1328,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\.gitkeep"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\02e85695-1d5c-4db2-adb9-c3365973d4f7.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\02e85695-1d5c-4db2-adb9-c3365973d4f7.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/02e85695-1d5c-4db2-adb9-c3365973d4f7.jpg",
       "AssetKind": "All",
@@ -1347,10 +1347,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\02e85695-1d5c-4db2-adb9-c3365973d4f7.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\0a31e1eb-d45e-428f-baba-2a63cd7164fb.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\0a31e1eb-d45e-428f-baba-2a63cd7164fb.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/0a31e1eb-d45e-428f-baba-2a63cd7164fb.png",
       "AssetKind": "All",
@@ -1366,10 +1366,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\0a31e1eb-d45e-428f-baba-2a63cd7164fb.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\0aa84fa4-41d3-43f4-aa3b-39a016665b86.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\0aa84fa4-41d3-43f4-aa3b-39a016665b86.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/0aa84fa4-41d3-43f4-aa3b-39a016665b86.png",
       "AssetKind": "All",
@@ -1385,10 +1385,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\0aa84fa4-41d3-43f4-aa3b-39a016665b86.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\0dcd7c3b-d8fb-47e4-a4ca-b5241799718e.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\0dcd7c3b-d8fb-47e4-a4ca-b5241799718e.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/0dcd7c3b-d8fb-47e4-a4ca-b5241799718e.png",
       "AssetKind": "All",
@@ -1404,10 +1404,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\0dcd7c3b-d8fb-47e4-a4ca-b5241799718e.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\18aa94ab-c194-4b9d-81c9-9c98f29d7798.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\18aa94ab-c194-4b9d-81c9-9c98f29d7798.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/18aa94ab-c194-4b9d-81c9-9c98f29d7798.png",
       "AssetKind": "All",
@@ -1423,10 +1423,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\18aa94ab-c194-4b9d-81c9-9c98f29d7798.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\28b33baf-6873-4911-9733-ec3a70437232.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\28b33baf-6873-4911-9733-ec3a70437232.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/28b33baf-6873-4911-9733-ec3a70437232.png",
       "AssetKind": "All",
@@ -1442,10 +1442,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\28b33baf-6873-4911-9733-ec3a70437232.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\2f6ebfbf-e838-466e-9216-b2415e61c70a.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\2f6ebfbf-e838-466e-9216-b2415e61c70a.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/2f6ebfbf-e838-466e-9216-b2415e61c70a.png",
       "AssetKind": "All",
@@ -1461,10 +1461,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\2f6ebfbf-e838-466e-9216-b2415e61c70a.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\3861ee64-1d66-46bb-9206-4a2568493681.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\3861ee64-1d66-46bb-9206-4a2568493681.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/3861ee64-1d66-46bb-9206-4a2568493681.png",
       "AssetKind": "All",
@@ -1480,10 +1480,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\3861ee64-1d66-46bb-9206-4a2568493681.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\47d5207c-cac7-4371-9941-c5240263011f.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\47d5207c-cac7-4371-9941-c5240263011f.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/47d5207c-cac7-4371-9941-c5240263011f.jpg",
       "AssetKind": "All",
@@ -1499,10 +1499,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\47d5207c-cac7-4371-9941-c5240263011f.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\4c0c6a5a-9e12-4f22-a476-155a4d4553a8.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\4c0c6a5a-9e12-4f22-a476-155a4d4553a8.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/4c0c6a5a-9e12-4f22-a476-155a4d4553a8.png",
       "AssetKind": "All",
@@ -1518,10 +1518,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\4c0c6a5a-9e12-4f22-a476-155a4d4553a8.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\4f15f242-eb3e-40a4-9fed-5ad6d397c8d5.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\4f15f242-eb3e-40a4-9fed-5ad6d397c8d5.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/4f15f242-eb3e-40a4-9fed-5ad6d397c8d5.png",
       "AssetKind": "All",
@@ -1537,10 +1537,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\4f15f242-eb3e-40a4-9fed-5ad6d397c8d5.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\52a2aefd-b820-469c-bcb3-5bb43e7d9e30.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\52a2aefd-b820-469c-bcb3-5bb43e7d9e30.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/52a2aefd-b820-469c-bcb3-5bb43e7d9e30.png",
       "AssetKind": "All",
@@ -1556,10 +1556,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\52a2aefd-b820-469c-bcb3-5bb43e7d9e30.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\552d645a-f23f-4daf-a5fc-2ab2077f7f93.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\552d645a-f23f-4daf-a5fc-2ab2077f7f93.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/552d645a-f23f-4daf-a5fc-2ab2077f7f93.jpg",
       "AssetKind": "All",
@@ -1575,10 +1575,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\552d645a-f23f-4daf-a5fc-2ab2077f7f93.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\565ea7a1-56e3-4a10-a029-7240d4145d15.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\565ea7a1-56e3-4a10-a029-7240d4145d15.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/565ea7a1-56e3-4a10-a029-7240d4145d15.png",
       "AssetKind": "All",
@@ -1594,10 +1594,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\565ea7a1-56e3-4a10-a029-7240d4145d15.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\5a79c0e2-1bd4-497d-8c5e-06b16613835e.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\5a79c0e2-1bd4-497d-8c5e-06b16613835e.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/5a79c0e2-1bd4-497d-8c5e-06b16613835e.png",
       "AssetKind": "All",
@@ -1613,10 +1613,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\5a79c0e2-1bd4-497d-8c5e-06b16613835e.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\5a8abad8-4858-45a7-b89e-2c926d4ccc67.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\5a8abad8-4858-45a7-b89e-2c926d4ccc67.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/5a8abad8-4858-45a7-b89e-2c926d4ccc67.jpg",
       "AssetKind": "All",
@@ -1632,10 +1632,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\5a8abad8-4858-45a7-b89e-2c926d4ccc67.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\5ee59b97-07d4-4f06-8193-2f8e9e7f78ee.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\5ee59b97-07d4-4f06-8193-2f8e9e7f78ee.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/5ee59b97-07d4-4f06-8193-2f8e9e7f78ee.jpg",
       "AssetKind": "All",
@@ -1651,10 +1651,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\5ee59b97-07d4-4f06-8193-2f8e9e7f78ee.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\6d2b30ac-6876-4e36-aa0d-002b7bb0c128.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\6d2b30ac-6876-4e36-aa0d-002b7bb0c128.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/6d2b30ac-6876-4e36-aa0d-002b7bb0c128.png",
       "AssetKind": "All",
@@ -1670,10 +1670,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\6d2b30ac-6876-4e36-aa0d-002b7bb0c128.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\6fd1c2e1-a2b7-4a49-8273-fb8a537b0972.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\6fd1c2e1-a2b7-4a49-8273-fb8a537b0972.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/6fd1c2e1-a2b7-4a49-8273-fb8a537b0972.jpg",
       "AssetKind": "All",
@@ -1689,10 +1689,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\6fd1c2e1-a2b7-4a49-8273-fb8a537b0972.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\702dbf47-d559-4dcc-ab50-d90d5768d838.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\702dbf47-d559-4dcc-ab50-d90d5768d838.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/702dbf47-d559-4dcc-ab50-d90d5768d838.jpg",
       "AssetKind": "All",
@@ -1708,10 +1708,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\702dbf47-d559-4dcc-ab50-d90d5768d838.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7197b2f4-3147-445f-9b1f-aa8a46e14613.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7197b2f4-3147-445f-9b1f-aa8a46e14613.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/7197b2f4-3147-445f-9b1f-aa8a46e14613.png",
       "AssetKind": "All",
@@ -1727,10 +1727,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\7197b2f4-3147-445f-9b1f-aa8a46e14613.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7bf292c2-a824-481d-93a5-8ccc2e2393d9.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7bf292c2-a824-481d-93a5-8ccc2e2393d9.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/7bf292c2-a824-481d-93a5-8ccc2e2393d9.png",
       "AssetKind": "All",
@@ -1746,10 +1746,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\7bf292c2-a824-481d-93a5-8ccc2e2393d9.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7e5fda5a-9151-4fca-a0eb-b7fb61e58de6.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7e5fda5a-9151-4fca-a0eb-b7fb61e58de6.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/7e5fda5a-9151-4fca-a0eb-b7fb61e58de6.jpg",
       "AssetKind": "All",
@@ -1765,10 +1765,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\7e5fda5a-9151-4fca-a0eb-b7fb61e58de6.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7ff6c4e0-9ccc-4ac3-8842-0616ad82d52f.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\7ff6c4e0-9ccc-4ac3-8842-0616ad82d52f.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/7ff6c4e0-9ccc-4ac3-8842-0616ad82d52f.png",
       "AssetKind": "All",
@@ -1784,10 +1784,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\7ff6c4e0-9ccc-4ac3-8842-0616ad82d52f.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\8302b47b-0fd9-4c24-9725-38d96b9f6aea.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\8302b47b-0fd9-4c24-9725-38d96b9f6aea.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/8302b47b-0fd9-4c24-9725-38d96b9f6aea.png",
       "AssetKind": "All",
@@ -1803,10 +1803,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\8302b47b-0fd9-4c24-9725-38d96b9f6aea.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\86931070-3564-41b8-8e65-f35dbc83aa71.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\86931070-3564-41b8-8e65-f35dbc83aa71.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/86931070-3564-41b8-8e65-f35dbc83aa71.jpg",
       "AssetKind": "All",
@@ -1822,10 +1822,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\86931070-3564-41b8-8e65-f35dbc83aa71.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\99cee4cb-6914-4622-922c-2415ad558bb4.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\99cee4cb-6914-4622-922c-2415ad558bb4.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/99cee4cb-6914-4622-922c-2415ad558bb4.png",
       "AssetKind": "All",
@@ -1841,10 +1841,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\99cee4cb-6914-4622-922c-2415ad558bb4.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\aa70eb9f-eeeb-4ef5-996f-43c089686d9a.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\aa70eb9f-eeeb-4ef5-996f-43c089686d9a.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/aa70eb9f-eeeb-4ef5-996f-43c089686d9a.jpg",
       "AssetKind": "All",
@@ -1860,10 +1860,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\aa70eb9f-eeeb-4ef5-996f-43c089686d9a.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\b0ef2ffd-2f30-4ab3-bc4b-95b0314e1116.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\b0ef2ffd-2f30-4ab3-bc4b-95b0314e1116.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/b0ef2ffd-2f30-4ab3-bc4b-95b0314e1116.jpg",
       "AssetKind": "All",
@@ -1879,10 +1879,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\b0ef2ffd-2f30-4ab3-bc4b-95b0314e1116.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\b66df2bf-28f5-4dc5-9b57-821d1b8d6e2e.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\b66df2bf-28f5-4dc5-9b57-821d1b8d6e2e.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/b66df2bf-28f5-4dc5-9b57-821d1b8d6e2e.jpg",
       "AssetKind": "All",
@@ -1898,10 +1898,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\b66df2bf-28f5-4dc5-9b57-821d1b8d6e2e.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\bus-buddy.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\bus-buddy.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/bus-buddy.png",
       "AssetKind": "All",
@@ -1917,10 +1917,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\bus-buddy.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\c4b19b5c-8f0d-415a-b553-4af71a14de10.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\c4b19b5c-8f0d-415a-b553-4af71a14de10.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/c4b19b5c-8f0d-415a-b553-4af71a14de10.png",
       "AssetKind": "All",
@@ -1936,10 +1936,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\c4b19b5c-8f0d-415a-b553-4af71a14de10.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\cca69d9b-e9d5-468c-b18e-d5c6a153355d.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\cca69d9b-e9d5-468c-b18e-d5c6a153355d.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/cca69d9b-e9d5-468c-b18e-d5c6a153355d.png",
       "AssetKind": "All",
@@ -1955,10 +1955,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\cca69d9b-e9d5-468c-b18e-d5c6a153355d.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\ceaa7a2b-0d5f-4bd0-befb-e1c6ca0feee8.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\ceaa7a2b-0d5f-4bd0-befb-e1c6ca0feee8.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/ceaa7a2b-0d5f-4bd0-befb-e1c6ca0feee8.jpg",
       "AssetKind": "All",
@@ -1974,10 +1974,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\ceaa7a2b-0d5f-4bd0-befb-e1c6ca0feee8.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\city-hopper.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\city-hopper.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/city-hopper.png",
       "AssetKind": "All",
@@ -1993,10 +1993,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\city-hopper.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\corporate-connect.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\corporate-connect.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/corporate-connect.png",
       "AssetKind": "All",
@@ -2012,10 +2012,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\corporate-connect.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\d5d1636c-d38c-4d37-9540-67381b3a5e14.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\d5d1636c-d38c-4d37-9540-67381b3a5e14.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/d5d1636c-d38c-4d37-9540-67381b3a5e14.png",
       "AssetKind": "All",
@@ -2031,10 +2031,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\d5d1636c-d38c-4d37-9540-67381b3a5e14.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\d5fca07f-567e-4286-ab81-b35f73e088b2.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\d5fca07f-567e-4286-ab81-b35f73e088b2.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/d5fca07f-567e-4286-ab81-b35f73e088b2.png",
       "AssetKind": "All",
@@ -2050,10 +2050,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\d5fca07f-567e-4286-ab81-b35f73e088b2.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\d7875d39-4a3f-488a-b9a4-6f178f2b6838.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\d7875d39-4a3f-488a-b9a4-6f178f2b6838.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/d7875d39-4a3f-488a-b9a4-6f178f2b6838.png",
       "AssetKind": "All",
@@ -2069,10 +2069,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\d7875d39-4a3f-488a-b9a4-6f178f2b6838.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\e2a56f0c-6c12-4670-b8e2-1b476c2eeebd.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\e2a56f0c-6c12-4670-b8e2-1b476c2eeebd.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/e2a56f0c-6c12-4670-b8e2-1b476c2eeebd.png",
       "AssetKind": "All",
@@ -2088,10 +2088,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\e2a56f0c-6c12-4670-b8e2-1b476c2eeebd.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\early-bird.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\early-bird.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/early-bird.png",
       "AssetKind": "All",
@@ -2107,10 +2107,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\early-bird.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\f2a1ff29-6638-46d7-8f1b-180ec1003308.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\f2a1ff29-6638-46d7-8f1b-180ec1003308.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/f2a1ff29-6638-46d7-8f1b-180ec1003308.jpg",
       "AssetKind": "All",
@@ -2126,10 +2126,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\f2a1ff29-6638-46d7-8f1b-180ec1003308.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\f75de015-7ece-4fbe-a133-c328a2222d8a.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\f75de015-7ece-4fbe-a133-c328a2222d8a.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/f75de015-7ece-4fbe-a133-c328a2222d8a.png",
       "AssetKind": "All",
@@ -2145,10 +2145,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\f75de015-7ece-4fbe-a133-c328a2222d8a.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\family-pack.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\family-pack.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/family-pack.png",
       "AssetKind": "All",
@@ -2164,10 +2164,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\family-pack.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\fb7c1cee-1b35-4717-a085-645757cbd973.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\fb7c1cee-1b35-4717-a085-645757cbd973.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/fb7c1cee-1b35-4717-a085-645757cbd973.jpg",
       "AssetKind": "All",
@@ -2183,10 +2183,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\fb7c1cee-1b35-4717-a085-645757cbd973.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\fc3a0459-69de-4832-986a-a041393f9a70.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\fc3a0459-69de-4832-986a-a041393f9a70.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/fc3a0459-69de-4832-986a-a041393f9a70.png",
       "AssetKind": "All",
@@ -2202,10 +2202,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\fc3a0459-69de-4832-986a-a041393f9a70.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\festive-joy.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\festive-joy.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/festive-joy.png",
       "AssetKind": "All",
@@ -2221,10 +2221,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\festive-joy.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\flight-special-deal.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\flight-special-deal.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/flight-special-deal.png",
       "AssetKind": "All",
@@ -2240,10 +2240,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\flight-special-deal.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\mega-miles.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\mega-miles.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/mega-miles.png",
       "AssetKind": "All",
@@ -2259,10 +2259,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\mega-miles.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\monsoon-express.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\monsoon-express.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/monsoon-express.png",
       "AssetKind": "All",
@@ -2278,10 +2278,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\monsoon-express.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\night-owl.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\night-owl.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/night-owl.png",
       "AssetKind": "All",
@@ -2297,10 +2297,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\night-owl.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\premium-escape.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\premium-escape.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/premium-escape.png",
       "AssetKind": "All",
@@ -2316,10 +2316,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\premium-escape.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\quick-fly.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\quick-fly.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/quick-fly.png",
       "AssetKind": "All",
@@ -2335,10 +2335,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\quick-fly.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\round-trip.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\round-trip.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/round-trip.png",
       "AssetKind": "All",
@@ -2354,10 +2354,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\round-trip.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\student-saver.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\student-saver.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/student-saver.png",
       "AssetKind": "All",
@@ -2373,10 +2373,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\student-saver.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\weekend-blast.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\offers\\weekend-blast.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "offers/weekend-blast.png",
       "AssetKind": "All",
@@ -2392,10 +2392,10 @@
       "OriginalItemSpec": "wwwroot\\offers\\weekend-blast.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\banners\\3d36087e15e94e09b4a5abcfa3afe3cc.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\banners\\3d36087e15e94e09b4a5abcfa3afe3cc.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "pages/banners/3d36087e15e94e09b4a5abcfa3afe3cc.jpg",
       "AssetKind": "All",
@@ -2411,10 +2411,10 @@
       "OriginalItemSpec": "wwwroot\\pages\\banners\\3d36087e15e94e09b4a5abcfa3afe3cc.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\banners\\7c7b83e97e534fe9a2c1b86705484e2b.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\banners\\7c7b83e97e534fe9a2c1b86705484e2b.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "pages/banners/7c7b83e97e534fe9a2c1b86705484e2b.png",
       "AssetKind": "All",
@@ -2430,10 +2430,10 @@
       "OriginalItemSpec": "wwwroot\\pages\\banners\\7c7b83e97e534fe9a2c1b86705484e2b.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\images\\4e2c75b8ddb24d2e8179ccf596ecf204.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\images\\4e2c75b8ddb24d2e8179ccf596ecf204.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "pages/images/4e2c75b8ddb24d2e8179ccf596ecf204.jpg",
       "AssetKind": "All",
@@ -2449,10 +2449,10 @@
       "OriginalItemSpec": "wwwroot\\pages\\images\\4e2c75b8ddb24d2e8179ccf596ecf204.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\images\\e8e83b3a795f4acfbb20ec3744812b8c.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pages\\images\\e8e83b3a795f4acfbb20ec3744812b8c.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "pages/images/e8e83b3a795f4acfbb20ec3744812b8c.jpg",
       "AssetKind": "All",
@@ -2468,10 +2468,10 @@
       "OriginalItemSpec": "wwwroot\\pages\\images\\e8e83b3a795f4acfbb20ec3744812b8c.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pick-n-book-logo.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\pick-n-book-logo.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "pick-n-book-logo.png",
       "AssetKind": "All",
@@ -2487,10 +2487,10 @@
       "OriginalItemSpec": "wwwroot\\pick-n-book-logo.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\picknbook-logo-live.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\picknbook-logo-live.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "picknbook-logo-live.png",
       "AssetKind": "All",
@@ -2506,10 +2506,10 @@
       "OriginalItemSpec": "wwwroot\\picknbook-logo-live.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\picknbook-logo-transparent.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\picknbook-logo-transparent.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "picknbook-logo-transparent.png",
       "AssetKind": "All",
@@ -2525,10 +2525,10 @@
       "OriginalItemSpec": "wwwroot\\picknbook-logo-transparent.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\picknbook-logo.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\picknbook-logo.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "picknbook-logo.png",
       "AssetKind": "All",
@@ -2544,10 +2544,10 @@
       "OriginalItemSpec": "wwwroot\\picknbook-logo.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\.gitkeep",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\.gitkeep",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/.gitkeep",
       "AssetKind": "All",
@@ -2563,10 +2563,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\.gitkeep"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\034e22e9-a6e7-4a54-93a2-717f1a60e99f.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\034e22e9-a6e7-4a54-93a2-717f1a60e99f.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/034e22e9-a6e7-4a54-93a2-717f1a60e99f.webp",
       "AssetKind": "All",
@@ -2582,10 +2582,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\034e22e9-a6e7-4a54-93a2-717f1a60e99f.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\05cb5cd4-ecfe-4579-ad76-c0f8b24248bd.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\05cb5cd4-ecfe-4579-ad76-c0f8b24248bd.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/05cb5cd4-ecfe-4579-ad76-c0f8b24248bd.webp",
       "AssetKind": "All",
@@ -2601,10 +2601,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\05cb5cd4-ecfe-4579-ad76-c0f8b24248bd.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\0e786fd2-e870-4b96-9c6e-c83f7564b99e.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\0e786fd2-e870-4b96-9c6e-c83f7564b99e.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/0e786fd2-e870-4b96-9c6e-c83f7564b99e.jpg",
       "AssetKind": "All",
@@ -2620,10 +2620,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\0e786fd2-e870-4b96-9c6e-c83f7564b99e.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\108ed06b-13be-445c-a641-9a7623e7ce8d.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\108ed06b-13be-445c-a641-9a7623e7ce8d.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/108ed06b-13be-445c-a641-9a7623e7ce8d.jpg",
       "AssetKind": "All",
@@ -2639,10 +2639,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\108ed06b-13be-445c-a641-9a7623e7ce8d.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\1c19eed6-9e7e-4efe-be37-b592a8598da8.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\1c19eed6-9e7e-4efe-be37-b592a8598da8.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/1c19eed6-9e7e-4efe-be37-b592a8598da8.jpg",
       "AssetKind": "All",
@@ -2658,10 +2658,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\1c19eed6-9e7e-4efe-be37-b592a8598da8.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\22a20a87-d6b7-4c13-8dc8-9aa6147960d9.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\22a20a87-d6b7-4c13-8dc8-9aa6147960d9.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/22a20a87-d6b7-4c13-8dc8-9aa6147960d9.png",
       "AssetKind": "All",
@@ -2677,10 +2677,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\22a20a87-d6b7-4c13-8dc8-9aa6147960d9.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\2677a204-21a8-4a99-9490-68862437b0c3.avif",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\2677a204-21a8-4a99-9490-68862437b0c3.avif",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/2677a204-21a8-4a99-9490-68862437b0c3.avif",
       "AssetKind": "All",
@@ -2696,10 +2696,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\2677a204-21a8-4a99-9490-68862437b0c3.avif"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\2e3c4ed7-0ccc-4904-9d2a-b3bdd0f5b1b4.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\2e3c4ed7-0ccc-4904-9d2a-b3bdd0f5b1b4.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/2e3c4ed7-0ccc-4904-9d2a-b3bdd0f5b1b4.jpg",
       "AssetKind": "All",
@@ -2715,10 +2715,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\2e3c4ed7-0ccc-4904-9d2a-b3bdd0f5b1b4.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\32009884-742c-4a54-baf9-b9c2da5101a5.avif",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\32009884-742c-4a54-baf9-b9c2da5101a5.avif",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/32009884-742c-4a54-baf9-b9c2da5101a5.avif",
       "AssetKind": "All",
@@ -2734,10 +2734,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\32009884-742c-4a54-baf9-b9c2da5101a5.avif"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\4d652daf-5d0a-458e-835c-3c9eed08a8e1.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\4d652daf-5d0a-458e-835c-3c9eed08a8e1.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/4d652daf-5d0a-458e-835c-3c9eed08a8e1.png",
       "AssetKind": "All",
@@ -2753,10 +2753,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\4d652daf-5d0a-458e-835c-3c9eed08a8e1.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\523faf2b-a1cf-431c-9503-7220f60d06b2.avif",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\523faf2b-a1cf-431c-9503-7220f60d06b2.avif",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/523faf2b-a1cf-431c-9503-7220f60d06b2.avif",
       "AssetKind": "All",
@@ -2772,10 +2772,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\523faf2b-a1cf-431c-9503-7220f60d06b2.avif"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\5aa2807c-ac91-4322-95dd-0229e25383e2.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\5aa2807c-ac91-4322-95dd-0229e25383e2.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/5aa2807c-ac91-4322-95dd-0229e25383e2.jpg",
       "AssetKind": "All",
@@ -2791,10 +2791,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\5aa2807c-ac91-4322-95dd-0229e25383e2.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\5cadb289-f0af-4bb6-8b2a-29968efaa0f7.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\5cadb289-f0af-4bb6-8b2a-29968efaa0f7.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/5cadb289-f0af-4bb6-8b2a-29968efaa0f7.jpg",
       "AssetKind": "All",
@@ -2810,10 +2810,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\5cadb289-f0af-4bb6-8b2a-29968efaa0f7.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\66d85c6f-c945-4fee-890b-18de16ee888d.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\66d85c6f-c945-4fee-890b-18de16ee888d.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/66d85c6f-c945-4fee-890b-18de16ee888d.webp",
       "AssetKind": "All",
@@ -2829,10 +2829,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\66d85c6f-c945-4fee-890b-18de16ee888d.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\67fa2506-4759-4259-8329-b3570f31bb9f.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\67fa2506-4759-4259-8329-b3570f31bb9f.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/67fa2506-4759-4259-8329-b3570f31bb9f.png",
       "AssetKind": "All",
@@ -2848,10 +2848,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\67fa2506-4759-4259-8329-b3570f31bb9f.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\6dfa0bff-1a11-410f-9ca4-f501c5e51fb0.avif",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\6dfa0bff-1a11-410f-9ca4-f501c5e51fb0.avif",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/6dfa0bff-1a11-410f-9ca4-f501c5e51fb0.avif",
       "AssetKind": "All",
@@ -2867,10 +2867,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\6dfa0bff-1a11-410f-9ca4-f501c5e51fb0.avif"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\6f3dca02-b0d5-43a9-9bdc-35142e1bdca6.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\6f3dca02-b0d5-43a9-9bdc-35142e1bdca6.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/6f3dca02-b0d5-43a9-9bdc-35142e1bdca6.png",
       "AssetKind": "All",
@@ -2886,10 +2886,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\6f3dca02-b0d5-43a9-9bdc-35142e1bdca6.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\6f3f4408-9b15-452e-bea6-41cae538e8e4.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\6f3f4408-9b15-452e-bea6-41cae538e8e4.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/6f3f4408-9b15-452e-bea6-41cae538e8e4.jpg",
       "AssetKind": "All",
@@ -2905,10 +2905,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\6f3f4408-9b15-452e-bea6-41cae538e8e4.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\7274a02f-47ec-4324-95dd-cfae3a3796bf.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\7274a02f-47ec-4324-95dd-cfae3a3796bf.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/7274a02f-47ec-4324-95dd-cfae3a3796bf.jpg",
       "AssetKind": "All",
@@ -2924,10 +2924,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\7274a02f-47ec-4324-95dd-cfae3a3796bf.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\8399370a-71c1-4673-ad57-f80ee3d0d81f.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\8399370a-71c1-4673-ad57-f80ee3d0d81f.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/8399370a-71c1-4673-ad57-f80ee3d0d81f.png",
       "AssetKind": "All",
@@ -2943,10 +2943,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\8399370a-71c1-4673-ad57-f80ee3d0d81f.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\87d8ba49-ce6b-4e84-b555-040a7640e540.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\87d8ba49-ce6b-4e84-b555-040a7640e540.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/87d8ba49-ce6b-4e84-b555-040a7640e540.jpg",
       "AssetKind": "All",
@@ -2962,10 +2962,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\87d8ba49-ce6b-4e84-b555-040a7640e540.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\94dbd8b3-eb9c-494c-bf23-51770b4c252b.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\94dbd8b3-eb9c-494c-bf23-51770b4c252b.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/94dbd8b3-eb9c-494c-bf23-51770b4c252b.webp",
       "AssetKind": "All",
@@ -2981,10 +2981,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\94dbd8b3-eb9c-494c-bf23-51770b4c252b.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\a7398f95-aaf5-43bb-837d-175714539812.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\a7398f95-aaf5-43bb-837d-175714539812.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/a7398f95-aaf5-43bb-837d-175714539812.jpg",
       "AssetKind": "All",
@@ -3000,10 +3000,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\a7398f95-aaf5-43bb-837d-175714539812.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\bdd99467-b76e-42b1-9fe0-dbdae45ea3c9.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\bdd99467-b76e-42b1-9fe0-dbdae45ea3c9.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/bdd99467-b76e-42b1-9fe0-dbdae45ea3c9.jpg",
       "AssetKind": "All",
@@ -3019,10 +3019,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\bdd99467-b76e-42b1-9fe0-dbdae45ea3c9.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\bf32119d-0188-4dc3-bf2c-bb9d4315ccf9.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\bf32119d-0188-4dc3-bf2c-bb9d4315ccf9.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/bf32119d-0188-4dc3-bf2c-bb9d4315ccf9.jpg",
       "AssetKind": "All",
@@ -3038,10 +3038,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\bf32119d-0188-4dc3-bf2c-bb9d4315ccf9.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\cade4cc1-dd3e-4313-8d1d-29d3a2cec0c4.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\cade4cc1-dd3e-4313-8d1d-29d3a2cec0c4.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/cade4cc1-dd3e-4313-8d1d-29d3a2cec0c4.webp",
       "AssetKind": "All",
@@ -3057,10 +3057,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\cade4cc1-dd3e-4313-8d1d-29d3a2cec0c4.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\ce7b981d-89e6-49f1-b0bd-fe196122126f.avif",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\ce7b981d-89e6-49f1-b0bd-fe196122126f.avif",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/ce7b981d-89e6-49f1-b0bd-fe196122126f.avif",
       "AssetKind": "All",
@@ -3076,10 +3076,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\ce7b981d-89e6-49f1-b0bd-fe196122126f.avif"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d069bb2c-008c-433e-a0f8-c6cacfda23da.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d069bb2c-008c-433e-a0f8-c6cacfda23da.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/d069bb2c-008c-433e-a0f8-c6cacfda23da.jpg",
       "AssetKind": "All",
@@ -3095,10 +3095,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\d069bb2c-008c-433e-a0f8-c6cacfda23da.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d2b3260a-e246-40e7-921f-9141e5d39eb4.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d2b3260a-e246-40e7-921f-9141e5d39eb4.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/d2b3260a-e246-40e7-921f-9141e5d39eb4.webp",
       "AssetKind": "All",
@@ -3114,10 +3114,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\d2b3260a-e246-40e7-921f-9141e5d39eb4.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d87ac5ee-791e-4a05-8625-745b94efeaa4.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d87ac5ee-791e-4a05-8625-745b94efeaa4.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/d87ac5ee-791e-4a05-8625-745b94efeaa4.webp",
       "AssetKind": "All",
@@ -3133,10 +3133,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\d87ac5ee-791e-4a05-8625-745b94efeaa4.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d9fd6357-839b-4a87-b215-0b77bc181bf5.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\d9fd6357-839b-4a87-b215-0b77bc181bf5.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/d9fd6357-839b-4a87-b215-0b77bc181bf5.jpg",
       "AssetKind": "All",
@@ -3152,10 +3152,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\d9fd6357-839b-4a87-b215-0b77bc181bf5.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\dce0df2f-25fc-46f2-b644-3bc6f8c2042e.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\dce0df2f-25fc-46f2-b644-3bc6f8c2042e.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/dce0df2f-25fc-46f2-b644-3bc6f8c2042e.jpg",
       "AssetKind": "All",
@@ -3171,10 +3171,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\dce0df2f-25fc-46f2-b644-3bc6f8c2042e.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\de57ea7a-437f-4d8d-b42a-b6607dd34ded.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\de57ea7a-437f-4d8d-b42a-b6607dd34ded.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/de57ea7a-437f-4d8d-b42a-b6607dd34ded.png",
       "AssetKind": "All",
@@ -3190,10 +3190,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\de57ea7a-437f-4d8d-b42a-b6607dd34ded.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\e46b1b29-7718-4ef7-92f9-3f5438d05d46.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\e46b1b29-7718-4ef7-92f9-3f5438d05d46.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/e46b1b29-7718-4ef7-92f9-3f5438d05d46.webp",
       "AssetKind": "All",
@@ -3209,10 +3209,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\e46b1b29-7718-4ef7-92f9-3f5438d05d46.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\e54f35f0-19db-45a6-8e5e-0dccac338e59.png",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\e54f35f0-19db-45a6-8e5e-0dccac338e59.png",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/e54f35f0-19db-45a6-8e5e-0dccac338e59.png",
       "AssetKind": "All",
@@ -3228,10 +3228,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\e54f35f0-19db-45a6-8e5e-0dccac338e59.png"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\f319d2fc-2328-476c-b3d3-1f740b60b345.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\f319d2fc-2328-476c-b3d3-1f740b60b345.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/f319d2fc-2328-476c-b3d3-1f740b60b345.webp",
       "AssetKind": "All",
@@ -3247,10 +3247,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\f319d2fc-2328-476c-b3d3-1f740b60b345.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\f9baac9f-6176-4482-b8ed-9d184052bfa4.webp",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\profile-images\\f9baac9f-6176-4482-b8ed-9d184052bfa4.webp",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "profile-images/f9baac9f-6176-4482-b8ed-9d184052bfa4.webp",
       "AssetKind": "All",
@@ -3266,10 +3266,10 @@
       "OriginalItemSpec": "wwwroot\\profile-images\\f9baac9f-6176-4482-b8ed-9d184052bfa4.webp"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\promotions\\ae35c6edfa1e43a1b3fede3c845eea58.jpeg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\promotions\\ae35c6edfa1e43a1b3fede3c845eea58.jpeg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "uploads/promotions/ae35c6edfa1e43a1b3fede3c845eea58.jpeg",
       "AssetKind": "All",
@@ -3285,10 +3285,10 @@
       "OriginalItemSpec": "wwwroot\\uploads\\promotions\\ae35c6edfa1e43a1b3fede3c845eea58.jpeg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\promotions\\e05f53d02bda4883baafe30e4c622a3e.jpeg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\promotions\\e05f53d02bda4883baafe30e4c622a3e.jpeg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "uploads/promotions/e05f53d02bda4883baafe30e4c622a3e.jpeg",
       "AssetKind": "All",
@@ -3304,10 +3304,10 @@
       "OriginalItemSpec": "wwwroot\\uploads\\promotions\\e05f53d02bda4883baafe30e4c622a3e.jpeg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\promotions\\f9463cdbd48e406b8444f0f59b48c07a.jpeg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\promotions\\f9463cdbd48e406b8444f0f59b48c07a.jpeg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "uploads/promotions/f9463cdbd48e406b8444f0f59b48c07a.jpeg",
       "AssetKind": "All",
@@ -3323,10 +3323,10 @@
       "OriginalItemSpec": "wwwroot\\uploads\\promotions\\f9463cdbd48e406b8444f0f59b48c07a.jpeg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\testimonials\\05f99d19e7924445bac51e33cf06cf58.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\testimonials\\05f99d19e7924445bac51e33cf06cf58.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "uploads/testimonials/05f99d19e7924445bac51e33cf06cf58.jpg",
       "AssetKind": "All",
@@ -3342,10 +3342,10 @@
       "OriginalItemSpec": "wwwroot\\uploads\\testimonials\\05f99d19e7924445bac51e33cf06cf58.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\testimonials\\595d0203aa7a42fb9e35bac68dafe100.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\testimonials\\595d0203aa7a42fb9e35bac68dafe100.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "uploads/testimonials/595d0203aa7a42fb9e35bac68dafe100.jpg",
       "AssetKind": "All",
@@ -3361,10 +3361,10 @@
       "OriginalItemSpec": "wwwroot\\uploads\\testimonials\\595d0203aa7a42fb9e35bac68dafe100.jpg"
     },
     {
-      "Identity": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\testimonials\\b498cd84213b42ab8f4c3e9190db2c6c.jpg",
+      "Identity": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\uploads\\testimonials\\b498cd84213b42ab8f4c3e9190db2c6c.jpg",
       "SourceId": "PickNBook.Api",
       "SourceType": "Discovered",
-      "ContentRoot": "C:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
+      "ContentRoot": "c:\\Users\\ADMIN\\Desktop\\Cloud\\PicknBook\\backend\\PickNBook.Api\\wwwroot\\",
       "BasePath": "_content/PickNBook.Api",
       "RelativePath": "uploads/testimonials/b498cd84213b42ab8f4c3e9190db2c6c.jpg",
       "AssetKind": "All",

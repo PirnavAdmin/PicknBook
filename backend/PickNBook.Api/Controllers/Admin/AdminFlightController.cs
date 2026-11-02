@@ -10,6 +10,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using PickNBook.Api.Helpers;
 using PickNBook.Api.Models.Entities;
+using PickNBook.Api.Models.Payments;
 using PickNBook.Api.Extensions;
 using System.IO;
 
@@ -748,6 +749,26 @@ namespace PickNBook.Api.Controllers
                 .GroupBy(c => c.BookingReference)
                 .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
+            var bookingIds = rows
+                .Select(x => x.FlightReservation?.Id)
+                .Where(id => id.HasValue)
+                .Select(id => id!.Value)
+                .Distinct()
+                .ToList();
+
+            var payments = bookingIds.Count > 0
+                ? await dbContext.Payments
+                    .AsNoTracking()
+                    .Where(p => p.BookingType == "Flight" && p.BookingId.HasValue && bookingIds.Contains(p.BookingId.Value))
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync()
+                : new List<Payment>();
+
+            var paymentLookup = payments
+                .Where(p => p.BookingId.HasValue)
+                .GroupBy(p => p.BookingId!.Value)
+                .ToDictionary(g => g.Key, g => g.First());
+
             var response = rows
                 .Where(x => x.FlightReservation != null)
                 .Select(x =>
@@ -755,10 +776,58 @@ namespace PickNBook.Api.Controllers
                     var booking = x.FlightReservation!;
 
                     cancellationLookup.TryGetValue(booking.BookingReference, out var cancellation);
+                    paymentLookup.TryGetValue(booking.Id, out var payment);
+
+                    // Prefer active refund status from cancellation or payment
+                    var rawRefundStatus = !string.IsNullOrWhiteSpace(cancellation?.RefundStatus) && !cancellation.RefundStatus.Equals("NOT_REQUIRED", StringComparison.OrdinalIgnoreCase)
+                        ? cancellation.RefundStatus
+                        : (!string.IsNullOrWhiteSpace(payment?.RefundStatus) && !payment.RefundStatus.Equals("NotRequired", StringComparison.OrdinalIgnoreCase)
+                            ? payment.RefundStatus
+                            : (cancellation?.RefundStatus ?? x.CustomerRefundStatus));
+
                     var resolvedRefundStatus = CancellationStatusMapper.ResolveRefundStatus(
-                        cancellation?.RefundStatus ?? x.CustomerRefundStatus,
+                        rawRefundStatus,
                         cancellation?.Status ?? x.CancellationStatus,
                         x.CustomerRefundAmountInr);
+
+                    var adminRefundStatus = !string.IsNullOrWhiteSpace(x.AdminRefundStatus)
+                        ? x.AdminRefundStatus
+                        : "Pending";
+
+                    decimal totalFare = booking.CustomerFareInr > 0 ? booking.CustomerFareInr : booking.TotalPriceInr;
+                    decimal offeredFare = booking.NetFareInr > 0 ? booking.NetFareInr : (booking.SupplierTotalFare > 0 ? booking.SupplierTotalFare : totalFare);
+
+                    // Airlines cancellation charges: prefer actual supplier cancellation charge from cancellation record
+                    decimal airlineCancellationCharges = cancellation != null && cancellation.SupplierCancellationCharge > 0
+                        ? cancellation.SupplierCancellationCharge
+                        : x.AdminCancellationChargeInr;
+
+                    // Service charge
+                    decimal adminServiceCharge = cancellation != null ? 0m : x.AdminServiceChargeInr;
+                    decimal totalCancellationAndService = airlineCancellationCharges + adminServiceCharge;
+
+                    // admin refund amount = offered fare - airlines cancellation charges
+                    decimal adminRefund = (airlineCancellationCharges > 0 || cancellation != null)
+                        ? Math.Max(0m, offeredFare - airlineCancellationCharges)
+                        : (x.AdminRefundAmountInr > 0 ? x.AdminRefundAmountInr : 0m);
+
+                    decimal customerRefund = x.CustomerRefundAmountInr;
+
+                    // calculatedProfit = (offered fare - (Cancellation charges all including service charge )) - Customer Refund
+                    decimal profit;
+                    if (airlineCancellationCharges > 0 || customerRefund > 0 || adminRefund > 0)
+                    {
+                        profit = (offeredFare - totalCancellationAndService) - customerRefund;
+                    }
+                    else
+                    {
+                        profit = totalFare - offeredFare;
+                    }
+
+                    // Cancellation status is "Pending" for active cancellation requests awaiting fulfillment / on-hold refund
+                    var displayCancellationStatus = string.Equals(x.CancellationStatus, "Rejected", StringComparison.OrdinalIgnoreCase)
+                        ? "Rejected"
+                        : "Pending";
 
                     return new AdminFlightCancellationRequestDto
                     {
@@ -771,24 +840,42 @@ namespace PickNBook.Api.Controllers
                         Customer = booking.PassengerName,
                         CustomerPhone = booking.PassengerPhone,
                         CustomerEmail = booking.PassengerEmail,
-                        Status = x.CancellationStatus,
-                        CustomerRefundAmountInr = x.CustomerRefundAmountInr,
-                        AdminRefundAmountInr = x.AdminRefundAmountInr,
+                        Status = displayCancellationStatus,
+                        CustomerRefundStatus = resolvedRefundStatus,
+                        AdminRefundStatus = adminRefundStatus,
+                        TotalPriceInr = totalFare,
+                        TotalFare = totalFare,
+                        Fare = totalFare,
+                        NetFareInr = offeredFare,
+                        Profit = profit,
+                        CalculatedProfit = profit,
+                        CustomerRefundAmountInr = customerRefund,
+                        AdminRefundAmountInr = adminRefund,
+                        CustomerCancellationChargeInr = x.CustomerCancellationChargeInr,
+                        CustomerServiceChargeInr = x.CustomerServiceChargeInr,
+                        AdminServiceChargeInr = adminServiceCharge,
                         Remark = x.AdminRemark,
                         CancellationPolicyJson = booking.CancellationPolicyJson,
                         FareRulesJson = booking.FareRulesJson,
                         NonRefundable = booking.NonRefundable,
+                        DepartureTimeUtc = booking.DepartureTime,
+                        JourneyDate = booking.DepartureTime.ToString("yyyy-MM-dd"),
+                        JourneyDateIst = IndiaTimeHelper.FormatIst(booking.DepartureTime, "yyyy-MM-dd"),
+                        ProviderName = booking.Airline,
+                        TravelClass = booking.TravelClass,
                         Details = new AdminFlightCancellationDetailsDto
                         {
-                            CancellationStatus = x.CancellationStatus,
+                            CancellationStatus = displayCancellationStatus,
                             CustomerRefundStatus = resolvedRefundStatus,
-                            AdminRefundStatus = resolvedRefundStatus,
-                            CustomerRefundAmountInr = x.CustomerRefundAmountInr,
+                            AdminRefundStatus = adminRefundStatus,
+                            TotalFare = totalFare,
+                            NetFare = offeredFare,
+                            CalculatedProfit = profit,
+                            CustomerRefundAmountInr = customerRefund,
                             CustomerCancellationChargeInr = x.CustomerCancellationChargeInr,
                             CustomerServiceChargeInr = x.CustomerServiceChargeInr,
-                            AdminRefundAmountInr = x.AdminRefundAmountInr,
-                            AdminCancellationChargeInr = x.AdminCancellationChargeInr,
-                            AdminServiceChargeInr = x.AdminServiceChargeInr,
+                            AdminRefundAmountInr = adminRefund,
+                            AdminServiceChargeInr = adminServiceCharge,
                             SupplierRemark = x.SupplierRemark,
                             CustomerRemark = x.CustomerRemark,
                             AdminRemark = x.AdminRemark
@@ -887,9 +974,11 @@ namespace PickNBook.Api.Controllers
             row.CustomerRemark = request.CustomerRemark;
             row.AdminRemark = request.AdminRemark;
 
-            // When admin approves and marks cancellation status "Completed", route refund
+            // When admin approves and marks cancellation status "Completed", "Approved", "Success", or "Cancelled", route refund
             if (string.Equals(row.CancellationStatus, "Completed", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(row.CancellationStatus, "Approved", StringComparison.OrdinalIgnoreCase))
+                string.Equals(row.CancellationStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(row.CancellationStatus, "Success", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(row.CancellationStatus, "Cancelled", StringComparison.OrdinalIgnoreCase))
             {
                 var reservation = await dbContext.FlightReservations.FirstOrDefaultAsync(r => r.Id == row.FlightReservationId);
                 if (reservation != null)
@@ -904,7 +993,7 @@ namespace PickNBook.Api.Controllers
                         !string.Equals(row.CustomerRefundStatus, "Refunded", StringComparison.OrdinalIgnoreCase) &&
                         int.TryParse(reservation.UserId, out int uId))
                     {
-                        var payment = await dbContext.Payments.FirstOrDefaultAsync(p => p.UserId == reservation.UserId && p.BookingReferenceId == reservation.Id && p.BookingType == "Flight");
+                        var payment = await dbContext.Payments.FirstOrDefaultAsync(p => (p.UserId == reservation.UserId || p.CustomerPhone == reservation.PassengerPhone) && (p.BookingReferenceId == reservation.Id || p.BookingId == reservation.Id || p.PaymentReference == reservation.BookingReference) && p.BookingType == "Flight");
                         var routeRes = await refundRouter.RouteAsync(new PickNBook.Api.Services.Interfaces.RefundRouteContext
                         {
                             UserId = uId,
@@ -933,6 +1022,7 @@ namespace PickNBook.Api.Controllers
                         bookingCancellation.CustomerRefundAmount = row.CustomerRefundAmountInr;
                         bookingCancellation.SupplierCancellationCharge = row.AdminCancellationChargeInr;
                         bookingCancellation.RefundStatus = row.CustomerRefundStatus;
+                        bookingCancellation.CompletedAtUtc = DateTime.UtcNow;
                     }
                 }
             }
@@ -1410,6 +1500,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpGet("popular-destinations")]
+        [HttpGet("popular-routes")]
         public async Task<IActionResult> GetPopularDestinations()
         {
             var rows = await dbContext.PopularDestinations
@@ -1421,6 +1512,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpPost("popular-destinations")]
+        [HttpPost("popular-routes")]
         public async Task<IActionResult> CreatePopularDestination([FromBody] PopularDestinationRequestDto request)
         {
             var error = ValidatePopularDestinationRequest(request);
@@ -1448,6 +1540,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpGet("popular-destinations/{id:int}")]
+        [HttpGet("popular-routes/{id:int}")]
         public async Task<IActionResult> GetPopularDestinationById(int id)
         {
             var row = await dbContext.PopularDestinations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
@@ -1460,6 +1553,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpPut("popular-destinations/{id:int}")]
+        [HttpPut("popular-routes/{id:int}")]
         public async Task<IActionResult> UpdatePopularDestination(int id, [FromBody] PopularDestinationRequestDto request)
         {
             var error = ValidatePopularDestinationRequest(request);
@@ -1487,6 +1581,7 @@ namespace PickNBook.Api.Controllers
         }
 
         [HttpDelete("popular-destinations/{id:int}")]
+        [HttpDelete("popular-routes/{id:int}")]
         public async Task<IActionResult> DeletePopularDestination(int id)
         {
             var row = await dbContext.PopularDestinations.FirstOrDefaultAsync(x => x.Id == id);

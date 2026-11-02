@@ -228,7 +228,21 @@ export function RefundStatusBadge({ status, refundAmount = 0, cancellationStatus
     letterSpacing: "0.02em",
   };
 
-  if (lower.includes("pending") || cancelLower.includes("pending") || (!lower && !cancelLower)) {
+  if (lower.includes("hold")) {
+    badgeStyle = {
+      ...badgeStyle,
+      backgroundColor: "#fef3c7",
+      color: "#b45309",
+      border: "1px solid #fde68a",
+    };
+    return (
+      <span style={badgeStyle} title="Refund is placed ON HOLD (e.g. gateway merchant balance shortfall)">
+        <AlertTriangle size={11} /> On Hold
+      </span>
+    );
+  }
+
+  if (lower.includes("pending") || (!lower && cancelLower.includes("pending")) || (!lower && !cancelLower)) {
     badgeStyle = {
       ...badgeStyle,
       backgroundColor: "#fff7ed",

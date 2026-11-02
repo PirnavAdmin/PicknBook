@@ -1386,6 +1386,29 @@ namespace PickNBook.Api.Controllers.Public
                         if (itinerary.TryGetProperty("PartialSegmentCancellation", out var pscNode))
                             partialSegmentCancellation = pscNode.ToString();
 
+                        if (string.IsNullOrWhiteSpace(fareRulesJson) || string.IsNullOrWhiteSpace(cancellationCharges))
+                        {
+                            try
+                            {
+                                if (long.TryParse(request.TraceId, out var traceIdNum) && !string.IsNullOrWhiteSpace(request.ResultIndex))
+                                {
+                                    var frRaw = await _srdvFlightService.GetFareRuleRawAsync(new AirFareRuleRequestDto
+                                    {
+                                        TraceId = traceIdNum,
+                                        ResultIndex = request.ResultIndex
+                                    });
+                                    if (!string.IsNullOrWhiteSpace(frRaw) && frRaw.TrimStart().StartsWith("{"))
+                                    {
+                                        fareRulesJson = frRaw;
+                                    }
+                                }
+                            }
+                            catch (Exception frEx)
+                            {
+                                _logger.LogWarning(frEx, "Failed to dynamically fetch FareRule during TicketLCC for TraceId {TraceId}", request.TraceId);
+                            }
+                        }
+
                         if (itinerary.TryGetProperty("Fare", out var fare))
                         {
                             totalFare = fare.TryGetProperty("PublishedFare", out var pubFare) && pubFare.ValueKind == JsonValueKind.Number ? pubFare.GetDecimal() : 0;
@@ -2006,6 +2029,28 @@ namespace PickNBook.Api.Controllers.Public
                             else if (itinerary.TryGetProperty("MiniFareRules", out var itMfr))
                                 fareRulesJson = itMfr.ToString();
                         }
+                        if (string.IsNullOrWhiteSpace(fareRulesJson) || string.IsNullOrWhiteSpace(cancellationCharges))
+                        {
+                            try
+                            {
+                                if (long.TryParse(request.TraceId, out var traceIdNum) && !string.IsNullOrWhiteSpace(request.ResultIndex))
+                                {
+                                    var frRaw = await _srdvFlightService.GetFareRuleRawAsync(new AirFareRuleRequestDto
+                                    {
+                                        TraceId = traceIdNum,
+                                        ResultIndex = request.ResultIndex
+                                    });
+                                    if (!string.IsNullOrWhiteSpace(frRaw) && frRaw.TrimStart().StartsWith("{"))
+                                    {
+                                        fareRulesJson = frRaw;
+                                    }
+                                }
+                            }
+                            catch (Exception frEx)
+                            {
+                                _logger.LogWarning(frEx, "Failed to dynamically fetch FareRule during HoldGDS for TraceId {TraceId}", request.TraceId);
+                            }
+                        }
                         if (itinerary.TryGetProperty("Fare", out var fare))
                         {
                             totalFare = fare.TryGetProperty("PublishedFare", out var pubFare) && pubFare.ValueKind == JsonValueKind.Number ? pubFare.GetDecimal() : 0;
@@ -2584,6 +2629,28 @@ namespace PickNBook.Api.Controllers.Public
                                 fareRulesJson = itFr2.ToString();
                             else if (itinerary.TryGetProperty("MiniFareRules", out var itMfr2))
                                 fareRulesJson = itMfr2.ToString();
+                        }
+                        if (string.IsNullOrWhiteSpace(fareRulesJson) || string.IsNullOrWhiteSpace(cancellationCharges))
+                        {
+                            try
+                            {
+                                if (long.TryParse(request.TraceId, out var traceIdNum) && !string.IsNullOrWhiteSpace(request.ResultIndex))
+                                {
+                                    var frRaw = await _srdvFlightService.GetFareRuleRawAsync(new AirFareRuleRequestDto
+                                    {
+                                        TraceId = traceIdNum,
+                                        ResultIndex = request.ResultIndex
+                                    });
+                                    if (!string.IsNullOrWhiteSpace(frRaw) && frRaw.TrimStart().StartsWith("{"))
+                                    {
+                                        fareRulesJson = frRaw;
+                                    }
+                                }
+                            }
+                            catch (Exception frEx)
+                            {
+                                _logger.LogWarning(frEx, "Failed to dynamically fetch FareRule during TicketGDS for TraceId {TraceId}", request.TraceId);
+                            }
                         }
                         if (itinerary.TryGetProperty("Fare", out var fare))
                         {
@@ -4559,6 +4626,68 @@ namespace PickNBook.Api.Controllers.Public
                 }
             }
             return null;
+        }
+
+        [HttpGet("/api/flight/popular-routes")]
+        [HttpGet("/api/flight/popular-destinations")]
+        [HttpGet("popular-routes")]
+        [HttpGet("popular-destinations")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPopularRoutes()
+        {
+            var rows = await _dbContext.PopularDestinations
+                .AsNoTracking()
+                .Where(x => x.Status == "Active")
+                .OrderByDescending(x => x.EntryDateUtc)
+                .ToListAsync();
+
+            var response = rows.Select(x =>
+            {
+                string fromCity = "";
+                string toCity = "";
+                string fromAirportCode = "";
+                string toAirportCode = "";
+
+                if (!string.IsNullOrWhiteSpace(x.Title))
+                {
+                    var parts = x.Title.Split(new[] { " to ", " - ", " -> ", "-" }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        fromCity = parts[0].Trim();
+                        toCity = parts[1].Trim();
+                    }
+                    else
+                    {
+                        fromCity = x.Title.Trim();
+                        toCity = x.SubTitle?.Trim() ?? "";
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(x.SubTitle) && string.IsNullOrWhiteSpace(toCity))
+                {
+                    toCity = x.SubTitle.Trim();
+                }
+
+                return new
+                {
+                    id = x.Id,
+                    title = x.Title,
+                    subTitle = x.SubTitle,
+                    fromCity = !string.IsNullOrWhiteSpace(fromCity) ? fromCity : x.Title,
+                    toCity = !string.IsNullOrWhiteSpace(toCity) ? toCity : x.SubTitle,
+                    fromAirportCode = fromAirportCode,
+                    toAirportCode = toAirportCode,
+                    image = x.ImageUrl,
+                    imageUrl = x.ImageUrl,
+                    category = x.Category,
+                    placement = x.Placement,
+                    url = x.Url,
+                    status = x.Status,
+                    entryDateUtc = x.EntryDateUtc
+                };
+            }).ToList();
+
+            return Ok(response);
         }
     }
 }

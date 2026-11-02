@@ -5,6 +5,7 @@ using PickNBook.Api.Models;
 using PickNBook.Api.Models.Entities;
 using PickNBook.Api.Models.Payments;
 using PickNBook.Api.Services;
+using PickNBook.Api.Helpers;
 using System.Security.Claims;
 
 namespace PickNBook.Api.Controllers;
@@ -149,7 +150,11 @@ public class DashboardController : AdminApiController
         var cancelledGrowth = 0m;
 
         // Refunds
-        var refundRequests = await _context.Payments.CountAsync(p => p.RefundStatus == "PENDING");
+        var refundRequests = await _context.Payments.CountAsync(p =>
+            p.RefundStatus == "PENDING" ||
+            p.RefundStatus == "REFUND_REQUESTED" ||
+            p.RefundStatus == "RefundProcessing" ||
+            p.RefundStatus == "AwaitingSupplierRefund");
         var refundsGrowth = 0m;
 
         // Today's Status & Day-over-Day
@@ -239,11 +244,12 @@ public class DashboardController : AdminApiController
 
         foreach (var p in recentPayments)
         {
+            var pDateUtc = DateTime.SpecifyKind(p.CreatedAt, DateTimeKind.Utc);
             recentActs.Add(new DashboardActivityItem(
                 $"pay-{p.Id}",
                 "payment",
                 $"Payment {p.Status} for {p.FinalPayableAmount} INR",
-                p.CreatedAt));
+                pDateUtc));
         }
 
         var recentUsers = await _context.Users
@@ -254,22 +260,30 @@ public class DashboardController : AdminApiController
 
         foreach (var u in recentUsers)
         {
+            var uDateUtc = DateTime.SpecifyKind(u.CreatedAt, DateTimeKind.Utc);
             recentActs.Add(new DashboardActivityItem(
                 $"user-{u.Id}",
                 "user",
                 $"New user signup: {u.Email}",
-                u.CreatedAt));
+                uDateUtc));
         }
 
         var sortedActivities = recentActs
             .OrderByDescending(x => x.OccurredAtUtc)
             .Take(10)
-            .Select(x => new
+            .Select(x =>
             {
-                id = x.Id,
-                type = x.Type,
-                message = x.Message,
-                occurredAtUtc = x.OccurredAtUtc
+                var ist = IndiaTimeHelper.ToIst(x.OccurredAtUtc);
+                return new
+                {
+                    id = x.Id,
+                    type = x.Type,
+                    message = x.Message,
+                    occurredAtUtc = x.OccurredAtUtc,
+                    occurredAtIst = $"{ist:yyyy-MM-ddTHH:mm:ss}+05:30",
+                    occurredAt = $"{ist:yyyy-MM-ddTHH:mm:ss}+05:30",
+                    timeAgo = IndiaTimeHelper.FormatIst(x.OccurredAtUtc, "hh:mm tt, dd MMM")
+                };
             })
             .ToList();
 
@@ -370,10 +384,16 @@ public class DashboardController : AdminApiController
                 flightProfit = Math.Round(totalFlightProfit, 2, MidpointRounding.AwayFromZero),
                 hotelProfit = Math.Round(totalHotelProfit, 2, MidpointRounding.AwayFromZero),
                 totalBookings,
+                flightBookings = flightReservations.Count,
+                busBookings = busReservations.Count,
+                hotelBookings = hotelReservations.Count,
                 bookingsGrowthPercent = bookingsGrowth,
                 totalUsers,
                 usersGrowthPercent = usersGrowth,
                 activeBookings,
+                activeFlightBookings = activeFlights,
+                activeBusBookings = activeBuses,
+                activeHotelBookings = activeHotels,
                 activeBookingsGrowthPercent = activeBookingsGrowth,
                 cancelledBookings,
                 cancelledBookingsGrowthPercent = cancelledGrowth,
