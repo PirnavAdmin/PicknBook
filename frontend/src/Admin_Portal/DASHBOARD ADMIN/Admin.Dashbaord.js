@@ -13,6 +13,7 @@ import {
   deriveAdminMetrics,
   getAdminDashboardRecentActivity,
   getAdminDashboardRevenueOverview,
+  extractTopHotels,
 } from '../../services/adminDashboardService';
 import { getStoredValue, setStoredValue } from '../../utils/adminPortalStorage';
 import { translateCityCode } from '../../utils/adminPortalUtils';
@@ -237,6 +238,8 @@ const AdminDashboard = () => {
 
   const [topHotels, setTopHotels] = useState([]);
   const [hotelsPage, setHotelsPage] = useState(0);
+  const [isLoadingHotels, setIsLoadingHotels] = useState(true);
+  const [hotelsError, setHotelsError] = useState(null);
 
   const [topAgencies, setTopAgencies] = useState([]);
   const [agenciesPage, setAgenciesPage] = useState(0);
@@ -413,13 +416,16 @@ const AdminDashboard = () => {
     return () => { active = false; };
   }, []);
 
-  const fetchB2cDashboardData = async () => {
+  const fetchB2cDashboardData = async (options = {}) => {
     const fetchStartTime = Date.now();
     setIsLoadingMetrics(true);
     setIsLoadingFlights(true);
     setIsLoadingBuses(true);
+    setIsLoadingHotels(true);
+    setHotelsError(null);
+    setHotelsPage(0);
     try {
-      const summaryResult = await getAdminDashboardSummary();
+      const summaryResult = await getAdminDashboardSummary(options);
       const metricsResult = deriveAdminMetrics(summaryResult);
       setIsLoadingMetrics(false);
 
@@ -557,46 +563,40 @@ const AdminDashboard = () => {
         }
       }
 
-      if (summaryResult?.topHotels && Array.isArray(summaryResult.topHotels) && summaryResult.topHotels.length > 0) {
-        const top5 = summaryResult.topHotels.slice(0, 5);
-        const maxVal = Math.max(...top5.map(h => h.bookingCount || h.count || 1), 1);
-        setTopHotels(top5.map(h => ({
-          name: h.hotelName || h.name || 'Hotel',
-          count: h.bookingCount || h.count || 0,
-          width: Math.max(10, Math.min(100, ((h.bookingCount || h.count || 1) / maxVal) * 100))
-        })));
-      } else {
-        try {
-          const hotelBookings = getStoredValue('hotel-bookings', []) || getStoredValue('hotelBookings', []) || getStoredValue('hotel_bookings', []);
-          if (Array.isArray(hotelBookings) && hotelBookings.length > 0) {
-            const hotelMap = {};
-            hotelBookings.forEach(b => {
-              const hName = b.hotelName || b.name || b.hotel_name || 'Taj Mahal Palace';
-              hotelMap[hName] = (hotelMap[hName] || 0) + 1;
-            });
-            const maxVal = Math.max(...Object.values(hotelMap), 1);
-            const topList = Object.entries(hotelMap).map(([name, count]) => ({
-              name,
-              count,
-              width: Math.max(10, Math.min(100, (count / maxVal) * 100))
-            })).sort((a, b) => b.count - a.count).slice(0, 5);
-            setTopHotels(topList);
-          } else {
-            setTopHotels([
-              { name: 'Taj Mahal Palace', count: 0, width: 10 },
-              { name: 'The Leela Palace', count: 0, width: 10 },
-              { name: 'ITC Grand Chola', count: 0, width: 10 },
-              { name: 'Oberoi Trident', count: 0, width: 10 }
-            ]);
-          }
-        } catch (e) {
-          setTopHotels([
-            { name: 'Taj Mahal Palace', count: 0, width: 10 },
-            { name: 'The Leela Palace', count: 0, width: 10 },
-            { name: 'ITC Grand Chola', count: 0, width: 10 },
-            { name: 'Oberoi Trident', count: 0, width: 10 }
-          ]);
+      // Safe dynamic extraction for Top Hotels by Bookings
+      const rawTopHotels = extractTopHotels(summaryResult);
+
+      if (Array.isArray(rawTopHotels)) {
+        if (rawTopHotels.length > 0) {
+          const mapped = rawTopHotels
+            .filter(item => item && typeof item === 'object')
+            .map(h => {
+              const hotelName = String(h.hotelName || h.HotelName || h.name || h.Name || h.hotel || '').trim();
+              const bookingCount = Number(h.bookingCount ?? h.BookingCount ?? h.count ?? h.Count ?? h.bookings ?? h.Bookings ?? 0);
+              return {
+                hotelName: hotelName || 'Hotel',
+                name: hotelName || 'Hotel',
+                bookingCount: isNaN(bookingCount) ? 0 : bookingCount,
+                count: isNaN(bookingCount) ? 0 : bookingCount
+              };
+            })
+            .filter(h => h.hotelName !== '');
+
+          const maxVal = Math.max(...mapped.map(h => h.bookingCount), 1);
+          setTopHotels(mapped.map(h => ({
+            ...h,
+            width: maxVal > 0 ? Math.max(8, Math.min(100, Math.round((h.bookingCount / maxVal) * 100))) : 0
+          })));
+        } else {
+          setTopHotels([]);
         }
+        setHotelsError(null);
+      } else if (summaryResult?.isFallback) {
+        setHotelsError("Failed to load hotel booking data. Please try again.");
+        setTopHotels([]);
+      } else {
+        setTopHotels([]);
+        setHotelsError(null);
       }
 
       try {
@@ -609,10 +609,13 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('B2C Dashboard fetch error:', err);
+      setHotelsError("Failed to load hotel booking data. Please try again.");
+      setTopHotels([]);
     } finally {
       setIsLoadingMetrics(false);
       setIsLoadingFlights(false);
       setIsLoadingBuses(false);
+      setIsLoadingHotels(false);
     }
   };
 
@@ -679,7 +682,7 @@ const AdminDashboard = () => {
           count,
           width: 80
         })).sort((a, b) => b.count - a.count).slice(0, 10);
-        setTopHotels(topHt);
+        // Note: Do not overwrite topHotels here as it represents Admin Dashboard overview topHotels
 
         const flRoutes = [];
         const bsRoutes = [];
@@ -1838,19 +1841,20 @@ const AdminDashboard = () => {
           </div>
 
           {/* Top Hotels */}
-          <div className={`dashboard-card-shell ${isLoadingMetrics ? 'dashboard-container-loading' : ''}`}>
+          <div className={`dashboard-card-shell ${isLoadingHotels ? 'dashboard-container-loading' : ''}`}>
             <div className="card-title-bar">
-              {isLoadingMetrics ? (
+              {isLoadingHotels ? (
                 <div className="dash-skeleton-box" style={{ width: '160px', height: '20px' }}></div>
               ) : (
                 <h3>Top Hotels by Bookings</h3>
               )}
-              {topHotels.length > 5 && (
+              {!isLoadingHotels && !hotelsError && topHotels.length > 5 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button
                     onClick={() => setHotelsPage(p => Math.max(0, p - 1))}
                     disabled={hotelsPage === 0}
                     style={{ background: 'none', border: 'none', cursor: hotelsPage === 0 ? 'default' : 'pointer', color: hotelsPage === 0 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
+                    title="Previous Page"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
                   </button>
@@ -1858,6 +1862,7 @@ const AdminDashboard = () => {
                     onClick={() => setHotelsPage(p => Math.min(Math.ceil(topHotels.length / 5) - 1, p + 1))}
                     disabled={hotelsPage >= Math.ceil(topHotels.length / 5) - 1}
                     style={{ background: 'none', border: 'none', cursor: hotelsPage >= Math.ceil(topHotels.length / 5) - 1 ? 'default' : 'pointer', color: hotelsPage >= Math.ceil(topHotels.length / 5) - 1 ? 'var(--admin-border)' : 'var(--admin-text)', padding: 0 }}
+                    title="Next Page"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
                   </button>
@@ -1865,7 +1870,7 @@ const AdminDashboard = () => {
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {isLoadingMetrics ? (
+              {isLoadingHotels ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
                   {[1, 2, 3, 4, 5].map((_, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -1875,14 +1880,88 @@ const AdminDashboard = () => {
                     </div>
                   ))}
                 </div>
-              ) : topHotels.length > 0 ? topHotels.slice(hotelsPage * 5, (hotelsPage + 1) * 5).map((hotel, index) => (
-                <div className="route-list-item" key={index}>
-                  <span className="route-label-bold" style={{ flex: '0 0 50%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: '10px' }}>{hotel.name}</span>
-                  <div className="route-progress-bar" style={{ flex: '1', width: 'auto' }}><div className="route-progress-fill" style={{ width: `${hotel.width}%`, background: '#10b981' }}></div></div>
-                  <span style={{ flex: '0 0 20%', textAlign: 'right' }}>{formatNumber(hotel.count)}</span>
+              ) : hotelsError ? (
+                <div style={{ padding: '16px 0', textAlign: 'center', fontSize: '0.8rem', color: '#ef4444' }}>
+                  <div>{hotelsError}</div>
+                  <button
+                    onClick={() => fetchB2cDashboardData({ force: true })}
+                    style={{
+                      marginTop: '8px',
+                      background: 'none',
+                      border: '1px solid #ef4444',
+                      color: '#ef4444',
+                      borderRadius: '4px',
+                      padding: '4px 12px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Retry
+                  </button>
                 </div>
-              )) : (
-                <div style={{ padding: '10px 0', fontSize: '0.8rem', color: 'var(--admin-muted)' }}>No API Data</div>
+              ) : topHotels.length > 0 ? (
+                topHotels.slice(hotelsPage * 5, (hotelsPage + 1) * 5).map((hotel, index) => {
+                  const hotelName = hotel.hotelName || hotel.name || 'Hotel';
+                  const bookingCount = hotel.bookingCount ?? hotel.count ?? 0;
+                  const barWidth = hotel.width ?? 0;
+                  return (
+                    <div
+                      className="route-list-item"
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 0',
+                        gap: '10px'
+                      }}
+                    >
+                      <span
+                        className="route-label-bold"
+                        title={hotelName}
+                        style={{
+                          flex: '0 0 52%',
+                          fontSize: '0.8rem',
+                          lineHeight: 1.35,
+                          wordBreak: 'break-word',
+                          paddingRight: '10px',
+                          color: 'var(--admin-text)'
+                        }}
+                      >
+                        {hotelName}
+                      </span>
+                      <div
+                        className="route-progress-bar"
+                        style={{ flex: '1', width: 'auto', minWidth: '40px' }}
+                      >
+                        <div
+                          className="route-progress-fill"
+                          style={{
+                            width: `${barWidth}%`,
+                            background: '#10b981',
+                            transition: 'width 0.3s ease'
+                          }}
+                        />
+                      </div>
+                      <span
+                        style={{
+                          flex: '0 0 20%',
+                          minWidth: '28px',
+                          textAlign: 'right',
+                          fontWeight: '600',
+                          fontSize: '0.82rem',
+                          color: 'var(--admin-text)'
+                        }}
+                      >
+                        {formatNumber(bookingCount)}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ padding: '16px 0', fontSize: '0.8rem', color: 'var(--admin-muted)', textAlign: 'center' }}>
+                  No hotel bookings available
+                </div>
               )}
             </div>
           </div>

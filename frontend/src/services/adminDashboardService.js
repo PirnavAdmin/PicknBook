@@ -173,6 +173,12 @@ export async function getAdminDashboardOverview(options = {}) {
   try {
     const data = await requestJson(url, { ...options, headers: getAdminAuthHeaders() });
     if (data && typeof data === "object") {
+      if (data.data && typeof data.data === "object" && !Array.isArray(data.data)) {
+        return { ...data.data, _raw: data };
+      }
+      if (data.result && typeof data.result === "object" && !Array.isArray(data.result)) {
+        return { ...data.result, _raw: data };
+      }
       return data;
     }
   } catch (error) {
@@ -212,12 +218,17 @@ export async function getAdminDashboardSummary({ force = false, signal } = {}) {
     try {
       // 1. Try GET /api/Dashboard/overview
       const overviewData = await getAdminDashboardOverview({ signal });
-      if (overviewData && (overviewData.todayStatus || overviewData.metrics || overviewData.bookingFunnel || overviewData.revenueToday || overviewData.bookings)) {
+      const rawData = overviewData?.data && typeof overviewData.data === 'object' && !Array.isArray(overviewData.data)
+        ? { ...overviewData.data, _raw: overviewData }
+        : (overviewData?.result && typeof overviewData.result === 'object' && !Array.isArray(overviewData.result)
+          ? { ...overviewData.result, _raw: overviewData }
+          : overviewData);
+      if (rawData && (rawData.todayStatus || rawData.metrics || rawData.bookingFunnel || rawData.revenueToday || rawData.bookings || rawData.topHotels || rawData.TopHotels || rawData.top_hotels || rawData.topSellingRoutes)) {
         if (owner === summaryOwner) {
-          cachedSummary = overviewData;
+          cachedSummary = rawData;
           cachedSummaryTime = Date.now();
         }
-        return overviewData;
+        return rawData;
       }
 
       // 2. Fallback to /api/BDashboard/summary
@@ -387,7 +398,7 @@ export function deriveAdminMetrics(summary) {
     weeklyChart: summary.weeklyChart || null,
     bookingFunnel: summary.bookingFunnel || null,
     topSellingRoutes: summary.topSellingRoutes || null,
-    topHotels: summary.topHotels || null,
+    topHotels: summary.topHotels || summary.TopHotels || summary.top_hotels || summary.data?.topHotels || summary.data?.TopHotels || null,
     todayStatus: summary.todayStatus || null,
     pendingWorksDetail: pendingWorks || null,
 
@@ -560,4 +571,21 @@ export async function getAdminDashboardRevenueOverview(params = {}, options = {}
     buildUrl(`/api/admin/dashboard/revenue-overview`, params),
     { ...options, headers: getAdminAuthHeaders() }
   );
+}
+
+export function extractTopHotels(summary) {
+  if (!summary || typeof summary !== 'object') return null;
+  const rawList =
+    summary.topHotels ??
+    summary.TopHotels ??
+    summary.top_hotels ??
+    summary.data?.topHotels ??
+    summary.data?.TopHotels ??
+    summary.data?.top_hotels ??
+    summary.result?.topHotels ??
+    summary.result?.TopHotels ??
+    summary.result?.top_hotels ??
+    null;
+  if (!Array.isArray(rawList)) return null;
+  return rawList;
 }

@@ -320,16 +320,31 @@ function normalizeBusSearchHistoryRecord(record, index = 0) {
     null
   );
 
-  const userOrGuestId = String(
-    pickFirst(
-      record,
-      ["userOrGuestId", "UserOrGuestId"],
-      isGuest ? `Guest` : `User #${resolvedCustomerId}`
-    ) || ""
+  const rawUserOrGuestId = String(
+    pickFirst(record, ["userOrGuestId", "UserOrGuestId"], "") || ""
   );
 
-  const customerName =
-    customerNameDirect || userOrGuestId || (isGuest ? "Guest User" : "Logged User");
+  const isGuestDetected = Boolean(
+    isGuest ||
+    !rawUserId ||
+    rawUserId === "0" ||
+    rawUserOrGuestId.toLowerCase() === "guest" ||
+    rawUserOrGuestId.toLowerCase().startsWith("guest-") ||
+    String(customerNameDirect || "").toLowerCase().startsWith("guest")
+  );
+
+  const resolvedIsGuest = isGuestDetected;
+
+  let customerName = "Guest";
+  if (!resolvedIsGuest) {
+    if (customerNameDirect && !customerNameDirect.toLowerCase().startsWith("guest") && !customerNameDirect.toLowerCase().startsWith("user #")) {
+      customerName = customerNameDirect;
+    } else {
+      customerName = "Guest";
+    }
+  }
+
+  const userOrGuestId = resolvedIsGuest ? "Guest" : (rawUserId ? String(rawUserId) : "Guest");
 
   const searchDateUtc = pickFirst(
     record,
@@ -793,17 +808,11 @@ function buildSegmentLabel(record) {
 }
 
 function buildCustomerLabel(record) {
-  if (record.isGuest) {
-    return record.userOrGuestId || "Guest User";
+  if (record.isGuest || !record.customerName || record.customerName === "Guest") {
+    return "Guest";
   }
 
-  const name = normalizeText(record.customerName, "");
-  const id = normalizeText(record.userId || record.customerId, "");
-  if (name && id && id !== "0") {
-    return `${name} (${id})`;
-  }
-
-  return name || (id ? `User #${id}` : "Logged User");
+  return normalizeText(record.customerName, "Guest");
 }
 
 export default function AdminBusSearchHistoryPage() {
@@ -1165,7 +1174,7 @@ export default function AdminBusSearchHistoryPage() {
                     >
                       {row.isGuest ? "Guest" : "User"}
                     </span>
-                    <span style={{ fontWeight: 500, color: "#334155" }}>{row.userOrGuestId || buildCustomerLabel(row)}</span>
+                    <span style={{ fontWeight: 500, color: "#334155" }}>{buildCustomerLabel(row)}</span>
                   </div>
                 </div>
                 <div className="admin-search-history-cell admin-cell-centered">
@@ -1282,9 +1291,9 @@ export default function AdminBusSearchHistoryPage() {
               </div>
 
               <div style={{ gridColumn: "1 / -1" }}>
-                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>User / Guest ID</span>
+                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em" }}>Customer Name</span>
                 <p style={{ margin: "4px 0 0", fontWeight: 600, color: "#0f172a", fontSize: "0.9rem", wordBreak: "break-all" }}>
-                  {selectedRecord.userOrGuestId || selectedRecord.userId || "N/A"}
+                  {selectedRecord.isGuest ? "Guest" : (selectedRecord.customerName && selectedRecord.customerName !== "Guest" ? selectedRecord.customerName : "Guest")}
                 </p>
               </div>
 

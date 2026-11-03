@@ -66,10 +66,16 @@ function formatFlightPillDate(dateStr) {
   return { date: dateFormatted, day: dayName };
 }
 
+import {
+  formatFlightTime,
+  formatFlightDate as formatFlightDateUtil,
+  isDayTime as isDayTimeUtil,
+  getFlightMinutesFromMidnight,
+  isArrivalNextDay,
+} from "../../utils/flightDateTimeUtils";
+
 function isDayTime(timeStr) {
-  if (!timeStr) return true;
-  const hr = parseInt(timeStr.split(":")[0], 10);
-  return hr >= 5 && hr < 18;
+  return isDayTimeUtil(timeStr);
 }
 
 import airIndiaExpress from "../../assets/images/airlines/Air-India_express.jpg";
@@ -272,9 +278,11 @@ function formatCardDate(date) {
   )} ${MONTHS[date.getMonth()]}`;
 }
 
-function formatFlightDate(date) {
-  return `${String(date.getDate()).padStart(2, "0")} ${MONTHS[date.getMonth()]} ${String(date.getFullYear()).slice(-2)
-    }`;
+function formatFlightDate(date, fallback) {
+  if (date instanceof Date && !isNaN(date.getTime())) {
+    return `${String(date.getDate()).padStart(2, "0")} ${MONTHS[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`;
+  }
+  return formatFlightDateUtil(date, fallback);
 }
 
 function formatCurrency(value) {
@@ -372,13 +380,7 @@ function parseTimeValue(dateString) {
 }
 
 function formatTime(date) {
-  if (!date) {
-    return "--:--";
-  }
-
-  return `${String(date.getHours()).padStart(2, "0")}:${String(
-    date.getMinutes()
-  ).padStart(2, "0")}`;
+  return formatFlightTime(date);
 }
 
 function durationLabel(totalMinutes) {
@@ -1167,6 +1169,11 @@ export default function FlightSearchResults() {
 
         const departureIst = parseTimeValue(flight.departureTimeIst);
         const arrivalIst = parseTimeValue(flight.arrivalTimeIst);
+        const depTimeVal = flight.departureTimeIst || flight.departureTime || departureIst;
+        const arrTimeVal = flight.arrivalTimeIst || flight.arrivalTime || arrivalIst;
+        const departureTimeStr = formatFlightTime(depTimeVal);
+        const arrivalTimeStr = formatFlightTime(arrTimeVal);
+        const isNextDayFlight = isArrivalNextDay(flight.departureTimeIst || flight.departureTime, flight.arrivalTimeIst || flight.arrivalTime);
         const durationMinutes = getDurationInMinutes(flight);
         const travelClass =
           selectedClassOption?.travelClass ||
@@ -1191,12 +1198,13 @@ export default function FlightSearchResults() {
             flight.toCity || currentDestination,
             currentDestinationCode
           ),
-          departDate: formatFlightDate(departureIst || selectedDate),
-          departureTime: formatTime(departureIst),
-          arrivalTime: formatTime(arrivalIst),
-          departureHour: departureIst ? departureIst.getHours() : 0,
-          departureMinutes: getMinutesSinceMidnight(departureIst),
-          arrivalMinutes: getMinutesSinceMidnight(arrivalIst),
+          departDate: formatFlightDate(flight.departureTimeIst || flight.departureTime || departureIst, selectedDate),
+          departureTime: departureTimeStr,
+          arrivalTime: arrivalTimeStr,
+          isNextDay: isNextDayFlight,
+          departureHour: getFlightMinutesFromMidnight(depTimeVal) !== null ? Math.floor(getFlightMinutesFromMidnight(depTimeVal) / 60) : (departureIst ? departureIst.getHours() : 0),
+          departureMinutes: getFlightMinutesFromMidnight(depTimeVal) ?? getMinutesSinceMidnight(departureIst),
+          arrivalMinutes: getFlightMinutesFromMidnight(arrTimeVal) ?? getMinutesSinceMidnight(arrivalIst),
           departureTimestamp: departureIst?.getTime() ?? null,
           arrivalTimestamp: arrivalIst?.getTime() ?? null,
           duration: durationLabel(durationMinutes),
@@ -2766,6 +2774,11 @@ export default function FlightSearchResults() {
                               </span>
                               <span className="premium-city-code">{flight.destinationCode}</span>
                               <span className="premium-large-time">{flight.arrivalTime}</span>
+                              {flight.isNextDay && (
+                                <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#b45309", background: "#fef3c7", padding: "1px 4px", borderRadius: "4px", marginLeft: "4px" }}>
+                                  +1 Day
+                                </span>
+                              )}
                             </div>
                             <div className="premium-airport-desc">
                               {getAirportName(flight.destinationCode, destinationName)}
@@ -2836,7 +2849,7 @@ export default function FlightSearchResults() {
                                 <strong style={{ color: "#0f172a", fontSize: "0.82rem" }}>{sec.sourceCode} ➔ {sec.destinationCode}</strong>
                                 <div style={{ color: "#64748b", fontSize: "0.72rem" }}>{sec.airline} ({sec.flightNumber})</div>
                                 <div style={{ color: "#334155", fontSize: "0.72rem", marginTop: "2px", fontWeight: 600 }}>
-                                  {sec.departureTime ? (sec.departureTime.includes("T") ? sec.departureTime.split("T")[1].slice(0, 5) : sec.departureTime.slice(11, 16)) : "--:--"} ➔ {sec.arrivalTime ? (sec.arrivalTime.includes("T") ? sec.arrivalTime.split("T")[1].slice(0, 5) : sec.arrivalTime.slice(11, 16)) : "--:--"}
+                                  {formatFlightTime(sec.departureTime)} ➔ {formatFlightTime(sec.arrivalTime)}
                                 </div>
                               </div>
                             ))}
@@ -3473,20 +3486,10 @@ export default function FlightSearchResults() {
                         
                         const parseTimeDate = (dateStr) => {
                           if (!dateStr) return { time: "", date: "" };
-                          if (dateStr.includes("T")) {
-                            return {
-                              time: dateStr.split("T")[1].slice(0, 5),
-                              date: new Date(dateStr).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: '2-digit'})
-                            };
-                          }
-                          if (dateStr.length >= 16) { 
-                            const timeMatch = dateStr.match(/\d{2}:\d{2}/);
-                            return {
-                              time: timeMatch ? timeMatch[0] : "",
-                              date: new Date(dateStr.replace(/-/g, "/")).toLocaleDateString('en-GB', {day: 'numeric', month: 'short', year: '2-digit'})
-                            };
-                          }
-                          return { time: dateStr, date: "" };
+                          return {
+                            time: formatFlightTime(dateStr),
+                            date: formatFlightDate(dateStr, flt?.departDate || selectedDate)
+                          };
                         };
                         const dep = parseTimeDate(depTimeStr);
                         const arr = parseTimeDate(arrTimeStr);

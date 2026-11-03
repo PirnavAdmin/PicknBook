@@ -15,7 +15,8 @@
 
 /* Table Header Styling - Burgundy #A51C49 background with white text */
 .security-mgmt-container table.sd-mini-table,
-.security-mgmt-container table.sec-ip-table {
+.security-mgmt-container table.sec-ip-table,
+.security-mgmt-container table.email-table {
   width: 100% !important;
   border-collapse: separate !important;
   border-spacing: 0 !important;
@@ -25,42 +26,49 @@
 }
 
 .security-mgmt-container table.sd-mini-table thead tr,
-.security-mgmt-container table.sec-ip-table thead tr {
+.security-mgmt-container table.sec-ip-table thead tr,
+.security-mgmt-container table.email-table thead tr {
   background: #A51C49 !important;
 }
 
 .security-mgmt-container table.sd-mini-table th,
-.security-mgmt-container table.sec-ip-table th {
+.security-mgmt-container table.sec-ip-table th,
+.security-mgmt-container table.email-table th {
   background: #A51C49 !important;
   color: #ffffff !important;
   padding: 10px 12px !important;
   font-size: 12px !important;
   font-weight: 500 !important;
-  text-align: center !important;
   vertical-align: middle !important;
   border: none !important;
   white-space: nowrap !important;
 }
 
 .security-mgmt-container table.sd-mini-table th:first-child,
-.security-mgmt-container table.sec-ip-table th:first-child {
+.security-mgmt-container table.sec-ip-table th:first-child,
+.security-mgmt-container table.email-table th:first-child {
   border-top-left-radius: 10px !important;
 }
 
 .security-mgmt-container table.sd-mini-table th:last-child,
-.security-mgmt-container table.sec-ip-table th:last-child {
+.security-mgmt-container table.sec-ip-table th:last-child,
+.security-mgmt-container table.email-table th:last-child {
   border-top-right-radius: 10px !important;
 }
 
 .security-mgmt-container table.sd-mini-table td,
-.security-mgmt-container table.sec-ip-table td {
+.security-mgmt-container table.sec-ip-table td,
+.security-mgmt-container table.email-table td {
   padding: 10px 12px !important;
   font-size: 12px !important;
   font-weight: 400 !important;
   color: #334155 !important;
-  text-align: center !important;
   vertical-align: middle !important;
   border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.security-mgmt-container table.email-table tbody tr.email-log-row:hover td {
+  background-color: #f8fafc !important;
 }
 
 .security-mgmt-container table.sec-table th,

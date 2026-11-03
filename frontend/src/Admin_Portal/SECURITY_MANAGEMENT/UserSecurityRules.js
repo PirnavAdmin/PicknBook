@@ -120,19 +120,7 @@ export default function UserSecurityRules() {
   const [showExtendModal, setShowExtendModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [activeDropdownId, setActiveDropdownId] = useState(null);
-
   const [selectedRule, setSelectedRule] = useState(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (!e.target.closest('.usr-dropdown-wrapper')) {
-        setActiveDropdownId(null);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
 
   // Form States - Block User
   const [blockUserForm, setBlockUserForm] = useState({
@@ -413,41 +401,69 @@ export default function UserSecurityRules() {
       </div>
 
       {/* Summary Stat Cards */}
-      <div className="sd-kpi-grid">
-        <div className="sd-kpi-card purple">
-          <div className="sd-kpi-header">
-            <span className="sd-kpi-title">Total Security Rules</span>
-            <span className="sd-kpi-icon">🛡️</span>
+      <div className="usr-summary-grid">
+        {/* Card 1: Total Security Rules */}
+        <div className="usr-summary-card card-total">
+          <div className="usr-summary-top">
+            <div className="usr-summary-icon-box icon-purple">
+              <span>🛡️</span>
+            </div>
+            <h3 className="usr-summary-heading">Total Security Rules</h3>
           </div>
-          <div className="sd-kpi-value">{totalCount}</div>
-          <span className="sd-kpi-desc">Configured across all users</span>
+          <div className="usr-summary-main">
+            <span className="usr-summary-count">{totalCount}</span>
+          </div>
+          <div className="usr-summary-supporting">
+            <p className="usr-summary-desc">Configured across all users</p>
+          </div>
         </div>
 
-        <div className="sd-kpi-card red">
-          <div className="sd-kpi-header">
-            <span className="sd-kpi-title">Active Full User Blocks</span>
-            <span className="sd-kpi-icon">🚫</span>
+        {/* Card 2: Active Full User Blocks */}
+        <div className="usr-summary-card card-user-block">
+          <div className="usr-summary-top">
+            <div className="usr-summary-icon-box icon-red">
+              <span>🚫</span>
+            </div>
+            <h3 className="usr-summary-heading">Active Full User Blocks</h3>
           </div>
-          <div className="sd-kpi-value">{activeUserBlocks}</div>
-          <span className="sd-kpi-desc">Full API & Session access restricted</span>
+          <div className="usr-summary-main">
+            <span className="usr-summary-count">{activeUserBlocks}</span>
+          </div>
+          <div className="usr-summary-supporting">
+            <p className="usr-summary-desc">Full API & Session access restricted</p>
+          </div>
         </div>
 
-        <div className="sd-kpi-card orange">
-          <div className="sd-kpi-header">
-            <span className="sd-kpi-title">Active URL Route Restrictions</span>
-            <span className="sd-kpi-icon">🌐</span>
+        {/* Card 3: Active URL Route Restrictions */}
+        <div className="usr-summary-card card-url-block">
+          <div className="usr-summary-top">
+            <div className="usr-summary-icon-box icon-orange">
+              <span>🌐</span>
+            </div>
+            <h3 className="usr-summary-heading">Active URL Route Restrictions</h3>
           </div>
-          <div className="sd-kpi-value">{activeUrlBlocks}</div>
-          <span className="sd-kpi-desc">Targeted endpoint blocks active</span>
+          <div className="usr-summary-main">
+            <span className="usr-summary-count">{activeUrlBlocks}</span>
+          </div>
+          <div className="usr-summary-supporting">
+            <p className="usr-summary-desc">Targeted endpoint blocks active</p>
+          </div>
         </div>
 
-        <div className="sd-kpi-card green">
-          <div className="sd-kpi-header">
-            <span className="sd-kpi-title">Unblocked / Expired Rules</span>
-            <span className="sd-kpi-icon">🔓</span>
+        {/* Card 4: Unblocked / Expired Rules */}
+        <div className="usr-summary-card card-inactive">
+          <div className="usr-summary-top">
+            <div className="usr-summary-icon-box icon-green">
+              <span>🔓</span>
+            </div>
+            <h3 className="usr-summary-heading">Unblocked / Expired Rules</h3>
           </div>
-          <div className="sd-kpi-value">{inactiveCount}</div>
-          <span className="sd-kpi-desc">Historic or unblocked rules</span>
+          <div className="usr-summary-main">
+            <span className="usr-summary-count">{inactiveCount}</span>
+          </div>
+          <div className="usr-summary-supporting">
+            <p className="usr-summary-desc">Historic or unblocked rules</p>
+          </div>
         </div>
       </div>
 
@@ -572,75 +588,16 @@ export default function UserSecurityRules() {
                             <div className="usr-created-by">By: {rule.createdBy || 'Admin'}</div>
                           </td>
                           <td>
-                            <div className="usr-dropdown-wrapper">
-                              <button
-                                type="button"
-                                className="usr-action-dropdown-btn admin-view-button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setActiveDropdownId(activeDropdownId === rule.id ? null : rule.id);
-                                }}
-                              >
-                                👁️ View ▾
-                              </button>
-
-                              {activeDropdownId === rule.id && (
-                                <div className="usr-dropdown-menu">
-                                  <button
-                                    type="button"
-                                    className="usr-dropdown-item admin-view-button"
-                                    onClick={() => {
-                                      setSelectedRule(rule);
-                                      setShowViewModal(true);
-                                      setActiveDropdownId(null);
-                                    }}
-                                  >
-                                    👁️ View Details
-                                  </button>
-
-                                  {isActive && rule.blockType === 'TEMPORARY' && (
-                                    <button
-                                      type="button"
-                                      className="usr-dropdown-item"
-                                      onClick={() => {
-                                        setSelectedRule(rule);
-                                        setExtendDurationMinutes(240);
-                                        setShowExtendModal(true);
-                                        setActiveDropdownId(null);
-                                      }}
-                                    >
-                                      ✏️ Edit / Extend
-                                    </button>
-                                  )}
-
-                                  {isActive && (
-                                    <button
-                                      type="button"
-                                      className="usr-dropdown-item"
-                                      onClick={() => {
-                                        setSelectedRule(rule);
-                                        setShowUnblockModal(true);
-                                        setActiveDropdownId(null);
-                                      }}
-                                    >
-                                      🔓 Unblock Rule
-                                    </button>
-                                  )}
-
-                                  <button
-                                    type="button"
-                                    className="usr-dropdown-item danger"
-                                    onClick={() => {
-                                      setSelectedRule(rule);
-                                      setShowDeleteModal(true);
-                                      setActiveDropdownId(null);
-                                    }}
-                                  >
-                                    🗑️ Delete Rule
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                            <button
+                              type="button"
+                              className="admin-view-button usr-view-details-btn"
+                              onClick={() => {
+                                setSelectedRule(rule);
+                                setShowViewModal(true);
+                              }}
+                            >
+                              View Details
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1026,7 +983,44 @@ export default function UserSecurityRules() {
                 <div><strong>Created By:</strong> {selectedRule.createdBy || 'Admin'}</div>
               </div>
             </div>
-            <div className="usr-modal-footer">
+            <div className="usr-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {(selectedRule.status || 'ACTIVE') === 'ACTIVE' && selectedRule.blockType === 'TEMPORARY' && (
+                  <button
+                    type="button"
+                    className="sd-btn-secondary"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setExtendDurationMinutes(240);
+                      setShowExtendModal(true);
+                    }}
+                  >
+                    ✏️ Edit / Extend
+                  </button>
+                )}
+                {(selectedRule.status || 'ACTIVE') === 'ACTIVE' && (
+                  <button
+                    type="button"
+                    className="sd-btn-secondary"
+                    onClick={() => {
+                      setShowViewModal(false);
+                      setShowUnblockModal(true);
+                    }}
+                  >
+                    🔓 Unblock Rule
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="usr-btn-danger"
+                  onClick={() => {
+                    setShowViewModal(false);
+                    setShowDeleteModal(true);
+                  }}
+                >
+                  🗑️ Delete Rule
+                </button>
+              </div>
               <button data-admin-close type="button" className="sd-btn-secondary" onClick={() => setShowViewModal(false)}>
                 Close
               </button>

@@ -1253,3 +1253,169 @@
   height: 30px !important;
 }
 
+/* ═════════════════════════════════════════════════════════════════════
+   REDESIGNED SECURITY RULES SUMMARY CARDS (SECURITY_UI_002)
+   ═════════════════════════════════════════════════════════════════════ */
+.usr-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 4px;
+  margin-bottom: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.usr-summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  min-height: 136px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.usr-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.07);
+}
+
+/* Category subtle top borders */
+.usr-summary-card.card-total {
+  border-top: 3px solid #7c3aed;
+}
+.usr-summary-card.card-user-block {
+  border-top: 3px solid #dc2626;
+}
+.usr-summary-card.card-url-block {
+  border-top: 3px solid #ea580c;
+}
+.usr-summary-card.card-inactive {
+  border-top: 3px solid #16a34a;
+}
+
+/* Top Section: Icon & Heading */
+.usr-summary-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.usr-summary-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.usr-summary-icon-box.icon-purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ede9fe;
+}
+.usr-summary-icon-box.icon-red {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+}
+.usr-summary-icon-box.icon-orange {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #ffedd5;
+}
+.usr-summary-icon-box.icon-green {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
+.usr-summary-heading {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+/* Main Section: Prominent Count */
+.usr-summary-main {
+  margin-bottom: 6px;
+}
+
+.usr-summary-count {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Supporting Section: Short Description */
+.usr-summary-supporting {
+  margin-top: auto;
+}
+
+.usr-summary-desc {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .usr-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .usr-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   VIEW DETAILS ACTION BUTTON (SECURITY_UI_001)
+   ═════════════════════════════════════════════════════════════════════ */
+.usr-view-details-btn.admin-view-button {
+  min-width: 90px !important;
+  height: 28px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  padding: 0 12px !important;
+  border-radius: 6px !important;
+  background: #a51c49 !important;
+  color: #ffffff !important;
+  border: 1px solid #a51c49 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  margin: 0 auto !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+.usr-view-details-btn.admin-view-button:hover {
+  background: #851237 !important;
+  border-color: #851237 !important;
+}
+

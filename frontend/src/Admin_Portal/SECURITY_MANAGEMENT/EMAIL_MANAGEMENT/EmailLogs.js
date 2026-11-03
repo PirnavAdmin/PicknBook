@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Eye } from 'lucide-react';
 import AdminPagination from '../../../components/AdminPagination';
 import emailService from '../../../services/emailService';
 import '../SecurityManagement.css';
@@ -259,24 +258,33 @@ export default function EmailLogs() {
           <table className="email-table">
             <thead>
               <tr>
-                <th style={{ textTransform: 'capitalize', width: '50px', verticalAlign: 'middle', textAlign: 'center' }}>S.No</th>
-                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle' }}>Date & Time</th>
-                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle' }}>Recipient</th>
-                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle' }}>Subject</th>
-                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle', textAlign: 'center' }}>Status</th>
-                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle', textAlign: 'center' }}>Sent By</th>
-                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle', textAlign: 'center' }}>Delivery Status</th>
-                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle', textAlign: 'center', width: '100px' }}>Action</th>
+                <th style={{ textTransform: 'capitalize', width: '55px', verticalAlign: 'middle', textAlign: 'center' }}>S.No</th>
+                <th style={{ textTransform: 'capitalize', width: '170px', verticalAlign: 'middle', textAlign: 'center' }}>Date &amp; Time</th>
+                <th style={{ textTransform: 'capitalize', width: '220px', verticalAlign: 'middle', textAlign: 'left' }}>Recipient</th>
+                <th style={{ textTransform: 'capitalize', verticalAlign: 'middle', textAlign: 'left' }}>Subject</th>
+                <th style={{ textTransform: 'capitalize', width: '100px', verticalAlign: 'middle', textAlign: 'center' }}>Status</th>
+                <th style={{ textTransform: 'capitalize', width: '120px', verticalAlign: 'middle', textAlign: 'center' }}>Sent By</th>
+                <th style={{ textTransform: 'capitalize', width: '130px', verticalAlign: 'middle', textAlign: 'center' }}>Delivery Status</th>
               </tr>
             </thead>
             <tbody>
               {paginatedLogs.length > 0 ? (
                 paginatedLogs.map((log, index) => (
-                  <tr key={log.id} style={{ height: '46px' }}>
+                  <tr
+                    key={log.id}
+                    style={{ height: '46px', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+                    onClick={() => setSelectedLog(log)}
+                    title="Click to view full email details"
+                    className="email-log-row"
+                  >
                     <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                    <td style={{ verticalAlign: 'middle', color: '#64748b' }}>{log.dateTime}</td>
-                    <td style={{ verticalAlign: 'middle', fontWeight: '600', color: '#0f172a' }}>{log.recipient}</td>
-                    <td style={{ verticalAlign: 'middle', color: '#334155' }}>{log.subject}</td>
+                    <td style={{ verticalAlign: 'middle', textAlign: 'center', color: '#64748b', whiteSpace: 'nowrap' }}>{log.dateTime}</td>
+                    <td style={{ verticalAlign: 'middle', textAlign: 'left', fontWeight: '600', color: '#0f172a', wordBreak: 'break-all' }}>{log.recipient}</td>
+                    <td style={{ verticalAlign: 'middle', textAlign: 'left', color: '#334155' }} title={log.subject}>
+                      <div style={{ maxWidth: '420px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {log.subject}
+                      </div>
+                    </td>
                     <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
                       <span className={`badge-status ${log.status === 'Sent' ? 'active' : 'inactive'}`}>
                         {log.status}
@@ -288,33 +296,11 @@ export default function EmailLogs() {
                         {log.deliveryStatus}
                       </span>
                     </td>
-                    <td style={{ verticalAlign: 'middle', textAlign: 'center' }}>
-                      <button className="admin-view-button"
-                        type="button"
-                        onClick={() => setSelectedLog(log)}
-                        style={{
-                          background: '#eff6ff',
-                          color: '#2563eb',
-                          border: '1px solid #bfdbfe',
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        <Eye size={13} color="#2563eb" /> View
-                      </button>
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#64748b', verticalAlign: 'middle' }}>
+                  <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: '#64748b', verticalAlign: 'middle' }}>
                     ✉️ No email logs matched your criteria.
                   </td>
                 </tr>

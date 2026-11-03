@@ -929,7 +929,7 @@ export default function FlightSeatSelectionPage() {
             </div>
             <div className="flight-meta-info">
               <span>{displayedLeg.airlineName || displayedLeg.airline || flight.airlineName} ({displayedLeg.flightNumber || flight.flightNumber})</span>
-              <span className="flight-date-badge">{displayedLeg.departDate || (activeSegmentIndex === 1 ? searchContext?.returnDate : searchContext?.departureDate) || flight.departDate || "--"}</span>
+              <span className="flight-date-badge">{displayedLeg.departDate || (activeSegmentIndex === 1 ? searchContext?.returnDate : searchContext?.departureDate) || flight.departDate || "--"}{(displayedLeg.departureTime || flight.departureTime) ? ` • ${displayedLeg.departureTime || flight.departureTime}` : ""}</span>
             </div>
           </div>
 

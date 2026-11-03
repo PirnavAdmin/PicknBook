@@ -114,6 +114,7 @@ export default function AdminQueryList() {
       await updateQueryStatus(emailModalQuery.id, {
         status: emailStatus,
         replyMessage: emailMessage,
+        subject: emailSubject,
       });
       setQueries((prev) =>
         prev.map((q) =>
@@ -854,7 +855,7 @@ export default function AdminQueryList() {
                       <td style={styles.td}>{q.subject || "ContactUs"}</td>
                       <td style={styles.td}>B2C</td>
                       <td style={{ ...styles.td, maxWidth: "120px", overflow: "hidden", textOverflow: "ellipsis" }} title={q.name}>{q.name}</td>
-                      <td style={{ ...styles.td, maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis" }} title={q.email}>{q.email}</td>
+                      <td style={{ ...styles.td, maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis" }} title={q.email || q.Email}>{q.email || q.Email || "-"}</td>
                       <td style={styles.td}>{q.phoneNo || "-"}</td>
                       <td style={{ ...styles.td, maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" }} title={q.message}>
                         {q.message}
@@ -993,7 +994,7 @@ export default function AdminQueryList() {
                 </div>
                 <div>
                   <div className="admin-detail-label">Email</div>
-                  <div className="admin-detail-value">{viewQuery.email}</div>
+                  <div className="admin-detail-value">{viewQuery.email || viewQuery.Email || "-"}</div>
                 </div>
                 <div>
                   <div className="admin-detail-label">Mobile</div>

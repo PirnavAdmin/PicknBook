@@ -1517,7 +1517,7 @@ export default function FlightPassengerDetailsPage() {
                   <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span>{leg?.airlineName || leg?.airline || "Flight"} ({leg?.flightNumber || "--"})</span>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <span className="flight-date-badge">{leg?.departDate || leg?.departureDate || "--"}</span>
+                      <span className="flight-date-badge">{leg?.departDate || leg?.departureDate || "--"}{leg?.departureTime ? ` • ${leg.departureTime}` : ""}</span>
                       <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
                         ₹{new Intl.NumberFormat("en-IN").format(Number(leg?.fare || leg?.price || leg?.priceInr || leg?.selectedTravelClassPriceInr || 0))}
                       </span>
@@ -1551,7 +1551,7 @@ export default function FlightPassengerDetailsPage() {
                   <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
                     <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <span className="flight-date-badge">{flight.departDate || searchContext?.departureDate || "--"}</span>
+                      <span className="flight-date-badge">{flight.departDate || searchContext?.departureDate || "--"}{flight.departureTime ? ` • ${flight.departureTime}` : ""}</span>
                       <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
                         ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
                       </span>
@@ -1583,7 +1583,7 @@ export default function FlightPassengerDetailsPage() {
                     <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span>{returnFlightNormalized.airlineName || returnFlightNormalized.airline} ({returnFlightNormalized.flightNumber})</span>
                       <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        <span className="flight-date-badge">{returnFlightNormalized.departDate || searchContext?.returnDate || "--"}</span>
+                        <span className="flight-date-badge">{returnFlightNormalized.departDate || searchContext?.returnDate || "--"}{returnFlightNormalized.departureTime ? ` • ${returnFlightNormalized.departureTime}` : ""}</span>
                         <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
                           ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized.fare || returnFlightNormalized.price || returnFlightNormalized.priceInr || returnFlightNormalized.selectedTravelClassPriceInr || 0))}
                         </span>
