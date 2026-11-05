@@ -101,7 +101,7 @@ import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
 import { listHotBusRoutes, searchBusCities } from "../../services/busBookingService";
 import { getPopularBusRoutesFromSearchHistory } from "../../services/busSearchHistoryService";
 import { getPopularFlightRoutes } from "../../services/flightBookingService";
-import { searchHotels } from "../../services/hotelBookingService";
+import { searchHotels, getTrendingHotels } from "../../services/hotelBookingService";
 import { toApiAssetUrl, toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
 import { getPublicTestimonials } from "../../services/testimonialService";
@@ -3003,7 +3003,33 @@ export default function HomePage() {
 
     setPopularRoutesLoading(false);
     setPopularRoutesError("");
-    setPopularRoutes(DEFAULT_POPULAR_BUS_ROUTES);
+    listHotBusRoutes({ metric: "score" })
+      .then((records) => {
+        if (!isMounted) return;
+        if (Array.isArray(records) && records.length > 0) {
+          const merged = records.map((r, i) => ({
+            id: r.routeId || `bus-hot-live-${i}`,
+            fromCity: r.fromCity,
+            toCity: r.toCity,
+            searches: r.searchCount || (2000 - i * 80),
+            fare: 450 + (i * 35) % 400,
+            arrowType: "swap",
+            img: DEFAULT_POPULAR_BUS_ROUTES[i % DEFAULT_POPULAR_BUS_ROUTES.length]?.img
+          }));
+          setPopularRoutes(merged);
+        } else {
+          setPopularRoutes(DEFAULT_POPULAR_BUS_ROUTES);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setPopularRoutes(DEFAULT_POPULAR_BUS_ROUTES);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setPopularRoutesLoading(false);
+          setPopularRoutesError("");
+        }
+      });
 
     return () => {
       isMounted = false;
@@ -3057,7 +3083,19 @@ export default function HomePage() {
 
   /* Popular Hotels — Static Curated Data */
   useEffect(() => {
-    setPopularHotelsLoading(false);
+    setPopularHotelsLoading(true);
+    getTrendingHotels("score")
+      .then((records) => {
+        if (Array.isArray(records) && records.length > 0) {
+          setPopularHotels(records);
+        }
+      })
+      .catch((err) => {
+        console.warn("Trending hotels error:", err);
+      })
+      .finally(() => {
+        setPopularHotelsLoading(false);
+      });
     setPopularHotelsError("");
     setPopularHotels([
       {
@@ -8926,7 +8964,7 @@ export default function HomePage() {
                     </div>
                     <div className="pop-route-body">
                       <p className="pop-hotel-name">{hotel.name}</p>
-                      <p className="pop-hotel-sub">{hotel.city} &nbsp;•&nbsp; From INR {hotel.price}</p>
+                      <p className="pop-hotel-sub">{hotel.city} &nbsp;•&nbsp; From INR {hotel.price}{hotel.searches ? ` • ${hotel.searches} searches` : ''}</p>
                     </div>
                     <button type="button" className="pop-route-book-btn"
                       onClick={(e) => { e.stopPropagation(); handlePopularHotelBooking(hotel); }}

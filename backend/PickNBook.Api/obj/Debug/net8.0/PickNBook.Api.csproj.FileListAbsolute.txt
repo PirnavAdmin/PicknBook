@@ -2116,11 +2116,8 @@ c:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\Pi
 c:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\PickNBook.Api.genruntimeconfig.cache
 c:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\ref\PickNBook.Api.dll
 C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\bin\Debug\net8.0\global.json
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\bin\Debug\net8.0\PickNBook.Api.staticwebassets.endpoints.json
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\rpswa.dswa.cache.json
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\rjimswa.dswa.cache.json
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets.build.json.cache
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\swae.build.ex.cache
+C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets\msbuild.PickNBook.Api.Microsoft.AspNetCore.StaticWebAssets.props
+C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets\msbuild.build.PickNBook.Api.props
+C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets\msbuild.buildMultiTargeting.PickNBook.Api.props
+C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.PickNBook.Api.props
+C:\Users\ADMIN\Desktop\Cloud\PicknBook\backend\PickNBook.Api\obj\Debug\net8.0\staticwebassets.pack.json

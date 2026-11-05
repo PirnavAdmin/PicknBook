@@ -112,7 +112,23 @@ function getCancellationPolicies(ticket, paidAmount) {
 }
 
 export default function BusEmailStyleTicket({ ticket, data, id }) {
-  const bookingReference = pick(ticket, ["bookingReference", "BookingReference"], data.pnr);
+  const bookingReference = pick(ticket, ["bookingReference", "BookingReference"], data?.pnr);
+  const busPartnerPnr = pick(
+    ticket,
+    [
+      "ticketNo",
+      "TicketNo",
+      "ticketNumber",
+      "TicketNumber",
+      "srdvTicketNo",
+      "SrdvTicketNo",
+      "busPartnerPnr",
+      "BusPartnerPnr",
+      "pnr",
+      "PNR",
+    ],
+    bookingReference
+  );
   const partnerPnr = pick(ticket, ["pnr", "PNR"], bookingReference);
   const departure = pick(ticket, ["departureTimeIst", "DepartureTimeIst", "departureTime", "DepartureTime"]);
   const arrival = pick(ticket, ["arrivalTimeIst", "ArrivalTimeIst", "arrivalTime", "ArrivalTime"]);
@@ -157,7 +173,7 @@ export default function BusEmailStyleTicket({ ticket, data, id }) {
         </div>
         <div className="pb-email-ticket-reference">
           <div>Booking ID: <strong>{bookingReference}</strong></div>
-          <div>Bus Partner PNR: <strong>{partnerPnr}</strong></div>
+          <div>Bus Partner PNR: <strong>{busPartnerPnr}</strong></div>
           <span>Confirmed</span>
         </div>
       </header>

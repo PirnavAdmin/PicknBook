@@ -3474,8 +3474,8 @@ export async function updateFlightPromotion(id, payload) {
   });
 }
 
-export async function getPopularFlightRoutes() {
-  const data = await requestJson("/api/flight/popular-routes", {
+export async function getPopularFlightRoutes(metric = "score") {
+  const data = await requestJson(`/api/flight/popular-routes?metric=${metric}`, {
     method: "GET",
     skipAuth: true,
   });

@@ -549,9 +549,11 @@ function normalizeBusBookingRecord(record) {
     bookingReference: String(
       getFieldValue(["bookingReference", "BookingReference", "referenceNumber"], "")
     ),
-    pnr: String(
-      getFieldValue(["pnr", "PNR", "Pnr", "pnrNumber", "PnrNumber"], "")
-    ),
+    pnr: (() => {
+      const rawPnr = String(getFieldValue(["pnr", "PNR", "Pnr", "pnrNumber", "PnrNumber"], ""));
+      const opPnr = String(getFieldValue(["operatorPnr", "OperatorPnr", "travelOperatorPNR", "TravelOperatorPNR"], ""));
+      return (opPnr && opPnr !== "--" && !opPnr.match(/^[0-9]+$/)) ? opPnr : (rawPnr || opPnr);
+    })(),
     operatorPnr: String(
       getFieldValue(["operatorPnr", "OperatorPnr", "travelOperatorPNR", "TravelOperatorPNR"], "")
     ),
