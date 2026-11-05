@@ -1916,11 +1916,11 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
     scrollLeft: 0,
   });
   const [isDragging, setIsDragging] = useState(false);
+  const scrollPosRef = useRef(0);
   const loopItems = useMemo(() => {
     if (!items || items.length === 0) return [];
-    if (items.length <= 2) return items; // Do not duplicate if 1 or 2
     let base = [...items];
-    while (base.length < 8) {
+    while (base.length < 10) {
       base = [...base, ...items];
     }
     return [...base, ...base, ...base];
@@ -1937,10 +1937,12 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
       return;
     }
 
-    if (node.scrollLeft < segmentWidth * 0.5) {
-      node.scrollLeft += segmentWidth;
-    } else if (node.scrollLeft > segmentWidth * 1.5) {
-      node.scrollLeft -= segmentWidth;
+    if (scrollPosRef.current < segmentWidth * 0.5) {
+      scrollPosRef.current += segmentWidth;
+      node.scrollLeft = scrollPosRef.current;
+    } else if (scrollPosRef.current > segmentWidth * 1.5) {
+      scrollPosRef.current -= segmentWidth;
+      node.scrollLeft = scrollPosRef.current;
     }
   };
 
@@ -1954,6 +1956,9 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
     const segmentWidth = node.scrollWidth / 3;
     if (segmentWidth > 0) {
       node.scrollLeft = segmentWidth;
+      scrollPosRef.current = segmentWidth;
+    } else {
+      scrollPosRef.current = node.scrollLeft || 0;
     }
 
     let previousTime = performance.now();
@@ -1968,15 +1973,16 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
 
         if (!state.active && !isPausedRef.current) {
           if (Math.abs(momentumRef.current) > 0.02) {
-            currentNode.scrollLeft += momentumRef.current * elapsed;
+            scrollPosRef.current += momentumRef.current * elapsed;
             momentumRef.current *= Math.pow(0.92, elapsed / 16.67);
           } else if (!pauseOnHover || !hoveredRef.current) {
             const loopWidth = currentNode.scrollWidth / 3;
             const pixelsPerMs = loopWidth / Math.max(duration * 1000, 1);
-            currentNode.scrollLeft += pixelsPerMs * elapsed;
+            scrollPosRef.current += pixelsPerMs * elapsed;
           }
 
           normalizeMarqueeScroll(currentNode);
+          currentNode.scrollLeft = scrollPosRef.current;
         }
       }
 
@@ -2098,7 +2104,8 @@ function AutoMarquee({ items, className, duration, renderItem, pauseOnHover = tr
       event.preventDefault();
     }
 
-    node.scrollLeft = state.scrollLeft - deltaX;
+    scrollPosRef.current = state.scrollLeft - deltaX;
+    node.scrollLeft = scrollPosRef.current;
     momentumRef.current = -((event.clientX - state.lastX) / frameElapsed);
     state.lastX = event.clientX;
     state.lastY = event.clientY;
@@ -3043,6 +3050,15 @@ export default function HomePage() {
     setPopularFlightsLoading(true);
     setPopularFlightsError("");
 
+    const DEFAULT_POPULAR_FLIGHT_ROUTES = [
+      { id: "flight-hot-1", fromCity: "Delhi", toCity: "Mumbai", fromAirportCode: "DEL", toAirportCode: "BOM" },
+      { id: "flight-hot-2", fromCity: "Bengaluru", toCity: "Delhi", fromAirportCode: "BLR", toAirportCode: "DEL" },
+      { id: "flight-hot-3", fromCity: "Hyderabad", toCity: "Goa", fromAirportCode: "HYD", toAirportCode: "GOI" },
+      { id: "flight-hot-4", fromCity: "Mumbai", toCity: "Bengaluru", fromAirportCode: "BOM", toAirportCode: "BLR" },
+      { id: "flight-hot-5", fromCity: "Chennai", toCity: "Kolkata", fromAirportCode: "MAA", toAirportCode: "CCU" },
+      { id: "flight-hot-6", fromCity: "Delhi", toCity: "Goa", fromAirportCode: "DEL", toAirportCode: "GOI" },
+    ];
+
     getPopularFlightRoutes()
       .then((response) => {
         const records = Array.isArray(response)
@@ -3053,7 +3069,11 @@ export default function HomePage() {
           const fromCity = String(record?.fromCity ?? record?.originCity ?? record?.source ?? record?.from ?? "").trim();
           const toCity = String(record?.toCity ?? record?.destinationCity ?? record?.destination ?? record?.to ?? "").trim();
           if (!fromCity || !toCity) return items;
-          const routeKey = `${record?.fromAirportCode ?? record?.sourceCode ?? fromCity}|${record?.toAirportCode ?? record?.destinationCode ?? toCity}`.toLowerCase();
+          const fromCode = String(record?.fromAirportCode || record?.sourceCode || record?.originCode || "").trim();
+          const toCode = String(record?.toAirportCode || record?.destinationCode || record?.destinationAirportCode || "").trim();
+          const fromKey = fromCode || fromCity;
+          const toKey = toCode || toCity;
+          const routeKey = `${fromKey}|${toKey}`.toLowerCase();
           if (seenRoutes.has(routeKey)) return items;
           seenRoutes.add(routeKey);
           items.push({
@@ -3061,18 +3081,18 @@ export default function HomePage() {
             route: record?.route,
             fromCity,
             toCity,
-            fromAirportCode: String(record?.fromAirportCode ?? record?.sourceCode ?? record?.originCode ?? "").trim(),
-            toAirportCode: String(record?.toAirportCode ?? record?.destinationCode ?? record?.destinationAirportCode ?? "").trim(),
-            image: record?.image ?? record?.imageUrl ?? record?.destinationImage,
+            fromAirportCode: fromCode || (fromCity.length === 3 ? fromCity.toUpperCase() : ""),
+            toAirportCode: toCode || (toCity.length === 3 ? toCity.toUpperCase() : ""),
+            image: record?.image || record?.imageUrl || record?.destinationImage || getCityImage(toCity, "flight_default"),
           });
           return items;
         }, []);
-        if (isMounted) setPopularFlights(routes);
+        if (isMounted) setPopularFlights(routes.length > 0 ? routes : DEFAULT_POPULAR_FLIGHT_ROUTES);
       })
-      .catch((error) => {
+      .catch(() => {
         if (!isMounted) return;
-        setPopularFlights([]);
-        setPopularFlightsError(error?.message || "Unable to load popular flights. Please try again.");
+        setPopularFlights(DEFAULT_POPULAR_FLIGHT_ROUTES);
+        setPopularFlightsError("");
       })
       .finally(() => {
         if (isMounted) setPopularFlightsLoading(false);
@@ -8620,122 +8640,103 @@ export default function HomePage() {
             ) : popularRoutes.length === 0 ? (
               <div className="popular-routes-empty">No popular routes available.</div>
             ) : (
-              <>
-                <div className="pop-bus-carousel-wrapper">
-                  <div className="pop-bus-cards-track" ref={busCardsTrackRef}>
-                    {popularRoutes.slice(0, 15).map((route, idx) => {
-                      const BUS_PHOTOS = [
-                        "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
-                        "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
-                        "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format",
-                        "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format",
-                        "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format"
-                      ];
-                      const busImg = route.img || BUS_PHOTOS[idx % BUS_PHOTOS.length];
+              <AutoMarquee
+                items={popularRoutes}
+                className="popular-routes-marquee bus-routes-marquee"
+                duration={38}
+                renderItem={(route, idx) => {
+                  const BUS_PHOTOS = [
+                    "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format",
+                    "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format"
+                  ];
+                  const busImg = route.img || BUS_PHOTOS[idx % BUS_PHOTOS.length];
 
-                      return (
-                        <article
-                          className="pop-route-card pop-bus-card"
-                          key={route.id || idx}
-                          role="button"
-                          tabIndex={0}
-                          style={{ outline: "none" }}
-                          onClick={() => handlePopularRouteBooking(route)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              handlePopularRouteBooking(route);
-                            }
+                  return (
+                    <article
+                      className="pop-route-card pop-bus-card"
+                      key={route.id || idx}
+                      role="button"
+                      tabIndex={0}
+                      style={{ outline: "none" }}
+                      onClick={() => handlePopularRouteBooking(route)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handlePopularRouteBooking(route);
+                        }
+                      }}
+                    >
+                      <div className="pop-route-img-wrap">
+                        <img
+                          src={busImg}
+                          alt={`${route.fromCity} to ${route.toCity}`}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length];
+                          }}
+                        />
+                        <div className="pop-bus-badge-top-left">
+                          <Bus size={11} strokeWidth={2.4} />
+                          <span>BUS</span>
+                        </div>
+                        <button
+                          type="button"
+                          className={`pop-bus-bookmark-btn ${savedBusRouteIds.has(route.id || idx) ? "is-saved" : ""}`}
+                          aria-label="Save route"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSaveBusRoute(route.id || idx);
                           }}
                         >
-                          <div className="pop-route-img-wrap">
-                            <img
-                              src={busImg}
-                              alt={`${route.fromCity} to ${route.toCity}`}
-                              loading="lazy"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length];
-                              }}
-                            />
-                            <div className="pop-bus-badge-top-left">
-                              <Bus size={11} strokeWidth={2.4} />
-                              <span>BUS</span>
-                            </div>
-                            <button
-                              type="button"
-                              className={`pop-bus-bookmark-btn ${savedBusRouteIds.has(route.id || idx) ? "is-saved" : ""}`}
-                              aria-label="Save route"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleSaveBusRoute(route.id || idx);
-                              }}
-                            >
-                              <Bookmark
-                                size={14}
-                                strokeWidth={2}
-                                fill={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "none"}
-                                color={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "#1f2937"}
-                              />
-                            </button>
-                            <div className="pop-bus-wave-wrap">
-                              <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="pop-bus-wave-svg">
-                                <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" fill="#ffffff" />
-                              </svg>
-                            </div>
-                          </div>
+                          <Bookmark
+                            size={14}
+                            strokeWidth={2}
+                            fill={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "none"}
+                            color={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "#1f2937"}
+                          />
+                        </button>
+                        <div className="pop-bus-wave-wrap">
+                          <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="pop-bus-wave-svg">
+                            <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" fill="#ffffff" />
+                          </svg>
+                        </div>
+                      </div>
 
-                          <div className="pop-bus-body">
-                            <div className="pop-bus-cities-row">
-                              <span className="pop-bus-city from" title={route.fromCity}>{route.fromCity}</span>
-                              <div className="pop-bus-connector">
-                                <span className="pop-bus-line" />
-                                <div className="pop-bus-icon-circle">
-                                  <Bus size={13} strokeWidth={2.4} />
-                                </div>
-                                <span className="pop-bus-line" />
-                              </div>
-                              <span className="pop-bus-city to" title={route.toCity}>{route.toCity}</span>
+                      <div className="pop-bus-body">
+                        <div className="pop-bus-cities-row">
+                          <span className="pop-bus-city from" title={route.fromCity}>{route.fromCity}</span>
+                          <div className="pop-bus-connector">
+                            <span className="pop-bus-line" />
+                            <div className="pop-bus-icon-circle">
+                              <Bus size={13} strokeWidth={2.4} />
                             </div>
+                            <span className="pop-bus-line" />
                           </div>
+                          <span className="pop-bus-city to" title={route.toCity}>{route.toCity}</span>
+                        </div>
+                      </div>
 
-                          <div className="pop-bus-footer">
-                            <button
-                              type="button"
-                              className="pop-bus-book-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePopularRouteBooking(route);
-                              }}
-                            >
-                              <span>BOOK BUS</span>
-                              <ArrowRight size={13} strokeWidth={2.5} />
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    className="pop-bus-next-circle-btn"
-                    aria-label="Next routes"
-                    onClick={handleNextBusPage}
-                  >
-                    <ChevronRight size={18} strokeWidth={2.6} />
-                  </button>
-                </div>
-
-                <div className="pop-bus-pagination-dots">
-                  {[0, 1, 2].map((dotIdx) => (
-                    <span
-                      key={dotIdx}
-                      className={`pop-bus-dot ${busRoutePage === dotIdx ? "active" : ""}`}
-                      onClick={() => handleGoToBusPage(dotIdx)}
-                    />
-                  ))}
-                </div>
-              </>
+                      <div className="pop-bus-footer">
+                        <button
+                          type="button"
+                          className="pop-bus-book-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePopularRouteBooking(route);
+                          }}
+                        >
+                          <span>BOOK BUS</span>
+                          <ArrowRight size={13} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                }}
+              />
             )}
           </section>
         )
