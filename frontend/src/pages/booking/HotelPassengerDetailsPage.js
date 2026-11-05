@@ -1,6 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
-import { createPortal } from "react-dom";
+import {
+  Headphones, Phone, Mail, createPortal } from "react-dom";
 import {
   ArrowLeft, CalendarDays, Check, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble, Info, X
 } from "lucide-react";
@@ -95,9 +96,8 @@ function getPromotionSubHeading(item) {
 const calculateNights = (inDate, outDate) => (!inDate || !outDate ? 1 : Math.ceil(Math.abs(new Date(outDate) - new Date(inDate)) / 86400000) || 1);
 const isValidEmail = (email) => {
   const value = String(email || "").trim();
-  return value.length <= 254 &&
-    !value.includes("..") &&
-    /^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)*\.[A-Z]{2,24}$/i.test(value);
+  if (!value || value.length > 254 || value.includes("..")) return false;
+  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
 };
 const isValidGuestName = (name) => {
   const value = String(name || "").trim();
@@ -112,18 +112,20 @@ const isValidMobile = (mobile) => {
   let digits = String(mobile || "").replace(/\D/g, "");
   if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
   else if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
-  return /^[6-9]\d{9}$/.test(digits) &&
-    !invalidGuestMobileNumbers.has(digits);
+  if (!/^[6-9]\d{9}$/.test(digits)) return false;
+  if (/^(\d)\1{9}$/.test(digits)) return false;
+  if (invalidGuestMobileNumbers.has(digits)) return false;
+  return true;
 };
 const getTitleGenderError = (title, gender) => {
   if (!title || !gender || gender === "Other" || title === "Dr") return "";
   const femaleTitles = ["Ms", "Mrs", "Miss"];
   const maleTitles = ["Mr", "Mstr"];
   if (femaleTitles.includes(title) && gender !== "Female") {
-    return `${title === "Miss" ? "Miss" : title === "Mrs" ? "Mrs." : "Ms."} title requires Female gender.`;
+    return "Title and Gender do not match. Please verify primary guest details.";
   }
   if (maleTitles.includes(title) && gender !== "Male") {
-    return `${title === "Mstr" ? "Mstr" : "Mr."} title requires Male gender.`;
+    return "Title and Gender do not match. Please verify primary guest details.";
   }
   return "";
 };
@@ -476,9 +478,21 @@ export default function HotelPassengerDetailsPage() {
 
   const updateGuest = (index, field, value) => {
     setFormError("");
+    let syncedGender = undefined;
+    if (field === "title") {
+      if (value === "Mr" || value === "Mstr") {
+        syncedGender = "Male";
+      } else if (value === "Mrs" || value === "Ms" || value === "Miss") {
+        syncedGender = "Female";
+      }
+    }
+
     setGuests((current) => {
       const next = [...current];
       let updated = { ...next[index], [field]: value };
+      if (syncedGender !== undefined) {
+        updated.gender = syncedGender;
+      }
       if (field === "fullName") {
         const cleanVal = String(value || "").trim();
         const parts = cleanVal.split(/\s+/);
@@ -494,7 +508,14 @@ export default function HotelPassengerDetailsPage() {
       delete next[`guest_${index}_${field}`];
       delete next[`guest_${index}_firstName`];
       delete next[`guest_${index}_lastName`];
-      const nextGuest = { ...guests[index], [field]: value };
+      if (syncedGender !== undefined) {
+        delete next[`guest_${index}_gender`];
+      }
+      const nextGuest = {
+        ...guests[index],
+        [field]: value,
+        ...(syncedGender !== undefined ? { gender: syncedGender } : {})
+      };
       const titleGenderError = getTitleGenderError(nextGuest.title, nextGuest.gender);
       if (titleGenderError) {
         next[`guest_${index}_titleGender`] = titleGenderError;
@@ -1073,11 +1094,14 @@ export default function HotelPassengerDetailsPage() {
           }
           
           basePrice += roomBase;
-          tax += roomTax;
           markupValue += roomMarkup;
           couponDiscount += Number(price.CouponDiscount ?? price.couponDiscount ?? 0);
           convenienceFee += Number(price.ConvenienceFee ?? price.convenienceFee ?? 0);
-          finalPayable += Number(rawTotal);
+          // [Bug ID: PNB_088] Dynamic GST calculation rule: <= 7500 -> 12%, > 7500 -> 18%
+          const roomGstRate = (roomBase > 7500) ? 0.18 : 0.12;
+          const dynamicRoomTax = roomTax > 0 ? roomTax : Math.round(roomBase * roomGstRate);
+          tax += dynamicRoomTax;
+          finalPayable += (roomBase + dynamicRoomTax + roomMarkup);
       });
   } else if (offer) {
       // Use the selected offer's price until blockRoom confirms the final rate
@@ -1119,7 +1143,9 @@ export default function HotelPassengerDetailsPage() {
           finalPayable = rawTotal;
       } else {
           basePrice = offerPrice > 0 ? offerPrice : 0;
-          finalPayable = basePrice;
+          const offerGstRate = (basePrice > 7500) ? 0.18 : 0.12;
+          tax = Math.round(basePrice * offerGstRate);
+          finalPayable = basePrice + tax;
       }
   }
   // If no offer selected and no blocked rooms, all prices remain 0 — UI shows "Select a room"
@@ -1152,7 +1178,8 @@ export default function HotelPassengerDetailsPage() {
     const titleOk = !!primary.title;
     const emailOk = !!primary.email?.trim() && isValidEmail(primary.email);
     const phoneOk = !!primary.mobile?.trim() && isValidMobile(primary.mobile);
-    return fullNameOk && ageOk && genderOk && titleOk && emailOk && phoneOk;
+    const titleGenderOk = !getTitleGenderError(primary.title, primary.gender);
+    return fullNameOk && ageOk && genderOk && titleOk && emailOk && phoneOk && titleGenderOk;
   }, [guests]);
 
   const selectExistingTraveler = (travelerId) => {
@@ -1194,10 +1221,10 @@ export default function HotelPassengerDetailsPage() {
       else if (!["Male", "Female", "Other"].includes(guest.gender)) message = "Select a valid gender.";
     } else if (field === "email" && index === 0) {
       if (!guest.email?.trim()) message = "Please enter email.";
-      else if (!isValidEmail(guest.email)) message = "Enter a valid email.";
+      else if (!isValidEmail(guest.email)) message = "Please enter a valid email address (e.g., name@example.com).";
     } else if (field === "mobile" && index === 0) {
       if (!guest.mobile?.trim()) message = "Please enter phone number.";
-      else if (!isValidMobile(guest.mobile)) message = "Enter a valid 10-digit Indian mobile number.";
+      else if (!isValidMobile(guest.mobile)) message = "Please enter a valid 10-digit mobile number.";
     }
 
     const updatedGuest = { ...guest, [field]: guest[field] };
@@ -1251,12 +1278,12 @@ export default function HotelPassengerDetailsPage() {
     if (!primary.email?.trim()) {
       nextErrors.guest_0_email = "Please enter email.";
     } else if (!isValidEmail(primary.email)) {
-      nextErrors.guest_0_email = "Enter a valid email.";
+      nextErrors.guest_0_email = "Please enter a valid email address (e.g., name@example.com).";
     }
     if (!primary.mobile?.trim()) {
       nextErrors.guest_0_mobile = "Please enter phone number.";
     } else if (!isValidMobile(primary.mobile)) {
-      nextErrors.guest_0_mobile = "Enter a valid 10-digit Indian mobile number.";
+      nextErrors.guest_0_mobile = "Please enter a valid 10-digit mobile number.";
     }
 
     // Co-Travelers validation (mandatory for children, optional for additional adults)
@@ -1354,6 +1381,7 @@ export default function HotelPassengerDetailsPage() {
   }, [currentStep]);
 
   const handleContinue = () => {
+    if (!agreedToAll) return;
     if (!validateForm()) { 
       setFormError("Please correct the highlighted guest details."); 
       return; 
@@ -1670,12 +1698,12 @@ export default function HotelPassengerDetailsPage() {
             nights={nights}
           />
         ) : (
-          <div className="hotel-checkout-layout">
+          <div className="hotel-checkout-layout max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             {/* Left Column Content */}
-            <div className="hotel-checkout-main">
+            <div className="hotel-checkout-main lg:col-span-8 space-y-5">
               {/* Hotel Summary Card (Search Result Style) */}
-              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "20px", padding: "16px", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "20px", background: "#fff", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "20px", padding: "20px", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "20px", background: "#fff", boxShadow: "0 4px 15px rgba(0,0,0,0.02)" }}>
                 <div style={{ width: "100%", height: "110px", borderRadius: "14px", overflow: "hidden" }}>
                   <img src={gallery[0]} alt={hotel.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 </div>
@@ -1716,7 +1744,7 @@ export default function HotelPassengerDetailsPage() {
                 </div>
               </div>
               {/* Primary Guest Form Card */}
-              <section className="hotel-panel" style={{ padding: "24px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)" }}>
+              <section className="hotel-panel p-5" style={{ padding: "20px", borderRadius: "20px", background: "#fff", border: "1px solid rgba(0,0,0,0.06)" }}>
                 <div className="form-title-section" style={{ borderBottom: "1px solid #f1f5f9", paddingBottom: "14px", marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Primary Guest Details</h3>
@@ -2066,8 +2094,14 @@ export default function HotelPassengerDetailsPage() {
                       {guests[0]?.fullName ? `${guests[0].title || ""} ${guests[0].fullName}`.trim() : ""}
                     </span>
                   </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "10px", marginTop: "4px" }}>
+                    <span>⚡ <strong>Booking Status:</strong></span>
+                    <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold px-3 py-1 rounded-full text-xs inline-flex items-center gap-1.5">
+                      <CheckCircle size={13} className="text-emerald-700" /> Confirmed
+                    </span>
+                  </div>
                   <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "10px", marginTop: "4px" }}>
-                    <span>💰 <strong>Total Amount:</strong></span>
+                    <span>💰 <strong>Total Payable:</strong></span>
                     <strong style={{ color: "#10b981", fontSize: "1rem" }}>{formatCurrency(Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}</strong>
                   </div>
                 </div>
@@ -2107,63 +2141,130 @@ export default function HotelPassengerDetailsPage() {
                   </div>
                 )}
 
-                {/* Hotel Cancellation Policy Section */}
+                {/* Hotel Cancellation Policy Section & Dynamic Consent Agreement */}
                 {offer && (
                   <div style={{ marginBottom: "16px" }}>
                     <CancellationPolicySection
                       booking={offer}
                       bookingType="hotel"
                       policyData={offer?.cancellationPolicies || offer?.cancellationPoliciesData}
+                      showConsentCheckbox={false}
                     />
                   </div>
                 )}
 
-                <label className={`hotel-checkbox ${errors.agreedToAll ? "is-error" : ""}`} style={{ display: "flex", alignItems: "flex-start", gap: "10px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "var(--hotel-ink)", margin: 0 }}>
-                  <input 
-                    type="checkbox" 
-                    checked={agreedToAll} 
-                    onChange={(event) => {
-                      setAgreedToAll(event.target.checked);
-                      setErrors((current) => { const next = { ...current }; delete next.agreedToAll; return next; });
-                      setFormError("");
-                    }} 
-                  />
-                  <span>
-                    I have reviewed my hotel selection and guest info, verify they are correct, and agree to the hotel booking policy, guest rules, and cancellation terms (
-                    <span style={{ color: "var(--hotel-rose)", fontWeight: 700 }}>
-                      {offer?.cancellationPolicy || "Standard cancellation terms apply"}
-                    </span>
-                    ) for this stay.
-                  </span>
-                </label>
-                {errors.agreedToAll && <p style={{ margin: "4px 0 0 0", color: "red", fontSize: "0.74rem" }}>{errors.agreedToAll}</p>}
-                {formError && <p className="hotel-helper hotel-helper--error" style={{ margin: "8px 0 0 0", color: "red", fontSize: "0.78rem" }}>{formError}</p>}
-                {agreedToAll && (
-                  <div className="booking-action-buttons-row" style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                      <button
-                        type="button"
-                        className="hotel-primary-button"
-                        style={{ minHeight: "44px", padding: "0 22px", borderRadius: "12px", fontWeight: 700, background: "var(--hotel-rose)" }}
-                        onClick={handleContinue}
-                      >
-                        Continue to Payment →
-                      </button>
-                      {!hasValidToken && (
-                        <span style={{ fontSize: "0.72rem", color: "var(--hotel-rose)", marginTop: "4px", fontWeight: 600 }}>
-                          * Login mandatory to pay
-                        </span>
-                      )}
+                {/* CONFIRM CONTAINER */}
+                <div
+                  className="hotel-confirm-container"
+                  style={{
+                    background: "#ffffff",
+                    border: errors.agreedToAll ? "1.5px solid #ff0000" : "1.5px solid #fecdd3",
+                    borderRadius: "16px",
+                    padding: "16px 20px",
+                    marginTop: "16px",
+                    marginBottom: "8px",
+                    boxShadow: "0 2px 8px rgba(225, 29, 72, 0.04)",
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "14px",
+                      cursor: "pointer",
+                      userSelect: "none",
+                      margin: 0,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={agreedToAll}
+                      onChange={(e) => {
+                        setAgreedToAll(e.target.checked);
+                        if (e.target.checked) {
+                          setErrors((current) => {
+                            const next = { ...current };
+                            delete next.agreedToAll;
+                            return next;
+                          });
+                          setFormError("");
+                        }
+                      }}
+                      style={{
+                        marginTop: "3px",
+                        width: "18px",
+                        height: "18px",
+                        accentColor: "#ff0000",
+                        cursor: "pointer",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div
+                      style={{
+                        fontSize: "0.85rem",
+                        lineHeight: "1.5",
+                        color: "#1e293b",
+                        fontWeight: 500,
+                      }}
+                    >
+                      I have reviewed my hotel selection and guest info, verify they are correct, and agree to the hotel booking policy, guest rules, and cancellation terms (
+                      <span style={{ color: "#ff0000", fontWeight: 700 }}>
+                        Non-refundable / Cancellation charges apply
+                      </span>
+                      ) for this stay.
                     </div>
-                  </div>
+                  </label>
+                </div>
+
+                {errors.agreedToAll && (
+                  <p style={{ margin: "4px 0 8px 4px", color: "red", fontSize: "0.74rem" }}>
+                    {errors.agreedToAll}
+                  </p>
                 )}
+
+                {formError && (
+                  <p className="hotel-helper hotel-helper--error" style={{ margin: "8px 0 0 0", color: "red", fontSize: "0.78rem" }}>
+                    {formError}
+                  </p>
+                )}
+
+                <div className="booking-action-buttons-row" style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                    <button
+                      type="button"
+                      className="hotel-primary-button"
+                      disabled={!agreedToAll}
+                      style={{
+                        minHeight: "44px",
+                        padding: "0 24px",
+                        borderRadius: "12px",
+                        fontWeight: 700,
+                        fontSize: "0.95rem",
+                        border: "none",
+                        background: agreedToAll ? "#ff0000" : "#c9ccd1",
+                        color: agreedToAll ? "#ffffff" : "#7b8088",
+                        cursor: agreedToAll ? "pointer" : "not-allowed",
+                        boxShadow: agreedToAll ? "0 4px 14px rgba(255, 0, 0, 0.35)" : "none",
+                        transition: "background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
+                      }}
+                      onClick={handleContinue}
+                    >
+                      Continue to Payment →
+                    </button>
+                    {!hasValidToken && (
+                      <span style={{ fontSize: "0.72rem", color: "var(--hotel-rose, #ff0000)", marginTop: "4px", fontWeight: 600 }}>
+                        * Login mandatory to pay
+                      </span>
+                    )}
+                  </div>
+                </div>
               </section>
             </div>
 
             {/* Right Column Booking Sidebar */}
-            <aside className="hotel-reserve-rail hotel-checkout-side" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <aside className="hotel-reserve-rail hotel-checkout-side lg:col-span-4 space-y-5 sticky top-6" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               {/* Booking Summary Card */}
-              <div className="hotel-reserve-card hotel-your-stay-card" style={{ background: "var(--hotel-surface)", borderRadius: "24px", border: "1px solid var(--hotel-border)", padding: "24px", boxShadow: "var(--hotel-shadow)" }}>
+              <div className="hotel-reserve-card hotel-your-stay-card p-5" style={{ background: "var(--hotel-surface)", borderRadius: "20px", border: "1px solid var(--hotel-border)", padding: "20px", boxShadow: "var(--hotel-shadow)" }}>
                 <div className="hotel-your-stay-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "16px" }}>
                   <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Booking Summary</h3>
                 </div>
@@ -2232,7 +2333,7 @@ export default function HotelPassengerDetailsPage() {
 
                     <div className="hotel-fare-breakdown" style={{ display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "14px" }}>
                       <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
-                        <span>Room base charges</span>
+                        <span>Base Fare</span>
                         <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(basePrice)}</strong>
                       </div>
                       {(couponDiscount > 0 || appliedDiscount > 0) && (
@@ -2242,13 +2343,13 @@ export default function HotelPassengerDetailsPage() {
                         </div>
                       )}
                       <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
-                        <span>Taxes & GST</span>
+                        <span>Taxes & Fees (GST)</span>
                         <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(tax)}</strong>
                       </div>
                     </div>
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                      <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Total Price</span>
+                      <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Total Payable</span>
                       <strong style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981" }}>
                         {formatCurrency(Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}
                       </strong>
@@ -2561,6 +2662,32 @@ export default function HotelPassengerDetailsPage() {
                   </div>
                 </article>
               )}
+            
+              {/* Need Help Card */}
+              <div className="hotel-reserve-card p-5" style={{ background: "var(--hotel-surface, #fff)", borderRadius: "20px", border: "1px solid var(--hotel-border, #e2e8f0)", padding: "20px", boxShadow: "var(--hotel-shadow, 0 4px 15px rgba(0,0,0,0.04))" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+                  <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(220, 30, 38, 0.08)", color: "var(--hotel-rose, #dc1e26)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Headphones size={18} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "var(--hotel-ink, #0f172a)" }}>Need Help?</h4>
+                    <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--hotel-muted, #64748b)" }}>24/7 dedicated customer assistance</p>
+                  </div>
+                </div>
+                <p style={{ margin: "0 0 12px 0", fontSize: "0.82rem", color: "var(--hotel-muted, #64748b)", lineHeight: "1.5" }}>
+                  Have questions regarding room check-in, policies, or booking amendments?
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.82rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--hotel-ink, #1e293b)", fontWeight: 600 }}>
+                    <Phone size={14} style={{ color: "var(--hotel-rose, #dc1e26)" }} />
+                    <span>+91 999-999-9999</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--hotel-ink, #1e293b)", fontWeight: 600 }}>
+                    <Mail size={14} style={{ color: "var(--hotel-rose, #dc1e26)" }} />
+                    <span>contact@picknbook.in</span>
+                  </div>
+                </div>
+              </div>
             </aside>
 
           </div>
@@ -2874,15 +3001,17 @@ export default function HotelPassengerDetailsPage() {
                 <div className="coupon-info-detail-item">
                   <span className="detail-item-label">Discount Benefit</span>
                   <span className="detail-item-value highlight">
-                    {detailModalItem.discountValue
+                    {Number(detailModalItem.discountValue) > 0
                       ? (detailModalItem.isPercentageDiscount
                         ? `${detailModalItem.discountValue}% OFF`
                         : `₹${detailModalItem.discountValue} OFF`)
-                      : detailModalItem.value
+                      : Number(detailModalItem.value) > 0
                         ? `₹${detailModalItem.value} OFF`
-                        : (detailModalItem.type === "offer"
-                          ? getOfferMainHeading(detailModalItem)
-                          : getCouponMainHeading(detailModalItem))}
+                        : (String(detailModalItem.title || "").match(/(\d+)\s*%/)
+                          ? `${String(detailModalItem.title || "").match(/(\d+)\s*%/)[1]}% OFF`
+                          : (detailModalItem.type === "offer"
+                            ? getOfferMainHeading(detailModalItem)
+                            : getCouponMainHeading(detailModalItem)))}
                   </span>
                 </div>
 

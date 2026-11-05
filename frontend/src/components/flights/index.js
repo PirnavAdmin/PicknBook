@@ -1,0 +1,10 @@
+export { default as FlightHero } from "./FlightHero";
+export { default as FlightSearchForm } from "./FlightSearchForm";
+export { default as FeaturedOffersCarousel } from "./FeaturedOffersCarousel";
+export { default as FeaturedOffers } from "./FeaturedOffersCarousel";
+export { default as FlightStats } from "./FlightStats";
+export { default as FlightStatistics } from "./FlightStats";
+export { default as FlightRatingsReviews } from "./FlightRatingsReviews";
+export { default as FlightReviews } from "./FlightRatingsReviews";
+export { default as AboutFlightBooking } from "./AboutFlightBooking";
+export { default as FlightsPage } from "./FlightsPage";

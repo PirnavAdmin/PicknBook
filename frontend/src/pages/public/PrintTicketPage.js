@@ -460,7 +460,7 @@ function getPickerDetails(ticket, fallbackType) {
   if (type === TICKET_TYPES.HOTEL) {
     const data = mapTicketToHotel(ticket);
     return [
-      { label: "Reference", value: data.pnr },
+      { label: "Confirmation No.", value: data.pnr },
       { label: "Check-in", value: data.checkIn },
       { label: "Fare", value: data.fare },
     ];

@@ -361,51 +361,92 @@
   gap: 8px;
 }
 
-/* ── Notification Card ── */
+/* ── Notification Card (Bug ID: PNB-090 Read/Unread Differentiation) ── */
 .unc-notif-card {
   position: relative;
   width: 100%;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
   border-radius: 9px;
-  padding: 11px 13px;
+  padding: 12px 14px;
   text-align: left;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   color: inherit;
   display: block;
   box-sizing: border-box;
 }
 
 .unc-notif-card:hover {
-  background: #ffffff;
-  border-color: #A51C49;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(165, 28, 73, 0.1);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
 }
 
 .unc-notif-card:focus-visible {
-  outline: 2px solid #A51C49;
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
+/* Unread Notifications: Distinct subtle background (bg-blue-50/60 border-l-4 border-l-blue-600), bold title */
 .unc-notif-card.unc-is-unread {
-  background: #fff9fb;
-  border-left: 3px solid #A51C49;
+  background: rgba(239, 246, 255, 0.7);
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
 }
 
+.unc-notif-card.unc-is-unread:hover {
+  background: rgba(239, 246, 255, 0.9);
+  border-color: #93c5fd;
+}
+
+.unc-notif-card.unc-is-unread .unc-notif-title {
+  font-weight: 750;
+  color: #0f172a;
+}
+
+/* Read Notifications: Neutral background (bg-white border-l-4 border-l-transparent text-slate-600), normal font weight */
 .unc-notif-card.unc-is-read {
-  opacity: 0.85;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid transparent;
+  color: #475569;
 }
 
-.unc-unread-dot {
-  position: absolute;
-  top: 13px;
-  right: 13px;
-  width: 8px;
-  height: 8px;
-  background: #A51C49;
-  border-radius: 50%;
+.unc-notif-card.unc-is-read:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.unc-notif-card.unc-is-read .unc-notif-title {
+  font-weight: 500;
+  color: #475569;
+}
+
+.unc-notif-card.unc-is-read .unc-notif-message {
+  color: #64748b;
+}
+
+/* Prominent NEW badge for unread */
+.unc-new-badge {
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7.5px;
+  border-radius: 9999px;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.3);
+}
+
+.unc-notif-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .unc-card-content {
@@ -423,11 +464,8 @@
 
 .unc-notif-title {
   font-size: 0.86rem;
-  font-weight: 700;
-  color: #0f172a;
   line-height: 1.35;
-  flex: 1;
-  min-width: 0;
+  margin: 0;
 }
 
 /* ── Severity Badges ── */
@@ -622,4 +660,24 @@
   }
 
   .notification-popover { right: -48px; }
+}
+/* Dark Mode Support for Notifications */
+@media (prefers-color-scheme: dark) {
+  .dark .unc-notif-card.unc-is-unread {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: #334155;
+    border-left-color: #2563eb;
+  }
+  .dark .unc-notif-card.unc-is-unread .unc-notif-title {
+    color: #f1f5f9;
+  }
+  .dark .unc-notif-card.unc-is-read {
+    background: #0f172a;
+    border-color: #1e293b;
+    border-left-color: transparent;
+    color: #94a3b8;
+  }
+  .dark .unc-notif-card.unc-is-read .unc-notif-title {
+    color: #94a3b8;
+  }
 }

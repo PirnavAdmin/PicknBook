@@ -820,10 +820,47 @@ export default function HotelBookingList() {
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <strong style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, marginBottom: "3px", wordBreak: "break-all" }}>
-                      <small style={{ color: "#64748b", fontSize: "0.65rem" }}>Booking Ref</small>
-                      {safeValue(b.bookingReference || b.confirmationNo || b.providerBookingId, "--")}
-                    </strong>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", marginBottom: "4px" }}>
+                      {/* Internal Hotel Reference */}
+                      <span
+                        className="font-mono font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-xs"
+                        title="Internal Hotel Reference ID"
+                        style={{
+                          fontFamily: "monospace",
+                          fontWeight: 600,
+                          color: "#1e293b",
+                          backgroundColor: "#f1f5f9",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.72rem",
+                          display: "inline-block",
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        Ref ID: {safeValue(b.bookingReference || (b.bookingId ? `HT-${b.bookingId}` : b.id), "--")}
+                      </span>
+
+                      {/* Supplier Confirmation Number if exists */}
+                      {(b.confirmationNo || b.supplierConfirmationNo || b.hotelConfirmationNo || b.providerBookingId) &&
+                       (b.confirmationNo !== b.bookingReference && b.supplierConfirmationNo !== b.bookingReference) && (
+                        <span
+                          className="font-mono font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-xs"
+                          style={{
+                            fontFamily: "monospace",
+                            fontWeight: 600,
+                            color: "#1e293b",
+                            backgroundColor: "#e2e8f0",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "0.68rem",
+                            marginTop: "2px"
+                          }}
+                          title="Hotel Confirmation Number"
+                        >
+                          Hotel Conf: {safeValue(b.confirmationNo || b.supplierConfirmationNo || b.hotelConfirmationNo || b.providerBookingId)}
+                        </span>
+                      )}
+                    </div>
                     <span className={`admin-status-pill ${statusClass}`}>
                       {safeValue(displayStatus)}
                     </span>
@@ -1025,7 +1062,7 @@ export default function HotelBookingList() {
                     <td>{safeValue(selectedBooking.bookingReference, "--")}</td>
                   </tr>
                   <tr>
-                    <th>PNR / Conf No</th>
+                    <th>Confirmation No</th>
                     <td>{safeValue(selectedBooking.confirmationNo || selectedBooking.bookingReference, "--")}</td>
                     <th>Booking Date (B.D.)</th>
                     <td>{formatAdminDate(selectedBooking.createdAt || selectedBooking.bookedAt)}</td>

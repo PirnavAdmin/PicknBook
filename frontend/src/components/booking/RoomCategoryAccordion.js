@@ -109,11 +109,11 @@ export default function RoomCategoryAccordion({
       {/* Filter Bar */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", background: "#f8fafc", padding: "12px", borderRadius: "12px", border: "1px solid rgba(0,0,0,0.04)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <label style={{ fontSize: "0.8rem", color: "var(--hotel-muted)", fontWeight: 500 }}>Meal Plan:</label>
+          <label style={{ fontSize: "0.875rem", color: "var(--hotel-muted)", fontWeight: 500 }}>Meal Plan:</label>
           <select 
             value={mealPlanFilter} 
             onChange={e => setMealPlanFilter(e.target.value)}
-            style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid #e2e8f0", fontSize: "0.8rem", background: "#fff", cursor: "pointer" }}
+            style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid #e2e8f0", fontSize: "0.875rem", background: "#fff", cursor: "pointer" }}
           >
             <option value="Any">Any</option>
             <option value="Breakfast Included">Breakfast Included</option>
@@ -121,7 +121,7 @@ export default function RoomCategoryAccordion({
           </select>
         </div>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "var(--hotel-ink)", cursor: "pointer" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.875rem", color: "var(--hotel-ink)", cursor: "pointer" }}>
           <input 
             type="checkbox" 
             checked={refundableOnly} 
@@ -132,11 +132,11 @@ export default function RoomCategoryAccordion({
         </label>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "auto" }}>
-          <label style={{ fontSize: "0.8rem", color: "var(--hotel-muted)", fontWeight: 500 }}>Sort:</label>
+          <label style={{ fontSize: "0.875rem", color: "var(--hotel-muted)", fontWeight: 500 }}>Sort:</label>
           <select 
             value={sortBy} 
             onChange={e => setSortBy(e.target.value)}
-            style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid #e2e8f0", fontSize: "0.8rem", background: "#fff", cursor: "pointer" }}
+            style={{ padding: "4px 8px", borderRadius: "6px", border: "1px solid #e2e8f0", fontSize: "0.875rem", background: "#fff", cursor: "pointer" }}
           >
             <option value="Recommended">Recommended</option>
             <option value="PriceLowHigh">Price (Low to High)</option>
@@ -326,10 +326,10 @@ export default function RoomCategoryAccordion({
                               }}
                               disabled={selectingOfferId !== ""}
                               style={{
-                                minWidth: "120px",
-                                height: "36px",
-                                borderRadius: "8px",
-                                fontSize: "0.8rem",
+                                minWidth: "140px",
+                                height: "44px", padding: "0 20px", borderRadius: "12px", minHeight: "44px",
+                                display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "8px", boxSizing: "border-box",
+                                fontSize: "0.875rem",
                                 fontWeight: 700,
                                 cursor: "pointer",
                                 background: isSelected ? "var(--hotel-rose, #ff0000)" : "#ff0000",
@@ -393,7 +393,7 @@ export default function RoomCategoryAccordion({
             <div style={{ padding: "20px 24px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" }}>
               <div>
                 <h3 style={{ margin: "0 0 4px 0", fontSize: "1.1rem", fontWeight: 700, color: "var(--hotel-ink)" }}>Room Amenities</h3>
-                <p style={{ margin: 0, fontSize: "0.8rem", color: "var(--hotel-muted)" }}>{amenitiesModalCategory.categoryName}</p>
+                <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--hotel-muted)" }}>{amenitiesModalCategory.categoryName}</p>
               </div>
               <button 
                 onClick={() => setAmenitiesModalCategory(null)}

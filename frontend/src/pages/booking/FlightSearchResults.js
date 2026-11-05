@@ -1,3 +1,13 @@
+function safeFindFlight(leg, id) {
+  if (Array.isArray(leg)) {
+    return (id ? leg.find((f) => f && f.id === id) : null) || leg[0] || null;
+  }
+  if (leg && typeof leg === "object" && leg.id) {
+    return leg;
+  }
+  return null;
+}
+
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   ArrowLeftRight,
@@ -1019,12 +1029,40 @@ export default function FlightSearchResults() {
           setReturnFlights(returnList);
           if (onwardList.length > 0) setSelectedOnwardFlightId(onwardList[0].id);
           if (returnList.length > 0) setSelectedReturnFlightId(returnList[0].id);
-        } else if (result && result.isMultiCity) {
-          const multicityLegs = Array.isArray(result.legs) ? result.legs : [];
+        } else if (result && (result.isMultiCity || result.isMultiCityResults || tripType === "multicity")) {
+          let multicityLegs = [];
+          if (Array.isArray(result?.legs)) {
+            multicityLegs = result.legs.map((leg) => Array.isArray(leg) ? leg : (leg ? [leg] : []));
+          } else if (Array.isArray(result) && result.length > 0 && Array.isArray(result[0])) {
+            multicityLegs = result;
+          } else if (Array.isArray(result)) {
+            multicityLegs = parsedMultiCityLegs.map((reqLeg, lIdx) => {
+              const from = cityCode(reqLeg.from || "", "").toUpperCase();
+              const to = cityCode(reqLeg.to || "", "").toUpperCase();
+              const matching = result.filter((f) =>
+                f && (
+                  f.sourceCode === from ||
+                  (f.fromCity && f.fromCity.toUpperCase().includes(from))
+                ) && (
+                  f.destinationCode === to ||
+                  (f.toCity && f.toCity.toUpperCase().includes(to))
+                )
+              );
+              return matching.length > 0 ? matching : (lIdx === 0 ? result : []);
+            });
+          } else {
+            multicityLegs = parsedMultiCityLegs.map(() => []);
+          }
+
+          while (multicityLegs.length < Math.max(parsedMultiCityLegs.length, 1)) {
+            multicityLegs.push([]);
+          }
+
           setApiFlights(multicityLegs);
           setReturnFlights([]);
-          // Store the shared TraceId from JourneyType: 3 response
-          if (result.sharedTraceId) setSharedMultiCityTraceId(result.sharedTraceId);
+          if (result?.sharedTraceId || result?.traceId) {
+            setSharedMultiCityTraceId(result.sharedTraceId || result.traceId);
+          }
           const initialSelections = {};
           multicityLegs.forEach((legArray, index) => {
             if (Array.isArray(legArray) && legArray.length > 0) {
@@ -1137,7 +1175,7 @@ export default function FlightSearchResults() {
       let total = 0;
       apiFlights.forEach((legArray, index) => {
         const selectedId = selectedMultiCityFlightIds[index];
-        const selectedObj = legArray?.find(f => f.id === selectedId) || legArray?.[0];
+        const selectedObj = safeFindFlight(legArray, selectedId);
         const resolvedObj = resolveFlightFareOption(selectedObj);
         if (resolvedObj) total += Number(resolvedObj.fare || 0);
       });
@@ -1728,7 +1766,7 @@ export default function FlightSearchResults() {
           window.scrollTo({ top: 0, behavior: "smooth" });
         }, 100);
       } else {
-        const firstLegFlight = apiFlights[0]?.find(f => f.id === updatedSelections[0]) || apiFlights[0]?.[0];
+        const firstLegFlight = safeFindFlight(apiFlights[0], updatedSelections[0]);
         if (firstLegFlight) {
           handleStartBookingJourney(firstLegFlight, null, null, updatedSelections);
         }
@@ -1762,9 +1800,7 @@ export default function FlightSearchResults() {
       const targetSelections = explicitMultiCitySelections || selectedMultiCityFlightIds || {};
       allSelectedLegs = apiFlights.map((legArray, index) => {
         const selectedId = targetSelections[index];
-        const selectedObj = Array.isArray(legArray)
-          ? (legArray.find(f => f.id === selectedId) || legArray[0])
-          : (legArray?.id ? legArray : null);
+        const selectedObj = safeFindFlight(legArray, selectedId);
         if (!selectedObj) return null;
         let resolvedObj = resolveFlightFareOption(selectedObj);
         const rawResultIndex = resolvedObj.legResultIndex || resolvedObj.resultIndex || resolvedObj.ResultIndex || "";
@@ -1909,7 +1945,7 @@ export default function FlightSearchResults() {
     // Build all selected legs synchronously using the passed selectionsMap
     const allSelectedLegs = apiFlights.map((legArray, index) => {
       const selectedId = selectionsMap[index];
-      const selectedObj = legArray?.find(f => f.id === selectedId) || legArray?.[0];
+      const selectedObj = safeFindFlight(legArray, selectedId);
       if (!selectedObj) return null;
       const rawResultIndex = selectedObj.legResultIndex || selectedObj.resultIndex || selectedObj.ResultIndex || "";
       return {
@@ -2087,7 +2123,7 @@ export default function FlightSearchResults() {
         <section className="flight-search-hero">
           <div className="flight-hero-wallpaper-overlay" />
           <div className="flight-hero-content-wrapper">
-            <div className="flight-hero-top-row">
+            <div className="flight-hero-top-row" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
               <div className="flight-trip-types">
                 <button
                   type="button"
@@ -2101,22 +2137,21 @@ export default function FlightSearchResults() {
                   className={`flight-trip-chip ${modifyForm.tripType === "twoway" ? "active" : ""}`}
                   onClick={() => setModifyForm((prev) => ({ ...prev, tripType: "twoway" }))}
                 >
-                  Two Way
+                  Round Trip
                 </button>
               </div>
-
-
             </div>
 
             <form
               className="flight-discover-searchbar"
+              style={{ width: '100%', maxWidth: 'none', boxSizing: 'border-box', display: 'flex' }}
               onSubmit={(e) => {
                 e.preventDefault();
                 handleApplyModifySearch();
               }}
             >
               {/* FROM FIELD */}
-              <div className="flight-discover-searchcell" style={{ flex: '1.2 1 auto' }}>
+              <div className="flight-discover-searchcell" style={{ flex: '1 1 0', minWidth: 0 }}>
                 <PlaceAutocomplete
                   label="FROM"
                   sublabel="ORIGIN AIRPORT"
@@ -2145,7 +2180,7 @@ export default function FlightSearchResults() {
               </button>
 
               {/* TO FIELD */}
-              <div className="flight-discover-searchcell with-divider" style={{ flex: '1.2 1 auto' }}>
+              <div className="flight-discover-searchcell with-divider" style={{ flex: '1 1 0', minWidth: 0 }}>
                 <PlaceAutocomplete
                   label="TO"
                   sublabel="DESTINATION AIRPORT"
@@ -2164,7 +2199,7 @@ export default function FlightSearchResults() {
               </div>
 
               {/* TIMELINE / DEPARTURE (+ RETURN) FIELD */}
-              <div className="flight-discover-searchcell with-divider" style={{ flex: '1.2 1 auto', cursor: 'pointer', position: 'relative' }}
+              <div className="flight-discover-searchcell with-divider" style={{ flex: '1 1 0', minWidth: 0, cursor: 'pointer', position: 'relative' }}
                 onClick={() => setActiveDatePicker("flight-discover-dep-date")}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
@@ -2236,7 +2271,7 @@ export default function FlightSearchResults() {
               <div
                 className="flight-discover-searchcell with-divider"
                 ref={travellersRef}
-                style={{ flex: '1.1 1 auto', cursor: 'pointer' }}
+                style={{ flex: '1 1 0', minWidth: 0, cursor: 'pointer' }}
                 onClick={() => setShowTravellersDropdown((prev) => !prev)}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
@@ -2955,13 +2990,13 @@ export default function FlightSearchResults() {
               </>
             )}
 
-            {tripType === "multicity" && (apiFlights.length > 0 ? apiFlights : parsedMultiCityLegs).map((legItemOrArray, index) => {
-              const legArray = Array.isArray(legItemOrArray) ? legItemOrArray : (apiFlights[index] || []);
+            {tripType === "multicity" && (parsedMultiCityLegs.length > 0 ? parsedMultiCityLegs : apiFlights).map((rawLeg, index) => {
+              const legArray = Array.isArray(apiFlights[index]) ? apiFlights[index] : (Array.isArray(apiFlights) && apiFlights.length > 0 && Array.isArray(apiFlights[0]) ? [] : (Array.isArray(apiFlights) ? apiFlights : []));
               const selectedId = selectedMultiCityFlightIds[index];
-              const selectedObj = legArray?.find(f => f.id === selectedId) || legArray?.[0];
+              const selectedObj = safeFindFlight(legArray, selectedId);
               const isActive = multiCityActiveTab === index;
 
-              const legInfo = parsedMultiCityLegs[index] || {};
+              const legInfo = parsedMultiCityLegs[index] || rawLeg || {};
               const displayAirline = selectedObj?.airline || "Select Flight";
               const displaySrc = cityCode(selectedObj?.sourceCode || legInfo.from || legInfo.fromCity || legInfo.source || "");
               const displayDest = cityCode(selectedObj?.destinationCode || legInfo.to || legInfo.toCity || legInfo.destination || "");
@@ -3036,7 +3071,7 @@ export default function FlightSearchResults() {
               onClick={() => {
                 if (tripType === "multicity") {
                   // Build all legs from current selections + api flights synchronously
-                  const firstLegFlight = apiFlights[0]?.find(f => f.id === selectedMultiCityFlightIds[0]) || apiFlights[0]?.[0];
+                  const firstLegFlight = safeFindFlight(apiFlights[0], selectedMultiCityFlightIds[0]);
                   if (firstLegFlight) {
                     handleStartBookingJourney(firstLegFlight, null, null, selectedMultiCityFlightIds);
                   }

@@ -1670,14 +1670,14 @@ export default function AdminBusCouponListPage() {
                             >
                               <button
                                 type="button"
-                                className="dropdown-item view admin-view-button"
+                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus:bg-slate-100 focus:outline-none transition-colors rounded-md font-medium text-left group dropdown-item view"
                                 onClick={() => {
                                   setViewingCoupon(coupon);
                                   setActiveActionDropdownId(null);
                                 }}
                               >
+                                <Eye size={16} className="w-4 h-4 text-slate-500 group-hover:text-slate-700 flex-shrink-0" />
                                 <span>View Details</span>
-                                <Eye size={14} className="item-icon" />
                               </button>
 
                               <button

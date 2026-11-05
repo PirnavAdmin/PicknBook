@@ -112,14 +112,16 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 1100px;
+  max-width: none;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .flight-hero-top-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  width: 100%;
   margin-bottom: 8px;
   flex-wrap: wrap;
   gap: 8px;
@@ -184,6 +186,7 @@
   align-items: center !important;
   justify-content: space-between !important;
   width: 100% !important;
+  max-width: none !important;
   box-sizing: border-box !important;
   position: relative !important;
   overflow: visible !important;
@@ -194,10 +197,10 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1.1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .flight-discover-searchcell.with-divider {
@@ -434,7 +437,7 @@
   background: #ff0000;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   .flight-discover-searchbar {
     flex-direction: column !important;
     border-radius: 24px !important;
@@ -442,16 +445,22 @@
     gap: 14px !important;
   }
 
+  .flight-discover-searchcell,
   .flight-discover-searchcell.with-divider {
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    padding-left: 0;
-    padding-top: 10px;
+    flex: 1 1 100% !important;
     width: 100%;
+    border-left: none;
+    padding-left: 0;
   }
 
-  .flight-discover-searchcell {
-    width: 100%;
+  .flight-discover-searchcell.with-divider {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding-top: 10px;
+  }
+
+  .flight-discover-searchcell:first-child {
+    border-top: none;
+    padding-top: 0;
   }
 
   .flight-discover-searchbutton {

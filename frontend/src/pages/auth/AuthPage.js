@@ -195,6 +195,7 @@ export default function AuthPage() {
   const [otp, setOtp]                     = useState("");
   const [otpSent, setOtpSent]             = useState(false);
   const [timeLeft, setTimeLeft]           = useState(0);
+  const [countdown, setCountdown]         = useState(30);
   const [status, setStatus]               = useState({ type: "", message: "" });
   const [errors, setErrors]               = useState({});
   const [loading, setLoading]             = useState(false);
@@ -224,12 +225,24 @@ export default function AuthPage() {
   const [stepKey, setStepKey] = useState(0);
   const bump = () => setStepKey((k) => k + 1);
 
-  /* ── Timers (UNCHANGED) ─────────────────────────────────── */
+  /* ── Timers ─────────────────────────────────────────────── */
   useEffect(() => {
     if (!otpSent || timeLeft <= 0) return;
     const id = setInterval(() => setTimeLeft((p) => p - 1), 1000);
     return () => clearInterval(id);
   }, [otpSent, timeLeft <= 0]);
+
+  useEffect(() => {
+    if (viewMode === "register-otp" || (viewMode === "login" && otpSent)) {
+      setCountdown(30);
+    }
+  }, [viewMode, otpSent]);
+
+  useEffect(() => {
+    if ((viewMode !== "register-otp" && !otpSent) || countdown <= 0) return;
+    const id = setInterval(() => setCountdown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(id);
+  }, [viewMode, otpSent, countdown]);
 
   useEffect(() => {
     if (fpStep !== 2 || fpTimeLeft <= 0) return;
@@ -285,17 +298,74 @@ export default function AuthPage() {
     }, 400);
   };
 
-  /* ── Input handlers (UNCHANGED) ─────────────────────────── */
-  const handleMobileChange   = (e) => { setMobile(e.target.value.replace(/\D/g,"").slice(0,10)); setErrors({}); setStatus({type:"",message:""}); };
-  const handleEmailChange    = (e) => { setEmail(e.target.value.trimStart()); setErrors({}); setStatus({type:"",message:""}); };
+  /* ── Input handlers ─────────────────────────────────────── */
+  const validateFullName = (name) => {
+    const trimmed = String(name || "").trim();
+    if (!trimmed) return "Enter your full name.";
+    if (!/^[A-Za-z\s]{2,}$/.test(trimmed)) {
+      return "Full name must be at least 2 characters and contain only letters.";
+    }
+    return "";
+  };
+
+  const validateMobileNumber = (phone) => {
+    const trimmed = String(phone || "").trim();
+    if (!trimmed) return "Enter your mobile number.";
+    if (!/^[6-9]\d{9}$/.test(trimmed)) {
+      return "Enter a valid 10-digit mobile number starting with 6-9.";
+    }
+    return "";
+  };
+
+  const validatePasswordField = (pwd) => {
+    if (!pwd) return "Create a password.";
+    if (pwd.length < 8) return "Password must be at least 8 characters.";
+    if (!/^(?=.*[A-Za-z])(?=.*\d)/.test(pwd)) {
+      return "Password must contain at least 1 letter and 1 number.";
+    }
+    return "";
+  };
+
+  const validateConfirmPasswordField = (pwd, confirmPwd) => {
+    if (!confirmPwd) return "Confirm your password.";
+    if (pwd !== confirmPwd) return "Passwords do not match.";
+    return "";
+  };
+
+  const handleFullNameBlur = () => {
+    if (viewMode !== "register") return;
+    const err = validateFullName(fullName);
+    setErrors((prev) => ({ ...prev, ...(err ? { fullName: err } : { fullName: undefined }) }));
+  };
+
+  const handleMobileBlur = () => {
+    if (viewMode !== "register") return;
+    const err = validateMobileNumber(mobile);
+    setErrors((prev) => ({ ...prev, ...(err ? { mobile: err } : { mobile: undefined }) }));
+  };
+
+  const handlePasswordBlur = () => {
+    if (viewMode !== "register") return;
+    const err = validatePasswordField(password);
+    setErrors((prev) => ({ ...prev, ...(err ? { password: err } : { password: undefined }) }));
+  };
+
+  const handleConfirmPasswordBlur = () => {
+    if (viewMode !== "register") return;
+    const err = validateConfirmPasswordField(password, confirmPassword);
+    setErrors((prev) => ({ ...prev, ...(err ? { confirmPassword: err } : { confirmPassword: undefined }) }));
+  };
+
+  const handleMobileChange   = (e) => { setMobile(e.target.value.replace(/\D/g,"").slice(0,10)); setErrors((prev) => ({ ...prev, mobile: undefined })); setStatus({type:"",message:""}); };
+  const handleEmailChange    = (e) => { setEmail(e.target.value.trimStart()); setErrors((prev) => ({ ...prev, email: undefined })); setStatus({type:"",message:""}); };
   const handleEmailBlur = () => {
     if (viewMode !== "register" || !email.trim()) return;
     const emailResult = validateEmailAddress(email);
-    setErrors((current) => ({ ...current, ...(emailResult.valid ? {} : { email: emailResult.error }) }));
+    setErrors((current) => ({ ...current, ...(emailResult.valid ? { email: undefined } : { email: emailResult.error }) }));
   };
-  const handlePasswordChange = (e) => { setPassword(e.target.value); setErrors({}); setStatus({type:"",message:""}); };
-  const handleOtpChange      = (e) => { setOtp(e.target.value.replace(/\D/g,"").slice(0,OTP_LENGTH)); setErrors({}); setStatus({type:"",message:""}); };
-  const switchAuthMethod = (method) => { setAuthMethod(method); setOtpSent(false); setOtp(""); setErrors({}); setStatus({type:"",message:""}); setTimeLeft(0); };
+  const handlePasswordChange = (e) => { setPassword(e.target.value); setErrors((prev) => ({ ...prev, password: undefined })); setStatus({type:"",message:""}); };
+  const handleOtpChange      = (e) => { setOtp(e.target.value.replace(/\D/g,"").slice(0,OTP_LENGTH)); setErrors((prev) => ({ ...prev, otp: undefined })); setStatus({type:"",message:""}); };
+  const switchAuthMethod = (method) => { setAuthMethod(method); setOtpSent(false); setOtp(""); setErrors({}); setStatus({type:"",message:""}); setTimeLeft(0); setCountdown(30); };
 
   /* ── switchView ─────────────────────────────────────────── */
   const switchView = (mode) => {
@@ -366,29 +436,25 @@ export default function AuthPage() {
     } finally { setLoading(false); }
   };
 
-  /* ── sendRegisterOtp (UNCHANGED) ────────────────────────── */
+  /* ── sendRegisterOtp ───────────────────────────────────── */
   const sendRegisterOtp = async (e) => {
     if (e) e.preventDefault(); if (loading) return;
     const nextErrors = {};
-    if (!fullName.trim()) nextErrors.fullName = "Enter your full name.";
-    if (!mobile.trim()) {
-      nextErrors.mobile = "Enter your mobile number.";
-    } else if (!/^[6-9]\d{9}$/.test(mobile)) {
-      nextErrors.mobile = "Enter a valid 10-digit mobile number.";
-    }
+    const nameErr = validateFullName(fullName);
+    if (nameErr) nextErrors.fullName = nameErr;
+
+    const mobErr = validateMobileNumber(mobile);
+    if (mobErr) nextErrors.mobile = mobErr;
+
     const registerEmailVal = validateEmailAddress(email);
     if (!registerEmailVal.valid) nextErrors.email = registerEmailVal.error;
-    const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[^\s]{8,64}$/;
-    if (!password) {
-      nextErrors.password = "Create a password.";
-    } else if (!pwdRegex.test(password)) {
-      nextErrors.password = "Password does not meet all requirements.";
-    }
-    if (!confirmPassword) {
-      nextErrors.confirmPassword = "Confirm your password.";
-    } else if (password !== confirmPassword) {
-      nextErrors.confirmPassword = "Passwords do not match.";
-    }
+
+    const pwdErr = validatePasswordField(password);
+    if (pwdErr) nextErrors.password = pwdErr;
+
+    const confirmErr = validateConfirmPasswordField(password, confirmPassword);
+    if (confirmErr) nextErrors.confirmPassword = confirmErr;
+
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -396,12 +462,35 @@ export default function AuthPage() {
     setLoading(true); setStatus({type:"",message:""});
     try {
       const payload = await sendRegistrationOtp({ phoneNumber: mobile, channel: "Mobile" });
-      setOtpSent(true); setOtp(""); setTimeLeft(CUSTOMER_OTP_DURATION_SECONDS); setViewMode("register-otp");
+      setOtpSent(true); setOtp(""); setTimeLeft(CUSTOMER_OTP_DURATION_SECONDS); setCountdown(30); setViewMode("register-otp");
       setStatus({ type:"success", message: readApiMessage(payload, "OTP sent to your mobile number.") });
     } catch (error) {
       setStatus({ type:"error", message: error?.message || "Failed to send OTP. Please try again." });
     } finally { setLoading(false); }
   };
+
+  /* ── handleResendOtp (30s countdown timer) ─────────────── */
+  const handleResendOtp = async () => {
+    if (countdown > 0 || loading) return;
+    setCountdown(30);
+    setErrors({});
+    setStatus({ type: "", message: "" });
+    if (viewMode === "register-otp") {
+      try {
+        setLoading(true);
+        const payload = await sendRegistrationOtp({ phoneNumber: mobile, channel: "Mobile" });
+        setStatus({ type: "success", message: readApiMessage(payload, "OTP resent to your mobile number.") });
+      } catch (error) {
+        setStatus({ type: "error", message: error?.message || "Failed to resend OTP. Please try again." });
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      await sendOtp();
+    }
+  };
+
+  const otpErrorMessage = errors.otp || (status.type === "error" ? status.message : "");
 
   /* ── handleRegister (UNCHANGED) ─────────────────────────── */
   const handleRegister = async (e) => {
@@ -682,7 +771,7 @@ export default function AuthPage() {
             {/* ══ LOGIN ══════════════════════════════════════ */}
             {viewMode === "login" && (
               <>
-                <StatusBanner status={status} />
+                <StatusBanner status={otpSent && status.type === "error" ? {} : status} />
                 {authMethod === "email" ? (
                   <form className="auth-page-form" onSubmit={loginWithEmail} autoComplete="on" noValidate>
                     {!adminChallengeId ? (
@@ -752,11 +841,26 @@ export default function AuthPage() {
                         <label className="auth-field-label" htmlFor="l-otp">OTP</label>
                         <div className="auth-field-input-wrap">
                           <ShieldCheck size={15} className="auth-field-icon" />
-                          <input id="l-otp" type="text" inputMode="numeric" placeholder="Enter 6-digit OTP" value={otp} onChange={handleOtpChange} autoComplete="one-time-code" className="auth-field-input auth-otp-input" />
+                          <input id="l-otp" type="text" inputMode="numeric" placeholder="Enter 6-digit OTP" value={otp} onChange={handleOtpChange} autoComplete="one-time-code" className={`auth-field-input auth-otp-input ${otpErrorMessage ? "border-rose-500 !border-rose-500" : ""}`} />
                         </div>
-                        {errors.otp && <span className="auth-field-error">{errors.otp}</span>}
-                        <div className="auth-otp-timer">
-                          {timeLeft > 0 ? <span>Expires in <strong>{formatTime(timeLeft)}</strong></span> : <span>OTP expired. <button type="button" className="auth-text-link" onClick={() => sendOtp()} disabled={loading}>Resend OTP</button></span>}
+                        {otpErrorMessage && (
+                          <p className="text-rose-500 text-xs font-medium mt-2 text-center">{otpErrorMessage}</p>
+                        )}
+                        <div className="auth-otp-timer text-center mt-2">
+                          {countdown > 0 ? (
+                            <span className="text-slate-500 text-xs font-medium">
+                              Resend OTP in 00:{countdown < 10 ? '0' : ''}{countdown}s
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="auth-text-link text-xs font-semibold text-rose-600 hover:text-rose-700 cursor-pointer"
+                              onClick={handleResendOtp}
+                              disabled={loading}
+                            >
+                              Resend OTP
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
@@ -769,7 +873,7 @@ export default function AuthPage() {
                       {loading ? <><Spinner />Please wait…</> : otpSent ? "Verify & Continue" : "Continue"}
                     </button>
                     {otpSent && (
-                      <button type="button" className="auth-text-link" style={{marginTop:"6px",textAlign:"center"}} onClick={() => { setOtpSent(false); setTimeLeft(0); }} disabled={loading}>
+                      <button type="button" className="auth-text-link" style={{marginTop:"6px",textAlign:"center"}} onClick={() => { setOtpSent(false); setTimeLeft(0); setCountdown(30); }} disabled={loading}>
                         ← Change mobile number
                       </button>
                     )}
@@ -805,9 +909,17 @@ export default function AuthPage() {
                   <label className="auth-field-label" htmlFor="r-name">Full Name</label>
                   <div className="auth-field-input-wrap">
                     <User size={15} className="auth-field-icon" />
-                    <input id="r-name" type="text" placeholder="Enter your full name" value={fullName} onChange={(e) => { setFullName(e.target.value); setErrors({}); setStatus({type:"",message:""}); }} className="auth-field-input" />
+                    <input
+                      id="r-name"
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={fullName}
+                      onChange={(e) => { setFullName(e.target.value); setErrors((prev) => ({ ...prev, fullName: undefined })); setStatus({type:"",message:""}); }}
+                      onBlur={handleFullNameBlur}
+                      className={`auth-field-input ${errors.fullName ? "border-rose-500 !border-rose-500" : ""}`}
+                    />
                   </div>
-                  {errors.fullName && <span className="auth-field-error">{errors.fullName}</span>}
+                  {errors.fullName && <p className="text-rose-500 text-xs font-medium mt-1">{errors.fullName}</p>}
                 </div>
                 <div className="auth-field-group">
                   <label className="auth-field-label" htmlFor="r-mobile">Mobile Number</label>
@@ -815,30 +927,55 @@ export default function AuthPage() {
                     <span className="auth-country-code">IN +91</span>
                     <div className="auth-phone-input-inner">
                       <Phone size={15} className="auth-field-icon" />
-                      <input id="r-mobile" type="tel" placeholder="Enter 10-digit mobile" value={mobile} onChange={handleMobileChange} className="auth-field-input" />
+                      <input
+                        id="r-mobile"
+                        type="tel"
+                        placeholder="Enter 10-digit mobile"
+                        value={mobile}
+                        onChange={handleMobileChange}
+                        onBlur={handleMobileBlur}
+                        className={`auth-field-input ${errors.mobile ? "border-rose-500 !border-rose-500" : ""}`}
+                      />
                     </div>
                   </div>
-                  {errors.mobile && <span className="auth-field-error">{errors.mobile}</span>}
+                  {errors.mobile && <p className="text-rose-500 text-xs font-medium mt-1">{errors.mobile}</p>}
                 </div>
                 <div className="auth-field-group">
                   <label className="auth-field-label" htmlFor="r-email">Email Address</label>
                   <div className="auth-field-input-wrap">
                     <Mail size={15} className="auth-field-icon" />
-                    <input id="r-email" type="email" placeholder="Enter your email address" value={email} onChange={handleEmailChange} onBlur={handleEmailBlur} className="auth-field-input" aria-invalid={Boolean(errors.email)} />
+                    <input
+                      id="r-email"
+                      type="email"
+                      placeholder="Enter your email address"
+                      value={email}
+                      onChange={handleEmailChange}
+                      onBlur={handleEmailBlur}
+                      className={`auth-field-input ${errors.email ? "border-rose-500 !border-rose-500" : ""}`}
+                      aria-invalid={Boolean(errors.email)}
+                    />
                   </div>
-                  {errors.email && <span className="auth-field-error">{errors.email}</span>}
+                  {errors.email && <p className="text-rose-500 text-xs font-medium mt-1">{errors.email}</p>}
                 </div>
                 <div className="auth-field-group">
                   <label className="auth-field-label" htmlFor="r-pwd">Set Password</label>
                   <div className="auth-field-input-wrap">
                     <LockKeyhole size={15} className="auth-field-icon" />
-                    <input id="r-pwd" type={showPassword ? "text" : "password"} placeholder="Create a strong password" value={password} onChange={handlePasswordChange} className="auth-field-input" />
+                    <input
+                      id="r-pwd"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a strong password"
+                      value={password}
+                      onChange={handlePasswordChange}
+                      onBlur={handlePasswordBlur}
+                      className={`auth-field-input ${errors.password ? "border-rose-500 !border-rose-500" : ""}`}
+                    />
                     <button type="button" className="auth-eye-btn" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff size={15}/> : <Eye size={15}/>}
                     </button>
                   </div>
                   <PasswordRequirements password={password} />
-                  {errors.password && <span className="auth-field-error">{errors.password}</span>}
+                  {errors.password && <p className="text-rose-500 text-xs font-medium mt-1">{errors.password}</p>}
                 </div>
                 <div className="auth-field-group">
                   <label className="auth-field-label" htmlFor="r-confirm-pwd">Confirm Password</label>
@@ -849,15 +986,16 @@ export default function AuthPage() {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Re-enter your password"
                       value={confirmPassword}
-                      onChange={(e) => { setConfirmPassword(e.target.value); setErrors({}); setStatus({ type: "", message: "" }); }}
-                      className="auth-field-input"
+                      onChange={(e) => { setConfirmPassword(e.target.value); setErrors((prev) => ({ ...prev, confirmPassword: undefined })); setStatus({ type: "", message: "" }); }}
+                      onBlur={handleConfirmPasswordBlur}
+                      className={`auth-field-input ${errors.confirmPassword ? "border-rose-500 !border-rose-500" : ""}`}
                       aria-invalid={Boolean(errors.confirmPassword)}
                     />
                     <button type="button" className="auth-eye-btn" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label={showConfirmPassword ? "Hide" : "Show"}>
                       {showConfirmPassword ? <EyeOff size={15}/> : <Eye size={15}/>} 
                     </button>
                   </div>
-                  {errors.confirmPassword && <span className="auth-field-error">{errors.confirmPassword}</span>}
+                  {errors.confirmPassword && <p className="text-rose-500 text-xs font-medium mt-1">{errors.confirmPassword}</p>}
                 </div>
                 <button type="submit" className="auth-primary-btn auth-white-primary-btn" disabled={loading}>
                   {loading ? <><Spinner />Please wait…</> : "Send OTP"}
@@ -877,7 +1015,7 @@ export default function AuthPage() {
             {/* ══ REGISTER OTP ═══════════════════════════════ */}
             {viewMode === "register-otp" && (
               <form className="auth-page-form" onSubmit={handleRegister} noValidate>
-                <StatusBanner status={status} />
+                <StatusBanner status={status.type === "success" ? status : {}} />
                 <div className="auth-otp-info">
                   <span className="auth-otp-info-icon"><ShieldCheck size={20}/></span>
                   <div><strong>OTP sent to your mobile</strong><p>+91 {mobile}</p></div>
@@ -886,17 +1024,32 @@ export default function AuthPage() {
                   <label className="auth-field-label" htmlFor="ro-otp">Enter OTP</label>
                   <div className="auth-field-input-wrap">
                     <ShieldCheck size={15} className="auth-field-icon" />
-                    <input id="ro-otp" type="text" inputMode="numeric" placeholder="Enter 6-digit OTP" value={otp} onChange={handleOtpChange} autoComplete="one-time-code" className="auth-field-input auth-otp-input" />
+                    <input id="ro-otp" type="text" inputMode="numeric" placeholder="Enter 6-digit OTP" value={otp} onChange={handleOtpChange} autoComplete="one-time-code" className={`auth-field-input auth-otp-input ${otpErrorMessage ? "border-rose-500 !border-rose-500" : ""}`} />
                   </div>
-                  {errors.otp && <span className="auth-field-error">{errors.otp}</span>}
-                  <div className="auth-otp-timer">
-                    {timeLeft > 0 ? <span>Expires in <strong>{formatTime(timeLeft)}</strong></span> : <span>OTP expired. <button type="button" className="auth-text-link" onClick={sendRegisterOtp} disabled={loading}>Resend OTP</button></span>}
+                  {otpErrorMessage && (
+                    <p className="text-rose-500 text-xs font-medium mt-2 text-center">{otpErrorMessage}</p>
+                  )}
+                  <div className="auth-otp-timer text-center mt-2">
+                    {countdown > 0 ? (
+                      <span className="text-slate-500 text-xs font-medium">
+                        Resend OTP in 00:{countdown < 10 ? '0' : ''}{countdown}s
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="auth-text-link text-xs font-semibold text-rose-600 hover:text-rose-700 cursor-pointer"
+                        onClick={handleResendOtp}
+                        disabled={loading}
+                      >
+                        Resend OTP
+                      </button>
+                    )}
                   </div>
                 </div>
-                <button type="submit" className="auth-primary-btn" disabled={loading || timeLeft === 0}>
+                <button type="submit" className="auth-primary-btn" disabled={loading}>
                   {loading ? <><Spinner />Please wait…</> : "Verify & Register"}
                 </button>
-                <button type="button" className="auth-back-btn" style={{marginTop:"6px"}} onClick={() => { setViewMode("register"); setOtpSent(false); }}>
+                <button type="button" className="auth-back-btn" style={{marginTop:"6px"}} onClick={() => { setViewMode("register"); setOtpSent(false); setCountdown(30); }}>
                   ← Back to Edit Details
                 </button>
               </form>

@@ -13,6 +13,9 @@ import "../../B2C BUS MANAGEMENT/Search History/BusSearchHistory.css";
 const DEFAULT_FILTERS = {
   query: "",
   customerName: "",
+  dateRange: "all",
+  startDate: "",
+  endDate: "",
   checkInDate: "",
   checkOutDate: "",
 };
@@ -68,6 +71,9 @@ export default function HotelSearchHistory() {
       const activeSearch = filters.query.trim() || filters.customerName.trim() || undefined;
       const responseData = await listHotelSearchHistory({
         searchTerm: activeSearch,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        dateFilter: filters.dateRange !== "all" ? filters.dateRange : undefined,
       }, { signal: controller.signal });
       if (controller.signal.aborted) return;
 
@@ -458,6 +464,51 @@ export default function HotelSearchHistory() {
               value={draftFilters.customerName}
               onChange={(e) => setDraftFilters(prev => ({ ...prev, customerName: e.target.value }))}
               placeholder="User ID or Guest"
+            />
+          </label>
+          <label>
+            <span>Date Range / Preset</span>
+            <select
+              value={draftFilters.dateRange}
+              onChange={(e) => {
+                const val = e.target.value;
+                let start = "";
+                let end = "";
+                const today = new Date();
+                if (val === "30") {
+                  const d = new Date(today);
+                  d.setDate(d.getDate() - 30);
+                  start = d.toISOString().split("T")[0];
+                  end = today.toISOString().split("T")[0];
+                } else if (val === "90") {
+                  const d = new Date(today);
+                  d.setDate(d.getDate() - 90);
+                  start = d.toISOString().split("T")[0];
+                  end = today.toISOString().split("T")[0];
+                }
+                setDraftFilters(prev => ({ ...prev, dateRange: val, startDate: start, endDate: end }));
+              }}
+            >
+              <option value="all">All Time (Full History)</option>
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="custom">Custom Date Range</option>
+            </select>
+          </label>
+          <label>
+            <span>Search Log Start Date</span>
+            <input
+              type="date"
+              value={draftFilters.startDate || ""}
+              onChange={(e) => setDraftFilters(prev => ({ ...prev, startDate: e.target.value, dateRange: "custom" }))}
+            />
+          </label>
+          <label>
+            <span>Search Log End Date</span>
+            <input
+              type="date"
+              value={draftFilters.endDate || ""}
+              onChange={(e) => setDraftFilters(prev => ({ ...prev, endDate: e.target.value, dateRange: "custom" }))}
             />
           </label>
           <label>

@@ -296,7 +296,7 @@ export default function DashboardPage() {
     <div className="dashboard-content dashboard-home">
       <header className="dashboard-header">
         <div className="dashboard-header-copy">
-          <h1>Travel Booking Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-4">Travel Booking Dashboard</h1>
         </div>
         <div className="dashboard-time-badge">
           {currentDateTime}

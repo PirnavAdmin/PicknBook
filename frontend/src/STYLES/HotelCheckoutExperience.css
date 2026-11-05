@@ -266,7 +266,33 @@
   min-height: 224px;
 }
  
-.hotel-checkout-layout,
+.hotel-checkout-layout {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+  .hotel-checkout-layout {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hotel-checkout-layout {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
 .hotel-confirm-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -276,18 +302,35 @@
 }
  
 .hotel-checkout-main {
-  display: grid;
-  gap: 12px;
+  grid-column: span 12 / span 12;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-width: 0;
-  height: max-content;
-  align-content: start;
   align-self: start;
 }
 
+@media (min-width: 1024px) {
+  .hotel-checkout-main {
+    grid-column: span 8 / span 8;
+  }
+}
+
 .hotel-checkout-side {
+  grid-column: span 12 / span 12;
+  display: flex;
+  flex-direction: column;
+  gap: 16px !important;
   min-width: 0;
   align-self: start;
-  gap: 12px !important;
+}
+
+@media (min-width: 1024px) {
+  .hotel-checkout-side {
+    grid-column: span 4 / span 4;
+    position: sticky;
+    top: 1.5rem;
+  }
 }
 
 .hotel-checkout-main,

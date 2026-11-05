@@ -37,7 +37,102 @@ const DEFAULT_FILTERS = {
   customer: "",
   passengerPhone: "",
   status: "ALL",
+  datePeriod: "ALL",
+  customStartDate: "",
+  customEndDate: "",
 };
+
+function getRecordTimestamp(booking) {
+  const rawDate =
+    booking?.requestDateUtc ||
+    booking?.cancelledAtValue ||
+    booking?.createdAtValue ||
+    booking?.createdAt ||
+    booking?.bookedAtUtc ||
+    booking?.raw?.requestDateUtc ||
+    booking?.raw?.cancelledAtUtc ||
+    booking?.raw?.createdAt;
+
+  if (!rawDate || rawDate === "--" || String(rawDate).startsWith("0001")) {
+    return null;
+  }
+
+  const d = new Date(rawDate);
+  const ts = d.getTime();
+  return Number.isNaN(ts) ? null : ts;
+}
+
+function isRecordInDatePeriod(booking, period, customStart, customEnd) {
+  if (!period || period === "ALL") return true;
+
+  const recordTime = getRecordTimestamp(booking);
+  if (!recordTime) return false;
+
+  const now = new Date();
+
+  if (period === "TODAY") {
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+    return recordTime >= startOfToday && recordTime <= endOfToday;
+  }
+
+  if (period === "YESTERDAY") {
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 0, 0, 0, 0).getTime();
+    const endOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999).getTime();
+    return recordTime >= startOfYesterday && recordTime <= endOfYesterday;
+  }
+
+  if (period === "THIS_WEEK") {
+    const day = now.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1) - day;
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0).getTime();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+    return recordTime >= startOfWeek && recordTime <= endOfToday;
+  }
+
+  if (period === "LAST_WEEK") {
+    const day = now.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1) - day;
+    const prevMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday - 7, 0, 0, 0, 0).getTime();
+    const prevSunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday - 1, 23, 59, 59, 999).getTime();
+    return recordTime >= prevMonday && recordTime <= prevSunday;
+  }
+
+  if (period === "THIS_MONTH") {
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime();
+    return recordTime >= startOfMonth && recordTime <= endOfToday;
+  }
+
+  if (period === "LAST_MONTH") {
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0).getTime();
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999).getTime();
+    return recordTime >= startOfLastMonth && recordTime <= endOfLastMonth;
+  }
+
+  if (period === "CUSTOM") {
+    if (!customStart && !customEnd) return true;
+    let valid = true;
+    if (customStart) {
+      const [sy, sm, sd] = customStart.split("-").map(Number);
+      const startMs = new Date(sy, sm - 1, sd, 0, 0, 0, 0).getTime();
+      if (!Number.isNaN(startMs) && recordTime < startMs) {
+        valid = false;
+      }
+    }
+    if (customEnd) {
+      const [ey, em, ed] = customEnd.split("-").map(Number);
+      const endMs = new Date(ey, em - 1, ed, 23, 59, 59, 999).getTime();
+      if (!Number.isNaN(endMs) && recordTime > endMs) {
+        valid = false;
+      }
+    }
+    return valid;
+  }
+
+  return true;
+}
 
 const normalizeText = (value, fallback = "") => {
   const text = String(value ?? "").trim();
@@ -670,6 +765,7 @@ export default function AdminFlightCancellationRequestListPage() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+  const [dateError, setDateError] = useState("");
   const [selectedCancellation, setSelectedCancellation] = useState(null);
   const [cancellationRequests, setCancellationRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -861,7 +957,7 @@ export default function AdminFlightCancellationRequestListPage() {
           const rawPayload = record?.raw || record || {};
           const rawDetails = record?.details || record?.Details || rawPayload?.details || rawPayload?.Details || {};
 
-          const fare = Math.max(parseNumber(record?.totalPriceInr ?? record?.fare ?? record?.TotalFareInr ?? record?.totalFare ?? rawDetails?.totalFare, 0), 0);
+          const fare = Math.max(parseNumber(record?.totalPriceInr, 0), 0);
           const inferredProfit = Math.round(fare * 0.04);
           const profit = parseNumber(record?.profit, inferredProfit);
 
@@ -959,8 +1055,6 @@ export default function AdminFlightCancellationRequestListPage() {
             operator: normalizeText(record?.providerName, "Flight Airlines"),
             vehicleType: normalizeText(record?.travelClass, "Economy"),
             fare,
-            totalFare: fare,
-            totalPriceInr: fare,
             profit,
             paymentMethod: record?.paymentMethod || rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || "--",
             paymentDetails: record?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--",
@@ -990,7 +1084,6 @@ export default function AdminFlightCancellationRequestListPage() {
         .map((unifiedBooking) => {
           const fare = Math.max(parseNumber(unifiedBooking?.fare, 0), 0);
           const raw = unifiedBooking?.raw || {};
-          const rawDetails = unifiedBooking?.details || raw?.details || {};
 
           const customerRefundAmountInr = unifiedBooking.customerRefundAmountInr;
           const adminRefundAmountInr = unifiedBooking.adminRefundAmountInr;
@@ -1017,15 +1110,11 @@ export default function AdminFlightCancellationRequestListPage() {
             : Math.max(fare - cancellationCharge, 0);
 
           // Profit Calculation (+ or - amount)
-          const serverCalculatedProfit = parseNumber(
-            raw.calculatedProfit ?? raw.CalculatedProfit ?? rawDetails?.calculatedProfit ?? unifiedBooking.profit,
-            null
-          );
-          const calculatedProfit = serverCalculatedProfit !== null
-            ? serverCalculatedProfit
-            : (adminRefundAmountInr > 0
-                ? (adminRefundAmountInr - customerRefundAmountInr)
-                : (unifiedBooking.profit || 0));
+          // Difference between refund amounts and charge margins
+          const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) +
+            (customerCancellationChargeInr - adminCancellationChargeInr) +
+            (customerServiceChargeInr - adminServiceChargeInr) ||
+            unifiedBooking.profit || 0;
 
           return {
             ...unifiedBooking,
@@ -1094,7 +1183,7 @@ export default function AdminFlightCancellationRequestListPage() {
     const rawPayload = record?.raw || record || {};
     const rawDetails = record?.details || record?.Details || rawPayload?.details || rawPayload?.Details || {};
 
-    const fare = Math.max(parseNumber(record?.totalPriceInr ?? record?.totalFare ?? record?.fare ?? record?.TotalFareInr ?? rawDetails?.totalFare, 0), 0);
+    const fare = Math.max(parseNumber(record?.totalPriceInr, 0), 0);
     const inferredProfit = Math.round(fare * 0.04);
     const profit = parseNumber(record?.profit, inferredProfit);
 
@@ -1177,15 +1266,10 @@ export default function AdminFlightCancellationRequestListPage() {
       ? customerRefundAmountInr
       : Math.max(fare - cancellationCharge, 0);
 
-    const serverCalculatedProfit = parseNumber(
-      record?.calculatedProfit ?? record?.CalculatedProfit ?? rawDetails?.calculatedProfit,
-      null
-    );
-    const calculatedProfit = serverCalculatedProfit !== null
-      ? serverCalculatedProfit
-      : (adminRefundAmountInr > 0 || adminCancellationChargeInr > 0
-          ? ((fare - customerRefundAmountInr) - (fare - adminRefundAmountInr) + (customerServiceChargeInr - adminServiceChargeInr))
-          : (profit || 0));
+    const calculatedProfit = (adminRefundAmountInr - customerRefundAmountInr) +
+      (customerCancellationChargeInr - adminCancellationChargeInr) +
+      (customerServiceChargeInr - adminServiceChargeInr) ||
+      profit || 0;
 
     return {
       id: cancelId,
@@ -1210,8 +1294,6 @@ export default function AdminFlightCancellationRequestListPage() {
       operator: normalizeText(record?.providerName, "Flight Airlines"),
       vehicleType: normalizeText(record?.travelClass, "Economy"),
       fare,
-      totalFare: fare,
-      totalPriceInr: fare,
       profit,
       paymentMethod: record?.paymentMethod || rawPayload?.paymentMethod || rawPayload?.paymentType || rawPayload?.gatewayName || "--",
       paymentDetails: record?.paymentDetails || rawPayload?.transactionId || rawPayload?.txnId || rawPayload?.paymentId || "--",
@@ -1285,6 +1367,10 @@ export default function AdminFlightCancellationRequestListPage() {
         }
       }
 
+      if (!isRecordInDatePeriod(booking, filters.datePeriod, filters.customStartDate, filters.customEndDate)) {
+        return false;
+      }
+
       return true;
     });
   }, [displayRequests, filters]);
@@ -1296,13 +1382,26 @@ export default function AdminFlightCancellationRequestListPage() {
   }, [filteredRequests, currentPage, itemsPerPage]);
 
   const handleFilterChange = (field, value) => {
-    setDraftFilters((previous) => ({
-      ...previous,
-      [field]: value,
-    }));
+    setDraftFilters((previous) => {
+      const next = {
+        ...previous,
+        [field]: value,
+      };
+      if (next.datePeriod === "CUSTOM" && next.customStartDate && next.customEndDate && next.customStartDate > next.customEndDate) {
+        setDateError("Start Date cannot be later than End Date");
+      } else {
+        setDateError("");
+      }
+      return next;
+    });
   };
 
   const applyFilters = () => {
+    if (draftFilters.datePeriod === "CUSTOM" && draftFilters.customStartDate && draftFilters.customEndDate && draftFilters.customStartDate > draftFilters.customEndDate) {
+      setDateError("Start Date cannot be later than End Date");
+      return;
+    }
+    setDateError("");
     setFilters(draftFilters);
     setIsFiltersOpen(false);
     setCurrentPage(1);
@@ -1311,6 +1410,7 @@ export default function AdminFlightCancellationRequestListPage() {
   const clearFilters = () => {
     setDraftFilters(DEFAULT_FILTERS);
     setFilters(DEFAULT_FILTERS);
+    setDateError("");
     setIsFiltersOpen(false);
     setCurrentPage(1);
   };
@@ -1516,6 +1616,45 @@ export default function AdminFlightCancellationRequestListPage() {
             </select>
           </label>
 
+          <label>
+            <span>Date Period</span>
+            <select
+              value={draftFilters.datePeriod || "ALL"}
+              onChange={(event) => handleFilterChange("datePeriod", event.target.value)}
+            >
+              <option value="ALL">All Periods</option>
+              <option value="TODAY">Today</option>
+              <option value="YESTERDAY">Yesterday</option>
+              <option value="THIS_WEEK">This Week</option>
+              <option value="LAST_WEEK">Last Week</option>
+              <option value="THIS_MONTH">This Month</option>
+              <option value="LAST_MONTH">Last Month</option>
+              <option value="CUSTOM">Custom Date Range</option>
+            </select>
+          </label>
+
+          {draftFilters.datePeriod === "CUSTOM" && (
+            <>
+              <label>
+                <span>Start Date</span>
+                <input
+                  type="date"
+                  value={draftFilters.customStartDate || ""}
+                  onChange={(event) => handleFilterChange("customStartDate", event.target.value)}
+                />
+              </label>
+
+              <label>
+                <span>End Date</span>
+                <input
+                  type="date"
+                  value={draftFilters.customEndDate || ""}
+                  onChange={(event) => handleFilterChange("customEndDate", event.target.value)}
+                />
+              </label>
+            </>
+          )}
+
           <div className="filters-actions admin-cancel-filter-actions">
             <button type="button" className="primary" onClick={applyFilters}>
               Apply Filter
@@ -1524,6 +1663,12 @@ export default function AdminFlightCancellationRequestListPage() {
               Reset
             </button>
           </div>
+
+          {dateError && (
+            <div className="admin-cancel-filter-error" style={{ color: "#dc2626", fontSize: "0.75rem", fontWeight: 600, width: "100%", marginTop: "4px" }}>
+              ⚠️ {dateError}
+            </div>
+          )}
         </section>
       ) : null}
 
@@ -1709,7 +1854,7 @@ export default function AdminFlightCancellationRequestListPage() {
                     Status: {safeValue(selectedCancellation.cancellationStatus || selectedCancellation.status)}
                   </span>
                   <span className="admin-view-meta-chip">
-                    Customer Fare: {adminCurrencyFormatter.format(selectedCancellation.totalFare || selectedCancellation.totalPriceInr || selectedCancellation.fare || 0)}
+                    Customer Fare: {adminCurrencyFormatter.format(selectedCancellation.fare || 0)}
                   </span>
                   <span className="admin-view-meta-chip">
                     Refund Amount: {adminCurrencyFormatter.format(selectedCancellation.customerRefundAmountInr || 0)}
@@ -1803,7 +1948,7 @@ export default function AdminFlightCancellationRequestListPage() {
                 <tbody>
                   <tr>
                     <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "600" }}>Total Fare</td>
-                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700" }}>{adminCurrencyFormatter.format(selectedCancellation.totalFare || selectedCancellation.totalPriceInr || selectedCancellation.fare || 0)}</td>
+                    <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", fontWeight: "700" }}>{adminCurrencyFormatter.format(selectedCancellation.fare || 0)}</td>
                     <td style={{ padding: "6px 10px", border: "1px solid #e2e8f0", color: "#475569" }}>Total fare charged to customer</td>
                   </tr>
                   <tr>

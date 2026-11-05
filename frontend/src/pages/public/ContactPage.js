@@ -88,16 +88,16 @@ export default function ContactPage() {
           </div>
 
           {/* Address Box */}
-          <div className="info-box-item">
-            <div className="info-icon-wrapper">
+          <div className="info-box-item flex items-start gap-3">
+            <div className="info-icon-wrapper shrink-0">
               <MapPin size={20} />
             </div>
             <div className="info-text-content">
               <h4>Address</h4>
-              <p>
+              <div className="text-sm text-slate-600 leading-relaxed break-words">
                 Pirnav Software Solutions Private Limited, 4th Floor, Jain Sadguru Images Capital Park,
-                Madhapur Hyderabad, Telangana, India, 500081
-              </p>
+                Madhapur, Hyderabad, Telangana, India <span className="whitespace-nowrap">(PIN: 500081)</span>
+              </div>
             </div>
           </div>
 
@@ -183,7 +183,7 @@ export default function ContactPage() {
                   <textarea
                     id="message"
                     name="message"
-                    className="form-field-input form-field-textarea"
+                    className="form-field-input form-field-textarea w-full bg-white text-slate-800 placeholder-slate-400 border border-slate-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 rounded-lg p-3 text-sm resize-y outline-none transition-all accent-auto caret-slate-800"
                     value={formData.message}
                     onChange={handleChange}
                     required

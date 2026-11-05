@@ -365,6 +365,9 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           <X size={24} />
         </button>
 
+        <div style={{ textAlign: "center", marginBottom: "16px" }}>
+          <img src="/assets/images/logo.png" alt="Pick&book" className="h-8 w-auto object-contain mx-auto" style={{ height: "32px", width: "auto", objectFit: "contain", margin: "0 auto" }} />
+        </div>
         <h2 style={{ marginTop: 0, marginBottom: "20px", fontSize: "1.5rem" }}>Review Booking ({bookingType})</h2>
 
         {isBlocked && blockTimeRemaining > 0 && (

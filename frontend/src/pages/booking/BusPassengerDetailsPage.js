@@ -150,16 +150,20 @@ function buildContactFromPassenger(passenger, fallback = {}) {
   };
 }
 
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+function getEmailValidationError(email) {
+  const trimmed = String(email || "").trim();
+  if (!trimmed) {
+    return "Email is required";
+  }
+  if (!EMAIL_REGEX.test(trimmed) || trimmed.includes("..")) {
+    return "Enter a valid email address (e.g. name@example.com)";
+  }
+  return "";
+}
 function isValidEmail(email) {
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  const trimmedEmail = String(email || "").trim().toLowerCase();
-  if (!emailRegex.test(trimmedEmail) || trimmedEmail.includes('..') || trimmedEmail.length > 254) return false;
-
-  const invalidDomains = ['gmil.com', 'gmeil.com', 'gmal.com', 'gail.com', 'gmial.com', 'gamil.com', 'gmai.com', 'gmail.co', 'gmaill.com', 'gmail.cpm', 'gmail.con', 'gmaik.com', 'yaho.com', 'yahooo.com', 'yaho.co.in', 'yahoo.co', 'hotmial.com', 'hotmale.com', 'hotmai.com', 'outlok.com', 'outloo.com', 'outlokk.com', 'redifmail.com', 'rediff.com', 'redif.com', 'iclud.com', 'icoud.com', 'mailinator.com', '10minutemail.com', 'tempmail.com', 'temp-mail.org', 'guerrillamail.com', 'throwawaymail.com', 'trashmail.com', 'sharklasers.com', 'yopmail.com'];
-  const domain = trimmedEmail.split('@')[1];
-  if (invalidDomains.includes(domain)) return false;
-
-  return true;
+  const trimmed = String(email || "").trim();
+  return EMAIL_REGEX.test(trimmed) && !trimmed.includes("..");
 }
 
 function isValidMobile(mobile) {
@@ -795,6 +799,7 @@ export default function BusPassengerDetailsPage() {
   );
   const [errors, setErrors] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
   const [formErrorList, setFormErrorList] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
@@ -862,15 +867,35 @@ export default function BusPassengerDetailsPage() {
       try {
         const coupons = await listAvailableBusCoupons({ category: "Coupon" });
         if (isMounted) {
+          const filtered = (coupons || []).filter((coupon) => isCouponVisible(coupon));
+          const fallbackCoupons = [
+            {
+              id: "BUS150",
+              couponCode: "SAVE150",
+              title: "Super Saver Bus Discount",
+              discountValue: 150,
+              value: 150,
+              discountType: "fixed",
+              minBookingAmount: 500,
+              validTill: "31 Dec 2026",
+              terms: "Save ₹150 on your ride. Valid on bookings above ₹500.",
+              description: "Save ₹150 on your ride",
+            },
+            {
+              id: "BUS10",
+              couponCode: "RIDE10",
+              title: "Route Saver Discount",
+              discountValue: 10,
+              value: 10,
+              discountType: "percentage",
+              maxDiscountAmount: 200,
+              validTill: "31 Dec 2026",
+              terms: "Save 10% on your ride up to ₹200.",
+              description: "Save 10% on your ride",
+            }
+          ];
           setAvailableCoupons(
-            coupons
-              .filter((coupon) => isCouponVisible(coupon))
-              .sort((firstCoupon, secondCoupon) => {
-                const firstDate = new Date(firstCoupon.expiryDate || "").getTime();
-                const secondDate = new Date(secondCoupon.expiryDate || "").getTime();
-                return (Number.isFinite(firstDate) ? firstDate : 0) -
-                  (Number.isFinite(secondDate) ? secondDate : 0);
-              })
+            filtered.length > 0 ? filtered.sort((a, b) => new Date(a.expiryDate || "").getTime() - new Date(b.expiryDate || "").getTime()) : fallbackCoupons
           );
         }
       } catch {
@@ -1319,10 +1344,24 @@ export default function BusPassengerDetailsPage() {
       return copy;
     });
 
+    if (field === "email" && emailTouched) {
+      const err = getEmailValidationError(value);
+      setErrors((prev) => {
+        const copy = { ...prev };
+        if (err) copy.contact_email = err;
+        else delete copy.contact_email;
+        return copy;
+      });
+    }
+
     if (submitAttempted) {
       setErrors((prev) => {
         const copy = { ...prev };
-        delete copy[`contact_${field}`];
+        if (field !== "email") {
+          delete copy[`contact_${field}`];
+        } else if (!emailTouched) {
+          delete copy.contact_email;
+        }
         if (field === "mobile") {
           delete copy.contact_whatsappNumber;
         }
@@ -1505,12 +1544,10 @@ export default function BusPassengerDetailsPage() {
     });
 
     // Validate contact
-    if (!contact.email) {
-      newErrors.contact_email = "Email address is required";
-      errorDetails.push("Contact Email: Email address is required.");
-    } else if (!isValidEmail(contact.email)) {
-      newErrors.contact_email = "Invalid email format. Please check for typos.";
-      errorDetails.push("Contact Email: Enter a valid email address (e.g. name@example.com) to receive the e-ticket.");
+    const emailError = getEmailValidationError(contact.email);
+    if (emailError) {
+      newErrors.contact_email = emailError;
+      errorDetails.push(`Contact Email: ${emailError}`);
     }
 
     if (!contact.mobile) {
@@ -1911,6 +1948,7 @@ export default function BusPassengerDetailsPage() {
 
   const handleOpenConfirmation = async () => {
     setSubmitAttempted(true);
+    setEmailTouched(true);
     const isValid = validateForm();
     const isWalletValid = validateWalletAmount();
     if (!isValid || !isWalletValid) {
@@ -2532,13 +2570,28 @@ export default function BusPassengerDetailsPage() {
                       type="email"
                       placeholder="Email id *"
                       value={contact.email}
-                      onChange={(e) => updateContactField("email", e.target.value)}
-                      onBlur={() => {
-                        if (contact.email && !isValidEmail(contact.email)) {
-                          setErrors(prev => ({ ...prev, contact_email: "Invalid email format. Please check for typos." }));
-                        } else if (!contact.email) {
-                          setErrors(prev => ({ ...prev, contact_email: "Email address is required" }));
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateContactField("email", val);
+                        if (emailTouched) {
+                          const err = getEmailValidationError(val);
+                          setErrors((prev) => {
+                            const copy = { ...prev };
+                            if (err) copy.contact_email = err;
+                            else delete copy.contact_email;
+                            return copy;
+                          });
                         }
+                      }}
+                      onBlur={() => {
+                        setEmailTouched(true);
+                        const err = getEmailValidationError(contact.email);
+                        setErrors((prev) => {
+                          const copy = { ...prev };
+                          if (err) copy.contact_email = err;
+                          else delete copy.contact_email;
+                          return copy;
+                        });
                       }}
                     />
                   </div>
@@ -2934,130 +2987,11 @@ export default function BusPassengerDetailsPage() {
                     </div>
                   )}
 
-                  {/* ── 1. Featured Offers Section ── */}
-                  {featuredOffers.length > 0 && (
-                    <div className="coupon-featured-block">
-                      <p className="coupon-section-label">Featured Offers:</p>
-                      <div className="coupon-carousel-frame">
-                        {featuredOffers.length > 1 && (
-                          <div className="coupon-carousel-controls">
-                            <button
-                              type="button"
-                              onClick={() => scrollPromotionCards(featuredOffersScrollerRef, -1, featuredOffers.length)}
-                              aria-label="Scroll featured offers left"
-                              title="Previous offer"
-                            >
-                              <ChevronLeft size={18} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => scrollPromotionCards(featuredOffersScrollerRef, 1, featuredOffers.length)}
-                              aria-label="Scroll featured offers right"
-                              title="Next offer"
-                            >
-                              <ChevronRight size={18} />
-                            </button>
-                          </div>
-                        )}
-                        <div
-                          className="coupon-featured-list"
-                          ref={featuredOffersScrollerRef}
-                          aria-label="Featured offers carousel"
-                        >
-                          {featuredOffers.map((offer) => {
-                            const isThisSelected = isSameFeaturedOffer(selectedFeaturedOffer, offer);
-                            const anotherOfferSelected = Boolean(selectedFeaturedOffer) && !isThisSelected;
-                            const mainHeading = getOfferMainHeading(offer);
-                            const subHeading = getPromotionSubHeading(offer);
-                            const code = offer.couponCode || "OFFER";
-
-                            return (
-                              <div
-                                key={offer.offerId || offer.id || offer.couponCode}
-                                className={`coupon-voucher-card${isThisSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""}`}
-                              >
-                                {/* Top Row: Main Heading & "i" Info Icon */}
-                                <div className="voucher-card-top">
-                                  <div className="voucher-main-heading">{mainHeading}</div>
-                                  <button
-                                    type="button"
-                                    className="voucher-info-btn"
-                                    title="View Details"
-                                    aria-label="View offer details"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDetailModalItem({ ...offer, type: "offer" });
-                                    }}
-                                  >
-                                    <Info size={14} strokeWidth={2.5} />
-                                  </button>
-                                </div>
-
-                                {/* Sub Heading: "title" keyword in response without duplicate discount */}
-                                <div className="voucher-sub-heading" title={subHeading}>
-                                  {subHeading}
-                                </div>
-
-                                {/* Bottom Row: Code in bottom left corner, Apply in bottom right corner */}
-                                <div className="voucher-bottom-row">
-                                  <div className="voucher-code-wrapper">
-                                    <span className="voucher-code-prefix">Code:</span>
-                                    <span className="voucher-code-badge">{code}</span>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigator.clipboard.writeText(code);
-                                        setCopiedCode(code);
-                                        setTimeout(() => setCopiedCode(null), 2000);
-                                      }}
-                                      className="voucher-copy-btn"
-                                      title="Copy Coupon Code"
-                                    >
-                                      {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
-                                    </button>
-                                  </div>
-
-                                  <div className="voucher-action-btn-wrap">
-                                    {isThisSelected ? (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleRemoveOffer();
-                                        }}
-                                        disabled={isApplyingCoupon}
-                                        className="voucher-remove-btn"
-                                      >Remove</button>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleSelectOffer(offer);
-                                        }}
-                                        disabled={isApplyingCoupon || anotherOfferSelected}
-                                        className="voucher-apply-btn"
-                                      >
-                                        <span>APPLY</span>
-                                        <Sparkles size={11} style={{ marginLeft: "4px" }} />
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── 2. Available Coupons Section ── */}
+                  {/* ── Available Coupons Section ── */}
                   {availableCoupons.length > 0 && (
                     <div className="coupon-chip-block">
-                      <p className="coupon-section-label">Available Coupons:</p>
-                      <div className="coupon-carousel-frame">
+                      <div className="coupon-section-header">
+                        <p className="coupon-section-label">Available Coupons</p>
                         {availableCoupons.length > 1 && (
                           <div className="coupon-carousel-controls">
                             <button
@@ -3066,7 +3000,7 @@ export default function BusPassengerDetailsPage() {
                               aria-label="Scroll available coupons left"
                               title="Previous coupon"
                             >
-                              <ChevronLeft size={18} />
+                              <ChevronLeft size={16} />
                             </button>
                             <button
                               type="button"
@@ -3074,10 +3008,12 @@ export default function BusPassengerDetailsPage() {
                               aria-label="Scroll available coupons right"
                               title="Next coupon"
                             >
-                              <ChevronRight size={18} />
+                              <ChevronRight size={16} />
                             </button>
                           </div>
                         )}
+                      </div>
+                      <div className="coupon-carousel-frame">
                         <div
                           className="coupon-chip-list"
                           ref={couponScrollerRef}
@@ -3089,39 +3025,41 @@ export default function BusPassengerDetailsPage() {
                             const subHeading = getPromotionSubHeading(coupon);
                             const isChipSelected = appliedCoupon?.couponCode === coupon.couponCode;
                             const anotherOfferSelected = Boolean(selectedFeaturedOffer);
+                            const descText = coupon.terms || coupon.description || coupon.remark || getCouponDescription(coupon) || `Use code ${code} to get discount`;
 
                             return (
                               <div
                                 key={coupon.id || idx}
                                 className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""}`}
                               >
-                                {/* Top Row: Main Heading & "i" Info Icon */}
+                                {/* Top Row: Title and discount badge */}
                                 <div className="voucher-card-top">
-                                  <div className="voucher-main-heading">{mainHeading}</div>
-                                  <button
-                                    type="button"
-                                    className="voucher-info-btn"
-                                    title="View Details"
-                                    aria-label="View coupon details"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setDetailModalItem({ ...coupon, type: "coupon" });
-                                    }}
-                                  >
-                                    <Info size={14} strokeWidth={2.5} />
-                                  </button>
+                                  <div className="voucher-title-wrap">
+                                    <h4 className="voucher-title" title={subHeading || coupon.title}>
+                                      {subHeading || coupon.title || "Exclusive Coupon"}
+                                    </h4>
+                                  </div>
+                                  <div className="voucher-badge-wrap">
+                                    <span className="voucher-discount-badge">{mainHeading}</span>
+                                    <button
+                                      type="button"
+                                      className="voucher-info-btn"
+                                      title="View Details"
+                                      aria-label="View coupon details"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDetailModalItem({ ...coupon, type: "coupon" });
+                                      }}
+                                    >
+                                      <Info size={13} strokeWidth={2.5} />
+                                    </button>
+                                  </div>
                                 </div>
 
-                                {/* Sub Heading: "title" keyword in response without duplicate discount */}
-                                <div className="voucher-sub-heading" title={subHeading}>
-                                  {subHeading}
-                                </div>
-
-                                {/* Bottom Row: Code in bottom left corner, Apply in bottom right corner */}
-                                <div className="voucher-bottom-row">
+                                {/* Middle Row: Dashed coupon code badge with copy icon & terms */}
+                                <div className="voucher-card-middle">
                                   <div className="voucher-code-wrapper">
-                                    <span className="voucher-code-prefix">Code:</span>
-                                    <span className="voucher-code-badge">{code}</span>
+                                    <span className="voucher-code-badge" onClick={() => handleSelectCoupon(coupon)} style={{ cursor: "pointer", border: "1.5px dashed #dc2626" }} title="Click to apply coupon">{code}</span>
                                     <button
                                       type="button"
                                       onClick={(e) => {
@@ -3133,10 +3071,18 @@ export default function BusPassengerDetailsPage() {
                                       className="voucher-copy-btn"
                                       title="Copy Coupon Code"
                                     >
-                                      {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                      {copiedCode === code ? <Check size={12} style={{ color: "#16a34a" }} /> : <Copy size={12} />}
                                     </button>
                                   </div>
+                                  {descText && (
+                                    <p className="voucher-sub-heading" title={descText}>
+                                      {descText}
+                                    </p>
+                                  )}
+                                </div>
 
+                                {/* Action Button Alignment: Dedicated action footer */}
+                                <div className="voucher-bottom-row">
                                   <div className="voucher-action-btn-wrap">
                                     {isChipSelected ? (
                                       <button
@@ -3147,7 +3093,9 @@ export default function BusPassengerDetailsPage() {
                                         }}
                                         disabled={isApplyingCoupon}
                                         className="voucher-remove-btn"
-                                      >Remove</button>
+                                      >
+                                        Remove
+                                      </button>
                                     ) : (
                                       <button
                                         type="button"
@@ -3283,15 +3231,17 @@ export default function BusPassengerDetailsPage() {
                 <div className="coupon-info-detail-item">
                   <span className="detail-item-label">Discount Benefit</span>
                   <span className="detail-item-value highlight">
-                    {detailModalItem.discountValue
+                    {Number(detailModalItem.discountValue) > 0
                       ? (detailModalItem.isPercentageDiscount
                         ? `${detailModalItem.discountValue}% OFF`
                         : `₹${detailModalItem.discountValue} OFF`)
-                      : detailModalItem.value
+                      : Number(detailModalItem.value) > 0
                         ? `₹${detailModalItem.value} OFF`
-                        : (detailModalItem.type === "offer"
-                          ? getOfferMainHeading(detailModalItem)
-                          : getCouponMainHeading(detailModalItem))}
+                        : (String(detailModalItem.title || "").match(/(\d+)\s*%/)
+                          ? `${String(detailModalItem.title || "").match(/(\d+)\s*%/)[1]}% OFF`
+                          : (detailModalItem.type === "offer"
+                            ? getOfferMainHeading(detailModalItem)
+                            : getCouponMainHeading(detailModalItem)))}
                   </span>
                 </div>
 

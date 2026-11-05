@@ -165,8 +165,9 @@
 
 /* PROMINENT BRAND LOGO */
 .fls-brand-logo-img {
-  height: 58px;
+  height: 34px;
   width: auto;
+  max-width: 170px;
   object-fit: contain;
   display: block;
 }
@@ -392,4 +393,10 @@
   .fls-step-col:not(:last-child)::after {
     display: none;
   }
+}
+
+/* Official Pick&Book Brand Red Accent */
+.fls-red-accent {
+  font-weight: 800;
+  color: #ff0000;
 }

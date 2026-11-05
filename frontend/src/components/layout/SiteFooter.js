@@ -67,6 +67,24 @@ function BlogCardCover({ src, title, category }) {
   );
 }
 
+const POLICY_LINKS = [
+  {
+    id: "terms-conditions",
+    label: "Terms & Conditions",
+    path: "/legal/terms-conditions",
+  },
+  {
+    id: "privacy-policy",
+    label: "Privacy Policy",
+    path: "/legal/privacy-policy",
+  },
+  {
+    id: "refund-cancellation-policy",
+    label: "Refund & Cancellation Policy",
+    path: "/legal/refund-cancellation-policy",
+  },
+];
+
 export default function SiteFooter() {
   const navigate = useNavigate();
   const [cmsPages, setCmsPages] = useState([]);
@@ -159,10 +177,10 @@ export default function SiteFooter() {
 
         {/* ── 2. Main Content Card (Large White Card) ──────────── */}
         <div className="pnb-footer-main-card">
-          <div className="pnb-footer-main-grid">
+          <div className="pnb-footer-main-grid max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 items-start">
 
-            {/* Column 1: Brand Info */}
-            <div className="pnb-footer-brand-col">
+            {/* Column 1: Logo & Brand Description with social media icons [PNB/UI/FOOTER_001] */}
+            <div className="pnb-footer-brand-col flex flex-col items-start">
               <div
                 className="pnb-footer-brand-logo-wrap"
                 onClick={() => navigate("/")}
@@ -175,141 +193,158 @@ export default function SiteFooter() {
                   className="pnb-footer-brand-logo-img"
                 />
               </div>
-              <p className="pnb-footer-brand-desc">
+              <p className="pnb-footer-brand-desc text-sm text-slate-600 mb-4 leading-relaxed">
                 India's most trusted travel platform for instant bus, flight, and hotel bookings with guaranteed low fares &amp; 24/7 support.
               </p>
+              {/* Social Media Icons */}
+              <div className="flex items-center gap-3 mt-1">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
+                  title="Facebook"
+                >
+                  <Facebook size={16} />
+                </a>
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
+                  title="Twitter"
+                >
+                  <Twitter size={16} />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
+                  title="Instagram"
+                >
+                  <Instagram size={16} />
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
+                  title="LinkedIn"
+                >
+                  <Linkedin size={16} />
+                </a>
+              </div>
             </div>
 
-            {/* Column 2: Our Services */}
+            {/* Column 2: Our Services (Hotels, Flights, Buses, Packages) [PNB/UI/FOOTER_001] */}
             <div className="pnb-footer-links-col">
-              <h4 className="pnb-col-heading">
-                <Bus size={19} className="pnb-col-heading-icon" />
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 mb-4 flex items-center gap-2">
+                <Bus size={18} className="text-rose-600 flex-shrink-0" />
                 <span>Our Services</span>
               </h4>
-              <ul className="pnb-col-links-list">
+              <ul className="space-y-2.5">
                 <li>
                   <button
                     type="button"
-                    onClick={(e) => handleServiceClick("buses", e)}
-                    className="pnb-footer-link"
+                    onClick={(e) => handleServiceClick("hotels", e)}
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
                   >
-                    <span className="pnb-link-chevron">›</span> Bus Ticket Booking
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Hotels
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("flights", e)}
-                    className="pnb-footer-link"
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
                   >
-                    <span className="pnb-link-chevron">›</span> Flight Booking
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Flights
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
-                    onClick={(e) => handleServiceClick("hotels", e)}
-                    className="pnb-footer-link"
+                    onClick={(e) => handleServiceClick("buses", e)}
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
                   >
-                    <span className="pnb-link-chevron">›</span> Hotel Reservations
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Buses
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
-                    onClick={(e) => handleServiceClick("offers", e)}
-                    className="pnb-footer-link"
+                    onClick={(e) => handleServiceClick("packages", e)}
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
                   >
-                    <span className="pnb-link-chevron">›</span> Exclusive Offers
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Packages
                   </button>
                 </li>
               </ul>
             </div>
 
-            {/* Column 3: Quick Links */}
+            {/* Column 3: Quick Links (About Us, My Bookings, Offers, Contact) [PNB/UI/FOOTER_001] */}
             <div className="pnb-footer-links-col">
-              <h4 className="pnb-col-heading">
-                <Plane size={19} className="pnb-col-heading-icon" />
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 mb-4 flex items-center gap-2">
+                <Plane size={18} className="text-rose-600 flex-shrink-0" />
                 <span>Quick Links</span>
               </h4>
-              <ul className="pnb-col-links-list">
+              <ul className="space-y-2.5">
                 <li>
                   <button
                     type="button"
-                    onClick={() => openFooterPage("/contact")}
-                    className="pnb-footer-link"
+                    onClick={() => openFooterPage("/about-us")}
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
                   >
-                    <span className="pnb-link-chevron">›</span> Contact Us
-                  </button>
-                </li>
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => openFooterPage("/travel-guide")}
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span> Travel Guide &amp; Blogs
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> About Us
                   </button>
                 </li>
                 <li>
                   <button
                     type="button"
                     onClick={() => openFooterPage("/fetch-ticket")}
-                    className="pnb-footer-link"
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
                   >
-                    <span className="pnb-link-chevron">›</span> Track Booking Status
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> My Bookings
                   </button>
                 </li>
-
+                <li>
+                  <button
+                    type="button"
+                    onClick={(e) => handleServiceClick("offers", e)}
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                  >
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Offers
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => openFooterPage("/contact")}
+                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                  >
+                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Contact
+                  </button>
+                </li>
               </ul>
             </div>
 
             {/* Column 4: Policies & Help */}
             <div className="pnb-footer-links-col">
-              <h4 className="pnb-col-heading">
-                <ShieldCheck size={19} className="pnb-col-heading-icon" />
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 mb-4 flex items-center gap-2">
+                <ShieldCheck size={18} className="text-rose-600 flex-shrink-0" />
                 <span>Policies &amp; Help</span>
               </h4>
-              <ul className="pnb-col-links-list">
-                <li>
-                  <a
-                    href="/legal/terms-conditions"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span> Terms &amp; Conditions
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/legal/privacy-policy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span> Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="/legal/refund-cancellation-policy"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span> Refund &amp; Cancellation Policy
-                  </a>
-                </li>
-                {cmsPages.map((page) => (
-                  <li key={page.id || page.slug}>
+              <ul className="space-y-2.5">
+                {POLICY_LINKS.map((link) => (
+                  <li key={link.id}>
                     <a
-                      href={`/online/${encodeURIComponent(page.slug)}`}
+                      href={link.path}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="pnb-footer-link"
+                      className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
                     >
-                      <span className="pnb-link-chevron">›</span> {page.title}
+                      <span className="pnb-link-chevron mr-1.5 text-rose-600">›</span> {link.label}
                     </a>
                   </li>
                 ))}

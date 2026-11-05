@@ -8,7 +8,7 @@ const TravelerHeader = ({ onAdd, onFilter, filterOpen }) => {
     <div className="customer-flight-bookings" style={{ padding: 0 }}>
       <header className="flight-ops-header" style={{ marginBottom: 12 }}>
         <div>
-          <h1>Traveler List</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-4">Traveler List</h1>
         </div>
         <div className="flight-ops-header-actions">
           <button onClick={onFilter} className="ops-icon-btn" type="button">

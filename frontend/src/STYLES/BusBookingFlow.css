@@ -3532,42 +3532,27 @@
 
 .bus-flow-page .coupon-carousel-frame {
   position: relative;
-  margin: 0 17px;
+  margin: 0;
+  width: 100%;
+}
+
+.bus-flow-page .coupon-section-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 10px !important;
+  gap: 8px !important;
 }
 
 .bus-flow-page .coupon-carousel-controls {
   display: flex !important;
-  position: absolute !important;
-  z-index: 15 !important;
-  top: 50% !important;
-  right: -16px !important;
-  left: -16px !important;
-  justify-content: space-between !important;
-  transform: translateY(-50%) !important;
-  pointer-events: none !important;
-}
-
-.bus-flow-page .coupon-carousel-controls button {
-  display: inline-grid !important;
-  width: 36px !important;
-  height: 36px !important;
-  place-items: center !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  border-radius: 50% !important;
-  background: #ffffff !important;
-  color: #17202f !important;
-  cursor: pointer !important;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18) !important;
+  position: static !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  transform: none !important;
   pointer-events: auto !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-.bus-flow-page .coupon-carousel-controls button:hover {
-  background: #ffffff !important;
-  border-color: #ff0000 !important;
-  color: #ff0000 !important;
-  transform: scale(1.12) !important;
-  box-shadow: 0 6px 16px rgba(255, 0, 0, 0.25) !important;
+  z-index: 2 !important;
 }
 
 .bus-flow-page .coupon-section-label {
@@ -5404,12 +5389,75 @@
   box-shadow: none !important;
 }
 
+/* ── Bus Coupons & Offers Standardized Harmonized Design ── */
+.bus-flow-page .coupon-featured-block,
+.bus-flow-page .coupon-chip-block {
+  margin-top: 10px !important;
+  margin-bottom: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.bus-flow-page .coupon-section-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 10px !important;
+  gap: 8px !important;
+}
+
+.bus-flow-page .coupon-section-label {
+  margin: 0 !important;
+  color: #334155 !important;
+  font-size: 0.92rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+/* Fix carousel navigation controls: header positioned, no card overlap, proper padding */
+.bus-flow-page .coupon-carousel-controls {
+  display: flex !important;
+  position: static !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transform: none !important;
+  pointer-events: auto !important;
+  z-index: 2 !important;
+}
+
+.bus-flow-page .coupon-carousel-controls button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease !important;
+}
+
+.bus-flow-page .coupon-carousel-controls button:hover {
+  background: #f8fafc !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
 .bus-flow-page .coupon-carousel-frame {
   position: relative !important;
-  margin: 0 17px !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
 .bus-flow-page .coupon-featured-list,
@@ -5417,245 +5465,208 @@
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: nowrap !important;
-  gap: 0 !important;
+  gap: 12px !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  padding: 0 !important;
+  padding: 2px 2px 6px 2px !important;
   margin: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
-  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth !important;
   scroll-snap-type: x mandatory !important;
-  touch-action: pan-x;
-  width: 100% !important;
-  box-sizing: border-box !important;
 }
 
 .bus-flow-page .coupon-featured-list::-webkit-scrollbar,
-.bus-flow-page .coupon-chip-list::-webkit-scrollbar,
-.bus-flow-page .coupon-featured-list::-webkit-scrollbar-thumb,
-.bus-flow-page .coupon-chip-list::-webkit-scrollbar-thumb,
-.bus-flow-page .coupon-featured-list::-webkit-scrollbar-track,
-.bus-flow-page .coupon-chip-list::-webkit-scrollbar-track {
+.bus-flow-page .coupon-chip-list::-webkit-scrollbar {
+  display: none !important;
   width: 0 !important;
   height: 0 !important;
-  display: none !important;
-  background: transparent !important;
 }
 
-.bus-flow-page .coupon-featured-list.is-dragging,
-.bus-flow-page .coupon-chip-list.is-dragging {
-  cursor: grabbing;
-  scroll-behavior: auto !important;
-  scroll-snap-type: none !important;
-}
-
-.voucher-code-wrapper {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-}
-
-.voucher-copy-btn {
-  background: transparent !important;
-  border: none !important;
-  color: #64748b !important;
-  cursor: pointer !important;
-  padding: 2px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: color 0.2s ease !important;
-}
-
-.voucher-copy-btn:hover {
-  color: #1e293b !important;
-}
-
-/* Base voucher card style - Option C: Soft Coral Gradient Card (Exact Mockup Match) */
+/* Harmonized Card Dimensions & Dynamic Content Height */
 .bus-flow-page .coupon-featured-offer,
 .bus-flow-page .coupon-voucher-card {
   flex: 0 0 100% !important;
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
-  min-height: 132px !important;
+  box-sizing: border-box !important;
+  height: auto !important;
+  min-height: auto !important;
   scroll-snap-align: start !important;
   scroll-snap-stop: always !important;
   display: flex !important;
   flex-direction: column !important;
-  align-items: stretch !important;
   justify-content: space-between !important;
-  border-radius: 18px !important;
-  background: radial-gradient(circle at 92% 16%, rgba(255, 255, 255, 0.22) 0%, transparent 42%), linear-gradient(135deg, #ff5c4b 0%, #ff6e5e 50%, #ff8375 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
-  box-shadow: none !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 16px !important;
+  gap: 12px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.2s ease !important;
   position: relative !important;
-  overflow: hidden !important;
-  transition: filter 0.2s ease !important;
-  padding: 16px 20px 14px 20px !important;
-  box-sizing: border-box !important;
 }
 
 .bus-flow-page .coupon-featured-offer:hover,
 .bus-flow-page .coupon-voucher-card:hover {
-  transform: none !important;
-  box-shadow: none !important;
-  filter: brightness(1.02) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Hide all old ticket notches and pseudo-elements */
-.bus-flow-page .coupon-featured-offer::before,
-.bus-flow-page .coupon-featured-offer::after,
-.bus-flow-page .coupon-voucher-card::before,
-.bus-flow-page .coupon-voucher-card::after,
-.bus-flow-page .coupon-featured-list::before,
-.bus-flow-page .coupon-featured-list::after,
-.bus-flow-page .coupon-chip-list::before,
-.bus-flow-page .coupon-chip-list::after,
-.bus-flow-page .coupon-carousel-frame::before,
-.bus-flow-page .coupon-carousel-frame::after {
-  display: none !important;
-  content: none !important;
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-/* Selected state */
-.bus-flow-page .coupon-featured-offer.is-selected,
 .bus-flow-page .coupon-voucher-card.is-selected {
-  border: 2px solid #ff0000 !important;
-  box-shadow: 0 0 0 2px #ffffff !important;
+  border-color: #ef4444 !important;
+  background: #fffcfc !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
 }
 
-/* Card Top Section: Main Heading & "i" Info Icon */
+.bus-flow-page .coupon-voucher-card.is-muted {
+  opacity: 0.6 !important;
+}
+
+/* Card Top: Title, discount badge, info button */
 .bus-flow-page .voucher-card-top {
   display: flex !important;
-  justify-content: space-between !important;
   align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
   width: 100% !important;
-  margin-bottom: 2px !important;
+  margin: 0 !important;
 }
 
-.bus-flow-page .voucher-main-heading {
-  font-size: 1.32rem !important;
-  font-weight: 900 !important;
-  color: #fffaf0 !important;
-  line-height: 1.15 !important;
-  letter-spacing: -0.4px !important;
-  text-shadow: 0 1px 3px rgba(180, 50, 40, 0.28) !important;
-  text-transform: uppercase !important;
-  padding-right: 28px !important;
+.bus-flow-page .voucher-title-wrap {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.bus-flow-page .voucher-title {
+  margin: 0 !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  line-height: 1.3 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.bus-flow-page .voucher-badge-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+}
+
+.bus-flow-page .voucher-discount-badge {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  letter-spacing: 0.02em !important;
+  white-space: nowrap !important;
 }
 
 .bus-flow-page .voucher-info-btn {
-  position: absolute !important;
-  top: 12px !important;
-  right: 12px !important;
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
-  min-height: 24px !important;
+  position: static !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
   border-radius: 50% !important;
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.95) !important;
-  color: #d13426 !important;
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   padding: 0 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  flex-shrink: 0 !important;
-  z-index: 2 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transition: all 0.2s ease !important;
 }
 
 .bus-flow-page .voucher-info-btn:hover {
-  background: #ffffff !important;
-  color: #b91c1c !important;
-  border-color: #ffffff !important;
-  transform: scale(1.15) !important;
-  box-shadow: 0 4px 12px rgba(209, 52, 38, 0.25) !important;
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  transform: scale(1.1) !important;
 }
 
-/* Sub Heading: "title" keyword in response */
-.bus-flow-page .voucher-sub-heading {
-  font-size: 0.78rem !important;
-  font-weight: 600 !important;
-  color: #2c1b1b !important;
-  line-height: 1.3 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  margin: 2px 0 8px 0 !important;
-}
-
-/* Bottom Row: Code in bottom left corner, Apply in bottom right corner */
-.bus-flow-page .voucher-bottom-row {
+/* Card Middle: Dashed code badge with copy icon & terms */
+.bus-flow-page .voucher-card-middle {
   display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
+  flex-direction: column !important;
+  gap: 6px !important;
   width: 100% !important;
-  gap: 8px !important;
-  margin-top: auto !important;
+  margin: 0 !important;
 }
 
-/* Bottom Left Pill */
 .bus-flow-page .voucher-code-wrapper {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  background: #fff9ef !important;
-  border-radius: 9999px !important;
-  padding: 4px 12px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
-  border: none !important;
-}
-
-.bus-flow-page .voucher-code-prefix {
-  font-size: 0.72rem !important;
-  font-weight: 500 !important;
-  color: #4b5563 !important;
+  gap: 8px !important;
+  background: #fef2f2 !important;
+  border: 1px dashed #fca5a5 !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  width: fit-content !important;
+  box-shadow: none !important;
 }
 
 .bus-flow-page .voucher-code-badge {
-  font-size: 0.76rem !important;
-  font-weight: 850 !important;
-  color: #0f172a !important;
-  border: none !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.78rem !important;
+  font-weight: 750 !important;
+  color: #b91c1c !important;
+  letter-spacing: 0.05em !important;
   background: transparent !important;
   padding: 0 !important;
-  text-transform: uppercase !important;
-  line-height: 1 !important;
-  letter-spacing: 0.3px !important;
-  font-family: inherit !important;
 }
 
-.voucher-copy-btn {
+.bus-flow-page .voucher-copy-btn {
   background: transparent !important;
   border: none !important;
-  color: #4b5563 !important;
+  color: #ef4444 !important;
   cursor: pointer !important;
   padding: 1px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: all 0.2s ease !important;
+  transition: transform 0.15s ease !important;
 }
 
-.voucher-copy-btn:hover {
-  color: #0f172a !important;
+.bus-flow-page .voucher-copy-btn:hover {
+  color: #b91c1c !important;
   transform: scale(1.15) !important;
+}
+
+.bus-flow-page .voucher-sub-heading {
+  margin: 0 !important;
+  font-size: 0.75rem !important;
+  color: #64748b !important;
+  line-height: 1.4 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: normal !important;
+}
+
+/* Card Footer: Action button */
+.bus-flow-page .voucher-bottom-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding-top: 4px !important;
 }
 
 .bus-flow-page .voucher-action-btn-wrap {
@@ -5664,30 +5675,27 @@
   justify-content: flex-end !important;
 }
 
-/* Bottom Right Pill (Apply button) */
 .bus-flow-page .voucher-apply-btn {
-  background: linear-gradient(135deg, #ff574d 0%, #ea3b30 100%) !important;
+  background: #ff0000 !important;
   color: #ffffff !important;
-  font-size: 0.74rem !important;
-  font-weight: 850 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.4px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
   border: none !important;
-  padding: 6px 16px !important;
-  border-radius: 9999px !important;
+  padding: 6px 14px !important;
+  border-radius: 8px !important;
   cursor: pointer !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
-  box-shadow: 0 4px 12px rgba(234, 59, 48, 0.42) !important;
-  height: auto !important;
+  box-shadow: 0 1px 3px rgba(255, 0, 0, 0.2) !important;
+  transition: all 0.2s ease !important;
 }
 
 .bus-flow-page .voucher-apply-btn:hover {
-  transform: translateY(-1px) scale(1.02) !important;
-  box-shadow: 0 6px 16px rgba(234, 59, 48, 0.55) !important;
-  opacity: 1 !important;
+  background: #dc2626 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(255, 0, 0, 0.3) !important;
 }
 
 .bus-flow-page .voucher-apply-btn:disabled {
@@ -5700,24 +5708,24 @@
 
 .bus-flow-page .voucher-remove-btn {
   background: #ffffff !important;
-  color: #ea3b30 !important;
-  border: 1px solid rgba(234, 59, 48, 0.4) !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
   font-size: 0.72rem !important;
-  font-weight: 800 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.4px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
   padding: 5px 14px !important;
-  border-radius: 9999px !important;
+  border-radius: 8px !important;
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
   transition: all 0.2s ease !important;
 }
 
 .bus-flow-page .voucher-remove-btn:hover {
-  background: #ea3b30 !important;
-  color: #ffffff !important;
+  background: #fef2f2 !important;
+  border-color: #f87171 !important;
+  color: #b91c1c !important;
 }
 
 /* Coupon / Offer Info Details Modal (Opened via "i" button) */

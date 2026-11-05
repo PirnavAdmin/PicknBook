@@ -555,19 +555,6 @@ export async function downloadHotelVoucher(id, bookingRef) {
   window.URL.revokeObjectURL(url);
 }
 
-export async function getTrendingHotels(metric = "score") {
-  try {
-    const data = await requestHotelJson(`/api/Hotels/trending?metric=${metric}`, {
-      method: "GET",
-      skipAuth: true,
-    }, "Unable to load trending hotels.");
-    return Array.isArray(data) ? data : [];
-  } catch (err) {
-    console.warn("Failed to fetch trending hotels from API:", err);
-    return [];
-  }
-}
-
 export async function resendHotelConfirmationEmail(id) {
   let cleanId = id;
   if (typeof id === "string") {

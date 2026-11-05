@@ -1894,11 +1894,29 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
     combinedList.legs = legsMapped;
     combinedList.outbound = legsMapped[0] || [];
     combinedList.return = legsMapped[1] || [];
+    combinedList.isMultiCity = true;
     combinedList.isMultiCityResults = true;
     combinedList.isRoundTripResults = false;
+    combinedList.sharedTraceId = traceId;
+    combinedList.traceId = traceId;
+    combinedList.TraceId = traceId;
     return combinedList;
   }
 
+  if (isMultiCity) {
+    const emptyLegs = (Array.isArray(searchParams.segments) && searchParams.segments.length > 0)
+      ? searchParams.segments.map(() => [])
+      : [[], [], []];
+    const emptyList = [];
+    emptyList.legs = emptyLegs;
+    emptyList.outbound = [];
+    emptyList.return = [];
+    emptyList.isMultiCity = true;
+    emptyList.isMultiCityResults = true;
+    emptyList.sharedTraceId = traceId;
+    emptyList.traceId = traceId;
+    return emptyList;
+  }
   return rawItems.map((item, idx) => mapSingleItem(item, idx, fromCode, toCode, 0, "outbound"));
 }
 
@@ -1966,8 +1984,8 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
       throw new Error("Select at least two valid multi-city legs.");
     }
     for (const leg of parsedLegs) {
-      const codeFrom = leg.fromCode;
-      const codeTo = leg.toCode;
+      const codeFrom = leg.fromCode || resolveAirportCode(leg.from || leg.source || leg.fromCity || "");
+      const codeTo = leg.toCode || resolveAirportCode(leg.to || leg.destination || leg.toCity || "");
       if (!codeFrom || !codeTo) {
         throw new Error("All multi-city legs require valid airport selections from the suggestions.");
       }
@@ -3474,8 +3492,8 @@ export async function updateFlightPromotion(id, payload) {
   });
 }
 
-export async function getPopularFlightRoutes(metric = "score") {
-  const data = await requestJson(`/api/flight/popular-routes?metric=${metric}`, {
+export async function getPopularFlightRoutes() {
+  const data = await requestJson("/api/flight/popular-routes", {
     method: "GET",
     skipAuth: true,
   });
