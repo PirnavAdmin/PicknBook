@@ -111,7 +111,7 @@ const EditProfileCard = () => {
           setErrors((currentErrors) => ({ ...currentErrors, ...validationErrors }));
           setStatusMessage("");
         } else {
-          setStatusMessage("Failed to update profile.");
+          setStatusMessage(err.message || "Failed to update profile.");
         }
       }
     } else {

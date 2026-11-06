@@ -329,11 +329,12 @@ export default function FlightSeatSelectionPage() {
       const legs = Array.isArray(rawSegments) ? rawSegments.flat(Infinity) : [];
       return legs.length ? legs.map(segment => ({
         ...journey,
-        sourceCode: segment.Origin?.Airport?.AirportCode || segment.Origin?.AirportCode,
-        destinationCode: segment.Destination?.Airport?.AirportCode || segment.Destination?.AirportCode,
-        fromCity: segment.Origin?.Airport?.CityName || segment.Origin?.CityName,
-        toCity: segment.Destination?.Airport?.CityName || segment.Destination?.CityName,
-        airlineCode: segment.Airline?.AirlineCode, flightNumber: segment.Airline?.FlightNumber,
+        sourceCode: segment.Origin?.Airport?.AirportCode || segment.Origin?.AirportCode || segment.FromAirportCode || segment.fromAirportCode || journey.sourceCode,
+        destinationCode: segment.Destination?.Airport?.AirportCode || segment.Destination?.AirportCode || segment.ToAirportCode || segment.toAirportCode || journey.destinationCode,
+        fromCity: segment.Origin?.Airport?.CityName || segment.Origin?.CityName || segment.FromCity || segment.fromCity || journey.fromCity,
+        toCity: segment.Destination?.Airport?.CityName || segment.Destination?.CityName || segment.ToCity || segment.toCity || journey.toCity,
+        airlineCode: segment.Airline?.AirlineCode || segment.AirlineCode || journey.airlineCode,
+        flightNumber: segment.Airline?.FlightNumber || segment.FlightNumber || journey.flightNumber,
       })) : [journey];
     });
   }, [flowState]);
@@ -482,7 +483,7 @@ export default function FlightSeatSelectionPage() {
       resolvedResultIndex = parts[activeSegmentIndex] || parts[0];
     }
 
-    const resolvedTraceId = currentLeg.traceId || currentLeg.TraceId || flowState.TraceId || flowState.traceId;
+    const resolvedTraceId = currentLeg.traceId || currentLeg.TraceId || flowState.TraceId || flowState.traceId || (typeof window !== "undefined" ? (window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId")) : null);
     const resolvedSrdvType = (currentLeg.srdvType || currentLeg.SrdvType || flowState.srdvType || "MixAPI").trim();
     const resolvedSrdvIndex = (currentLeg.srdvIndex || currentLeg.SrdvIndex || (resolvedResultIndex.includes("_") ? resolvedResultIndex.split("_")[0] : "1")).trim();
 
