@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Facebook, Twitter, Instagram, Youtube, Linkedin, Building2, Send, Lock } from "lucide-react";
+import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Facebook, Youtube, Building2, Send, Lock } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -236,33 +236,6 @@ export default function SiteFooter() {
                 >
                   <Facebook size={16} />
                 </a>
-                <a
-                  href="https://twitter.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
-                  title="Twitter"
-                >
-                  <Twitter size={16} />
-                </a>
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
-                  title="Instagram"
-                >
-                  <Instagram size={16} />
-                </a>
-                <a
-                  href="https://linkedin.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
-                  title="LinkedIn"
-                >
-                  <Linkedin size={16} />
-                </a>
               </div>
             </div>
 
@@ -449,15 +422,6 @@ export default function SiteFooter() {
             <span className="pnb-pill-label">Follow Us:</span>
             <div className="pnb-social-circles-row">
               <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pnb-social-circle pnb-ig-circle"
-                title="Instagram"
-              >
-                <Instagram size={17} color="#ffffff" />
-              </a>
-              <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -474,15 +438,6 @@ export default function SiteFooter() {
                 title="YouTube"
               >
                 <Youtube size={17} color="#ffffff" />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pnb-social-circle pnb-li-circle"
-                title="LinkedIn"
-              >
-                <Linkedin size={17} color="#ffffff" />
               </a>
             </div>
           </div>
