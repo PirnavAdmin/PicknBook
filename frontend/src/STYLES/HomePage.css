@@ -11267,8 +11267,9 @@ button:focus-visible {
 .bus-offers-tabs-bar {
   display: flex !important;
   align-items: center !important;
+  flex-wrap: wrap !important;
   gap: 10px !important;
-  margin: 0 !important;
+  margin: 12px 0 6px 0 !important;
 }
 
 .bus-offers-tab-btn {

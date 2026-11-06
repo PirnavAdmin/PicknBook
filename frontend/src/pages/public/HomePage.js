@@ -2502,7 +2502,15 @@ export default function HomePage() {
   const [isDealsDialogOpen, setIsDealsDialogOpen] = useState(false);
   const [offerForDetailPopup, setOfferForDetailPopup] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [hotelOfferFilter, setHotelOfferFilter] = useState("all");
+  const GENERIC_OFFER_CATEGORIES = [
+  { id: "all", label: "All Offers" },
+  { id: "bank", label: "Bank Offers" },
+  { id: "special", label: "Special Deals" },
+  { id: "weekend", label: "Weekend Deals" },
+  { id: "discount", label: "Top Discounts" },
+];
+
+  const [offerCategoryFilter, setOfferCategoryFilter] = useState("all");
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [copiedOfferCode, setCopiedOfferCode] = useState(null);
@@ -3080,6 +3088,7 @@ export default function HomePage() {
 
   // Sync offersFilter with activeTab when activeTab changes
   useEffect(() => {
+    setOfferCategoryFilter("all");
     if (activeTab === "buses") {
       setOffersFilter("bus");
     } else if (activeTab === "hotels") {
@@ -3963,10 +3972,24 @@ export default function HomePage() {
         return false;
       }
     }
-    if (activeTab === "hotels" && hotelOfferFilter !== "all") {
-      const haystack = `${offer.title || ""} ${offer.description || ""} ${offer.category || ""} ${offer.badgeLabel || ""} ${offer.code || ""}`.toLowerCase();
-      if (!haystack.includes(hotelOfferFilter)) {
-        return false;
+    if (offerCategoryFilter && offerCategoryFilter !== "all") {
+      const haystack = `${offer.title || ""} ${offer.description || ""} ${offer.category || ""} ${offer.badgeLabel || ""} ${offer.code || ""} ${offer.remark || ""}`.toLowerCase();
+      switch (offerCategoryFilter) {
+        case "bank":
+          if (!/bank|card|credit|debit|upi|hdfc|icici|sbi|axis|kotak|bob|pnb|amex|mastercard|visa|rupay|paytm|gpay|phonepe/.test(haystack)) return false;
+          break;
+        case "special":
+          if (!/special|deal|exclusive|save|flat|super|mega|vip|instant|prime|popular|luxury|stay|villa|resort/.test(haystack)) return false;
+          break;
+        case "weekend":
+          if (!/weekend|getaway|holiday|vacation|festive|sunday|saturday|friday|trip|tour|season/.test(haystack)) return false;
+          break;
+        case "discount":
+          if (!/discount|budget|saver|value|promo|code|cashback|off|%|sale|economy/.test(haystack)) return false;
+          break;
+        default:
+          if (!haystack.includes(offerCategoryFilter.toLowerCase())) return false;
+          break;
       }
     }
     return true;
@@ -8462,31 +8485,6 @@ export default function HomePage() {
           <div className="bus-offers-header-block">
             <div className="bus-offers-title-wrap">
               <h2 className="bus-offers-title">Featured Offers</h2>
-              {activeTab === "hotels" && (
-                <div className="flex flex-wrap items-center gap-2 mt-3.5 mb-2">
-                  {[
-                    { id: "all", label: "All Stays" },
-                    { id: "luxury", label: "Luxury & Villas" },
-                    { id: "weekend", label: "Weekend Getaways" },
-                    { id: "budget", label: "Budget Friendly" },
-                    { id: "resort", label: "Resorts & Spa" }
-                  ].map((cat) => {
-                    const isActive = hotelOfferFilter === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setHotelOfferFilter(cat.id)}
-                        className={`backdrop-blur-md bg-white/40 border border-white/60 shadow-sm text-slate-700 hover:bg-white/60 hover:text-slate-900 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                          isActive ? "bg-white/80 border-primary-500/40 text-primary-700 shadow-md !bg-white/80 !border-red-500/40 !text-red-600" : ""
-                        }`}
-                      >
-                        {cat.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
               <p className="bus-offers-subtitle">
                 {activeTab === "buses"
                   ? "Best deals on buses. Grab them before they're gone!"
@@ -8494,6 +8492,23 @@ export default function HomePage() {
                   ? "Best deals on flights. Grab them before they're gone!"
                   : "Best deals on hotels. Grab them before they're gone!"}
               </p>
+              <div className="bus-offers-tabs-bar" role="tablist" aria-label="Offer categories">
+                {GENERIC_OFFER_CATEGORIES.map((cat) => {
+                  const isActive = offerCategoryFilter === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      onClick={() => setOfferCategoryFilter(cat.id)}
+                      className={`bus-offers-tab-btn ${isActive ? "active" : ""}`}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
