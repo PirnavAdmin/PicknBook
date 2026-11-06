@@ -1092,8 +1092,18 @@ export default function FlightPassengerDetailsPage() {
       totalFare: finalPayable,
     };
 
+    const resolvedFlowLegs = selectedLegs.length > 0
+      ? selectedLegs
+      : (returnFlightNormalized ? [flight, returnFlightNormalized] : (flight ? [flight] : []));
+
     const payload = {
       ...flowState,
+      flight,
+      returnFlight: returnFlightNormalized,
+      legs: resolvedFlowLegs,
+      selectedLegs: resolvedFlowLegs,
+      isTwoWay: isTwoWayNormalized,
+      isMultiCity: isMultiCityNormalized,
       passengers,
       contact,
       specialAssistance,
@@ -1106,6 +1116,10 @@ export default function FlightPassengerDetailsPage() {
       tripSecureAdded,
       tripSecureFee,
       fareQuote: fareQuoteData,
+      TraceId: fareQuoteData?.identity?.TraceId || flowState.TraceId || flowState.traceId || flight?.traceId || flight?.TraceId,
+      traceId: fareQuoteData?.identity?.TraceId || flowState.TraceId || flowState.traceId || flight?.traceId || flight?.TraceId,
+      ResultIndex: fareQuoteData?.identity?.ResultIndex || flowState.ResultIndex || flowState.resultIndex || flight?.resultIndex || flight?.ResultIndex,
+      resultIndex: fareQuoteData?.identity?.ResultIndex || flowState.ResultIndex || flowState.resultIndex || flight?.resultIndex || flight?.ResultIndex,
     };
 
     // Save in-progress state FIRST
@@ -1153,8 +1167,18 @@ export default function FlightPassengerDetailsPage() {
       totalFare: finalPayable + assuredFee,
     };
 
+    const resolvedFlowLegs = selectedLegs.length > 0
+      ? selectedLegs
+      : (returnFlightNormalized ? [flight, returnFlightNormalized] : (flight ? [flight] : []));
+
     const payload = {
       ...flowState,
+      flight,
+      returnFlight: returnFlightNormalized,
+      legs: resolvedFlowLegs,
+      selectedLegs: resolvedFlowLegs,
+      isTwoWay: isTwoWayNormalized,
+      isMultiCity: isMultiCityNormalized,
       passengers,
       contact,
       specialAssistance,
@@ -1174,6 +1198,10 @@ export default function FlightPassengerDetailsPage() {
       useWallet: walletAppliedAmount > 0,
       walletAvailableBalance: walletBalance,
       walletStatus,
+      TraceId: fareQuoteData?.identity?.TraceId || flowState.TraceId || flowState.traceId || flight?.traceId || flight?.TraceId,
+      traceId: fareQuoteData?.identity?.TraceId || flowState.TraceId || flowState.traceId || flight?.traceId || flight?.TraceId,
+      ResultIndex: fareQuoteData?.identity?.ResultIndex || flowState.ResultIndex || flowState.resultIndex || flight?.resultIndex || flight?.ResultIndex,
+      resultIndex: fareQuoteData?.identity?.ResultIndex || flowState.ResultIndex || flowState.resultIndex || flight?.resultIndex || flight?.ResultIndex,
     };
 
     setIsApplying(true);
@@ -1181,10 +1209,19 @@ export default function FlightPassengerDetailsPage() {
 
     try {
       if (!fareQuoteData?.success) throw new Error(fareQuoteError || "Wait for a valid fare quote before continuing.");
-      const currentQuote = await getFareQuote({ flight,
-        ...fareQuoteData.identity, couponCode: couponCode.trim().toUpperCase() || null,
+      const currentQuote = await getFareQuote({
+        flight,
+        returnFlight: returnFlightNormalized,
+        legs: resolvedFlowLegs,
+        selectedLegs: resolvedFlowLegs,
+        ...fareQuoteData.identity,
+        couponCode: couponCode.trim().toUpperCase() || null,
         journeyType: isMultiCityNormalized ? 3 : isTwoWayNormalized ? 2 : 1,
-        adults: travellers.adults, children: travellers.children, infants: travellers.infants });
+        adults: travellers.adults,
+        children: travellers.children,
+        infants: travellers.infants,
+        isMultiCity: isMultiCityNormalized,
+      });
       payload.fareQuote = currentQuote;
       const refreshedTotal = currentQuote.totalFare + assuredFee;
       const refreshedWalletApplied = Math.min(walletAppliedAmount, refreshedTotal);
@@ -1199,6 +1236,14 @@ export default function FlightPassengerDetailsPage() {
       payload.fareSummary = { ...payload.fareSummary, baseFare: currentQuote.baseFare,
         tax: currentQuote.tax, totalFare: currentQuote.totalFare, markup: 0, convenienceFee: 0,
         discount: currentQuote.pickNBookDiscount };
+      if (currentQuote?.identity?.TraceId) {
+        payload.TraceId = currentQuote.identity.TraceId;
+        payload.traceId = currentQuote.identity.TraceId;
+      }
+      if (currentQuote?.identity?.ResultIndex) {
+        payload.ResultIndex = currentQuote.identity.ResultIndex;
+        payload.resultIndex = currentQuote.identity.ResultIndex;
+      }
       try {
         sessionStorage.setItem("Passengers", JSON.stringify(passengers));
       } catch (e) { }

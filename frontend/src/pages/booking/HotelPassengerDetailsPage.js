@@ -1,9 +1,11 @@
 /* eslint-disable */
 import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
-  Headphones, Phone, Mail, createPortal } from "react-dom";
-import {
-  ArrowLeft, CalendarDays, Check, CheckCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble, Info, X
+  ArrowLeft, CalendarDays, Check, CheckCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble, Info, X,
+  Headphones,
+  Phone,
+  Mail
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";

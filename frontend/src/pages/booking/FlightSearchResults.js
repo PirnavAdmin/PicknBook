@@ -566,8 +566,12 @@ function getClassBadgeTone(travelClass) {
 }
 
 function normalizeTripType(value) {
-  if (value === "twoway" || value === "multicity") {
-    return value;
+  const norm = String(value || "").toLowerCase().replace(/[-_\s]/g, "");
+  if (norm === "twoway" || norm === "roundtrip" || norm === "round" || norm === "2") {
+    return "twoway";
+  }
+  if (norm === "multicity" || norm === "multi" || norm === "3") {
+    return "multicity";
   }
 
   return "oneway";

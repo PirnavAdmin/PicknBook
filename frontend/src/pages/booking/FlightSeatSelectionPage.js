@@ -323,11 +323,26 @@ export default function FlightSeatSelectionPage() {
   const [ssrOptionsByLeg, setSsrOptionsByLeg] = useState({});
 
   const effectiveLegs = useMemo(() => {
-    const journeys = flowState.selectedLegs?.length ? flowState.selectedLegs : [flowState.flight, flowState.returnFlight].filter(Boolean);
-    return journeys.flatMap(journey => {
+    const isTwoWay = flowState.isTwoWay || ["twoway", "roundtrip", "round", "2"].includes(String(searchContext?.tripType || flowState.tripType || "").toLowerCase());
+    const returnFlightResolved = flowState.returnFlight || flowState.selectedLegs?.[1] || flowState.legs?.[1] || null;
+
+    let journeys = [];
+    if (Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0) {
+      journeys = [...flowState.selectedLegs];
+    } else if (Array.isArray(flowState.legs) && flowState.legs.length > 0) {
+      journeys = [...flowState.legs];
+    } else {
+      journeys = [flowState.flight, returnFlightResolved].filter(Boolean);
+    }
+
+    if (isTwoWay && journeys.length === 1 && returnFlightResolved) {
+      journeys.push(returnFlightResolved);
+    }
+
+    return journeys.flatMap((journey, journeyIdx) => {
       const rawSegments = journey.segments || journey.Segments || [];
       const legs = Array.isArray(rawSegments) ? rawSegments.flat(Infinity) : [];
-      return legs.length ? legs.map(segment => ({
+      return legs.length ? legs.map((segment, segIdx) => ({
         ...journey,
         sourceCode: segment.Origin?.Airport?.AirportCode || segment.Origin?.AirportCode || segment.FromAirportCode || segment.fromAirportCode || journey.sourceCode,
         destinationCode: segment.Destination?.Airport?.AirportCode || segment.Destination?.AirportCode || segment.ToAirportCode || segment.toAirportCode || journey.destinationCode,
@@ -335,9 +350,17 @@ export default function FlightSeatSelectionPage() {
         toCity: segment.Destination?.Airport?.CityName || segment.Destination?.CityName || segment.ToCity || segment.toCity || journey.toCity,
         airlineCode: segment.Airline?.AirlineCode || segment.AirlineCode || journey.airlineCode,
         flightNumber: segment.Airline?.FlightNumber || segment.FlightNumber || journey.flightNumber,
-      })) : [journey];
+        sectorIndex: segIdx,
+        journeyIndex: journeyIdx,
+        isReturnLeg: journeyIdx > 0 && isTwoWay,
+      })) : [{
+        ...journey,
+        sectorIndex: 0,
+        journeyIndex: journeyIdx,
+        isReturnLeg: journeyIdx > 0 && isTwoWay,
+      }];
     });
-  }, [flowState]);
+  }, [flowState, searchContext]);
   const segments = effectiveLegs.map(leg => (leg.sourceCode || leg.fromAirportCode || "") + "-" + (leg.destinationCode || leg.toAirportCode || ""));
 
   const currentLeg = effectiveLegs[activeSegmentIndex] || flight;
@@ -453,6 +476,7 @@ export default function FlightSeatSelectionPage() {
     }
 
     writeFlightBookingFlowState({
+      ...flowState,
       flight,
       searchContext,
     });
@@ -471,21 +495,62 @@ export default function FlightSeatSelectionPage() {
     // Resolve leg-specific ResultIndex:
     // For MultiCity / RoundTrip, each leg MUST query SeatMap with its own individual sector ResultIndex.
     let resolvedResultIndex = currentLeg.ResultIndex || currentLeg.resultIndex || "";
-    if (!resolvedResultIndex && flowState.selectedLegs && flowState.selectedLegs[activeSegmentIndex]) {
-      const targetLeg = flowState.selectedLegs[activeSegmentIndex];
-      resolvedResultIndex = targetLeg.ResultIndex || targetLeg.resultIndex || "";
-    }
-    if (!resolvedResultIndex) {
-      resolvedResultIndex = flowState.ResultIndex || flowState.resultIndex || "";
-    }
     if (resolvedResultIndex.includes(",")) {
       const parts = resolvedResultIndex.split(",").map(p => p.trim());
-      resolvedResultIndex = parts[activeSegmentIndex] || parts[0];
+      resolvedResultIndex = parts[currentLeg.journeyIndex ?? activeSegmentIndex] || parts[activeSegmentIndex] || parts[0];
+    }
+    if (!resolvedResultIndex || /^(flight-|flt-)/.test(resolvedResultIndex)) {
+      if (currentLeg.journeyIndex !== undefined && flowState.selectedLegs?.[currentLeg.journeyIndex]) {
+        const targetJourney = flowState.selectedLegs[currentLeg.journeyIndex];
+        resolvedResultIndex = targetJourney.ResultIndex || targetJourney.resultIndex || "";
+      } else if (currentLeg.isReturnLeg && flowState.returnFlight) {
+        resolvedResultIndex = flowState.returnFlight.ResultIndex || flowState.returnFlight.resultIndex || "";
+      } else if (flowState.selectedLegs?.[activeSegmentIndex]) {
+        resolvedResultIndex = flowState.selectedLegs[activeSegmentIndex].ResultIndex || flowState.selectedLegs[activeSegmentIndex].resultIndex || "";
+      } else if (flowState.legs?.[activeSegmentIndex]) {
+        resolvedResultIndex = flowState.legs[activeSegmentIndex].ResultIndex || flowState.legs[activeSegmentIndex].resultIndex || "";
+      }
+    }
+    if (!resolvedResultIndex || /^(flight-|flt-)/.test(resolvedResultIndex)) {
+      const globalResultIndex = flowState.ResultIndex || flowState.resultIndex || "";
+      if (globalResultIndex.includes(",")) {
+        const parts = globalResultIndex.split(",").map(p => p.trim());
+        resolvedResultIndex = parts[currentLeg.journeyIndex ?? activeSegmentIndex] || parts[activeSegmentIndex] || parts[0];
+      } else {
+        resolvedResultIndex = globalResultIndex;
+      }
     }
 
-    const resolvedTraceId = currentLeg.traceId || currentLeg.TraceId || flowState.TraceId || flowState.traceId || (typeof window !== "undefined" ? (window.sessionStorage.getItem("flight_trace_id") || window.sessionStorage.getItem("TraceId")) : null);
-    const resolvedSrdvType = (currentLeg.srdvType || currentLeg.SrdvType || flowState.srdvType || "MixAPI").trim();
-    const resolvedSrdvIndex = (currentLeg.srdvIndex || currentLeg.SrdvIndex || (resolvedResultIndex.includes("_") ? resolvedResultIndex.split("_")[0] : "1")).trim();
+    const resolvedTraceId =
+      currentLeg.traceId ||
+      currentLeg.TraceId ||
+      flowState.TraceId ||
+      flowState.traceId ||
+      flowState.fareQuote?.identity?.TraceId ||
+      flowState.fareQuote?.identity?.traceId ||
+      flowState.searchContext?.traceId ||
+      flowState.searchContext?.TraceId ||
+      (typeof window !== "undefined"
+        ? (window.sessionStorage.getItem("flight_trace_id") ||
+           window.sessionStorage.getItem("TraceId") ||
+           window.sessionStorage.getItem("flight_search_trace_id"))
+        : null);
+
+    const resolvedSrdvType = (
+      currentLeg.srdvType ||
+      currentLeg.SrdvType ||
+      flowState.srdvType ||
+      flowState.fareQuote?.identity?.SrdvType ||
+      "MixAPI"
+    ).trim();
+
+    const resolvedSrdvIndex = (
+      currentLeg.srdvIndex ||
+      currentLeg.SrdvIndex ||
+      flowState.srdvIndex ||
+      flowState.fareQuote?.identity?.SrdvIndex ||
+      (resolvedResultIndex.includes("_") ? resolvedResultIndex.split("_")[0] : "1")
+    ).trim();
 
     const hasValidTraceId = /^[1-9]\d*$/.test(String(resolvedTraceId || "").trim());
     const hasValidResultIndex = !!(resolvedResultIndex) &&
@@ -714,12 +779,26 @@ export default function FlightSeatSelectionPage() {
       ? flowState.passengers.map((passenger, index) => {
         const pSeats = segments.map((_, legIdx) => {
           const legSeats = selectedSeatsBySegment[legIdx] || [];
-          return (passenger.passengerType === "Infant" ? null : legSeats[flowState.passengers.slice(0, index).filter(p => p.passengerType !== "Infant").length]?.rawApiSeat) || null;
+          const adultChildIndex = flowState.passengers.slice(0, index).filter(p => p.passengerType !== "Infant").length;
+          const chosenSeat = passenger.passengerType === "Infant" ? null : legSeats[adultChildIndex];
+          if (!chosenSeat || !chosenSeat.rawApiSeat) return null;
+          const legMeta = effectiveLegs[legIdx] || {};
+          return {
+            ...chosenSeat.rawApiSeat,
+            Origin: chosenSeat.rawApiSeat.Origin || legMeta.sourceCode || legMeta.fromAirportCode || "",
+            Destination: chosenSeat.rawApiSeat.Destination || legMeta.destinationCode || legMeta.toAirportCode || "",
+            AirlineCode: chosenSeat.rawApiSeat.AirlineCode || legMeta.airlineCode || "",
+            FlightNumber: chosenSeat.rawApiSeat.FlightNumber || legMeta.flightNumber || "",
+          };
         }).filter(Boolean);
+
+        const seatLabels = segments
+          .map((_, legIdx) => (selectedSeatsBySegment[legIdx] || [])[index]?.label)
+          .filter(Boolean);
 
         return {
           ...passenger,
-          seatLabel: (selectedSeatsBySegment[0] || [])[index]?.label || "",
+          seatLabel: seatLabels.length > 0 ? seatLabels.join(" / ") : "",
           seatDynamic: pSeats.length > 0 ? pSeats : undefined,
           baggage: index === 0 ? selectedBaggageItems : [],
           mealDynamic: index === 0 ? selectedMeals : [],
@@ -928,7 +1007,11 @@ export default function FlightSeatSelectionPage() {
           {/* Your Flight Details */}
           <div className="sidebar-card your-flight-card">
             <h3 className="sidebar-card-title">
-              {segments.length > 1 ? `Flight ${activeSegmentIndex + 1} of ${segments.length}` : "Your Flight"}
+              {segments.length > 1
+                ? (effectiveLegs[activeSegmentIndex]?.isReturnLeg
+                    ? `Return Flight: Flight ${activeSegmentIndex + 1} of ${segments.length}`
+                    : `Flight ${activeSegmentIndex + 1} of ${segments.length}`)
+                : "Your Flight"}
             </h3>
             <div className="flight-segment">
               <div className="flight-city-info">
@@ -1025,7 +1108,10 @@ export default function FlightSeatSelectionPage() {
                           className={`segment-pill ${activeSegmentIndex === idx ? "active" : ""}`}
                           onClick={() => setActiveSegmentIndex(idx)}
                         >
-                          <span style={{ fontWeight: 700 }}>Flight {idx + 1}: {seg.replace("-", " → ")}</span>
+                          <span style={{ fontWeight: 700 }}>
+                            {effectiveLegs[idx]?.isReturnLeg ? "Return: " : `Flight ${idx + 1}: `}
+                            {seg.replace("-", " → ")}
+                          </span>
                           {legSeatCount > 0 && (
                             <span style={{ marginLeft: 6, fontSize: "0.72rem", padding: "2px 7px", borderRadius: 10, backgroundColor: activeSegmentIndex === idx ? "#2563eb" : "#e2e8f0", color: activeSegmentIndex === idx ? "#ffffff" : "#334155" }}>
                               ✓ {legSeatCount}
@@ -1496,6 +1582,100 @@ export default function FlightSeatSelectionPage() {
                     {selectionError}
                   </p>
                 )}
+
+                {/* Stepper Bar directly under Aircraft Fuselage */}
+                <div className="seat-leg-stepper-bar" style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginTop: "20px",
+                  padding: "14px 18px",
+                  backgroundColor: "#f8fafc",
+                  borderRadius: "10px",
+                  border: "1px solid #e2e8f0",
+                  flexWrap: "wrap",
+                  gap: "12px"
+                }}>
+                  <div>
+                    {activeSegmentIndex > 0 ? (
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "10px 18px",
+                          borderRadius: "8px",
+                          border: "1px solid #cbd5e1",
+                          background: "#ffffff",
+                          color: "#1e293b",
+                          fontWeight: 600,
+                          cursor: "pointer"
+                        }}
+                        onClick={() => {
+                          setActiveSegmentIndex((prev) => Math.max(0, prev - 1));
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      >
+                        <ArrowLeft size={16} /> Previous Flight ({segments[activeSegmentIndex - 1]?.replace("-", " → ")})
+                      </button>
+                    ) : <span />}
+                  </div>
+
+                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                    {activeSegmentIndex < segments.length - 1 ? (
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "10px 22px",
+                          borderRadius: "8px",
+                          background: "#2563eb",
+                          color: "#ffffff",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          border: "none",
+                          boxShadow: "0 2px 6px rgba(37,99,235,0.3)"
+                        }}
+                        onClick={() => {
+                          setActiveSegmentIndex((prev) => prev + 1);
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        disabled={selectedSeats.length > 0 && selectedSeats.length !== travellers.seatRequired}
+                      >
+                        {effectiveLegs[activeSegmentIndex + 1]?.isReturnLeg
+                          ? "Select Return Flight Seats"
+                          : `Next Flight Seats (${segments[activeSegmentIndex + 1]?.replace("-", " → ")})`} <ArrowRight size={16} />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "10px 22px",
+                          borderRadius: "8px",
+                          background: "#16a34a",
+                          color: "#ffffff",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          border: "none",
+                          boxShadow: "0 2px 6px rgba(22,163,74,0.3)"
+                        }}
+                        onClick={handleContinue}
+                        disabled={selectedSeats.length > 0 && selectedSeats.length !== travellers.seatRequired}
+                      >
+                        Continue to Payment <ArrowRight size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
               <p>No additional protection products are available.</p>
@@ -1542,7 +1722,32 @@ export default function FlightSeatSelectionPage() {
               </div>
             </div>
 
-            <div className="addon-card-footer">
+            <div className="addon-card-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+              {activeSegmentIndex > 0 ? (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 18px",
+                    borderRadius: "8px",
+                    border: "1px solid #cbd5e1",
+                    background: "#ffffff",
+                    color: "#1e293b",
+                    fontWeight: 600,
+                    cursor: "pointer"
+                  }}
+                  onClick={() => {
+                    setActiveSegmentIndex((prev) => Math.max(0, prev - 1));
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                >
+                  <ArrowLeft size={16} /> Previous Flight
+                </button>
+              ) : <span />}
+
               <button
                 type="button"
                 className="btn-primary addon-cta"
@@ -1557,7 +1762,9 @@ export default function FlightSeatSelectionPage() {
                 }}
                 disabled={selectedSeats.length > 0 && selectedSeats.length !== travellers.seatRequired}
               >
-                {activeSegmentIndex < segments.length - 1 ? "Next Flight Seats" : "Continue to Payment"} <ArrowRight size={16} />
+                {activeSegmentIndex < segments.length - 1
+                  ? (effectiveLegs[activeSegmentIndex + 1]?.isReturnLeg ? "Select Return Flight Seats" : "Next Flight Seats")
+                  : "Continue to Payment"} <ArrowRight size={16} />
               </button>
             </div>
           </div>
