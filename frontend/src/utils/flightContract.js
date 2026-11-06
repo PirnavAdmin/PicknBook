@@ -8,17 +8,15 @@ export function supplierBoolean(value) {
 export function flightIdentity(params = {}) {
   const flight = params.flight || {};
   const read = (camel, pascal) => String(params[camel] ?? params[pascal] ?? flight[camel] ?? flight[pascal] ?? "").trim();
+  const rawResultIndex = read("resultIndex", "ResultIndex");
   const identity = {
     TraceId: read("traceId", "TraceId"),
-    ResultIndex: read("resultIndex", "ResultIndex"),
-    SrdvType: read("srdvType", "SrdvType"),
-    SrdvIndex: read("srdvIndex", "SrdvIndex"),
+    ResultIndex: rawResultIndex,
+    SrdvType: read("srdvType", "SrdvType") || "MixAPI",
+    SrdvIndex: read("srdvIndex", "SrdvIndex") || (rawResultIndex.includes("_") ? rawResultIndex.split("_")[0] : "1"),
   };
   if (!/^[1-9]\d*$/.test(identity.TraceId) || !identity.ResultIndex || /^(flight-|flt-)/.test(identity.ResultIndex)) {
     throw new Error("The supplier flight reference is missing. Search and select the flight again.");
-  }
-  if (!identity.SrdvType || !identity.SrdvIndex) {
-    throw new Error("The supplier routing information is missing. Search and select the flight again.");
   }
   return identity;
 }

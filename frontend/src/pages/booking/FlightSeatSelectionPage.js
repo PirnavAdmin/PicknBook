@@ -460,34 +460,39 @@ export default function FlightSeatSelectionPage() {
   useEffect(() => {
     let isCurrent = true;
 
-    if (!currentLeg?.id && !currentLeg?.resultIndex) {
+    if (!currentLeg?.id && !currentLeg?.resultIndex && !currentLeg?.ResultIndex) {
       setIsSeatMapLoading(false);
       return () => {
         isCurrent = false;
       };
     }
 
-    // PRE-VALIDATE: check SRDV identity fields before calling APIs.
-    // flightIdentity() throws if traceId, resultIndex, srdvType, or srdvIndex are missing/invalid.
-    // For RoundTrip and MultiCity, we MUST use the combined flowState values (like ResultIndex: "1_OB4,1_IB3")
-    // otherwise the SRDV backend will return "Supplier Logs Not found" because it expects the full journey context.
-    const isMultiItinerary = flowState.isMultiCity || (flowState.selectedLegs && flowState.selectedLegs.length > 1 && Array.from(new Set(flowState.selectedLegs.map(l => l.resultIndex || l.ResultIndex))).length > 1);
+    // Resolve leg-specific ResultIndex:
+    // For MultiCity / RoundTrip, each leg MUST query SeatMap with its own individual sector ResultIndex.
+    let resolvedResultIndex = currentLeg.ResultIndex || currentLeg.resultIndex || "";
+    if (!resolvedResultIndex && flowState.selectedLegs && flowState.selectedLegs[activeSegmentIndex]) {
+      const targetLeg = flowState.selectedLegs[activeSegmentIndex];
+      resolvedResultIndex = targetLeg.ResultIndex || targetLeg.resultIndex || "";
+    }
+    if (!resolvedResultIndex) {
+      resolvedResultIndex = flowState.ResultIndex || flowState.resultIndex || "";
+    }
+    if (resolvedResultIndex.includes(",")) {
+      const parts = resolvedResultIndex.split(",").map(p => p.trim());
+      resolvedResultIndex = parts[activeSegmentIndex] || parts[0];
+    }
 
     const resolvedTraceId = currentLeg.traceId || currentLeg.TraceId || flowState.TraceId || flowState.traceId;
-    const resolvedResultIndex = isMultiItinerary
-      ? (currentLeg.ResultIndex || currentLeg.resultIndex || "")
-      : (flowState.ResultIndex || flowState.resultIndex || currentLeg.ResultIndex || currentLeg.resultIndex);
+    const resolvedSrdvType = (currentLeg.srdvType || currentLeg.SrdvType || flowState.srdvType || "MixAPI").trim();
+    const resolvedSrdvIndex = (currentLeg.srdvIndex || currentLeg.SrdvIndex || (resolvedResultIndex.includes("_") ? resolvedResultIndex.split("_")[0] : "1")).trim();
 
     const hasValidTraceId = /^[1-9]\d*$/.test(String(resolvedTraceId || "").trim());
     const hasValidResultIndex = !!(resolvedResultIndex) &&
       !/^(flight-|flt-)/.test(String(resolvedResultIndex || "").trim());
-    const hasValidSrdvType = !!(currentLeg.srdvType || currentLeg.SrdvType || "").trim();
-    const hasValidSrdvIndex = !!(currentLeg.srdvIndex || currentLeg.SrdvIndex || "").trim();
 
-    if (!hasValidTraceId || !hasValidResultIndex || !hasValidSrdvType || !hasValidSrdvIndex) {
-      console.warn("[SeatMap/SSR] Skipping API call — missing SRDV identity fields:", {
+    if (!hasValidTraceId || !hasValidResultIndex) {
+      console.warn("[SeatMap/SSR] Skipping API call — missing valid TraceId or ResultIndex:", {
         traceId: resolvedTraceId, resultIndex: resolvedResultIndex,
-        srdvType: currentLeg.srdvType, srdvIndex: currentLeg.srdvIndex,
       });
       setIsSeatMapLoading(false);
       setSsrOptionsByLeg(prev => ({ ...prev, [activeSegmentIndex]: { baggage: [], meal: [] } }));
@@ -509,11 +514,22 @@ export default function FlightSeatSelectionPage() {
 
     (async () => {
       try {
-        // If it's a mixed itinerary (multiple unique ResultIndices), we query it as an independent OneWay (journeyType: 1)
-        const queryJourneyType = isMultiItinerary ? 1 : (flowState.isMultiCity ? 3 : (flowState.isTwoWay ? 2 : 1));
+        // Query seat map and SSR per physical leg
+        const legPayload = {
+          ...currentLeg,
+          TraceId: Number(resolvedTraceId),
+          traceId: Number(resolvedTraceId),
+          ResultIndex: resolvedResultIndex,
+          resultIndex: resolvedResultIndex,
+          SrdvType: resolvedSrdvType,
+          srdvType: resolvedSrdvType,
+          SrdvIndex: resolvedSrdvIndex,
+          srdvIndex: resolvedSrdvIndex,
+          journeyType: 1
+        };
         const [seatMap, ssr] = await Promise.all([
-          getFlightSeatMap({ ...currentLeg, TraceId: resolvedTraceId, traceId: resolvedTraceId, ResultIndex: resolvedResultIndex, resultIndex: resolvedResultIndex, journeyType: queryJourneyType }),
-          getFlightSSR({ ...currentLeg, TraceId: resolvedTraceId, traceId: resolvedTraceId, ResultIndex: resolvedResultIndex, resultIndex: resolvedResultIndex, journeyType: queryJourneyType })
+          getFlightSeatMap(legPayload),
+          getFlightSSR(legPayload)
         ]);
         if (!isCurrent) return;
 

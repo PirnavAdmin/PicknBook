@@ -462,9 +462,9 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
   const cleanCandidate = cleanResultIndex(rawResultIndex);
   const exactResultIndex = cleanCandidate || rawResultIndex;
 
-  const srdvType = pickFirst(record, ["srdvType", "SrdvType"], null) || "";
+  const srdvType = pickFirst(record, ["srdvType", "SrdvType"], null) || pickFirst(primaryFare, ["srdvType", "SrdvType"], null) || "MixAPI";
   const isLcc = supplierBoolean(pickFirst(primaryFare, ["IsLCC", "isLcc", "IsLcc"], null) ?? pickFirst(record, ["isLcc", "IsLcc"], null));
-  const srdvIndex = pickFirst(primaryFare, ["SrdvIndex", "srdvIndex"], null) || pickFirst(record, ["srdvIndex", "SrdvIndex"], null) || "";
+  const srdvIndex = pickFirst(primaryFare, ["SrdvIndex", "srdvIndex"], null) || pickFirst(record, ["srdvIndex", "SrdvIndex"], null) || (exactResultIndex.includes("_") ? exactResultIndex.split("_")[0] : "1");
 
   const duration = extractDuration(record);
   const stops =
@@ -2253,10 +2253,10 @@ export async function getFlightSSR(params = {}) {
 
   const payload = {
     JourneyType: String(params.journeyType ?? params.JourneyType ?? 1),
-    TraceId: activeTraceId,
-    ResultIndex: activeResultIndex,
-    SrdvType: activeSrdvType,
-    SrdvIndex: activeSrdvIndex,
+    TraceId: Number(activeTraceId),
+    ResultIndex: String(activeResultIndex).trim(),
+    SrdvType: activeSrdvType || "MixAPI",
+    SrdvIndex: activeSrdvIndex || (String(activeResultIndex).includes("_") ? activeResultIndex.split("_")[0] : "1"),
   };
 
   const endpoint = `${SRDV_ROOT}/SSR`;
@@ -2384,10 +2384,10 @@ export async function getFlightSeatMap(paramsOrTrace = {}, resultIdx = null, srd
 
   const payload = {
     JourneyType: String(paramObj.journeyType ?? paramObj.JourneyType ?? 1),
-    TraceId: activeTraceId,
-    ResultIndex: activeResultIndex,
-    SrdvType: activeSrdvType,
-    SrdvIndex: activeSrdvIndex,
+    TraceId: Number(activeTraceId),
+    ResultIndex: String(activeResultIndex).trim(),
+    SrdvType: activeSrdvType || "MixAPI",
+    SrdvIndex: activeSrdvIndex || (String(activeResultIndex).includes("_") ? activeResultIndex.split("_")[0] : "1"),
   };
 
   const endpoint = `${SRDV_ROOT}/SeatMap`;
