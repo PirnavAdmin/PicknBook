@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { fetchTicketByContact, normalizeBookingType } from "../../services/ticketService";
 import BusEmailStyleTicket from "../../components/BusEmailStyleTicket";
 import HotelEmailStyleTicket from "../../components/HotelEmailStyleTicket";
+import FlightEmailStyleTicket from "../../components/FlightEmailStyleTicket";
 import "../../STYLES/PrintTicket.css";
 
 const TICKET_TYPES = { BUS: "bus", FLIGHT: "flight", HOTEL: "hotel" };
@@ -1156,7 +1157,7 @@ const printTicketElement = (ticketId, title) => {
 
   printWindow.document.write(`<!DOCTYPE html><html><head><title>${title}</title>${styles}
     <style>@page { margin: 0.35in; } body { margin: 0; padding: 12px; background: #fff !important; }
-    .pb-email-ticket { margin: 0 auto; } * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }</style>
+    .pb-email-ticket, .pb-hotel-email-ticket, .pb-flight-email-ticket { margin: 0 auto; } * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }</style>
     </head><body>${ticketElement.outerHTML}</body></html>`);
   printWindow.document.close();
   printWindow.onload = () => {
@@ -1491,19 +1492,33 @@ const TicketPreviewPage = () => {
 
             if (activeTicketType === TICKET_TYPES.FLIGHT) {
               const flightData = mapTicketToFlight(rawTicket);
+              const isFlightCancelled =
+                rawTicket?.isCancelled ||
+                String(rawTicket?.status || flightData?.status || "").toUpperCase().includes("CANCEL") ||
+                String(rawTicket?.status || flightData?.status || "").toUpperCase().includes("REFUND");
               return (
-                <TicketSection
-                  key={frontId}
-                  icon="F"
-                  label="Flight Ticket"
-                  sub={`${flightData.airline} - ${flightData.flightNumber} - PNR: ${flightData.pnr}`}
-                  accent="#2563eb"
-                  onPrint={() => printById(frontId, backId, 'Flight Ticket')}
-                  onDownload={() => downloadTicketAsImage(frontId, backId, `flight-ticket-${index + 1}`)}
-                  backElement={<GenericBackSide id={backId} title="Flight Ticket" ticket={rawTicket} />}
-                >
-                  <FlightTicket data={flightData} id={frontId} rawTicket={rawTicket} />
-                </TicketSection>
+                <section className="pb-ticket-section pb-email-ticket-section" key={frontId}>
+                  <div className="no-print pb-ticket-toolbar">
+                    <div className="pb-ticket-title">
+                      <span className="pb-ticket-icon">F</span>
+                      <div>
+                        <strong>{isFlightCancelled ? "Flight Booking Cancelled" : "Flight Ticket"}</strong>
+                        <small>{`${flightData.airline} - ${flightData.flightNumber} - PNR: ${flightData.pnr}`}</small>
+                      </div>
+                    </div>
+                    <div className="pb-ticket-actions">
+                      <button type="button" onClick={() => printTicketElement(frontId, "Flight Ticket")}>Print</button>
+                      <button
+                        type="button"
+                        className="pb-secondary-action"
+                        onClick={() => downloadTicketAsImage(frontId, null, `flight-ticket-${index + 1}`)}
+                      >
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                  <FlightEmailStyleTicket ticket={rawTicket} data={flightData} id={frontId} />
+                </section>
               );
             }
 

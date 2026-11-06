@@ -220,7 +220,7 @@ const FetchTicket = () => {
           return {
             ...ticket,
             status,
-            isCancelled: Boolean(ticket?.isCancelled) || status.toUpperCase() === "CANCELLED",
+            isCancelled: Boolean(ticket?.isCancelled) || status.toUpperCase().includes("CANCEL") || status.toUpperCase().includes("REFUND"),
             bookingType: normalizeBookingType(ticket?.bookingType || ticket?.ticketType, selectedBookingType),
             ticketType: normalizeBookingType(ticket?.ticketType || ticket?.bookingType, selectedBookingType),
           };
@@ -497,8 +497,8 @@ const FetchTicket = () => {
                       {foundTicket.bookingReference || foundTicket.pnr || "Active Ticket"}
                     </h3>
                   </div>
-                  <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {foundTicket.status || "Confirmed"}
+                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${foundTicket.isCancelled ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+                    {foundTicket.status || (foundTicket.isCancelled ? "Cancelled" : "Confirmed")}
                   </span>
                 </div>
 

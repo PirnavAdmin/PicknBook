@@ -1,0 +1,508 @@
+.pb-flight-email-ticket {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.pb-flight-email-ticket *,
+.pb-flight-email-ticket *::before,
+.pb-flight-email-ticket *::after {
+  box-sizing: border-box;
+}
+
+.pb-flight-email-ticket-header,
+.pb-flight-email-ticket-details,
+.pb-flight-email-ticket-policies {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 1. HEADER */
+.pb-flight-email-ticket-header {
+  min-height: 104px;
+  padding: 18px 22px;
+  align-items: center;
+  gap: 16px;
+  border-top: 4px solid #dc2626;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.pb-flight-email-ticket-logo {
+  display: block;
+  width: auto;
+  height: 34px;
+  max-width: 140px;
+  object-fit: contain;
+}
+
+.pb-flight-email-ticket-heading {
+  margin-top: 6px;
+  color: #dc2626;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-flight-email-ticket-booked {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.pb-flight-email-ticket-booked strong {
+  color: #1e293b;
+}
+
+.pb-flight-email-ticket-reference {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+  text-align: right;
+}
+
+.pb-flight-email-ticket-reference div {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.pb-flight-email-ticket-reference div:first-child strong {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.pb-flight-email-ticket-reference div strong {
+  color: #1e293b;
+}
+
+.pb-flight-status-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pb-flight-status-badge.confirmed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pb-flight-status-badge.cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* 2. AIRLINE STRIP */
+.pb-flight-email-ticket-airline {
+  padding: 12px 22px;
+  gap: 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.pb-flight-airline-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pb-flight-airline-logo-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.pb-flight-airline-logo-box img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.pb-flight-airline-name {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pb-flight-number-tag {
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pb-flight-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.pb-flight-class-badge {
+  background: #e2e8f0;
+  color: #1e293b;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.pb-flight-fare-badge {
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1.5px 6px;
+  border-radius: 4px;
+}
+
+.pb-flight-baggage-note {
+  font-size: 10.5px;
+  color: #475569;
+  font-weight: 600;
+  text-align: right;
+}
+
+.pb-flight-baggage-note strong {
+  color: #0f172a;
+}
+
+/* 3. FLIGHT ROUTE & JOURNEY */
+.pb-flight-email-ticket-route {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.pb-flight-segment-card {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.pb-flight-segment-card:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.pb-flight-route-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.pb-flight-route-col.dest {
+  text-align: right;
+}
+
+.pb-flight-route-col label {
+  display: block;
+  color: #64748b;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-flight-route-time {
+  font-size: 19px;
+  font-weight: 900;
+  color: #091a3e;
+  margin: 2px 0;
+}
+
+.pb-flight-route-time span {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.pb-flight-route-city {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pb-flight-route-airport {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+.pb-flight-route-date {
+  font-size: 10.5px;
+  color: #475569;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.pb-flight-route-mid {
+  text-align: center;
+  padding: 0 10px;
+}
+
+.pb-flight-duration {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.pb-flight-connector-line {
+  color: #dc2626;
+  font-size: 18px;
+  font-weight: 900;
+  margin: 1px 0;
+}
+
+.pb-flight-stop-pill {
+  display: inline-block;
+  font-size: 8.5px;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pb-flight-reporting-note {
+  margin-top: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  font-size: 10px;
+  color: #475569;
+  text-align: center;
+}
+
+.pb-flight-reporting-note strong {
+  color: #0f172a;
+}
+
+/* 4. NOTICE BANNER */
+.pb-flight-notice-banner {
+  margin: 14px 22px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.pb-flight-notice-banner.confirmed {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.pb-flight-notice-banner.cancelled {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+/* 5. PASSENGER & PAYMENT DETAILS */
+.pb-flight-email-ticket-details {
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pb-flight-email-ticket-details > div {
+  padding: 16px 20px;
+}
+
+.pb-flight-email-ticket-details > div:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.pb-flight-email-ticket-details h3,
+.pb-flight-email-ticket-important h3,
+.pb-flight-email-ticket-policies h3 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pb-flight-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.pb-flight-table th {
+  text-align: left;
+  padding: 4px 6px;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.pb-flight-table td {
+  padding: 6px;
+  color: #334155;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.pb-flight-table td:last-child {
+  text-align: right;
+}
+
+.pb-flight-payment-table td {
+  padding: 3px 0;
+  border-bottom: none;
+}
+
+.pb-flight-payment-table td:first-child {
+  color: #64748b;
+}
+
+.pb-flight-payment-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+
+.pb-flight-payment-table tr.total-row td {
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e1;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pb-flight-payment-table tr.total-row td:last-child {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.pb-flight-payment-table tr.refund-row td:last-child {
+  font-size: 13.5px;
+  font-weight: 900;
+  color: #15803d;
+}
+
+.pb-flight-pax-seat {
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* 6. IMPORTANT INFORMATION */
+.pb-flight-email-ticket-important {
+  padding: 16px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.pb-flight-email-ticket-important ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pb-flight-email-ticket-important a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* 7. POLICIES */
+.pb-flight-email-ticket-policies {
+  background: #f8fafc;
+}
+
+.pb-flight-email-ticket-policies > div {
+  padding: 16px 20px;
+}
+
+.pb-flight-email-ticket-policies > div:first-child {
+  border-right: 1px solid #e2e8f0;
+}
+
+.pb-flight-email-ticket-policies ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.pb-flight-email-ticket-policies p {
+  margin: 0;
+  font-size: 10.5px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .pb-flight-email-ticket-header,
+  .pb-flight-email-ticket-details,
+  .pb-flight-email-ticket-policies {
+    grid-template-columns: 1fr;
+  }
+
+  .pb-flight-email-ticket-reference {
+    justify-items: start;
+    text-align: left;
+    margin-top: 10px;
+  }
+
+  .pb-flight-email-ticket-details > div:first-child,
+  .pb-flight-email-ticket-policies > div:first-child {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .pb-flight-route-columns {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .pb-flight-route-col.dest {
+    text-align: center;
+  }
+
+  .pb-flight-baggage-note {
+    text-align: left;
+    margin-top: 6px;
+  }
+}
+
