@@ -150,20 +150,16 @@ function buildContactFromPassenger(passenger, fallback = {}) {
   };
 }
 
-const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-function getEmailValidationError(email) {
-  const trimmed = String(email || "").trim();
-  if (!trimmed) {
-    return "Email is required";
-  }
-  if (!EMAIL_REGEX.test(trimmed) || trimmed.includes("..")) {
-    return "Enter a valid email address (e.g. name@example.com)";
-  }
-  return "";
-}
 function isValidEmail(email) {
-  const trimmed = String(email || "").trim();
-  return EMAIL_REGEX.test(trimmed) && !trimmed.includes("..");
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const trimmedEmail = String(email || "").trim().toLowerCase();
+  if (!emailRegex.test(trimmedEmail) || trimmedEmail.includes('..') || trimmedEmail.length > 254) return false;
+
+  const invalidDomains = ['gmil.com', 'gmeil.com', 'gmal.com', 'gail.com', 'gmial.com', 'gamil.com', 'gmai.com', 'gmail.co', 'gmaill.com', 'gmail.cpm', 'gmail.con', 'gmaik.com', 'yaho.com', 'yahooo.com', 'yaho.co.in', 'yahoo.co', 'hotmial.com', 'hotmale.com', 'hotmai.com', 'outlok.com', 'outloo.com', 'outlokk.com', 'redifmail.com', 'rediff.com', 'redif.com', 'iclud.com', 'icoud.com', 'mailinator.com', '10minutemail.com', 'tempmail.com', 'temp-mail.org', 'guerrillamail.com', 'throwawaymail.com', 'trashmail.com', 'sharklasers.com', 'yopmail.com'];
+  const domain = trimmedEmail.split('@')[1];
+  if (invalidDomains.includes(domain)) return false;
+
+  return true;
 }
 
 function isValidMobile(mobile) {
@@ -230,6 +226,200 @@ function hasAdjacentMaleSeat(seat) {
   return Array.isArray(seat?.adjacentBookedGenders)
     ? seat.adjacentBookedGenders.some((gender) => normalizeGender(gender) === "Male")
     : false;
+}
+
+function validateFirstName(name) {
+  const trimmed = String(name || "").trim().replace(/\s+/g, " ");
+  if (!trimmed) {
+    return "First name is required";
+  }
+  if (/\d/.test(trimmed)) {
+    return "Numbers are not allowed in first name";
+  }
+  if (!/^[A-Za-z\s'-]+$/.test(trimmed)) {
+    return "Special characters are not allowed. Use letters only";
+  }
+  if (trimmed.length < 2) {
+    return "First name must be at least 2 characters";
+  }
+  if (trimmed.length > 30) {
+    return "First name must not exceed 30 characters";
+  }
+  if (/(.)\1\1/i.test(trimmed)) {
+    return "More than 2 repeated letters in a row are not allowed";
+  }
+  const lettersOnly = trimmed.replace(/[^A-Za-z]/g, "");
+  if (lettersOnly.length < 2) {
+    return "Invalid first name. Enter a proper name";
+  }
+  return "";
+}
+
+function validateLastName(name) {
+  const trimmed = String(name || "").trim().replace(/\s+/g, " ");
+  if (!trimmed) return "";
+  if (/\d/.test(trimmed)) {
+    return "Numbers are not allowed in last name";
+  }
+  if (!/^[A-Za-z\s'-]+$/.test(trimmed)) {
+    return "Special characters are not allowed. Use letters only";
+  }
+  if (trimmed.length < 2) {
+    return "Last name must be at least 2 characters";
+  }
+  if (trimmed.length > 30) {
+    return "Last name must not exceed 30 characters";
+  }
+  if (/(.)\1\1/i.test(trimmed)) {
+    return "More than 2 repeated letters in a row are not allowed";
+  }
+  return "";
+}
+
+function validateTitle(title, gender) {
+  if (!title) {
+    return "Title is required";
+  }
+  if (gender) {
+    const normGen = normalizeGender(gender);
+    const maleTitles = ["Mr", "Mstr", "Master"];
+    const femaleTitles = ["Mrs", "Ms", "Miss"];
+    if (normGen === "Male" && femaleTitles.includes(title)) {
+      return "Title does not match Male gender";
+    }
+    if (normGen === "Female" && maleTitles.includes(title)) {
+      return "Title does not match Female gender";
+    }
+  }
+  return "";
+}
+
+function validateAge(ageVal) {
+  if (ageVal === undefined || ageVal === null || String(ageVal).trim() === "") {
+    return "Age is required";
+  }
+  const raw = String(ageVal).trim();
+  if (!/^\d+$/.test(raw)) {
+    return "Age must contain digits only";
+  }
+  const age = Number(raw);
+  if (Number.isNaN(age) || age < 1 || age > 120) {
+    return "Enter an age between 1 and 120";
+  }
+  return "";
+}
+
+function validateGender(gender, seat, title) {
+  if (!gender) {
+    return "Gender is required";
+  }
+  const normGen = normalizeGender(gender);
+  if (normGen === "Male" && (seat?.bookedGender === "Female" || hasAdjacentFemaleSeat(seat))) {
+    return seat?.bookedGender === "Female"
+      ? "Seat is reserved for females only"
+      : "Cannot book beside female-reserved seat";
+  }
+  if (normGen === "Female" && (seat?.bookedGender === "Male" || hasAdjacentMaleSeat(seat))) {
+    return seat?.bookedGender === "Male"
+      ? "Seat is reserved for males only"
+      : "Cannot book beside male-reserved seat";
+  }
+  if (title) {
+    const maleTitles = ["Mr", "Mstr", "Master"];
+    const femaleTitles = ["Mrs", "Ms", "Miss"];
+    if (normGen === "Male" && femaleTitles.includes(title)) {
+      return "Gender does not match Title";
+    }
+    if (normGen === "Female" && maleTitles.includes(title)) {
+      return "Gender does not match Title";
+    }
+  }
+  return "";
+}
+
+function validateAadhaarNumber(idNumber) {
+  const digits = String(idNumber || "").replace(/\D/g, "");
+  if (!digits) {
+    return "12-digit Aadhaar number is required";
+  }
+  if (digits.length !== 12) {
+    return "Aadhaar number must be exactly 12 digits";
+  }
+  if (!validateAadhaar(digits)) {
+    return "Invalid Aadhaar number";
+  }
+  return "";
+}
+
+function validateEmailAddress(email) {
+  const trimmed = String(email || "").trim();
+  if (!trimmed) {
+    return "Email address is required";
+  }
+  if (/\s/.test(trimmed)) {
+    return "Email address cannot contain spaces";
+  }
+  if (trimmed.length > 100) {
+    return "Email must not exceed 100 characters";
+  }
+  if (!isValidEmail(trimmed)) {
+    return "Enter a valid email address (e.g. name@example.com)";
+  }
+  return "";
+}
+
+function validateMobileNumber(mobile) {
+  const raw = String(mobile || "").trim();
+  if (!raw) {
+    return "Mobile number is required";
+  }
+  if (/\D/.test(raw)) {
+    return "Mobile number must contain digits only";
+  }
+  if (raw.length !== 10) {
+    return `Mobile number must be exactly 10 digits (you entered ${raw.length})`;
+  }
+  if (!/^[6-9]/.test(raw)) {
+    return "Mobile number must start with 6, 7, 8 or 9";
+  }
+  if (/^(\d)\1{9}$/.test(raw)) {
+    return "Enter a valid 10-digit mobile number";
+  }
+  if (!isValidMobile(raw)) {
+    return "Enter a valid 10-digit mobile number";
+  }
+  return "";
+}
+
+function validateWhatsappNumber(whatsappVal, mobileFallback, isEnabled) {
+  if (!isEnabled) return "";
+  const val = String(whatsappVal || mobileFallback || "").trim();
+  if (!val) {
+    return "WhatsApp number is required";
+  }
+  if (/\D/.test(val)) {
+    return "WhatsApp number must contain digits only";
+  }
+  if (val.length !== 10) {
+    return `WhatsApp number must be exactly 10 digits (you entered ${val.length})`;
+  }
+  if (!/^[6-9]/.test(val)) {
+    return "WhatsApp number must start with 6, 7, 8 or 9";
+  }
+  if (/^(\d)\1{9}$/.test(val)) {
+    return "Enter a valid 10-digit WhatsApp number";
+  }
+  if (!isValidMobile(val)) {
+    return "Enter a valid 10-digit WhatsApp number";
+  }
+  return "";
+}
+
+function validateAgreement(agreed) {
+  if (!agreed) {
+    return "Please accept the rules and terms of this fare to proceed";
+  }
+  return "";
 }
 
 
@@ -798,8 +988,8 @@ export default function BusPassengerDetailsPage() {
       : ""
   );
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [emailTouched, setEmailTouched] = useState(false);
   const [formErrorList, setFormErrorList] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [copiedCode, setCopiedCode] = useState(null);
@@ -867,35 +1057,15 @@ export default function BusPassengerDetailsPage() {
       try {
         const coupons = await listAvailableBusCoupons({ category: "Coupon" });
         if (isMounted) {
-          const filtered = (coupons || []).filter((coupon) => isCouponVisible(coupon));
-          const fallbackCoupons = [
-            {
-              id: "BUS150",
-              couponCode: "SAVE150",
-              title: "Super Saver Bus Discount",
-              discountValue: 150,
-              value: 150,
-              discountType: "fixed",
-              minBookingAmount: 500,
-              validTill: "31 Dec 2026",
-              terms: "Save ₹150 on your ride. Valid on bookings above ₹500.",
-              description: "Save ₹150 on your ride",
-            },
-            {
-              id: "BUS10",
-              couponCode: "RIDE10",
-              title: "Route Saver Discount",
-              discountValue: 10,
-              value: 10,
-              discountType: "percentage",
-              maxDiscountAmount: 200,
-              validTill: "31 Dec 2026",
-              terms: "Save 10% on your ride up to ₹200.",
-              description: "Save 10% on your ride",
-            }
-          ];
           setAvailableCoupons(
-            filtered.length > 0 ? filtered.sort((a, b) => new Date(a.expiryDate || "").getTime() - new Date(b.expiryDate || "").getTime()) : fallbackCoupons
+            coupons
+              .filter((coupon) => isCouponVisible(coupon))
+              .sort((firstCoupon, secondCoupon) => {
+                const firstDate = new Date(firstCoupon.expiryDate || "").getTime();
+                const secondDate = new Date(secondCoupon.expiryDate || "").getTime();
+                return (Number.isFinite(firstDate) ? firstDate : 0) -
+                  (Number.isFinite(secondDate) ? secondDate : 0);
+              })
           );
         }
       } catch {
@@ -1320,19 +1490,21 @@ export default function BusPassengerDetailsPage() {
       });
     }
 
-    if (submitAttempted) {
-      setErrors((prev) => {
-        const copy = { ...prev };
-        delete copy[`passenger_${index}_${field}`];
-        if (field === "mobile") {
-          delete copy[`passenger_${index}_phone`];
-        }
-        if (index === 0 && (field === "email" || field === "mobile" || field === "phone")) {
-          delete copy[`contact_${field === "email" ? "email" : "mobile"}`];
-        }
-        return copy;
-      });
-    }
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[`passenger_${index}_${field}`];
+      if (field === "title" || field === "gender") {
+        delete copy[`passenger_${index}_title`];
+        delete copy[`passenger_${index}_gender`];
+      }
+      if (field === "mobile") {
+        delete copy[`passenger_${index}_phone`];
+      }
+      if (index === 0 && (field === "email" || field === "mobile" || field === "phone")) {
+        delete copy[`contact_${field === "email" ? "email" : "mobile"}`];
+      }
+      return copy;
+    });
   };
 
   const updateContactField = (field, value) => {
@@ -1344,30 +1516,14 @@ export default function BusPassengerDetailsPage() {
       return copy;
     });
 
-    if (field === "email" && emailTouched) {
-      const err = getEmailValidationError(value);
-      setErrors((prev) => {
-        const copy = { ...prev };
-        if (err) copy.contact_email = err;
-        else delete copy.contact_email;
-        return copy;
-      });
-    }
-
-    if (submitAttempted) {
-      setErrors((prev) => {
-        const copy = { ...prev };
-        if (field !== "email") {
-          delete copy[`contact_${field}`];
-        } else if (!emailTouched) {
-          delete copy.contact_email;
-        }
-        if (field === "mobile") {
-          delete copy.contact_whatsappNumber;
-        }
-        return copy;
-      });
-    }
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy[`contact_${field}`];
+      if (field === "mobile") {
+        delete copy.contact_whatsappNumber;
+      }
+      return copy;
+    });
   };
 
   const toggleWhatsappUpdates = (checked) => {
@@ -1377,24 +1533,22 @@ export default function BusPassengerDetailsPage() {
       whatsappNumber: checked && !prev.whatsappNumber ? prev.mobile : prev.whatsappNumber,
     }));
 
-    if (submitAttempted) {
-      setErrors((prev) => {
-        const copy = { ...prev };
-        delete copy.contact_whatsappNumber;
-        return copy;
-      });
-    }
+    setErrors((prev) => {
+      const copy = { ...prev };
+      delete copy.contact_whatsappNumber;
+      return copy;
+    });
   };
 
   const handleToggleAgree = (checked) => {
     setAgreedToFare(checked);
-    if (submitAttempted) {
-      setErrors((prev) => {
-        const copy = { ...prev };
+    setErrors((prev) => {
+      const copy = { ...prev };
+      if (checked) {
         delete copy.agreedToFare;
-        return copy;
-      });
-    }
+      }
+      return copy;
+    });
   };
 
   const validateForm = () => {
@@ -1419,79 +1573,43 @@ export default function BusPassengerDetailsPage() {
         return;
       }
 
-      if (!passenger.title) {
-        newErrors[`${prefix}title`] = "Please select a title.";
-        errorDetails.push(`${seatLabel}: Title is required to verify the salutation.`);
+      const titleErr = validateTitle(passenger.title, passenger.gender);
+      if (titleErr) {
+        newErrors[`${prefix}title`] = titleErr;
+        errorDetails.push(`${seatLabel}: ${titleErr}`);
       }
 
-      const firstName = String(passenger.firstName || "").trim();
-      const nameRegex = /^[A-Za-z]+([ '-][A-Za-z]+)*$/;
-      if (!firstName) {
-        newErrors[`${prefix}firstName`] = "Please enter the passenger's first name.";
-        errorDetails.push(`${seatLabel}: First name is required.`);
-      } else if (firstName.length > 50) {
-        newErrors[`${prefix}firstName`] = "Max 50 characters";
-        errorDetails.push(`${seatLabel}: First name must be 1 to 50 characters.`);
-      } else if (!nameRegex.test(firstName)) {
-        newErrors[`${prefix}firstName`] = "Letters only (spaces/hyphens allowed)";
-        errorDetails.push(`${seatLabel}: First name must contain letters only (spaces, hyphens, and apostrophes allowed).`);
+      const fNameErr = validateFirstName(passenger.firstName);
+      if (fNameErr) {
+        newErrors[`${prefix}firstName`] = fNameErr;
+        errorDetails.push(`${seatLabel}: ${fNameErr}`);
       }
 
-      const lastName = String(passenger.lastName || "").trim();
-      if (lastName) {
-        if (lastName.length > 50) {
-          newErrors[`${prefix}lastName`] = "Max 50 characters";
-          errorDetails.push(`${seatLabel}: Last name must be 1 to 50 characters.`);
-        } else if (!nameRegex.test(lastName)) {
-          newErrors[`${prefix}lastName`] = "Letters only (spaces/hyphens allowed)";
-          errorDetails.push(`${seatLabel}: Last name must contain letters only (spaces, hyphens, and apostrophes allowed).`);
-        }
+      const lNameErr = validateLastName(passenger.lastName);
+      if (lNameErr) {
+        newErrors[`${prefix}lastName`] = lNameErr;
+        errorDetails.push(`${seatLabel}: ${lNameErr}`);
       }
 
-      const ageVal = passenger.age;
-      if (ageVal === undefined || ageVal === null || String(ageVal).trim() === "") {
-        newErrors[`${prefix}age`] = "Please enter the passenger's age.";
-        errorDetails.push(`${seatLabel}: Age is required.`);
-      } else {
-        const age = Number(ageVal);
-        if (Number.isNaN(age) || age < 1 || age > 120) {
-          newErrors[`${prefix}age`] = "Enter an age between 1 and 120.";
-          errorDetails.push(`${seatLabel}: Age must be a number between 1 and 120.`);
-        }
+      const ageErr = validateAge(passenger.age);
+      if (ageErr) {
+        newErrors[`${prefix}age`] = ageErr;
+        errorDetails.push(`${seatLabel}: ${ageErr}`);
       }
 
-      if (!passenger.gender) {
-        newErrors[`${prefix}gender`] = "Please select the passenger's gender.";
-        errorDetails.push(`${seatLabel}: Gender selection is required.`);
-      }
-
-      if (passenger.title && passenger.gender) {
-        const maleTitles = ["Mr", "Mstr", "Master"];
-        const femaleTitles = ["Mrs", "Ms", "Miss"];
-        const normGen = normalizeGender(passenger.gender);
-        if (normGen === "Male" && femaleTitles.includes(passenger.title)) {
-          newErrors[`${prefix}title`] = "Title doesn't match gender";
-          errorDetails.push(`${seatLabel}: Title '${passenger.title}' does not match Male gender.`);
-        } else if (normGen === "Female" && maleTitles.includes(passenger.title)) {
-          newErrors[`${prefix}title`] = "Title doesn't match gender";
-          errorDetails.push(`${seatLabel}: Title '${passenger.title}' does not match Female gender.`);
-        }
+      const genderErr = validateGender(passenger.gender, seat, passenger.title);
+      if (genderErr) {
+        newErrors[`${prefix}gender`] = genderErr;
+        errorDetails.push(`${seatLabel}: ${genderErr}`);
       }
 
       if (isIdProofRequired) {
-        const idNumDigits = String(passenger.idNumber || "").replace(/\D/g, "");
-        if (!idNumDigits) {
-          newErrors[`${prefix}idNumber`] = "Please enter the 12-digit Aadhaar number.";
-          errorDetails.push(`${seatLabel}: 12-digit Aadhaar Card number is required.`);
-        } else if (idNumDigits.length !== 12) {
-          newErrors[`${prefix}idNumber`] = "Must be 12 digits";
-          errorDetails.push(`${seatLabel}: Aadhaar Card number must be exactly 12 numeric digits.`);
-        } else if (!validateAadhaar(idNumDigits)) {
-          newErrors[`${prefix}idNumber`] = "Invalid Aadhaar";
-          errorDetails.push(`${seatLabel}: The Aadhaar number entered is mathematically invalid. Please enter a real Aadhaar number.`);
+        const idErr = validateAadhaarNumber(passenger.idNumber);
+        if (idErr) {
+          newErrors[`${prefix}idNumber`] = idErr;
+          errorDetails.push(`${seatLabel}: ${idErr}`);
         }
       }
-
     });
 
     // Gender Seat Adjacent restriction checks
@@ -1544,35 +1662,31 @@ export default function BusPassengerDetailsPage() {
     });
 
     // Validate contact
-    const emailError = getEmailValidationError(contact.email);
-    if (emailError) {
-      newErrors.contact_email = emailError;
-      errorDetails.push(`Contact Email: ${emailError}`);
+    const emailErr = validateEmailAddress(contact.email);
+    if (emailErr) {
+      newErrors.contact_email = emailErr;
+      errorDetails.push(`Email: ${emailErr}`);
     }
 
-    if (!contact.mobile) {
-      newErrors.contact_mobile = "Mobile number is required";
-      errorDetails.push("Contact Mobile: Mobile number is required.");
-    } else if (!isValidMobile(contact.mobile)) {
-      newErrors.contact_mobile = "Enter a valid 10-digit mobile number";
-      errorDetails.push("Contact Mobile: Mobile number must be exactly 10 digits to receive SMS updates.");
+    const mobileErr = validateMobileNumber(contact.mobile);
+    if (mobileErr) {
+      newErrors.contact_mobile = mobileErr;
+      errorDetails.push(`Mobile: ${mobileErr}`);
     }
 
     if (contact.whatsappUpdates) {
-      const whatsappValue = contact.whatsappNumber || contact.mobile;
-      if (!whatsappValue) {
-        newErrors.contact_whatsappNumber = "WhatsApp number is required";
-        errorDetails.push("WhatsApp Updates: WhatsApp number is required when WhatsApp updates are enabled.");
-      } else if (!isValidMobile(whatsappValue)) {
-        newErrors.contact_whatsappNumber = "Enter a valid 10-digit WhatsApp number";
-        errorDetails.push("WhatsApp Updates: WhatsApp number must be exactly 10 digits.");
+      const whatsappErr = validateWhatsappNumber(contact.whatsappNumber, contact.mobile, contact.whatsappUpdates);
+      if (whatsappErr) {
+        newErrors.contact_whatsappNumber = whatsappErr;
+        errorDetails.push(`WhatsApp: ${whatsappErr}`);
       }
     }
 
     // Validate agreement
-    if (!agreedToFare) {
-      newErrors.agreedToFare = "You must agree to the rules and restrictions";
-      errorDetails.push("Terms Agreement: You must accept the fare rules and booking terms to proceed.");
+    const agreeErr = validateAgreement(agreedToFare);
+    if (agreeErr) {
+      newErrors.agreedToFare = agreeErr;
+      errorDetails.push(`Terms Agreement: ${agreeErr}`);
     }
 
     // Validate coupon
@@ -1583,6 +1697,11 @@ export default function BusPassengerDetailsPage() {
 
     setErrors(newErrors);
     setFormErrorList(errorDetails);
+    if (errorDetails.length > 0) {
+      setFormError(errorDetails[0]);
+    } else {
+      setFormError("");
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -1948,10 +2067,37 @@ export default function BusPassengerDetailsPage() {
 
   const handleOpenConfirmation = async () => {
     setSubmitAttempted(true);
-    setEmailTouched(true);
+
+    const allTouched = {
+      contact_email: true,
+      contact_mobile: true,
+      contact_whatsappNumber: true,
+      agreedToFare: true,
+    };
+    passengers.forEach((_, i) => {
+      const pfx = `passenger_${i}_`;
+      allTouched[`${pfx}traveler`] = true;
+      allTouched[`${pfx}title`] = true;
+      allTouched[`${pfx}firstName`] = true;
+      allTouched[`${pfx}lastName`] = true;
+      allTouched[`${pfx}age`] = true;
+      allTouched[`${pfx}gender`] = true;
+      allTouched[`${pfx}idNumber`] = true;
+    });
+    setTouched(allTouched);
+
     const isValid = validateForm();
     const isWalletValid = validateWalletAmount();
     if (!isValid || !isWalletValid) {
+      setTimeout(() => {
+        const firstInvalidEl = document.querySelector(".field-has-error, .field-has-error-text input, [aria-invalid='true']");
+        if (firstInvalidEl) {
+          firstInvalidEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (typeof firstInvalidEl.focus === "function") {
+            firstInvalidEl.focus({ preventScroll: true });
+          }
+        }
+      }, 50);
       return;
     }
     setFormError("");
@@ -2266,6 +2412,14 @@ export default function BusPassengerDetailsPage() {
     const seat = selectedSeats[index] || {};
     const isFemaleOnlySeat = hasAdjacentFemaleSeat(seat);
     const isMaleOnlySeat = hasAdjacentMaleSeat(seat);
+    const prefix = `passenger_${index}_`;
+
+    const titleError = errors[`${prefix}title`];
+    const firstNameError = errors[`${prefix}firstName`];
+    const lastNameError = errors[`${prefix}lastName`];
+    const ageError = errors[`${prefix}age`];
+    const genderError = errors[`${prefix}gender`];
+    const idError = errors[`${prefix}idNumber`];
 
     return (
       <div className="passenger-fields">
@@ -2273,16 +2427,38 @@ export default function BusPassengerDetailsPage() {
           <span>Title *</span>
           <select
             value={passenger.title}
-            onChange={(e) => updatePassenger(index, "title", e.target.value)}
-            className={errors[`passenger_${index}_title`] ? "field-has-error" : ""}
+            onChange={(e) => {
+              updatePassenger(index, "title", e.target.value);
+              if (submitAttempted || touched[`${prefix}title`]) {
+                const err = validateTitle(e.target.value, passenger.gender);
+                setErrors((prev) => {
+                  const copy = { ...prev };
+                  if (err) copy[`${prefix}title`] = err;
+                  else delete copy[`${prefix}title`];
+                  return copy;
+                });
+              }
+            }}
+            onBlur={() => {
+              setTouched((prev) => ({ ...prev, [`${prefix}title`]: true }));
+              const err = validateTitle(passenger.title, passenger.gender);
+              setErrors((prev) => {
+                const copy = { ...prev };
+                if (err) copy[`${prefix}title`] = err;
+                else delete copy[`${prefix}title`];
+                return copy;
+              });
+            }}
+            aria-invalid={Boolean(titleError)}
+            className={titleError ? "field-has-error" : ""}
           >
             <option value="">Title *</option>
             <option value="Mr">Mr</option>
             <option value="Mrs">Mrs</option>
             <option value="Ms">Ms</option>
           </select>
-          {errors[`passenger_${index}_title`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_title`]}</span>
+          {titleError && (
+            <span className="field-error-text" role="alert">{titleError}</span>
           )}
         </label>
 
@@ -2291,12 +2467,35 @@ export default function BusPassengerDetailsPage() {
           <input
             type="text"
             placeholder="First Name *"
+            maxLength={30}
             value={passenger.firstName}
-            onChange={(e) => updatePassenger(index, "firstName", e.target.value)}
-            className={errors[`passenger_${index}_firstName`] ? "field-has-error" : ""}
+            onChange={(e) => {
+              updatePassenger(index, "firstName", e.target.value);
+              if (submitAttempted || touched[`${prefix}firstName`]) {
+                const err = validateFirstName(e.target.value);
+                setErrors((prev) => {
+                  const copy = { ...prev };
+                  if (err) copy[`${prefix}firstName`] = err;
+                  else delete copy[`${prefix}firstName`];
+                  return copy;
+                });
+              }
+            }}
+            onBlur={() => {
+              setTouched((prev) => ({ ...prev, [`${prefix}firstName`]: true }));
+              const err = validateFirstName(passenger.firstName);
+              setErrors((prev) => {
+                const copy = { ...prev };
+                if (err) copy[`${prefix}firstName`] = err;
+                else delete copy[`${prefix}firstName`];
+                return copy;
+              });
+            }}
+            aria-invalid={Boolean(firstNameError)}
+            className={firstNameError ? "field-has-error" : ""}
           />
-          {errors[`passenger_${index}_firstName`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_firstName`]}</span>
+          {firstNameError && (
+            <span className="field-error-text" role="alert">{firstNameError}</span>
           )}
         </label>
 
@@ -2305,26 +2504,74 @@ export default function BusPassengerDetailsPage() {
           <input
             type="text"
             placeholder="Last Name"
+            maxLength={30}
             value={passenger.lastName}
-            onChange={(e) => updatePassenger(index, "lastName", e.target.value)}
-            className={errors[`passenger_${index}_lastName`] ? "field-has-error" : ""}
+            onChange={(e) => {
+              updatePassenger(index, "lastName", e.target.value);
+              if (submitAttempted || touched[`${prefix}lastName`]) {
+                const err = validateLastName(e.target.value);
+                setErrors((prev) => {
+                  const copy = { ...prev };
+                  if (err) copy[`${prefix}lastName`] = err;
+                  else delete copy[`${prefix}lastName`];
+                  return copy;
+                });
+              }
+            }}
+            onBlur={() => {
+              setTouched((prev) => ({ ...prev, [`${prefix}lastName`]: true }));
+              const err = validateLastName(passenger.lastName);
+              setErrors((prev) => {
+                const copy = { ...prev };
+                if (err) copy[`${prefix}lastName`] = err;
+                else delete copy[`${prefix}lastName`];
+                return copy;
+              });
+            }}
+            aria-invalid={Boolean(lastNameError)}
+            className={lastNameError ? "field-has-error" : ""}
           />
-          {errors[`passenger_${index}_lastName`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_lastName`]}</span>
+          {lastNameError && (
+            <span className="field-error-text" role="alert">{lastNameError}</span>
           )}
         </label>
 
         <label className="passenger-field">
           <span>Age *</span>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Age *"
+            maxLength={3}
             value={passenger.age}
-            onChange={(e) => updatePassenger(index, "age", e.target.value)}
-            className={errors[`passenger_${index}_age`] ? "field-has-error" : ""}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, "").slice(0, 3);
+              updatePassenger(index, "age", val);
+              if (submitAttempted || touched[`${prefix}age`]) {
+                const err = validateAge(val);
+                setErrors((prev) => {
+                  const copy = { ...prev };
+                  if (err) copy[`${prefix}age`] = err;
+                  else delete copy[`${prefix}age`];
+                  return copy;
+                });
+              }
+            }}
+            onBlur={() => {
+              setTouched((prev) => ({ ...prev, [`${prefix}age`]: true }));
+              const err = validateAge(passenger.age);
+              setErrors((prev) => {
+                const copy = { ...prev };
+                if (err) copy[`${prefix}age`] = err;
+                else delete copy[`${prefix}age`];
+                return copy;
+              });
+            }}
+            aria-invalid={Boolean(ageError)}
+            className={ageError ? "field-has-error" : ""}
           />
-          {errors[`passenger_${index}_age`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_age`]}</span>
+          {ageError && (
+            <span className="field-error-text" role="alert">{ageError}</span>
           )}
         </label>
 
@@ -2332,22 +2579,44 @@ export default function BusPassengerDetailsPage() {
           <span>Gender *</span>
           <select
             value={passenger.gender}
-            onChange={(e) => updatePassenger(index, "gender", e.target.value)}
-            className={errors[`passenger_${index}_gender`] ? "field-has-error" : ""}
+            onChange={(e) => {
+              updatePassenger(index, "gender", e.target.value);
+              if (submitAttempted || touched[`${prefix}gender`]) {
+                const err = validateGender(e.target.value, seat, passenger.title);
+                setErrors((prev) => {
+                  const copy = { ...prev };
+                  if (err) copy[`${prefix}gender`] = err;
+                  else delete copy[`${prefix}gender`];
+                  return copy;
+                });
+              }
+            }}
+            onBlur={() => {
+              setTouched((prev) => ({ ...prev, [`${prefix}gender`]: true }));
+              const err = validateGender(passenger.gender, seat, passenger.title);
+              setErrors((prev) => {
+                const copy = { ...prev };
+                if (err) copy[`${prefix}gender`] = err;
+                else delete copy[`${prefix}gender`];
+                return copy;
+              });
+            }}
+            aria-invalid={Boolean(genderError)}
+            className={genderError ? "field-has-error" : ""}
           >
             <option value="">Gender *</option>
             <option value="Male" disabled={isFemaleOnlySeat}>Male</option>
             <option value="Female" disabled={isMaleOnlySeat}>Female</option>
           </select>
-          {errors[`passenger_${index}_gender`] && (
-            <span className="field-error-text">{errors[`passenger_${index}_gender`]}</span>
+          {genderError && (
+            <span className="field-error-text" role="alert">{genderError}</span>
           )}
-          {isFemaleOnlySeat && !errors[`passenger_${index}_gender`] && (
+          {isFemaleOnlySeat && !genderError && (
             <small className="passenger-restriction-note">
               Female passenger required.
             </small>
           )}
-          {isMaleOnlySeat && !errors[`passenger_${index}_gender`] && (
+          {isMaleOnlySeat && !genderError && (
             <small className="passenger-restriction-note">
               Male passenger required.
             </small>
@@ -2363,11 +2632,34 @@ export default function BusPassengerDetailsPage() {
               maxLength={12}
               placeholder="Enter 12-digit Aadhaar number *"
               value={passenger.idNumber || ""}
-              onChange={(e) => updatePassenger(index, "idNumber", e.target.value.replace(/\D/g, "").slice(0, 12))}
-              className={errors[`passenger_${index}_idNumber`] ? "field-has-error" : ""}
+              onChange={(e) => {
+                const clean = e.target.value.replace(/\D/g, "").slice(0, 12);
+                updatePassenger(index, "idNumber", clean);
+                if (submitAttempted || touched[`${prefix}idNumber`]) {
+                  const err = validateAadhaarNumber(clean);
+                  setErrors((prev) => {
+                    const copy = { ...prev };
+                    if (err) copy[`${prefix}idNumber`] = err;
+                    else delete copy[`${prefix}idNumber`];
+                    return copy;
+                  });
+                }
+              }}
+              onBlur={() => {
+                setTouched((prev) => ({ ...prev, [`${prefix}idNumber`]: true }));
+                const err = validateAadhaarNumber(passenger.idNumber);
+                setErrors((prev) => {
+                  const copy = { ...prev };
+                  if (err) copy[`${prefix}idNumber`] = err;
+                  else delete copy[`${prefix}idNumber`];
+                  return copy;
+                });
+              }}
+              aria-invalid={Boolean(idError)}
+              className={idError ? "field-has-error" : ""}
             />
-            {errors[`passenger_${index}_idNumber`] && (
-              <span className="field-error-text">{errors[`passenger_${index}_idNumber`]}</span>
+            {idError && (
+              <span className="field-error-text" role="alert">{idError}</span>
             )}
           </label>
         )}
@@ -2509,9 +2801,25 @@ export default function BusPassengerDetailsPage() {
                           <select
                             className={`passenger-existing-select ${errors[`passenger_${index}_traveler`] ? "field-has-error" : ""}`}
                             value={passenger.selectedTravelerId || ""}
-                            onChange={(e) =>
-                              handleSelectExistingTraveler(index, e.target.value)
-                            }
+                            onChange={(e) => {
+                              handleSelectExistingTraveler(index, e.target.value);
+                              if (e.target.value) {
+                                setErrors((prev) => {
+                                  const copy = { ...prev };
+                                  delete copy[`passenger_${index}_traveler`];
+                                  return copy;
+                                });
+                              }
+                            }}
+                            onBlur={() => {
+                              setTouched((prev) => ({ ...prev, [`passenger_${index}_traveler`]: true }));
+                              if (!passenger.selectedTravelerId) {
+                                setErrors((prev) => ({
+                                  ...prev,
+                                  [`passenger_${index}_traveler`]: "Please select a saved traveler or add a new traveler.",
+                                }));
+                              }
+                            }}
                             aria-invalid={Boolean(errors[`passenger_${index}_traveler`])}
                             aria-describedby={errors[`passenger_${index}_traveler`] ? `passenger-${index}-traveler-error` : undefined}
                           >
@@ -2534,7 +2842,7 @@ export default function BusPassengerDetailsPage() {
                             )}
                           </select>
                           {errors[`passenger_${index}_traveler`] && (
-                            <span id={`passenger-${index}-traveler-error`} className="field-error-text">
+                            <span id={`passenger-${index}-traveler-error`} className="field-error-text" role="alert">
                               {errors[`passenger_${index}_traveler`]}
                             </span>
                           )}
@@ -2570,11 +2878,11 @@ export default function BusPassengerDetailsPage() {
                       type="email"
                       placeholder="Email id *"
                       value={contact.email}
+                      aria-invalid={Boolean(errors.contact_email)}
                       onChange={(e) => {
-                        const val = e.target.value;
-                        updateContactField("email", val);
-                        if (emailTouched) {
-                          const err = getEmailValidationError(val);
+                        updateContactField("email", e.target.value);
+                        if (submitAttempted || touched.contact_email) {
+                          const err = validateEmailAddress(e.target.value);
                           setErrors((prev) => {
                             const copy = { ...prev };
                             if (err) copy.contact_email = err;
@@ -2584,8 +2892,8 @@ export default function BusPassengerDetailsPage() {
                         }
                       }}
                       onBlur={() => {
-                        setEmailTouched(true);
-                        const err = getEmailValidationError(contact.email);
+                        setTouched((prev) => ({ ...prev, contact_email: true }));
+                        const err = validateEmailAddress(contact.email);
                         setErrors((prev) => {
                           const copy = { ...prev };
                           if (err) copy.contact_email = err;
@@ -2596,7 +2904,7 @@ export default function BusPassengerDetailsPage() {
                     />
                   </div>
                   {errors.contact_email && (
-                    <span className="field-error-text">{errors.contact_email}</span>
+                    <span className="field-error-text" role="alert">{errors.contact_email}</span>
                   )}
                 </label>
 
@@ -2605,21 +2913,39 @@ export default function BusPassengerDetailsPage() {
                   <div className={`contact-input ${errors.contact_mobile ? "field-has-error" : ""}`}>
                     <Phone size={14} />
                     <input
-                      type="text"
+                      type="tel"
+                      inputMode="numeric"
                       placeholder="Mobile *"
+                      maxLength={10}
                       value={contact.mobile}
-                      onChange={(e) => updateContactField("mobile", e.target.value)}
-                      onBlur={() => {
-                        if (contact.mobile && !isValidMobile(contact.mobile)) {
-                          setErrors(prev => ({ ...prev, contact_mobile: "Enter a valid 10-digit mobile number" }));
-                        } else if (!contact.mobile) {
-                          setErrors(prev => ({ ...prev, contact_mobile: "Mobile number is required" }));
+                      aria-invalid={Boolean(errors.contact_mobile)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        updateContactField("mobile", val);
+                        if (submitAttempted || touched.contact_mobile) {
+                          const err = validateMobileNumber(val);
+                          setErrors((prev) => {
+                            const copy = { ...prev };
+                            if (err) copy.contact_mobile = err;
+                            else delete copy.contact_mobile;
+                            return copy;
+                          });
                         }
+                      }}
+                      onBlur={() => {
+                        setTouched((prev) => ({ ...prev, contact_mobile: true }));
+                        const err = validateMobileNumber(contact.mobile);
+                        setErrors((prev) => {
+                          const copy = { ...prev };
+                          if (err) copy.contact_mobile = err;
+                          else delete copy.contact_mobile;
+                          return copy;
+                        });
                       }}
                     />
                   </div>
                   {errors.contact_mobile && (
-                    <span className="field-error-text">{errors.contact_mobile}</span>
+                    <span className="field-error-text" role="alert">{errors.contact_mobile}</span>
                   )}
                 </label>
 
@@ -2632,29 +2958,65 @@ export default function BusPassengerDetailsPage() {
                     <input
                       type="checkbox"
                       checked={contact.whatsappUpdates}
-                      onChange={(e) => toggleWhatsappUpdates(e.target.checked)}
+                      onChange={(e) => {
+                        toggleWhatsappUpdates(e.target.checked);
+                        if (e.target.checked && (submitAttempted || touched.contact_whatsappNumber)) {
+                          const val = contact.whatsappNumber || contact.mobile;
+                          const err = validateWhatsappNumber(val, contact.mobile, true);
+                          setErrors((prev) => {
+                            const copy = { ...prev };
+                            if (err) copy.contact_whatsappNumber = err;
+                            else delete copy.contact_whatsappNumber;
+                            return copy;
+                          });
+                        } else if (!e.target.checked) {
+                          setErrors((prev) => {
+                            const copy = { ...prev };
+                            delete copy.contact_whatsappNumber;
+                            return copy;
+                          });
+                        }
+                      }}
                       style={{ width: 16, height: 16, margin: 0 }}
                     />
                     <input
-                      type="text"
+                      type="tel"
+                      inputMode="numeric"
                       placeholder="WhatsApp no. (defaults to mobile)"
+                      maxLength={10}
                       value={contact.whatsappNumber}
-                      onChange={(e) => updateContactField("whatsappNumber", e.target.value)}
                       disabled={!contact.whatsappUpdates}
+                      aria-invalid={Boolean(errors.contact_whatsappNumber)}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 10);
+                        updateContactField("whatsappNumber", val);
+                        if (contact.whatsappUpdates && (submitAttempted || touched.contact_whatsappNumber)) {
+                          const err = validateWhatsappNumber(val, contact.mobile, true);
+                          setErrors((prev) => {
+                            const copy = { ...prev };
+                            if (err) copy.contact_whatsappNumber = err;
+                            else delete copy.contact_whatsappNumber;
+                            return copy;
+                          });
+                        }
+                      }}
                       onBlur={() => {
                         if (contact.whatsappUpdates) {
-                          const whatsappValue = contact.whatsappNumber || contact.mobile;
-                          if (whatsappValue && !isValidMobile(whatsappValue)) {
-                            setErrors(prev => ({ ...prev, contact_whatsappNumber: "Enter a valid 10-digit WhatsApp number" }));
-                          } else if (!whatsappValue) {
-                            setErrors(prev => ({ ...prev, contact_whatsappNumber: "WhatsApp number is required" }));
-                          }
+                          setTouched((prev) => ({ ...prev, contact_whatsappNumber: true }));
+                          const val = contact.whatsappNumber || contact.mobile;
+                          const err = validateWhatsappNumber(val, contact.mobile, true);
+                          setErrors((prev) => {
+                            const copy = { ...prev };
+                            if (err) copy.contact_whatsappNumber = err;
+                            else delete copy.contact_whatsappNumber;
+                            return copy;
+                          });
                         }
                       }}
                     />
                   </div>
                   {errors.contact_whatsappNumber && (
-                    <span className="field-error-text">{errors.contact_whatsappNumber}</span>
+                    <span className="field-error-text" role="alert">{errors.contact_whatsappNumber}</span>
                   )}
                 </label>
               </div>
@@ -2675,7 +3037,31 @@ export default function BusPassengerDetailsPage() {
                   <input
                     type="checkbox"
                     checked={agreedToFare}
-                    onChange={(e) => handleToggleAgree(e.target.checked)}
+                    aria-invalid={Boolean(errors.agreedToFare)}
+                    onChange={(e) => {
+                      handleToggleAgree(e.target.checked);
+                      if (e.target.checked) {
+                        setErrors((prev) => {
+                          const copy = { ...prev };
+                          delete copy.agreedToFare;
+                          return copy;
+                        });
+                      } else if (submitAttempted || touched.agreedToFare) {
+                        setErrors((prev) => ({
+                          ...prev,
+                          agreedToFare: "Please accept the rules and terms of this fare to proceed",
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      setTouched((prev) => ({ ...prev, agreedToFare: true }));
+                      if (!agreedToFare) {
+                        setErrors((prev) => ({
+                          ...prev,
+                          agreedToFare: "Please accept the rules and terms of this fare to proceed",
+                        }));
+                      }
+                    }}
                   />
                   <span>
                     I agree to the rules and restrictions of this fare, and the
@@ -2683,18 +3069,38 @@ export default function BusPassengerDetailsPage() {
                   </span>
                 </label>
                 {errors.agreedToFare && (
-                  <span className="field-error-text" style={{ marginTop: '2px' }}>{errors.agreedToFare}</span>
+                  <span className="field-error-text" role="alert" style={{ marginTop: '2px' }}>{errors.agreedToFare}</span>
                 )}
 
-                {formError && typeof formError === 'string' && !fatalSeatError && (
-                  <div className="form-error-summary-box">
+                {submitAttempted && formErrorList.length > 0 && !fatalSeatError && (
+                  <div className="form-error-summary-box" role="alert">
                     <div className="error-summary-header">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                       </svg>
-                      <span>Please correct the following issues to proceed:</span>
+                      <span>Please correct the following {formErrorList.length} issue{formErrorList.length > 1 ? "s" : ""} to proceed:</span>
+                    </div>
+                    <ul className="error-summary-list" style={{ paddingLeft: '22px', margin: '4px 0 0 0' }}>
+                      {formErrorList.map((err, idx) => (
+                        <li key={idx} style={{ fontSize: '0.8rem', color: '#dc2626', marginBottom: '4px' }}>
+                          {err}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {formError && typeof formError === 'string' && formErrorList.length === 0 && !fatalSeatError && (
+                  <div className="form-error-summary-box" role="alert">
+                    <div className="error-summary-header">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2.5" fill="none">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      <span>Notice</span>
                     </div>
                     <div style={{ padding: '0 12px 12px', fontSize: '0.85rem', color: '#ef4444' }}>
                       {formError}
@@ -2987,79 +3393,75 @@ export default function BusPassengerDetailsPage() {
                     </div>
                   )}
 
-                  {/* ── Available Coupons Section ── */}
-                  {availableCoupons.length > 0 && (
-                    <div className="coupon-chip-block">
-                      <div className="coupon-section-header">
-                        <p className="coupon-section-label">Available Coupons</p>
-                        {availableCoupons.length > 1 && (
+                  {/* ── 1. Featured Offers Section ── */}
+                  {featuredOffers.length > 0 && (
+                    <div className="coupon-featured-block">
+                      <p className="coupon-section-label">Featured Offers:</p>
+                      <div className="coupon-carousel-frame">
+                        {featuredOffers.length > 1 && (
                           <div className="coupon-carousel-controls">
                             <button
                               type="button"
-                              onClick={() => scrollPromotionCards(couponScrollerRef, -1, availableCoupons.length)}
-                              aria-label="Scroll available coupons left"
-                              title="Previous coupon"
+                              onClick={() => scrollPromotionCards(featuredOffersScrollerRef, -1, featuredOffers.length)}
+                              aria-label="Scroll featured offers left"
+                              title="Previous offer"
                             >
-                              <ChevronLeft size={16} />
+                              <ChevronLeft size={18} />
                             </button>
                             <button
                               type="button"
-                              onClick={() => scrollPromotionCards(couponScrollerRef, 1, availableCoupons.length)}
-                              aria-label="Scroll available coupons right"
-                              title="Next coupon"
+                              onClick={() => scrollPromotionCards(featuredOffersScrollerRef, 1, featuredOffers.length)}
+                              aria-label="Scroll featured offers right"
+                              title="Next offer"
                             >
-                              <ChevronRight size={16} />
+                              <ChevronRight size={18} />
                             </button>
                           </div>
                         )}
-                      </div>
-                      <div className="coupon-carousel-frame">
                         <div
-                          className="coupon-chip-list"
-                          ref={couponScrollerRef}
-                          aria-label="Available coupons carousel"
+                          className="coupon-featured-list"
+                          ref={featuredOffersScrollerRef}
+                          aria-label="Featured offers carousel"
                         >
-                          {availableCoupons.map((coupon, idx) => {
-                            const code = coupon.couponCode || `Promo #${coupon.id || idx}`;
-                            const mainHeading = getCouponMainHeading(coupon);
-                            const subHeading = getPromotionSubHeading(coupon);
-                            const isChipSelected = appliedCoupon?.couponCode === coupon.couponCode;
-                            const anotherOfferSelected = Boolean(selectedFeaturedOffer);
-                            const descText = coupon.terms || coupon.description || coupon.remark || getCouponDescription(coupon) || `Use code ${code} to get discount`;
+                          {featuredOffers.map((offer) => {
+                            const isThisSelected = isSameFeaturedOffer(selectedFeaturedOffer, offer);
+                            const anotherOfferSelected = Boolean(selectedFeaturedOffer) && !isThisSelected;
+                            const mainHeading = getOfferMainHeading(offer);
+                            const subHeading = getPromotionSubHeading(offer);
+                            const code = offer.couponCode || "OFFER";
 
                             return (
                               <div
-                                key={coupon.id || idx}
-                                className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""}`}
+                                key={offer.offerId || offer.id || offer.couponCode}
+                                className={`coupon-voucher-card${isThisSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""}`}
                               >
-                                {/* Top Row: Title and discount badge */}
+                                {/* Top Row: Main Heading & "i" Info Icon */}
                                 <div className="voucher-card-top">
-                                  <div className="voucher-title-wrap">
-                                    <h4 className="voucher-title" title={subHeading || coupon.title}>
-                                      {subHeading || coupon.title || "Exclusive Coupon"}
-                                    </h4>
-                                  </div>
-                                  <div className="voucher-badge-wrap">
-                                    <span className="voucher-discount-badge">{mainHeading}</span>
-                                    <button
-                                      type="button"
-                                      className="voucher-info-btn"
-                                      title="View Details"
-                                      aria-label="View coupon details"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDetailModalItem({ ...coupon, type: "coupon" });
-                                      }}
-                                    >
-                                      <Info size={13} strokeWidth={2.5} />
-                                    </button>
-                                  </div>
+                                  <div className="voucher-main-heading">{mainHeading}</div>
+                                  <button
+                                    type="button"
+                                    className="voucher-info-btn"
+                                    title="View Details"
+                                    aria-label="View offer details"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDetailModalItem({ ...offer, type: "offer" });
+                                    }}
+                                  >
+                                    <Info size={14} strokeWidth={2.5} />
+                                  </button>
                                 </div>
 
-                                {/* Middle Row: Dashed coupon code badge with copy icon & terms */}
-                                <div className="voucher-card-middle">
+                                {/* Sub Heading: "title" keyword in response without duplicate discount */}
+                                <div className="voucher-sub-heading" title={subHeading}>
+                                  {subHeading}
+                                </div>
+
+                                {/* Bottom Row: Code in bottom left corner, Apply in bottom right corner */}
+                                <div className="voucher-bottom-row">
                                   <div className="voucher-code-wrapper">
-                                    <span className="voucher-code-badge" onClick={() => handleSelectCoupon(coupon)} style={{ cursor: "pointer", border: "1.5px dashed #dc2626" }} title="Click to apply coupon">{code}</span>
+                                    <span className="voucher-code-prefix">Code:</span>
+                                    <span className="voucher-code-badge">{code}</span>
                                     <button
                                       type="button"
                                       onClick={(e) => {
@@ -3071,18 +3473,129 @@ export default function BusPassengerDetailsPage() {
                                       className="voucher-copy-btn"
                                       title="Copy Coupon Code"
                                     >
-                                      {copiedCode === code ? <Check size={12} style={{ color: "#16a34a" }} /> : <Copy size={12} />}
+                                      {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
                                     </button>
                                   </div>
-                                  {descText && (
-                                    <p className="voucher-sub-heading" title={descText}>
-                                      {descText}
-                                    </p>
-                                  )}
+
+                                  <div className="voucher-action-btn-wrap">
+                                    {isThisSelected ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemoveOffer();
+                                        }}
+                                        disabled={isApplyingCoupon}
+                                        className="voucher-remove-btn"
+                                      >Remove</button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleSelectOffer(offer);
+                                        }}
+                                        disabled={isApplyingCoupon || anotherOfferSelected}
+                                        className="voucher-apply-btn"
+                                      >
+                                        <span>APPLY</span>
+                                        <Sparkles size={11} style={{ marginLeft: "4px" }} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── 2. Available Coupons Section ── */}
+                  {availableCoupons.length > 0 && (
+                    <div className="coupon-chip-block">
+                      <p className="coupon-section-label">Available Coupons:</p>
+                      <div className="coupon-carousel-frame">
+                        {availableCoupons.length > 1 && (
+                          <div className="coupon-carousel-controls">
+                            <button
+                              type="button"
+                              onClick={() => scrollPromotionCards(couponScrollerRef, -1, availableCoupons.length)}
+                              aria-label="Scroll available coupons left"
+                              title="Previous coupon"
+                            >
+                              <ChevronLeft size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => scrollPromotionCards(couponScrollerRef, 1, availableCoupons.length)}
+                              aria-label="Scroll available coupons right"
+                              title="Next coupon"
+                            >
+                              <ChevronRight size={18} />
+                            </button>
+                          </div>
+                        )}
+                        <div
+                          className="coupon-chip-list"
+                          ref={couponScrollerRef}
+                          aria-label="Available coupons carousel"
+                        >
+                          {availableCoupons.map((coupon, idx) => {
+                            const code = coupon.couponCode || `Promo #${coupon.id || idx}`;
+                            const mainHeading = getCouponMainHeading(coupon);
+                            const subHeading = getPromotionSubHeading(coupon);
+                            const isChipSelected = appliedCoupon?.couponCode === coupon.couponCode;
+                            const anotherOfferSelected = Boolean(selectedFeaturedOffer);
+
+                            return (
+                              <div
+                                key={coupon.id || idx}
+                                className={`coupon-voucher-card${isChipSelected ? " is-selected" : ""}${anotherOfferSelected ? " is-muted" : ""}`}
+                              >
+                                {/* Top Row: Main Heading & "i" Info Icon */}
+                                <div className="voucher-card-top">
+                                  <div className="voucher-main-heading">{mainHeading}</div>
+                                  <button
+                                    type="button"
+                                    className="voucher-info-btn"
+                                    title="View Details"
+                                    aria-label="View coupon details"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDetailModalItem({ ...coupon, type: "coupon" });
+                                    }}
+                                  >
+                                    <Info size={14} strokeWidth={2.5} />
+                                  </button>
                                 </div>
 
-                                {/* Action Button Alignment: Dedicated action footer */}
+                                {/* Sub Heading: "title" keyword in response without duplicate discount */}
+                                <div className="voucher-sub-heading" title={subHeading}>
+                                  {subHeading}
+                                </div>
+
+                                {/* Bottom Row: Code in bottom left corner, Apply in bottom right corner */}
                                 <div className="voucher-bottom-row">
+                                  <div className="voucher-code-wrapper">
+                                    <span className="voucher-code-prefix">Code:</span>
+                                    <span className="voucher-code-badge">{code}</span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigator.clipboard.writeText(code);
+                                        setCopiedCode(code);
+                                        setTimeout(() => setCopiedCode(null), 2000);
+                                      }}
+                                      className="voucher-copy-btn"
+                                      title="Copy Coupon Code"
+                                    >
+                                      {copiedCode === code ? <Check size={12} /> : <Copy size={12} />}
+                                    </button>
+                                  </div>
+
                                   <div className="voucher-action-btn-wrap">
                                     {isChipSelected ? (
                                       <button
@@ -3093,9 +3606,7 @@ export default function BusPassengerDetailsPage() {
                                         }}
                                         disabled={isApplyingCoupon}
                                         className="voucher-remove-btn"
-                                      >
-                                        Remove
-                                      </button>
+                                      >Remove</button>
                                     ) : (
                                       <button
                                         type="button"
@@ -3231,17 +3742,15 @@ export default function BusPassengerDetailsPage() {
                 <div className="coupon-info-detail-item">
                   <span className="detail-item-label">Discount Benefit</span>
                   <span className="detail-item-value highlight">
-                    {Number(detailModalItem.discountValue) > 0
+                    {detailModalItem.discountValue
                       ? (detailModalItem.isPercentageDiscount
                         ? `${detailModalItem.discountValue}% OFF`
                         : `₹${detailModalItem.discountValue} OFF`)
-                      : Number(detailModalItem.value) > 0
+                      : detailModalItem.value
                         ? `₹${detailModalItem.value} OFF`
-                        : (String(detailModalItem.title || "").match(/(\d+)\s*%/)
-                          ? `${String(detailModalItem.title || "").match(/(\d+)\s*%/)[1]}% OFF`
-                          : (detailModalItem.type === "offer"
-                            ? getOfferMainHeading(detailModalItem)
-                            : getCouponMainHeading(detailModalItem)))}
+                        : (detailModalItem.type === "offer"
+                          ? getOfferMainHeading(detailModalItem)
+                          : getCouponMainHeading(detailModalItem))}
                   </span>
                 </div>
 

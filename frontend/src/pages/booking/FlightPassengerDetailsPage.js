@@ -14,6 +14,7 @@ import { fetchCouponsAndOffers } from "../../services/unifiedCouponService";
 import { getWalletSummary } from "../../services/walletService";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import BookingTimer from "./BookingTimer";
+import { COUNTRIES, findCountry, isValidCountry, getCountryCode } from "../../utils/countries";
 
 const TRAVELER_STORAGE_KEY = "my_traveler_data";
 
@@ -841,6 +842,66 @@ export default function FlightPassengerDetailsPage() {
     });
   };
 
+  const handlePassportCountryChange = (index, value) => {
+    const match = findCountry(value);
+    setPassengers((previous) =>
+      previous.map((passenger, passengerIndex) =>
+        passengerIndex === index
+          ? {
+            ...passenger,
+            passportIssueCountry: value,
+            passportIssueCountryCode: match ? match.code : value,
+          }
+          : passenger
+      )
+    );
+    if (match) {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[`passenger_${index}_passportIssueCountryCode`];
+        return copy;
+      });
+    }
+  };
+
+  const handlePassportCountryBlur = (index) => {
+    const p = passengers[index];
+    const rawVal = (p?.passportIssueCountry || p?.passportIssueCountryCode || "").trim();
+    if (!rawVal) {
+      if (isInternational) {
+        setErrors((prev) => ({
+          ...prev,
+          [`passenger_${index}_passportIssueCountryCode`]: "Required",
+        }));
+      }
+      return;
+    }
+    const match = findCountry(rawVal);
+    if (match) {
+      setPassengers((previous) =>
+        previous.map((passenger, passengerIndex) =>
+          passengerIndex === index
+            ? {
+              ...passenger,
+              passportIssueCountry: match.name,
+              passportIssueCountryCode: match.code,
+            }
+            : passenger
+        )
+      );
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[`passenger_${index}_passportIssueCountryCode`];
+        return copy;
+      });
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        [`passenger_${index}_passportIssueCountryCode`]: "Please enter a valid country name",
+      }));
+    }
+  };
+
   const preservedFareSummary = flowState.fareSummary || {};
   const fqObj = fareQuoteData;
   const fqResults = fqObj?.results || fqObj?.Results || fqObj?.rawResponse?.Results || fqObj?.rawResponse?.Response?.Results || {};
@@ -987,7 +1048,30 @@ export default function FlightPassengerDetailsPage() {
       if (isInternational) {
         if (!p.passportNo || !p.passportNo.trim()) newErrors[`passenger_${idx}_passportNo`] = "Required";
         if (!p.passportExpiry || !p.passportExpiry.trim()) newErrors[`passenger_${idx}_passportExpiry`] = "Required";
-        if (!p.passportIssueCountryCode || !p.passportIssueCountryCode.trim()) newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Required";
+        const issueCountry = (p.passportIssueCountry || p.passportIssueCountryCode || "").trim();
+        if (!issueCountry) {
+          newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Required";
+        } else if (!isValidCountry(issueCountry)) {
+          newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Please enter a valid country name";
+        }
+      }
+
+      if (p.passportExpiry && p.passportExpiry.trim()) {
+        const parts = p.passportExpiry.split("/");
+        if (parts.length !== 3 || p.passportExpiry.length !== 10) {
+          newErrors[`passenger_${idx}_passportExpiry`] = "Format: DD/MM/YYYY";
+        } else {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          const year = parseInt(parts[2], 10);
+          const dateObj = new Date(year, month - 1, day);
+          const isValidDate = dateObj.getFullYear() === year && dateObj.getMonth() === month - 1 && dateObj.getDate() === day;
+          if (!isValidDate) {
+            newErrors[`passenger_${idx}_passportExpiry`] = "Invalid Date";
+          } else if (dateObj <= new Date()) {
+            newErrors[`passenger_${idx}_passportExpiry`] = "Passport has expired";
+          }
+        }
       }
 
       if (p.passportNo && p.passportNo.trim()) {
@@ -1397,11 +1481,14 @@ export default function FlightPassengerDetailsPage() {
             <span>Passport Issue Country *</span>
             <input
               type="text"
-              placeholder="Country Code (e.g. IN)"
-              value={passenger.passportIssueCountryCode || ""}
+              list="passport-country-options"
+              placeholder="Enter country name (e.g. India)"
+              value={passenger.passportIssueCountry ?? passenger.passportIssueCountryCode ?? ""}
               onChange={(event) =>
-                updatePassenger(index, "passportIssueCountryCode", event.target.value.toUpperCase())
+                handlePassportCountryChange(index, event.target.value)
               }
+              onBlur={() => handlePassportCountryBlur(index)}
+              autoComplete="off"
               className={errors[`passenger_${index}_passportIssueCountryCode`] ? "field-has-error" : ""}
             />
             {errors[`passenger_${index}_passportIssueCountryCode`] && (
@@ -2338,6 +2425,15 @@ export default function FlightPassengerDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Datalist for Country Autocomplete */}
+      <datalist id="passport-country-options">
+        {COUNTRIES.map((c) => (
+          <option key={c.code} value={c.name}>
+            {c.name} ({c.code})
+          </option>
+        ))}
+      </datalist>
 
     </main>
   );

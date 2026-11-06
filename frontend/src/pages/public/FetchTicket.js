@@ -77,6 +77,83 @@ const getRefFieldConfig = (type) => {
   }
 };
 
+const validateMobile = (value) => {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) {
+    return "Mobile number is required";
+  }
+  if (/\D/.test(trimmed)) {
+    return "Mobile number must contain digits only (no spaces, letters or symbols)";
+  }
+  if (trimmed.length !== 10) {
+    return `Mobile number must be exactly 10 digits (you entered ${trimmed.length})`;
+  }
+  if (!/^[6-9]/.test(trimmed)) {
+    return "Mobile number must start with 6, 7, 8 or 9";
+  }
+  if (/^(\d)\1{9}$/.test(trimmed)) {
+    return "Enter a valid mobile number";
+  }
+  return null;
+};
+
+const validateEmail = (value) => {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) {
+    return "Email is required";
+  }
+  if (/\s/.test(trimmed)) {
+    return "Email cannot contain spaces";
+  }
+  if (!trimmed.includes("@")) {
+    return "Email must contain '@' (for example: name@gmail.com)";
+  }
+  if ((trimmed.match(/@/g) || []).length > 1) {
+    return "Email can contain only one '@'";
+  }
+  const atIndex = trimmed.indexOf("@");
+  const namePart = trimmed.slice(0, atIndex);
+  const domainPart = trimmed.slice(atIndex + 1);
+  if (!namePart || namePart.length === 0) {
+    return "Enter the part before '@' (for example: name@gmail.com)";
+  }
+  if (!domainPart || domainPart.length === 0) {
+    return "Enter the domain after '@' (for example: gmail.com)";
+  }
+  if (trimmed.length > 100) {
+    return "Email must not exceed 100 characters";
+  }
+  if (/[^a-zA-Z0-9._%+\-]/.test(namePart)) {
+    return "Email contains invalid characters. Use only letters, numbers and . _ % + -";
+  }
+  if (namePart.startsWith(".") || namePart.endsWith(".") || namePart.includes("..")) {
+    return "Email cannot start or end with a dot, or have two dots in a row";
+  }
+  if (!domainPart.includes(".")) {
+    return "Domain must have an ending like .com or .in";
+  }
+  if (/[^a-zA-Z0-9.\-]/.test(domainPart)) {
+    return "Domain contains invalid characters";
+  }
+  if (
+    domainPart.startsWith(".") ||
+    domainPart.endsWith(".") ||
+    domainPart.startsWith("-") ||
+    domainPart.endsWith("-") ||
+    domainPart.includes("..") ||
+    domainPart.includes(".-") ||
+    domainPart.includes("-.")
+  ) {
+    return "Enter a valid domain (for example: gmail.com)";
+  }
+  const domainParts = domainPart.split(".");
+  const tld = domainParts[domainParts.length - 1];
+  if (!/^[a-zA-Z]{2,}$/.test(tld)) {
+    return "Domain ending must be at least 2 letters, like .com or .in";
+  }
+  return null;
+};
+
 const FetchTicket = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -106,82 +183,80 @@ const FetchTicket = () => {
   const refConfig = getRefFieldConfig(bookingType);
 
   const handleMobileChange = (e) => {
-    // Restrict input to digits and valid country code characters (+, spaces, hyphens) [PNB/USER/BOOKING_003]
-    const val = e.target.value.replace(/[^\d+ -]/g, "").slice(0, 16);
+    const val = e.target.value.replace(/[^\d+ -]/g, "").slice(0, 15);
     setMobile(val);
-    if (mobileError) setMobileError("");
     if (error) setError("");
+    if (mobileError) {
+      const err = validateMobile(val.replace(/\D/g, ""));
+      setMobileError(err || "");
+    }
   };
 
   const handleMobileBlur = () => {
-    const digits = mobile.replace(/\D/g, "");
-    if (!mobile.trim()) {
-      if (!bookingReference.trim()) {
-        setMobileError("Please enter your registered mobile number.");
-      }
-    } else if (digits.length < 10) {
-      setMobileError("Please enter a valid 10-digit mobile number.");
-    } else {
+    const trimmed = mobile.trim();
+    const digits = trimmed.replace(/\D/g, "");
+    setMobile(digits);
+    if (!digits && bookingReference.trim()) {
       setMobileError("");
+      return;
     }
+    const err = validateMobile(digits);
+    setMobileError(err || "");
   };
 
   const handleEmailChange = (e) => {
-    setEmail(e.target.value);
-    if (emailError) setEmailError("");
+    const val = e.target.value.slice(0, 100);
+    setEmail(val);
     if (error) setError("");
-  };
-
-  const handleEmailBlur = () => {
-    const trimmed = email.trim();
-    if (!trimmed) {
-      if (!bookingReference.trim()) {
-        setEmailError("Please enter your registered email address.");
-      }
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      setEmailError("Please enter a valid email address.");
-    } else {
-      setEmailError("");
+    if (emailError) {
+      const err = validateEmail(val);
+      setEmailError(err || "");
     }
   };
 
-  const validateForm = () => {
-    let hasErr = false;
-    const mobileDigits = mobile.replace(/\D/g, "");
-    const trimmedRef = bookingReference.trim();
-    const trimmedEmail = email.trim();
+  const handleEmailBlur = () => {
+    const trimmed = email.trim().toLowerCase();
+    setEmail(trimmed);
+    if (!trimmed && bookingReference.trim()) {
+      setEmailError("");
+      return;
+    }
+    const err = validateEmail(trimmed);
+    setEmailError(err || "");
+  };
 
-    // If booking reference is directly supplied, lookup can proceed
-    if (trimmedRef) {
+  const validateForm = () => {
+    const trimmedRef = bookingReference.trim();
+    const trimmedMobile = mobile.replace(/\D/g, "");
+    const trimmedEmail = email.trim().toLowerCase();
+
+    // If booking reference is directly supplied without contact details, lookup can proceed
+    if (trimmedRef && !trimmedMobile && !trimmedEmail) {
       setError("");
       setMobileError("");
       setEmailError("");
       return true;
     }
 
-    if (!mobileDigits) {
-      setMobileError("Please enter a valid 10-digit mobile number.");
-      hasErr = true;
-    } else if (mobileDigits.length < 10) {
-      setMobileError("Please enter a valid 10-digit mobile number.");
-      hasErr = true;
+    const mErr = validateMobile(trimmedMobile);
+    const eErr = validateEmail(trimmedEmail);
+
+    if (mErr) {
+      setMobileError(mErr);
+      const el = document.getElementById("fetch-mobile-input");
+      if (el) el.focus();
+      return false;
     } else {
       setMobileError("");
     }
 
-    if (!trimmedEmail) {
-      setEmailError("Please enter your registered email address.");
-      hasErr = true;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError("Please enter a valid email address.");
-      hasErr = true;
+    if (eErr) {
+      setEmailError(eErr);
+      const el = document.getElementById("fetch-email-input");
+      if (el) el.focus();
+      return false;
     } else {
       setEmailError("");
-    }
-
-    if (hasErr) {
-      setError("Please provide all required fields to locate your reservation.");
-      return false;
     }
 
     setError("");
@@ -197,7 +272,7 @@ const FetchTicket = () => {
     setError("");
 
     const trimmedMobile = mobile.replace(/\D/g, "");
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     const trimmedRef = bookingReference.trim();
     const phoneOrEmailVal = trimmedMobile || trimmedEmail;
 
@@ -235,7 +310,14 @@ const FetchTicket = () => {
       setFoundTicket(tickets[0]);
       setFoundTicketsList(tickets);
     } catch (fetchError) {
-      setError("No active booking found with the provided details. Please verify your reference number.");
+      let msg = fetchError?.message || "No active booking found with the provided details. Please verify your reference number.";
+      try {
+        const parsed = JSON.parse(msg);
+        if (parsed?.message) {
+          msg = parsed.message;
+        }
+      } catch (_) {}
+      setError(msg);
     } finally {
       setLoading(false);
     }

@@ -38,7 +38,7 @@ const CLASS_OPTIONS = [
 
 const FLIGHT_TRIP_TYPES = [
   { value: "oneway", label: "One Way" },
-  { value: "twoway", label: "Two Way" },
+  { value: "twoway", label: "Round Trip" },
   { value: "multicity", label: "Multi City" },
 ];
 
@@ -611,21 +611,23 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
           {/* ── Flights ── */}
           {activeTab === "flights" && (
             <div className="booking-content">
-              <div className="trip-switch" role="tablist">
-                {FLIGHT_TRIP_TYPES.map((t) => (
-                  <button key={t.value} type="button" className={`trip-chip ${flightTripType === t.value ? "active" : ""}`} onClick={() => setFlightTripType(t.value)}>
-                    {t.label}
-                  </button>
-                ))}
+              <div style={{ display: "flex", justifyContent: "center", width: "100%", marginBottom: 8 }}>
+                <div className="trip-switch" role="tablist">
+                  {FLIGHT_TRIP_TYPES.map((t) => (
+                    <button key={t.value} type="button" className={`trip-chip ${flightTripType === t.value ? "active" : ""}`} onClick={() => setFlightTripType(t.value)}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {flightTripType === "multicity" ? (
-                <div className="multi-city-list">
+                <div className="multi-city-list" style={{ width: "100%", maxWidth: "none", boxSizing: "border-box" }}>
                   {multiCityLegs.map((leg, idx) => (
-                    <div className="multi-city-row" key={leg.id}>
+                    <div className="multi-city-row" key={leg.id} style={{ width: "100%", maxWidth: "none", boxSizing: "border-box", display: "flex", alignItems: "stretch", gap: "8px" }}>
                       <PlaceAutocomplete label={`Leg ${idx + 1} – From`} value={leg.from} onChange={(v, code) => updateMultiCityLeg(leg.id, "from", v, code)} tripType="flight" field="from" placeholder="Source" />
                       <PlaceAutocomplete label={`Leg ${idx + 1} – To`} value={leg.to} onChange={(v, code) => updateMultiCityLeg(leg.id, "to", v, code)} tripType="flight" field="to" placeholder="Destination" />
-                      <div className="field field-with-icon" style={{ position: "relative" }}>
+                      <div className="field field-with-icon" style={{ position: "relative", flex: 1, minWidth: 0 }}>
                         <label>Departure</label>
                         <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === `leg-dep-${leg.id}` ? null : `leg-dep-${leg.id}`)}>
                           <CalendarDays size={18} />
@@ -642,13 +644,16 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                   <div className="multi-footer-row">{travellerField}{classField}</div>
                 </div>
               ) : (
-                <div className={`search-grid standard-grid ${isFlightTwoWay ? "two-way" : "one-way"}`}>
+                <div
+                  className={`search-grid standard-grid ${isFlightTwoWay ? "two-way" : "one-way"}`}
+                  style={{ width: "100%", maxWidth: "none", boxSizing: "border-box", display: "flex", alignItems: "stretch", gap: "8px" }}
+                >
                   <PlaceAutocomplete label="Source" value={flightFrom} onChange={handleFlightFromChange} tripType="flight" field="from" placeholder="Source" error={flightFromError} className="source-field" />
                   <div className="swap-field">
                     <button type="button" className="swap-btn" onClick={handleSwapFlights} aria-label="Swap"><ArrowLeftRight size={16} /></button>
                   </div>
                   <PlaceAutocomplete label="Destination" value={flightTo} onChange={handleFlightToChange} tripType="flight" field="to" placeholder="Destination" error={flightToError} className="destination-field" />
-                  <div className="field field-with-icon departure-field" style={{ position: "relative" }}>
+                  <div className="field field-with-icon departure-field" style={{ position: "relative", flex: 1, minWidth: 0 }}>
                     <label>Departure</label>
                     <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "flight-dep" ? null : "flight-dep")}>
                       <CalendarDays size={18} />
@@ -657,7 +662,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CustomDatePicker isOpen={activeDatePicker === "flight-dep"} onClose={() => setActiveDatePicker(null)} value={flightDepartureDate} minDate={getDefaultDateString(0)} onChange={(v) => { setFlightDepartureDate(v); setActiveDatePicker(null); }} />
                   </div>
                   {isFlightTwoWay && (
-                    <div className="field field-with-icon return-field" style={{ position: "relative" }}>
+                    <div className="field field-with-icon return-field" style={{ position: "relative", flex: 1, minWidth: 0 }}>
                       <label>Return</label>
                       <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "flight-ret" ? null : "flight-ret")}>
                         <CalendarDays size={18} />

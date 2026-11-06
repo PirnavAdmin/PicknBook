@@ -85,6 +85,27 @@ const POLICY_LINKS = [
   },
 ];
 
+function isStandardLegalDuplicate(page) {
+  const normTitle = String(page?.title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  const normSlug = String(page?.slug || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  const isTerms = normTitle.includes("term") || normSlug.includes("term");
+  const isPrivacy = normTitle.includes("privacy") || normSlug.includes("privacy");
+  const isRefundOrCancellation =
+    normTitle.includes("refund") ||
+    normTitle.includes("return") ||
+    normTitle.includes("cancellation") ||
+    normSlug.includes("refund") ||
+    normSlug.includes("return") ||
+    normSlug.includes("cancellation");
+
+  return isTerms || isPrivacy || isRefundOrCancellation;
+}
+
 export default function SiteFooter() {
   const navigate = useNavigate();
   const [cmsPages, setCmsPages] = useState([]);
@@ -130,7 +151,15 @@ export default function SiteFooter() {
         const pages = Array.isArray(response)
           ? response
           : (response?.data || response?.pages || response?.list || []);
-        if (active) setCmsPages(pages.filter((page) => String(page?.status || "Active").toLowerCase() === "active"));
+        if (active) {
+          setCmsPages(
+            pages.filter(
+              (page) =>
+                String(page?.status || "Active").toLowerCase() === "active" &&
+                !isStandardLegalDuplicate(page)
+            )
+          );
+        }
       })
       .catch((error) => console.error("Unable to load public CMS pages for footer navigation:", error));
     return () => { active = false; };
