@@ -2816,6 +2816,7 @@ export async function sendCancelRequest(params = {}) {
     ClientRefId: String(params.clientRefId ?? params.ClientRefId ?? ""),
     ...(params.sectors || params.Sectors ? { Sectors: params.sectors || params.Sectors } : {}),
     ...(params.ticketData || params.TicketData ? { TicketData: params.ticketData || params.TicketData } : {}),
+    ...(params.refundPreference || params.RefundPreference ? { RefundPreference: params.refundPreference || params.RefundPreference } : {}),
   };
 
   const endpoint = `${SRDV_ROOT}/SendChangeRequest`;
@@ -3378,6 +3379,7 @@ async function requestFlightCancellation(bookingIdOrObj, { selectedLegIndexes = 
     RequestType: requestType,
     CancellationType: cancellationType,
     Remarks: reason || "Customer requested cancellation",
+    RefundPreference: refundPreference || "Original",
     Sectors: sectors,
     TicketData: ticketData
   });

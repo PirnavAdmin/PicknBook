@@ -200,6 +200,19 @@ export default function FlightPassengerDetailsPage() {
       ? flowState.selectedLegs[1]
       : null);
 
+  const selectedLegs = useMemo(() => {
+    if (Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0) {
+      return flowState.selectedLegs;
+    }
+    if (Array.isArray(flowState.legs) && flowState.legs.length > 0) {
+      return flowState.legs;
+    }
+    if (returnFlightNormalized) {
+      return flight ? [flight, returnFlightNormalized] : [returnFlightNormalized];
+    }
+    return flight ? [flight] : [];
+  }, [flowState.selectedLegs, flowState.legs, flight, returnFlightNormalized]);
+
   const [passengers, setPassengers] = useState(() =>
     buildPassengerSeed(selectedSeats, travellers, flowState.passengers)
   );
@@ -412,12 +425,12 @@ export default function FlightPassengerDetailsPage() {
     async function runFareQuote() {
       if (!flight) return;
       try {
-        const selectedLegs = flowState.selectedLegs || flowState.legs || (flight ? [flight] : []);
+        const legsToQuote = selectedLegs.length > 0 ? selectedLegs : (flight ? [flight] : []);
         
         // Deduplicate itineraries based on resultIndex
         const uniqueItineraries = [];
         const seenIndices = new Set();
-        for (const leg of selectedLegs) {
+        for (const leg of legsToQuote) {
           const idx = leg.resultIndex || leg.ResultIndex || "";
           if (idx && !seenIndices.has(idx)) {
             seenIndices.add(idx);
@@ -495,8 +508,8 @@ export default function FlightPassengerDetailsPage() {
           quoteRes = await getFareQuote({
             flight,
             returnFlight: returnFlightNormalized,
-            legs: selectedLegs,
-            selectedLegs: selectedLegs,
+            legs: legsToQuote,
+            selectedLegs: legsToQuote,
             traceId: flight.traceId || flowState.traceId || flowState.TraceId,
             resultIndex: resolvedResultIndex,
             srdvType: flight.srdvType,
