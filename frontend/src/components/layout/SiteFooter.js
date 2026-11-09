@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Facebook, Youtube, Building2, Send, Lock } from "lucide-react";
+import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Youtube, Building2, Send, Lock } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -225,18 +225,6 @@ export default function SiteFooter() {
               <p className="pnb-footer-brand-desc text-sm text-slate-600 mb-4 leading-relaxed">
                 India's most trusted travel platform for instant bus, flight, and hotel bookings with guaranteed low fares &amp; 24/7 support.
               </p>
-              {/* Social Media Icons */}
-              <div className="flex items-center gap-3 mt-1">
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition-colors"
-                  title="Facebook"
-                >
-                  <Facebook size={16} />
-                </a>
-              </div>
             </div>
 
             {/* Column 2: Our Services (Hotels, Flights, Buses, Packages) [PNB/UI/FOOTER_001] */}
@@ -421,15 +409,6 @@ export default function SiteFooter() {
           <div className="pnb-pill-section pnb-pill-socials">
             <span className="pnb-pill-label">Follow Us:</span>
             <div className="pnb-social-circles-row">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pnb-social-circle pnb-fb-circle"
-                title="Facebook"
-              >
-                <Facebook size={17} color="#ffffff" />
-              </a>
               <a
                 href="https://youtube.com"
                 target="_blank"

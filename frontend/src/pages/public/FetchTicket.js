@@ -12,10 +12,7 @@ import {
   Tag,
   Ticket,
   ArrowRight,
-  Lock,
-  HelpCircle,
-  Loader2,
-  Download
+  Lock
 } from "lucide-react";
 import { fetchTicketByContact, normalizeBookingType } from "../../services/ticketService";
 import hotelPreview from "../../assets/images/illustrations/hotel-section-banner.png";
@@ -25,19 +22,19 @@ import "../../STYLES/FetchTicket.css";
 
 // Category data for Left Side
 const CATEGORIES = {
-  hotel: {
-    id: "hotel",
-    label: "HOTELS",
-    title: "Comfortable stays, memorable experiences",
-    image: hotelPreview,
-    icon: Hotel
-  },
   bus: {
     id: "bus",
     label: "BUSES",
     title: "Premium bus journeys, on-time arrivals",
     image: busPreview,
     icon: BusFront
+  },
+  hotel: {
+    id: "hotel",
+    label: "HOTELS",
+    title: "Comfortable stays, memorable experiences",
+    image: hotelPreview,
+    icon: Hotel
   },
   flight: {
     id: "flight",
@@ -48,93 +45,100 @@ const CATEGORIES = {
   }
 };
 
-const getRefFieldConfig = (type) => {
-  switch (type) {
-    case "hotel":
-      return {
-        label: "Hotel Booking Reference",
-        placeholder: "e.g., HT-20261021114642-440 or Confirmation No.",
-        helper: "Found on your hotel booking confirmation email or SMS voucher."
-      };
-    case "flight":
-      return {
-        label: "PNR / Ticket Number",
-        placeholder: "e.g., 6-character PNR (ABCDEF)",
-        helper: "Found on your airline e-ticket or booking confirmation."
-      };
-    case "bus":
-      return {
-        label: "Bus Ticket / PNR Number",
-        placeholder: "e.g., Ticket or Booking ID",
-        helper: "Found on your bus m-ticket or SMS confirmation."
-      };
-    default:
-      return {
-        label: "Booking Reference or PNR",
-        placeholder: "e.g., Booking Reference or PNR",
-        helper: "Found in your booking confirmation message."
-      };
-  }
-};
-
 const validateMobile = (value) => {
   const trimmed = (value ?? "").trim();
+
+  // 1. Empty -> "Mobile number is required"
   if (!trimmed) {
     return "Mobile number is required";
   }
+
+  // 2. Any non-digit /\D/ -> "Mobile number must contain digits only (no spaces, letters or symbols)"
   if (/\D/.test(trimmed)) {
     return "Mobile number must contain digits only (no spaces, letters or symbols)";
   }
+
+  // 3. Length is not 10 -> "Mobile number must be exactly 10 digits (you entered N)"
   if (trimmed.length !== 10) {
     return `Mobile number must be exactly 10 digits (you entered ${trimmed.length})`;
   }
+
+  // 4. Doesn't start 6-9 -> "Mobile number must start with 6, 7, 8 or 9" (test: /^[6-9]/)
   if (!/^[6-9]/.test(trimmed)) {
     return "Mobile number must start with 6, 7, 8 or 9";
   }
+
+  // 5. Same digit 10 times -> "Enter a valid mobile number" (test: /^(\d)\1{9}$/)
   if (/^(\d)\1{9}$/.test(trimmed)) {
     return "Enter a valid mobile number";
   }
+
   return null;
 };
 
 const validateEmail = (value) => {
   const trimmed = (value ?? "").trim();
+
+  // 1. Empty -> "Email is required"
   if (!trimmed) {
     return "Email is required";
   }
+
+  // 2. Has a space -> "Email cannot contain spaces"
   if (/\s/.test(trimmed)) {
     return "Email cannot contain spaces";
   }
+
+  // 3. No "@" -> "Email must contain '@' (for example: name@gmail.com)"
   if (!trimmed.includes("@")) {
     return "Email must contain '@' (for example: name@gmail.com)";
   }
+
+  // 4. More than one "@" -> "Email can contain only one '@'"
   if ((trimmed.match(/@/g) || []).length > 1) {
     return "Email can contain only one '@'";
   }
+
   const atIndex = trimmed.indexOf("@");
   const namePart = trimmed.slice(0, atIndex);
   const domainPart = trimmed.slice(atIndex + 1);
+
+  // 5. Nothing before "@" -> "Enter the part before '@' (for example: name@gmail.com)"
   if (!namePart || namePart.length === 0) {
     return "Enter the part before '@' (for example: name@gmail.com)";
   }
+
+  // 6. Nothing after "@" -> "Enter the domain after '@' (for example: gmail.com)"
   if (!domainPart || domainPart.length === 0) {
     return "Enter the domain after '@' (for example: gmail.com)";
   }
+
+  // 7. Over 100 characters -> "Email must not exceed 100 characters"
   if (trimmed.length > 100) {
     return "Email must not exceed 100 characters";
   }
+
+  // 8. Name part has characters outside A-Za-z0-9 . _ % + - -> "Email contains invalid characters. Use only letters, numbers and . _ % + -"
   if (/[^a-zA-Z0-9._%+\-]/.test(namePart)) {
     return "Email contains invalid characters. Use only letters, numbers and . _ % + -";
   }
+
+  // 9. Name part starts/ends with "." or has ".." -> "Email cannot start or end with a dot, or have two dots in a row"
   if (namePart.startsWith(".") || namePart.endsWith(".") || namePart.includes("..")) {
     return "Email cannot start or end with a dot, or have two dots in a row";
   }
+
+  // 10. Domain has no "." -> "Domain must have an ending like .com or .in"
   if (!domainPart.includes(".")) {
     return "Domain must have an ending like .com or .in";
   }
+
+  // 11. Domain has characters outside A-Za-z0-9 . - -> "Domain contains invalid characters"
   if (/[^a-zA-Z0-9.\-]/.test(domainPart)) {
     return "Domain contains invalid characters";
   }
+
+  // 12. Domain starts/ends with "." or "-", or has "..", ".-", "-." -> "Enter a valid domain (for example: gmail.com)"
   if (
     domainPart.startsWith(".") ||
     domainPart.endsWith(".") ||
@@ -146,11 +150,20 @@ const validateEmail = (value) => {
   ) {
     return "Enter a valid domain (for example: gmail.com)";
   }
-  const domainParts = domainPart.split(".");
-  const tld = domainParts[domainParts.length - 1];
-  if (!/^[a-zA-Z]{2,}$/.test(tld)) {
-    return "Domain ending must be at least 2 letters, like .com or .in";
+
+  const domainLabels = domainPart.split(".");
+  const tld = domainLabels[domainLabels.length - 1];
+
+  // 13. TLD is under 2 letters -> "Domain ending must be at least 2 letters (for example: .com)"
+  if (tld.length < 2) {
+    return "Domain ending must be at least 2 letters (for example: .com)";
   }
+
+  // 14. TLD has characters other than letters -> "Domain ending can contain letters only" (test: /^[a-zA-Z]+$/)
+  if (!/^[a-zA-Z]+$/.test(tld)) {
+    return "Domain ending can contain letters only";
+  }
+
   return null;
 };
 
@@ -173,115 +186,89 @@ const FetchTicket = () => {
   );
   const [filterType] = useState(location.state?.filterType || searchParams.get("filterType") || "all");
   const [error, setError] = useState("");
-  const [mobileError, setMobileError] = useState("");
-  const [emailError, setEmailError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [foundTicket, setFoundTicket] = useState(null);
-  const [foundTicketsList, setFoundTicketsList] = useState([]);
 
-  // Dynamic reference field details based on active tab [PNB/HOTEL/BOOKING_005]
-  const refConfig = getRefFieldConfig(bookingType);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState({
+    mobile: false,
+    email: false,
+  });
 
   const handleMobileChange = (e) => {
-    const val = e.target.value.replace(/[^\d+ -]/g, "").slice(0, 15);
+    const val = e.target.value.replace(/\D/g, "").slice(0, 15);
     setMobile(val);
     if (error) setError("");
-    if (mobileError) {
-      const err = validateMobile(val.replace(/\D/g, ""));
-      setMobileError(err || "");
+    if (touched.mobile) {
+      const err = validateMobile(val);
+      setFieldErrors((prev) => ({ ...prev, mobile: err }));
     }
   };
 
   const handleMobileBlur = () => {
     const trimmed = mobile.trim();
-    const digits = trimmed.replace(/\D/g, "");
-    setMobile(digits);
-    if (!digits && bookingReference.trim()) {
-      setMobileError("");
-      return;
-    }
-    const err = validateMobile(digits);
-    setMobileError(err || "");
+    setMobile(trimmed);
+    setTouched((prev) => ({ ...prev, mobile: true }));
+    const err = validateMobile(trimmed);
+    setFieldErrors((prev) => ({ ...prev, mobile: err }));
   };
 
   const handleEmailChange = (e) => {
     const val = e.target.value.slice(0, 100);
     setEmail(val);
     if (error) setError("");
-    if (emailError) {
+    if (touched.email) {
       const err = validateEmail(val);
-      setEmailError(err || "");
+      setFieldErrors((prev) => ({ ...prev, email: err }));
     }
   };
 
   const handleEmailBlur = () => {
     const trimmed = email.trim().toLowerCase();
     setEmail(trimmed);
-    if (!trimmed && bookingReference.trim()) {
-      setEmailError("");
-      return;
-    }
+    setTouched((prev) => ({ ...prev, email: true }));
     const err = validateEmail(trimmed);
-    setEmailError(err || "");
-  };
-
-  const validateForm = () => {
-    const trimmedRef = bookingReference.trim();
-    const trimmedMobile = mobile.replace(/\D/g, "");
-    const trimmedEmail = email.trim().toLowerCase();
-
-    // If booking reference is directly supplied without contact details, lookup can proceed
-    if (trimmedRef && !trimmedMobile && !trimmedEmail) {
-      setError("");
-      setMobileError("");
-      setEmailError("");
-      return true;
-    }
-
-    const mErr = validateMobile(trimmedMobile);
-    const eErr = validateEmail(trimmedEmail);
-
-    if (mErr) {
-      setMobileError(mErr);
-      const el = document.getElementById("fetch-mobile-input");
-      if (el) el.focus();
-      return false;
-    } else {
-      setMobileError("");
-    }
-
-    if (eErr) {
-      setEmailError(eErr);
-      const el = document.getElementById("fetch-email-input");
-      if (el) el.focus();
-      return false;
-    } else {
-      setEmailError("");
-    }
-
-    setError("");
-    return true;
+    setFieldErrors((prev) => ({ ...prev, email: err }));
   };
 
   const handleFetchBooking = async (event) => {
     event.preventDefault();
-    if (!validateForm()) return;
+
+    const trimmedMobile = mobile.trim();
+    const lowercasedEmail = email.trim().toLowerCase();
+    setMobile(trimmedMobile);
+    setEmail(lowercasedEmail);
+
+    setTouched({ mobile: true, email: true });
+
+    const mobileErr = validateMobile(trimmedMobile);
+    const emailErr = validateEmail(lowercasedEmail);
+
+    const nextFieldErrors = {};
+    if (mobileErr) nextFieldErrors.mobile = mobileErr;
+    if (emailErr) nextFieldErrors.email = emailErr;
+    setFieldErrors(nextFieldErrors);
+
+    // Block the fetch request while either field has an error, and focus the first invalid field.
+    if (mobileErr) {
+      const el = document.getElementById("fetch-mobile-input");
+      if (el) el.focus();
+      return;
+    }
+
+    if (emailErr) {
+      const el = document.getElementById("fetch-email-input");
+      if (el) el.focus();
+      return;
+    }
 
     setLoading(true);
-    setFoundTicket(null);
     setError("");
-
-    const trimmedMobile = mobile.replace(/\D/g, "");
-    const trimmedEmail = email.trim().toLowerCase();
     const trimmedRef = bookingReference.trim();
-    const phoneOrEmailVal = trimmedMobile || trimmedEmail;
 
     try {
       const resolvedTickets = await fetchTicketByContact({
-        bookingId: trimmedRef,
-        phoneOrEmail: phoneOrEmailVal,
         mobile: trimmedMobile,
-        email: trimmedEmail,
+        email: lowercasedEmail,
         bookingType,
         bookingReference: trimmedRef,
         activeOnly: filterType === "upcoming",
@@ -295,28 +282,37 @@ const FetchTicket = () => {
           return {
             ...ticket,
             status,
-            isCancelled: Boolean(ticket?.isCancelled) || status.toUpperCase().includes("CANCEL") || status.toUpperCase().includes("REFUND"),
+            isCancelled: Boolean(ticket?.isCancelled) || status.toUpperCase() === "CANCELLED",
             bookingType: normalizeBookingType(ticket?.bookingType || ticket?.ticketType, selectedBookingType),
             ticketType: normalizeBookingType(ticket?.ticketType || ticket?.bookingType, selectedBookingType),
           };
         });
 
       if (tickets.length === 0) {
-        setError("No active booking found with the provided details. Please verify your reference number.");
+        setError("No booking found for the provided details.");
         return;
       }
 
       setError("");
-      setFoundTicket(tickets[0]);
-      setFoundTicketsList(tickets);
+      navigate("/print-ticket", {
+        state: {
+          pnr: trimmedRef,
+          bookingReference: trimmedRef,
+          mobile: trimmedMobile,
+          email: lowercasedEmail,
+          bookingType: selectedBookingType,
+          ticket: tickets.length === 1 ? tickets[0] : null,
+          tickets: tickets,
+        },
+      });
     } catch (fetchError) {
-      let msg = fetchError?.message || "No active booking found with the provided details. Please verify your reference number.";
+      let msg = fetchError.message || "No booking found matching the provided details.";
       try {
         const parsed = JSON.parse(msg);
         if (parsed?.message) {
           msg = parsed.message;
         }
-      } catch (_) {}
+      } catch (_) { }
       setError(msg);
     } finally {
       setLoading(false);
@@ -328,12 +324,13 @@ const FetchTicket = () => {
   return (
     <div className="fetch-redesign-container">
       <div className="fetch-redesign-shell">
-        {/* Left Section: Category Navigation, Dynamic Image, Value-Add Guide, and Benefits [PNB/USER/UI_006] */}
-        <div className="fetch-redesign-left h-full flex flex-col justify-between">
+        {/* Left Section: Curved Category Navigation, Dynamic Image with Overlay and Benefits */}
+        <div className="fetch-redesign-left">
           {/* Top Curved Arc Navigation Panel */}
           <div className="left-arc-header">
+            {/* SVG Arc path behind the buttons */}
             <svg className="arc-path-svg" viewBox="0 0 320 80" fill="none">
-              <path d="M15,48 Q160,18 305,48" stroke="#ff0000" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.3" />
+              <path d="M48,50 Q160,18 272,50" stroke="#fecdd3" strokeWidth="1.5" strokeDasharray="4 4" />
             </svg>
             <div className="arc-buttons-wrap">
               {[
@@ -345,13 +342,10 @@ const FetchTicket = () => {
                   key={cat.id}
                   type="button"
                   className={`arc-tab-btn ${bookingType === cat.id ? "active" : ""}`}
-                  onClick={() => {
-                    setBookingType(cat.id);
-                    if (error) setError("");
-                  }}
+                  onClick={() => setBookingType(cat.id)}
                 >
                   <div className="arc-circle-icon">
-                    <cat.icon size={20} />
+                    <cat.icon size={bookingType === cat.id ? 28 : 22} />
                     {bookingType === cat.id && <div className="arc-indicator-arrow" />}
                   </div>
                   <span>{cat.label}</span>
@@ -360,43 +354,20 @@ const FetchTicket = () => {
             </div>
           </div>
 
-          {/* Dynamic visual preview area [PNB/USER/UI_006] */}
-          <div className="left-visual-preview flex-1 relative overflow-hidden flex flex-col items-center justify-center p-4">
-            <img
-              src="/assets/images/fetch-ticket-illustration.svg"
-              alt="Fetch Ticket"
-              className="w-56 h-auto object-contain my-auto"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = currentCategory.image;
-              }}
-            />
-            <div className="visual-overlay-content mt-2 text-center">
+          {/* Dynamic visual preview area */}
+          <div className="left-visual-preview">
+            <div className="visual-overlay-content">
               <h3>{currentCategory.title}</h3>
-              <div className="red-accent-bar mx-auto" />
+              <div className="red-accent-bar" />
             </div>
-          </div>
-
-          {/* Value-Add Section: Need help finding your booking ID? [PNB/USER/UI_006] */}
-          <div className="left-help-card p-3.5 mx-3 my-2 rounded-xl bg-slate-50 border border-slate-100 flex items-start gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
-              <HelpCircle size={15} />
-            </div>
-            <div className="text-[11px] text-slate-600 leading-snug">
-              <strong className="text-slate-800 block text-xs font-bold mb-0.5">
-                Need help finding your booking ID?
-              </strong>
-              <span>
-                Check your booking SMS or confirmation email. {bookingType === "hotel" ? "Hotel references start with HT-." : bookingType === "bus" ? "Bus tickets start with BS-." : "Flight PNRs are 6 alphanumeric characters."}
-              </span>
-            </div>
+            <img src={currentCategory.image} alt={currentCategory.label} className="left-preview-img" />
           </div>
 
           {/* Bottom Benefits Row */}
           <div className="left-benefits-footer">
             <div className="benefit-item">
               <div className="benefit-icon">
-                <ShieldCheck size={16} />
+                <ShieldCheck size={18} color="#ff0000" />
               </div>
               <div className="benefit-text">
                 <strong>Secure &amp; Safe</strong>
@@ -405,7 +376,7 @@ const FetchTicket = () => {
             </div>
             <div className="benefit-item">
               <div className="benefit-icon">
-                <Tag size={16} />
+                <Tag size={18} color="#ff0000" />
               </div>
               <div className="benefit-text">
                 <strong>Best Prices</strong>
@@ -414,17 +385,17 @@ const FetchTicket = () => {
             </div>
             <div className="benefit-item">
               <div className="benefit-icon">
-                <Mail size={16} />
+                <Mail size={18} color="#ff0000" />
               </div>
               <div className="benefit-text">
                 <strong>24/7 Support</strong>
-                <span>We're here for you anytime</span>
+                <span>We're here for you anytime, anywhere</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Section: Standardized Form [PNB/USER/BOOKING_001, BOOKING_003, BOOKING_005, UI_007] */}
+        {/* Right Section: Clean Fetch Booking Form matching reference screenshot */}
         <div className="fetch-redesign-right">
           <div className="fetch-right-header">
             <div className="fetch-ticket-icon-box">
@@ -435,90 +406,69 @@ const FetchTicket = () => {
 
           <p className="fetch-right-subtitle">
             Enter the contact details used when booking.<br />
-            We'll bring all your bookings together in one place.
+            We'll bring all your bookings together.
           </p>
 
           <hr className="fetch-right-divider" />
 
-          <form onSubmit={handleFetchBooking} className="fetch-right-form space-y-4">
-            {/* Helper Notice for Mandatory Fields [PNB/USER/BOOKING_001] */}
-            <div className="text-xs text-slate-500 font-medium -mt-1">
-              * Required fields to locate your reservation (or provide Booking Reference).
-            </div>
-
-            {/* Mobile Number Field [PNB/USER/BOOKING_001, BOOKING_003, UI_007] */}
+          <form onSubmit={handleFetchBooking} className="fetch-right-form" noValidate>
             <div className="fetch-input-group">
-              <label htmlFor="fetch-mobile-input" className="flex items-center text-sm font-bold text-slate-900">
-                <span>Mobile number</span>
-                <span className="text-red-500 ml-1 font-bold" style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <div className="fetch-input-field-wrap relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <Phone size={18} />
-                </div>
+              <label htmlFor="fetch-mobile-input">Mobile number</label>
+              <div className={`fetch-input-field-wrap ${fieldErrors.mobile ? "is-error" : ""}`}>
+                <Phone size={18} className="fetch-input-icon" />
                 <input
                   id="fetch-mobile-input"
                   type="tel"
+                  inputMode="numeric"
                   value={mobile}
                   onChange={handleMobileChange}
                   onBlur={handleMobileBlur}
-                  placeholder="+91 98765 43210 or 10-digit mobile number"
-                  className={`fetch-input-field h-11 md:h-12 w-full rounded-lg border pl-11 pr-4 py-2.5 text-sm text-slate-800 focus:outline-none transition-all ${
-                    mobileError ? "border-red-500 bg-red-50/30" : "border-slate-300 focus:border-rose-500"
-                  }`}
+                  maxLength={15}
+                  placeholder="Enter your mobile number"
+                  className={fieldErrors.mobile ? "is-error" : ""}
+                  aria-invalid={Boolean(fieldErrors.mobile)}
+                  aria-describedby={fieldErrors.mobile ? "fetch-mobile-error" : undefined}
                   disabled={loading}
                 />
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Enter the mobile number registered at the time of booking.
-              </div>
-              {mobileError && (
-                <div className="text-xs text-rose-500 font-medium mt-1 flex items-center gap-1">
-                  <span>⚠️</span> {mobileError}
+              {fieldErrors.mobile && (
+                <div id="fetch-mobile-error" className="fetch-field-error" role="alert">
+                  {fieldErrors.mobile}
                 </div>
               )}
             </div>
 
-            {/* Email Address Field [PNB/USER/BOOKING_001, UI_007] */}
             <div className="fetch-input-group">
-              <label htmlFor="fetch-email-input" className="flex items-center text-sm font-bold text-slate-900">
-                <span>Email address</span>
-                <span className="text-red-500 ml-1 font-bold" style={{ color: "#ef4444" }}>*</span>
-              </label>
-              <div className="fetch-input-field-wrap relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <Mail size={18} />
-                </div>
+              <label htmlFor="fetch-email-input">Email address</label>
+              <div className={`fetch-input-field-wrap ${fieldErrors.email ? "is-error" : ""}`}>
+                <Mail size={18} className="fetch-input-icon" />
                 <input
                   id="fetch-email-input"
                   type="email"
                   value={email}
                   onChange={handleEmailChange}
                   onBlur={handleEmailBlur}
+                  maxLength={100}
                   placeholder="Enter your email address"
-                  className={`fetch-input-field h-11 md:h-12 w-full rounded-lg border pl-11 pr-4 py-2.5 text-sm text-slate-800 focus:outline-none transition-all ${
-                    emailError ? "border-red-500 bg-red-50/30" : "border-slate-300 focus:border-rose-500"
-                  }`}
+                  className={fieldErrors.email ? "is-error" : ""}
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? "fetch-email-error" : undefined}
                   disabled={loading}
                 />
               </div>
-              {emailError && (
-                <div className="text-xs text-rose-500 font-medium mt-1 flex items-center gap-1">
-                  <span>⚠️</span> {emailError}
+              {fieldErrors.email && (
+                <div id="fetch-email-error" className="fetch-field-error" role="alert">
+                  {fieldErrors.email}
                 </div>
               )}
             </div>
 
-            {/* Dynamic Booking Reference Field [PNB/HOTEL/BOOKING_005, UI_007] */}
             <div className="fetch-input-group">
-              <label htmlFor="fetch-ref-input" className="flex items-center text-sm font-bold text-slate-900">
-                <span>{refConfig.label}</span>
-                <span className="text-slate-400 font-normal text-xs ml-1.5">(Optional)</span>
+              <label htmlFor="fetch-ref-input">
+                Booking Reference or PNR <span className="fetch-optional-tag">(Optional)</span>
               </label>
-              <div className="fetch-input-field-wrap relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                  <Ticket size={18} />
-                </div>
+              <div className="fetch-input-field-wrap">
+                <Ticket size={18} className="fetch-input-icon" />
                 <input
                   id="fetch-ref-input"
                   type="text"
@@ -527,13 +477,9 @@ const FetchTicket = () => {
                     setBookingReference(e.target.value.trim());
                     if (error) setError("");
                   }}
-                  placeholder={refConfig.placeholder}
-                  className="fetch-input-field h-11 md:h-12 w-full rounded-lg border border-slate-300 focus:border-rose-500 pl-11 pr-4 py-2.5 text-sm text-slate-800 focus:outline-none transition-all"
+                  placeholder="e.g. BS-20261016... or PNR"
                   disabled={loading}
                 />
-              </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                {refConfig.helper}
               </div>
             </div>
 
@@ -546,105 +492,17 @@ const FetchTicket = () => {
               </span>
             </div>
 
-            {error && <div className="stepper-error-banner">⚠️ {error}</div>}
+            {error && <div className="stepper-error-banner" role="alert">⚠️ {error}</div>}
 
-            {/* Standardized Submit Button [PNB/USER/UI_007] */}
-            <button
-              type="submit"
-              className="fetch-main-submit-btn w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl mt-6 flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>FETCHING TICKET...</span>
-                </>
-              ) : (
-                <>
-                  <span>Fetch all bookings</span>
-                  <ArrowRight size={18} />
-                </>
-              )}
+            <button type="submit" className="fetch-main-submit-btn" disabled={loading}>
+              <span>{loading ? "FETCHING BOOKINGS..." : "Fetch all bookings"}</span>
+              <ArrowRight size={19} color="#ffffff" />
             </button>
 
-            {/* Active Ticket Card Summary with Quick Actions */}
-            {foundTicket && (
-              <div className="found-ticket-card p-5 mt-6 bg-white border border-slate-200 rounded-2xl shadow-md text-left">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-rose-600">
-                      {foundTicket.bookingType || "Booking"}
-                    </span>
-                    <h3 className="text-base font-bold text-slate-900 mt-0.5">
-                      {foundTicket.bookingReference || foundTicket.pnr || "Active Ticket"}
-                    </h3>
-                  </div>
-                  <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${foundTicket.isCancelled ? "bg-rose-50 text-rose-700 border-rose-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
-                    {foundTicket.status || (foundTicket.isCancelled ? "Cancelled" : "Confirmed")}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-3 text-xs text-slate-600">
-                  <div>
-                    <span className="block text-slate-400 font-medium">Passenger</span>
-                    <strong className="text-slate-800 text-xs font-semibold">
-                      {foundTicket.passengers?.[0]?.name || foundTicket.guestName || "Primary Passenger"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="block text-slate-400 font-medium">From / Hotel</span>
-                    <strong className="text-slate-800 text-xs font-semibold">
-                      {foundTicket.fromCity || foundTicket.hotelName || "--"}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="block text-slate-400 font-medium">To / Destination</span>
-                    <strong className="text-slate-800 text-xs font-semibold">
-                      {foundTicket.toCity || foundTicket.city || "--"}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100">
-                  <button
-                    type="button"
-                    className="flex-1 min-h-[42px] px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                    onClick={() => {
-                      navigate("/print-ticket", {
-                        state: {
-                          pnr: foundTicket.bookingReference || foundTicket.pnr,
-                          bookingReference: foundTicket.bookingReference || foundTicket.pnr,
-                          ticket: foundTicket,
-                          tickets: foundTicketsList,
-                          autoDownload: true,
-                        },
-                      });
-                    }}
-                  >
-                    <Download size={15} />
-                    <span>Download PDF</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="flex-1 min-h-[42px] px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
-                    onClick={() => {
-                      navigate("/print-ticket", {
-                        state: {
-                          pnr: foundTicket.bookingReference || foundTicket.pnr,
-                          bookingReference: foundTicket.bookingReference || foundTicket.pnr,
-                          ticket: foundTicket,
-                          tickets: foundTicketsList,
-                        },
-                      });
-                    }}
-                  >
-                    <Ticket size={15} />
-                    <span>Print Ticket</span>
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="fetch-security-footer">
+              <Lock size={15} className="fetch-security-icon" />
+              <span>Your information is safe and secure.</span>
+            </div>
           </form>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { flightIdentity, supplierBoolean, normalizeFareQuote, assertFlightResponse } from "../utils/flightContract.js";
+import { getCountryCode } from "../utils/countries.js";
 import { clearFlightBookingFlowState } from "../pages/booking/flightBookingFlowStore.js";
 import { extractRelevantSegments } from "../utils/flightSegmentUtils.js";
 import { parseSrdvSeatMap } from "../utils/seatMapUtils.js";
@@ -2640,7 +2641,11 @@ export function mapPassengersForApi(passengers, baseFare, tax, flight = {}, fare
       PassportNo: String(p.passportNo || p.PassportNo || "").trim(),
       PassportExpiry: (p.passportNo || p.PassportNo) ? formatSrdvDateTime(p.passportExpiry || p.PassportExpiry || p.passportExpiryDate) : "",
       PassportIssueDate: (p.passportNo || p.PassportNo) ? formatSrdvDateTime(p.passportIssueDate || p.PassportIssueDate || "") : "",
-      PassportIssueCountryCode: String(p.passportIssueCountryCode || p.PassportIssueCountryCode || "").slice(0, 2).toUpperCase(),
+      PassportIssueCountryCode: (
+        getCountryCode(p.passportIssueCountryCode || p.PassportIssueCountryCode || p.passportIssueCountry || "") ||
+        String(p.passportIssueCountryCode || p.PassportIssueCountryCode || "").slice(0, 2).toUpperCase() ||
+        "IN"
+      ),
       Nationality: nationalityCode,
       AddressLine1: String(p.addressLine1 || p.AddressLine1 || p.address || "Main Street").trim(),
       AddressLine2: String(p.addressLine2 || p.AddressLine2 || "").trim(),

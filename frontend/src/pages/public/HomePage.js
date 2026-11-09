@@ -1,26 +1,3 @@
-const HOTEL_CONFIDENCE_CARDS = [
-  {
-    icon: ShieldCheck,
-    title: "Clear cancellation terms",
-    description: "Cancellation charges and refund details are shown before you complete the booking.",
-  },
-  {
-    icon: IndianRupee,
-    title: "Transparent pricing",
-    description: "Room charges, taxes and the total price are listed in your booking summary.",
-  },
-  {
-    icon: RefreshCw,
-    title: "Refunds to your source",
-    description: "Eligible refunds are returned to the original payment method.",
-  },
-  {
-    icon: Headphones,
-    title: "Help when you need it",
-    description: "Reach customer support for booking, cancellation or refund questions.",
-  },
-];
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -69,13 +46,6 @@ import {
 } from "lucide-react";
 import HotelSearchWidget from "../../components/HotelSearchWidget";
 import PlaceAutocomplete from "../../components/PlaceAutocomplete";
-import {
-  FlightHero,
-  FeaturedOffersCarousel,
-  FlightStats,
-  FlightRatingsReviews,
-  AboutFlightBooking,
-} from "../../components/flights";
 import offerGreenBusImg from "../../assets/images/buses/offer_green_bus.svg";
 import offerYellowBusImg from "../../assets/images/buses/offer_yellow_bus.svg";
 import offerBlueBusImg from "../../assets/images/buses/offer_blue_bus.svg";
@@ -136,6 +106,8 @@ import { toApiAssetUrl, toApiUrl } from "../../services/apiClient";
 import { usePromo } from "../../contexts/PromoContext";
 import { getPublicTestimonials } from "../../services/testimonialService";
 import { getPublicBlogs } from "../../services/blogService";
+
+const MARQUEE_SECONDS = 40;
 
 function StatCountUp({ endValue, duration = 2000, decimals = 0, suffix = "", formatComma = false }) {
   const [value, setValue] = useState(0);
@@ -1269,7 +1241,8 @@ const HOME_MODE_CONTENT = {
   buses: {
     mode: "buses",
     Icon: Bus,
-    heroTitleStart: "Your Journey. ", heroTitleEnd: "Our Priority.",
+    heroTitleStart: "Travel Comfortably. ",
+    heroTitleEnd: "Arrive Happily.",
     heroSubtitle: "A better ride makes every destination feel even closer.",
     heroTags: ["Live Bus Tracking", "Seat Selection", "Boarding Clarity"],
     valueProps: [
@@ -1429,8 +1402,7 @@ const HOME_MODE_CONTENT = {
     appBenefits: HOME_HOTEL_APP_BENEFITS,
     aboutTitle: "About Pick&book Hotel Booking",
     aboutParagraphs: [
-      "Pick&book Hotel Booking provides a simple and convenient platform for searching, comparing, and booking hotels based on the user's destination and stay requirements. Users can select their destination, check-in and check-out dates, number of rooms, and guest details to find suitable hotel options. The platform allows users to explore popular city stays, room types, amenities, prices, and booking details before making a reservation.",
-      "Whether it is a business trip, weekend getaway, family stay, or short stopover, Pick&book helps users compare available accommodation options and complete their hotel booking through an easy and streamlined process."
+      "Pick&book Hotel Booking provides a simple and convenient platform for searching, comparing, and booking hotels based on the user's destination and stay requirements. Users can select their destination, check-in and check-out dates, number of rooms, and guest details to find suitable hotel options. The platform allows users to explore popular city stays, room types, amenities, prices, and booking details before making a reservation. Whether it is a business trip, weekend getaway, family stay, or short stopover, Pick&book helps users compare available accommodation options and complete their hotel booking through an easy and streamlined process."
     ],
     bannerBadge: "STAY & ROOM CONFIRMATION GUARANTEE",
     bannerTitle: "Book Hotels Smarter. Stay Better.",
@@ -1793,56 +1765,6 @@ function resolveFeaturedOfferImageSrc(imageUrl) {
   return resolved;
 }
 
-// Format discount badge/header calculation [PNB/BUS/OFFER_001]
-export function formatFeaturedOfferDiscount(offer) {
-  if (!offer) return "";
-  const dType = String(
-    offer.discountType ??
-    offer.DiscountType ??
-    offer.couponType ??
-    offer.CouponType ??
-    offer.promotionType ??
-    offer.PromotionType ??
-    ""
-  ).trim();
-  const dVal = Number(offer.discountValue ?? offer.DiscountValue ?? offer.value ?? offer.Value ?? 0);
-  const title = String(offer.title ?? offer.Title ?? offer.name ?? offer.Name ?? "");
-  const upperType = dType.toUpperCase();
-
-  // If dynamic fare calculation is used and discount is 0 or uncalculated, fall back to parsing percentage from title
-  if (!dVal || dVal === 0) {
-    const titleMatch = title.match(/(\d+)\s*%/);
-    if (titleMatch) {
-      return `${titleMatch[1]}% OFF`;
-    }
-  }
-
-  if (upperType === "PERCENTAGE" || upperType === "PERCENT" || upperType.includes("PERCENT")) {
-    if (dVal > 0) return `${dVal}% OFF`;
-    const titleMatch = title.match(/(\d+)\s*%/);
-    if (titleMatch) return `${titleMatch[1]}% OFF`;
-    return "";
-  }
-
-  if (upperType === "FLAT" || upperType === "FIXED" || upperType.includes("FLAT") || upperType.includes("FIXED")) {
-    if (dVal > 0) return `₹${dVal} OFF`;
-    const titleMatch = title.match(/(\d+)\s*%/);
-    if (titleMatch) return `${titleMatch[1]}% OFF`;
-    return "";
-  }
-
-  if (dVal > 0) {
-    return `₹${dVal} OFF`;
-  }
-
-  const titleMatch = title.match(/(\d+)\s*%/);
-  if (titleMatch) {
-    return `${titleMatch[1]}% OFF`;
-  }
-
-  return "";
-}
-
 function normalizeFeaturedOffer(offer, index) {
   const id =
     pickOfferValue(offer, ["id", "Id", "offerId", "OfferId", "offerCode", "OfferCode"]) ||
@@ -1947,61 +1869,19 @@ function normalizeFeaturedOffer(offer, index) {
     })
     : [];
 
-  const rawValidTill = pickOfferValue(offer, [
-    "validTill",
-    "ValidTill",
-    "couponExpiresAtUtc",
-    "CouponExpiresAtUtc",
-    "expiryDate",
-    "ExpiryDate",
-    "endDateUtc",
-    "EndDateUtc",
-    "endDate",
-    "EndDate",
-  ]) || promo?.endDateUtc || promo?.EndDateUtc || null;
-
-  const rawCode = pickOfferValue(offer, [
-    "code",
-    "Code",
-    "couponCode",
-    "CouponCode",
-    "offerCode",
-    "OfferCode",
-    "promotionCode",
-    "PromotionCode",
-  ]) || promotionCode || "";
-
-  const calculatedDiscount = formatFeaturedOfferDiscount({
-    ...offer,
-    discountType,
-    discountValue,
-    title: pickOfferValue(offer, ["title", "Title", "name", "Name"]),
-  });
-
-  const rawDiscountText = pickOfferValue(offer, ["discountText", "DiscountText", "badgeLabel", "BadgeLabel"]);
-  const discountText = rawDiscountText && rawDiscountText !== "₹0 OFF" && rawDiscountText !== "0% OFF" && rawDiscountText !== "0 OFF"
-    ? rawDiscountText
-    : (calculatedDiscount || rawDiscountText || "");
-
-  const resolvedBannerImg = resolveFeaturedOfferImageSrc(imageUrl);
-
   return {
     id,
-    title: pickOfferValue(offer, ["title", "Title", "name", "Name", "promotionTitle", "PromotionTitle"]) || "Special Offer",
-    discountText,
-    validTill: rawValidTill,
-    code: rawCode,
-    bannerImg: resolvedBannerImg,
-    isActive: normalizeOfferActiveFlag(isActive),
     offerCode: pickOfferValue(offer, ["offerCode", "OfferCode", "offerId", "OfferId"]),
+    title: pickOfferValue(offer, ["title", "Title", "name", "Name"]),
     subtitle: pickOfferValue(offer, ["subtitle", "Subtitle"]),
     description: pickOfferValue(offer, ["description", "Description", "subtitle", "Subtitle"]),
-    couponCode: rawCode,
-    imageUrl: resolvedBannerImg,
-    bookingType: bookingType || "Bus",
-    couponExpiresAtUtc: rawValidTill,
+    couponCode: pickOfferValue(offer, ["couponCode", "CouponCode", "code", "Code"]) || promotionCode,
+    imageUrl: resolveFeaturedOfferImageSrc(imageUrl),
+    bookingType,
+    isActive: normalizeOfferActiveFlag(isActive),
+    couponExpiresAtUtc: pickOfferValue(offer, ["couponExpiresAtUtc", "CouponExpiresAtUtc", "expiryDate", "ExpiryDate"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
     startDateUtc: pickOfferValue(offer, ["startDateUtc", "StartDateUtc"]) || promo?.startDateUtc || promo?.StartDateUtc || null,
-    endDateUtc: rawValidTill,
+    endDateUtc: pickOfferValue(offer, ["endDateUtc", "EndDateUtc"]) || promo?.endDateUtc || promo?.EndDateUtc || null,
     promotionId,
     promotionCode,
     promotionTitle,
@@ -2010,7 +1890,7 @@ function normalizeFeaturedOffer(offer, index) {
     discountValue,
     maxDiscountAmount,
     minBookingAmount,
-    badgeLabel: discountText,
+    badgeLabel: pickOfferValue(offer, ["badgeLabel", "BadgeLabel"]),
     isAutoApply: offer?.isAutoApply ?? offer?.IsAutoApply ?? false,
     previewFinalPrice,
     conditions
@@ -2455,6 +2335,7 @@ export default function HomePage() {
   const [popularRoutes, setPopularRoutes] = useState([]);
   const [popularRoutesLoading, setPopularRoutesLoading] = useState(false);
   const [popularRoutesError, setPopularRoutesError] = useState("");
+  const [isBusMarqueePaused, setIsBusMarqueePaused] = useState(false);
   const [busRoutePage, setBusRoutePage] = useState(0);
   const busCardsTrackRef = useRef(null);
 
@@ -2502,36 +2383,6 @@ export default function HomePage() {
   const [isDealsDialogOpen, setIsDealsDialogOpen] = useState(false);
   const [offerForDetailPopup, setOfferForDetailPopup] = useState(null);
   const [copied, setCopied] = useState(false);
-  const GENERIC_OFFER_CATEGORIES = [
-  { id: "all", label: "All Offers" },
-  { id: "bank", label: "Bank Offers" },
-  { id: "special", label: "Special Deals" },
-  { id: "weekend", label: "Weekend Deals" },
-  { id: "discount", label: "Top Discounts" },
-];
-
-  const [offerCategoryFilter, setOfferCategoryFilter] = useState("all");
-  const [toastMessage, setToastMessage] = useState("");
-  const [showToast, setShowToast] = useState(false);
-  const [copiedOfferCode, setCopiedOfferCode] = useState(null);
-
-  const handleHotelOfferCardClick = (offer, e) => {
-    if (e && e.stopPropagation) e.stopPropagation();
-    const code = offer.code || offer.couponCode || offer.promotionCode || "";
-    if (code) {
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(code);
-      }
-      setCopiedOfferCode(code);
-      setToastMessage(`Coupon code ${code} copied!`);
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-        setCopiedOfferCode(null);
-      }, 2800);
-    }
-    setOfferForDetailPopup(offer);
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -2911,14 +2762,10 @@ export default function HomePage() {
 
                       <div className="wavy-offer-code-group">
                         {offer.title && <h3 className="wavy-offer-title">{offer.title}</h3>}
-                        {(offer.code || offer.couponCode) && (
-                          <p className="wavy-offer-validity font-bold text-xs text-slate-800" style={{ fontWeight: 700, color: '#1e293b' }}>
-                            {offer.code || offer.couponCode}
-                          </p>
-                        )}
-                        {(offer.validTill || offer.couponExpiresAtUtc) && (
-                          <p className="wavy-offer-validity text-xs sm:text-sm font-medium text-slate-600 whitespace-normal leading-relaxed pr-4">
-                            Valid till {new Date(offer.validTill || offer.couponExpiresAtUtc).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        {offer.couponCode && <p className="wavy-offer-validity">{offer.couponCode}</p>}
+                        {offer.couponExpiresAtUtc && (
+                          <p className="wavy-offer-validity">
+                            {new Date(offer.couponExpiresAtUtc).toLocaleDateString()}
                           </p>
                         )}
                       </div>
@@ -3088,7 +2935,6 @@ export default function HomePage() {
 
   // Sync offersFilter with activeTab when activeTab changes
   useEffect(() => {
-    setOfferCategoryFilter("all");
     if (activeTab === "buses") {
       setOffersFilter("bus");
     } else if (activeTab === "hotels") {
@@ -3113,16 +2959,7 @@ export default function HomePage() {
         const offers = getFeaturedOffersPayload(response);
         const activeOffers = offers
           .map((offer, index) => normalizeFeaturedOffer(offer, index))
-          .filter((offer) => {
-            if (!offer.isActive) return false;
-            if (offer.validTill) {
-              const exp = new Date(offer.validTill);
-              if (!isNaN(exp.getTime()) && exp < new Date()) {
-                return false;
-              }
-            }
-            return true;
-          });
+          .filter((offer) => offer.isActive);
 
 
         if (isMounted) {
@@ -3150,21 +2987,11 @@ export default function HomePage() {
   useEffect(() => {
     let isMounted = true;
     const DEFAULT_POPULAR_BUS_ROUTES = [
-      { id: "bus-hot-1", fromCity: "Delhi", toCity: "Jaipur", searches: 2450, fare: 450, arrowType: "single", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-2", fromCity: "Hyderabad", toCity: "Vijayawada", searches: 2180, fare: 620, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-3", fromCity: "Bengaluru", toCity: "Goa", searches: 1890, fare: 850, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-4", fromCity: "Hyderabad", toCity: "Bengaluru", searches: 1420, fare: 700, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-5", fromCity: "Chennai", toCity: "Coimbatore", searches: 1280, fare: 680, arrowType: "swap", img: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-6", fromCity: "Mumbai", toCity: "Pune", searches: 1950, fare: 420, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-7", fromCity: "Delhi", toCity: "Agra", searches: 1820, fare: 380, arrowType: "swap", img: "https://images.unsplash.com/photo-1564507592333-c60657eea523?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-8", fromCity: "Bengaluru", toCity: "Chennai", searches: 1640, fare: 550, arrowType: "swap", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-9", fromCity: "Ahmedabad", toCity: "Mumbai", searches: 1510, fare: 750, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-10", fromCity: "Pune", toCity: "Goa", searches: 1390, fare: 800, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-11", fromCity: "Jaipur", toCity: "Udaipur", searches: 1220, fare: 490, arrowType: "swap", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-12", fromCity: "Hyderabad", toCity: "Tirupati", searches: 1140, fare: 650, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-13", fromCity: "Chandigarh", toCity: "Manali", searches: 1080, fare: 920, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-14", fromCity: "Chennai", toCity: "Madurai", searches: 1010, fare: 580, arrowType: "swap", img: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format" },
-      { id: "bus-hot-15", fromCity: "Kolkata", toCity: "Digha", searches: 960, fare: 350, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-1", fromCity: "Jaipur", toCity: "Udaipur", searches: 1220, fare: 490, arrowType: "swap", img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-2", fromCity: "Hyderabad", toCity: "Tirupati", searches: 1140, fare: 650, arrowType: "swap", img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-3", fromCity: "Chandigarh", toCity: "Manali", searches: 1080, fare: 920, arrowType: "swap", img: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-4", fromCity: "Chennai", toCity: "Madurai", searches: 1010, fare: 580, arrowType: "swap", img: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format" },
+      { id: "bus-hot-5", fromCity: "Kolkata", toCity: "Digha", searches: 960, fare: 350, arrowType: "swap", img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&q=80&fit=crop&auto=format" },
     ];
 
     setPopularRoutesLoading(false);
@@ -3963,36 +3790,7 @@ export default function HomePage() {
 
   const filteredOffers = featuredOffers.filter((offer) => {
     const type = (offer.bookingType || "").toLowerCase();
-    const matchesCategory = !type || type.includes(currentOffersCategory);
-    if (!matchesCategory) return false;
-    if (offer.isActive === false) return false;
-    if (offer.validTill) {
-      const expDate = new Date(offer.validTill);
-      if (!isNaN(expDate.getTime()) && expDate < new Date()) {
-        return false;
-      }
-    }
-    if (offerCategoryFilter && offerCategoryFilter !== "all") {
-      const haystack = `${offer.title || ""} ${offer.description || ""} ${offer.category || ""} ${offer.badgeLabel || ""} ${offer.code || ""} ${offer.remark || ""}`.toLowerCase();
-      switch (offerCategoryFilter) {
-        case "bank":
-          if (!/bank|card|credit|debit|upi|hdfc|icici|sbi|axis|kotak|bob|pnb|amex|mastercard|visa|rupay|paytm|gpay|phonepe/.test(haystack)) return false;
-          break;
-        case "special":
-          if (!/special|deal|exclusive|save|flat|super|mega|vip|instant|prime|popular|luxury|stay|villa|resort/.test(haystack)) return false;
-          break;
-        case "weekend":
-          if (!/weekend|getaway|holiday|vacation|festive|sunday|saturday|friday|trip|tour|season/.test(haystack)) return false;
-          break;
-        case "discount":
-          if (!/discount|budget|saver|value|promo|code|cashback|off|%|sale|economy/.test(haystack)) return false;
-          break;
-        default:
-          if (!haystack.includes(offerCategoryFilter.toLowerCase())) return false;
-          break;
-      }
-    }
-    return true;
+    return type.includes(currentOffersCategory);
   });
 
   const homeContent = HOME_MODE_CONTENT[activeTab] || HOME_MODE_CONTENT.flights;
@@ -7904,97 +7702,6 @@ export default function HomePage() {
           .img-offer-cat-text.text-bus {
             color: #ff0000 !important;
           }
-        
-          /* Single-Screen Desktop Optimization for Bus Home [BUS_UI_053, BUS_UI_054] */
-          @media (min-width: 1024px) {
-            .hero-section.homepage-buses {
-              padding-top: 1.5rem !important;
-              padding-bottom: 1rem !important;
-              min-height: auto !important;
-            }
-            .homepage-buses-hero-shell {
-              min-height: calc(100vh - 80px);
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              padding-top: 1.5rem !important;
-              padding-bottom: 2rem !important;
-            }
-            .homepage-buses + .bus-offers-section,
-            .bus-offers-section.bus-home-offers {
-              padding-top: 0.5rem !important;
-              padding-bottom: 1.5rem !important;
-              margin-top: 0 !important;
-              margin-bottom: 0 !important;
-            }
-          }
-
-          /* Browser Zoom Adaptability (80% to 125%) */
-          .homepage-buses .hero-content,
-          .homepage-buses .hero-grid,
-          .bus-offers-section.bus-home-offers .bus-offers-content-shell {
-            max-width: 80rem !important;
-            width: 100% !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-            box-sizing: border-box !important;
-          }
-          @media (min-width: 640px) {
-            .homepage-buses .hero-content,
-            .homepage-buses .hero-grid,
-            .bus-offers-section.bus-home-offers .bus-offers-content-shell {
-              padding-left: 1.5rem !important;
-              padding-right: 1.5rem !important;
-            }
-          }
-          @media (min-width: 1024px) {
-            .homepage-buses .hero-content,
-            .homepage-buses .hero-grid,
-            .bus-offers-section.bus-home-offers .bus-offers-content-shell {
-              padding-left: 2rem !important;
-              padding-right: 2rem !important;
-            }
-          }
-
-          .homepage-buses .search-panel {
-            max-width: 80rem !important;
-            width: 100% !important;
-          }
-
-          .homepage-buses .flight-search-bar-row {
-            max-width: 80rem !important;
-            width: 100% !important;
-            min-height: 56px !important;
-            height: auto !important;
-            padding: 8px 12px 8px 16px !important;
-            gap: 8px !important;
-            flex-wrap: wrap !important;
-          }
-          @media (min-width: 1024px) {
-            .homepage-buses .flight-search-bar-row {
-              flex-wrap: nowrap !important;
-            }
-          }
-
-          .homepage-buses .flight-search-bar-row .source-field,
-          .homepage-buses .flight-search-bar-row .destination-field {
-            flex: 1 1 0 !important;
-            min-width: 140px !important;
-          }
-
-          .homepage-buses .flight-search-bar-row .departure-field,
-          .homepage-buses .flight-search-bar-row .return-field {
-            flex: 0.85 1 0 !important;
-            min-width: 120px !important;
-          }
-
-          .homepage-buses .flight-search-bar-row .search-btn {
-            flex: 0 0 auto !important;
-            min-width: 140px !important;
-            white-space: nowrap !important;
-          }
         `}</style>
       <section className={`hero-section ${activeTab === "flights" ? "homepage-flights" : ""} ${activeTab === "buses" ? "homepage-buses" : ""} ${activeTab === "hotels" ? "homepage-hotels" : ""} ${activeTab === "flights" && flightTripType === "multicity" ? "hero-multicity" : ""}`}>
         <div className="flight-hero-wallpaper" aria-hidden="true">
@@ -8105,28 +7812,30 @@ export default function HomePage() {
 
               {activeTab === "flights" ? (
                 <div className="booking-content">
-                  <div
-                    className="trip-switch"
-                    role="tablist"
-                    aria-label="Flight trip type"
-                  >
-                    {FLIGHT_TRIP_TYPES.map((tripType) => {
-                      let IconComponent = Plane;
-                      if (tripType.value === "twoway") IconComponent = ArrowLeftRight;
-                      if (tripType.value === "multicity") IconComponent = Route;
-                      return (
-                        <button
-                          key={tripType.value}
-                          type="button"
-                          className={`trip-chip ${flightTripType === tripType.value ? "active" : ""
-                            }`}
-                          onClick={() => setFlightTripType(tripType.value)}
-                        >
-                          <IconComponent size={14} />
-                          <span>{tripType.label}</span>
-                        </button>
-                      );
-                    })}
+                  <div style={{ display: "flex", justifyContent: "center", width: "100%", marginBottom: 8 }}>
+                    <div
+                      className="trip-switch"
+                      role="tablist"
+                      aria-label="Flight trip type"
+                    >
+                      {FLIGHT_TRIP_TYPES.map((tripType) => {
+                        let IconComponent = Plane;
+                        if (tripType.value === "twoway") IconComponent = ArrowLeftRight;
+                        if (tripType.value === "multicity") IconComponent = Route;
+                        return (
+                          <button
+                            key={tripType.value}
+                            type="button"
+                            className={`trip-chip ${flightTripType === tripType.value ? "active" : ""
+                              }`}
+                            onClick={() => setFlightTripType(tripType.value)}
+                          >
+                            <IconComponent size={14} />
+                            <span>{tripType.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {flightTripType === "multicity" ? (
@@ -8480,7 +8189,7 @@ export default function HomePage() {
       </section>
 
       {/* 1. FEATURED OFFERS SECTION (TOP) */}
-      <section className={`bus-offers-section section-shell ${activeTab === "buses" ? "bus-home-offers" : ""}`}>
+      <section className="bus-offers-section section-shell">
         <div className="bus-offers-content-shell">
           <div className="bus-offers-header-block">
             <div className="bus-offers-title-wrap">
@@ -8492,23 +8201,6 @@ export default function HomePage() {
                   ? "Best deals on flights. Grab them before they're gone!"
                   : "Best deals on hotels. Grab them before they're gone!"}
               </p>
-              <div className="bus-offers-tabs-bar" role="tablist" aria-label="Offer categories">
-                {GENERIC_OFFER_CATEGORIES.map((cat) => {
-                  const isActive = offerCategoryFilter === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={isActive}
-                      onClick={() => setOfferCategoryFilter(cat.id)}
-                      className={`bus-offers-tab-btn ${isActive ? "active" : ""}`}
-                    >
-                      {cat.label}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
           </div>
 
@@ -8518,13 +8210,8 @@ export default function HomePage() {
               Loading offers...
             </div>
           ) : filteredOffers.length === 0 ? (
-            <div className="bus-offers-empty-state" style={{ padding: "32px 16px", textAlign: "center", color: "#64748b", fontSize: "14px", background: "#f8fafc", borderRadius: "12px", border: "1px dashed #cbd5e1", margin: "10px 0" }}>
-              <p style={{ margin: 0, fontWeight: 500 }}>
-                No active {activeTab === "buses" ? "bus" : activeTab === "flights" ? "flight" : "hotel"} promotional offers available at the moment.
-              </p>
-              <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                Check back soon for new discounts and travel deals!
-              </span>
+            <div style={{ padding: "20px 0", textAlign: "center", color: "#64748b", fontSize: "14px" }}>
+              No {activeTab === "buses" ? "bus" : activeTab === "flights" ? "flight" : "hotel"} offers available.
             </div>
           ) : (
             <div className="bus-offers-carousel-wrapper">
@@ -8550,104 +8237,14 @@ export default function HomePage() {
                   const isHotel = typeLower.includes("hotel");
                   const cardTheme = isFlight ? "flight" : isHotel ? "hotel" : "bus";
                   const categoryLabel = isFlight ? "FLIGHT OFFER" : isHotel ? "HOTEL OFFER" : "BUS OFFER";
-                  const OfferIcon = isFlight ? Plane : isHotel ? Building2 : Bus;
 
-                  const cardImage = offer.bannerImg || offer.imageUrl;
-                  const hasDetails = Boolean(offer.title || offer.code || offer.validTill || offer.discountText);
-
-                  if (hasDetails) {
-                    const formattedDate = offer.validTill || offer.couponExpiresAtUtc
-                      ? new Date(offer.validTill || offer.couponExpiresAtUtc).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                      : "";
-
-                    return (
-                      <article
-                        key={offer.id ? `${offer.id}-${idx}` : idx}
-                        className={`wavy-offer-card theme-${cardTheme}`}
-                        onClick={(e) => isHotel ? handleHotelOfferCardClick(offer, e) : setOfferForDetailPopup(offer)}
-                        role="button"
-                        tabIndex={0}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <div className="wavy-offer-left pr-4 max-w-[60%]">
-                          <div className="wavy-offer-cat-row">
-                            <div className={`wavy-offer-icon-circle icon-${cardTheme}`}>
-                              <OfferIcon size={12} strokeWidth={2.6} />
-                            </div>
-                            <span className={`wavy-offer-cat-text text-${cardTheme}`}>
-                              {categoryLabel}
-                            </span>
-                          </div>
-
-                          <div className="wavy-offer-code-group">
-                            {offer.title && <h3 className="wavy-offer-title">{offer.title}</h3>}
-                            {(offer.code || offer.couponCode) && (
-                              <p className="wavy-offer-validity font-bold text-xs text-slate-800" style={{ fontWeight: 700, color: '#1e293b' }}>
-                                {offer.code || offer.couponCode}
-                              </p>
-                            )}
-                            {formattedDate && (
-                              <p className="wavy-offer-validity text-xs sm:text-sm font-medium text-slate-600 whitespace-normal leading-relaxed pr-4">
-                                Valid till {formattedDate}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="wavy-offer-action-row">
-                            <button
-                              type="button"
-                              className={`wavy-offer-grab-btn btn-${cardTheme}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOfferBooking(offer);
-                              }}
-                            >
-                              <span>Grab Offer</span>
-                              <ArrowRight size={13} strokeWidth={2.4} />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="wavy-offer-divider" aria-hidden="true">
-                          <svg viewBox="0 0 50 145" preserveAspectRatio="none" className="wavy-divider-svg">
-                            <path
-                              d="M0,0 C26,24 8,80 34,118 C38,128 44,138 48,145 L0,145 Z"
-                              className={`wavy-accent-path accent-${cardTheme}`}
-                            />
-                            <path
-                              d="M0,0 C20,24 2,80 28,118 C32,128 38,138 42,145 L0,145 Z"
-                              fill="#ffffff"
-                            />
-                          </svg>
-                        </div>
-
-                        <div className="wavy-offer-right">
-                          {(offer.discountText || offer.badgeLabel) && (
-                            <span className={`wavy-offer-badge badge-${cardTheme}`}>
-                              {offer.discountText || offer.badgeLabel}
-                            </span>
-                          )}
-                          {cardImage && (
-                            <img
-                              src={cardImage}
-                              alt={offer.title || categoryLabel}
-                              className="wavy-offer-photo"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.hidden = true;
-                              }}
-                            />
-                          )}
-                        </div>
-                      </article>
-                    );
-                  }
+                  const cardImage = offer.imageUrl;
 
                   return (
                     <button
                       key={offer.id ? `${offer.id}-${idx}` : idx}
                       className={`img-offer-card theme-${cardTheme}`}
-                      onClick={(e) => isHotel ? handleHotelOfferCardClick(offer, e) : setOfferForDetailPopup(offer)}
+                      onClick={() => setOfferForDetailPopup(offer)}
                       style={{ textAlign: 'left', outline: 'none', appearance: 'none' }}
                     >
                       <div className="img-offer-photo-side">
@@ -8799,7 +8396,7 @@ export default function HomePage() {
               <div className="td-services-body-grid">
                 {/* Left White Copy & Features Column */}
                 <div className="td-services-left-col">
-                  <h2 className={`td-services-headline ${isFlight ? "text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-center mb-3" : ""}`}>{config.headline}</h2>
+                  <h2 className="td-services-headline">{config.headline}</h2>
                   <p className="td-services-paragraph">{config.subtitle}</p>
 
                   <div className="td-services-features-list">
@@ -8980,10 +8577,19 @@ export default function HomePage() {
             ) : popularRoutes.length === 0 ? (
               <div className="popular-routes-empty">No popular routes available.</div>
             ) : (
-              <>
-                <div className="pop-bus-carousel-wrapper">
-                  <div className="pop-bus-cards-track" ref={busCardsTrackRef}>
-                    {popularRoutes.slice(0, 15).map((route, idx) => {
+              <div
+                className={`pop-bus-marquee-wrapper ${isBusMarqueePaused ? "is-paused" : ""}`}
+                style={{ "--bus-marquee-duration": `${MARQUEE_SECONDS}s` }}
+                onTouchStart={() => setIsBusMarqueePaused(true)}
+                onTouchEnd={() => setIsBusMarqueePaused(false)}
+                onTouchCancel={() => setIsBusMarqueePaused(false)}
+              >
+                <div
+                  className="pop-bus-cards-track pop-bus-marquee-track"
+                  style={{ animationDuration: `${MARQUEE_SECONDS}s` }}
+                >
+                  {[0, 1].map((copyIndex) =>
+                    popularRoutes.map((route, routeIdx) => {
                       const BUS_PHOTOS = [
                         "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80&fit=crop&auto=format",
                         "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600&q=80&fit=crop&auto=format",
@@ -8991,111 +8597,94 @@ export default function HomePage() {
                         "https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=600&q=80&fit=crop&auto=format",
                         "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80&fit=crop&auto=format"
                       ];
-                      const busImg = route.img || BUS_PHOTOS[idx % BUS_PHOTOS.length];
+                      const busImg = route.img || BUS_PHOTOS[routeIdx % BUS_PHOTOS.length];
+                      const routeIdentifier = route.id || `${route.fromCity}-${route.toCity}`;
+                      const uniqueKey = `${route.id || routeIdentifier}-${copyIndex}`;
 
-                      return (
-                        <article
-                          className="pop-route-card pop-bus-card"
-                          key={route.id || idx}
-                          role="button"
-                          tabIndex={0}
-                          style={{ outline: "none" }}
-                          onClick={() => handlePopularRouteBooking(route)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              handlePopularRouteBooking(route);
-                            }
-                          }}
-                        >
-                          <div className="pop-route-img-wrap">
-                            <img
-                              src={busImg}
-                              alt={`${route.fromCity} to ${route.toCity}`}
-                              loading="lazy"
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length];
-                              }}
+                    return (
+                      <article
+                        className="pop-route-card pop-bus-card"
+                        key={uniqueKey}
+                        role="button"
+                        tabIndex={0}
+                        style={{ outline: "none" }}
+                        onClick={() => handlePopularRouteBooking(route)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handlePopularRouteBooking(route);
+                          }
+                        }}
+                      >
+                        <div className="pop-route-img-wrap">
+                          <img
+                            src={busImg}
+                            alt={`${route.fromCity} to ${route.toCity}`}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length];
+                            }}
+                          />
+                          <div className="pop-bus-badge-top-left">
+                            <Bus size={11} strokeWidth={2.4} />
+                            <span>BUS</span>
+                          </div>
+                          <button
+                            type="button"
+                            className={`pop-bus-bookmark-btn ${savedBusRouteIds.has(routeIdentifier) ? "is-saved" : ""}`}
+                            aria-label="Save route"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSaveBusRoute(routeIdentifier);
+                            }}
+                          >
+                            <Bookmark
+                              size={14}
+                              strokeWidth={2}
+                              fill={savedBusRouteIds.has(routeIdentifier) ? "#dc2626" : "none"}
+                              color={savedBusRouteIds.has(routeIdentifier) ? "#dc2626" : "#1f2937"}
                             />
-                            <div className="pop-bus-badge-top-left">
-                              <Bus size={11} strokeWidth={2.4} />
-                              <span>BUS</span>
-                            </div>
-                            <button
-                              type="button"
-                              className={`pop-bus-bookmark-btn ${savedBusRouteIds.has(route.id || idx) ? "is-saved" : ""}`}
-                              aria-label="Save route"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleSaveBusRoute(route.id || idx);
-                              }}
-                            >
-                              <Bookmark
-                                size={14}
-                                strokeWidth={2}
-                                fill={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "none"}
-                                color={savedBusRouteIds.has(route.id || idx) ? "#dc2626" : "#1f2937"}
-                              />
-                            </button>
-                            <div className="pop-bus-wave-wrap">
-                              <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="pop-bus-wave-svg">
-                                <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" fill="#ffffff" />
-                              </svg>
-                            </div>
+                          </button>
+                          <div className="pop-bus-wave-wrap">
+                            <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="pop-bus-wave-svg">
+                              <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" fill="#ffffff" />
+                            </svg>
                           </div>
+                        </div>
 
-                          <div className="pop-bus-body">
-                            <div className="pop-bus-cities-row">
-                              <span className="pop-bus-city from" title={route.fromCity}>{route.fromCity}</span>
-                              <div className="pop-bus-connector">
-                                <span className="pop-bus-line" />
-                                <div className="pop-bus-icon-circle">
-                                  <Bus size={13} strokeWidth={2.4} />
-                                </div>
-                                <span className="pop-bus-line" />
+                        <div className="pop-bus-body">
+                          <div className="pop-bus-cities-row">
+                            <span className="pop-bus-city from" title={route.fromCity}>{route.fromCity}</span>
+                            <div className="pop-bus-connector">
+                              <span className="pop-bus-line" />
+                              <div className="pop-bus-icon-circle">
+                                <Bus size={13} strokeWidth={2.4} />
                               </div>
-                              <span className="pop-bus-city to" title={route.toCity}>{route.toCity}</span>
+                              <span className="pop-bus-line" />
                             </div>
+                            <span className="pop-bus-city to" title={route.toCity}>{route.toCity}</span>
                           </div>
+                        </div>
 
-                          <div className="pop-bus-footer">
-                            <button
-                              type="button"
-                              className="pop-bus-book-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handlePopularRouteBooking(route);
-                              }}
-                            >
-                              <span>BOOK BUS</span>
-                              <ArrowRight size={13} strokeWidth={2.5} />
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    className="pop-bus-next-circle-btn"
-                    aria-label="Next routes"
-                    onClick={handleNextBusPage}
-                  >
-                    <ChevronRight size={18} strokeWidth={2.6} />
-                  </button>
+                        <div className="pop-bus-footer">
+                          <button
+                            type="button"
+                            className="pop-bus-book-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePopularRouteBooking(route);
+                            }}
+                          >
+                            <span>BOOK BUS</span>
+                            <ArrowRight size={13} strokeWidth={2.5} />
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  }))}
                 </div>
-
-                <div className="pop-bus-pagination-dots">
-                  {[0, 1, 2].map((dotIdx) => (
-                    <span
-                      key={dotIdx}
-                      className={`pop-bus-dot ${busRoutePage === dotIdx ? "active" : ""}`}
-                      onClick={() => handleGoToBusPage(dotIdx)}
-                    />
-                  ))}
-                </div>
-              </>
+              </div>
             )}
           </section>
         )
@@ -9676,7 +9265,7 @@ export default function HomePage() {
         <div className="india-faq-block">
           <div className="section-header india-static-header">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-6 text-center">{homeContent.faqHeading}</h2>
+              <h2>{homeContent.faqHeading}</h2>
             </div>
             <button
               type="button"
@@ -9738,59 +9327,6 @@ export default function HomePage() {
           {homeContent.aboutParagraphs && homeContent.aboutParagraphs.map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}
-          {activeTab === "hotels" && (
-            <>
-              <div
-                className="hotel-confidence-divider"
-                style={{
-                  height: "1px",
-                  backgroundColor: "#e2e8f0",
-                  margin: "22px 0",
-                }}
-              />
-
-              <div className="hotel-confidence-header" style={{ marginBottom: "16px" }}>
-                <h3
-                  className="hotel-confidence-heading"
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: 600,
-                    color: "#0f172a",
-                    margin: "0 0 4px 0",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  Book Hotel Stay with Confidence
-                </h3>
-                <p
-                  className="hotel-confidence-subtext"
-                  style={{
-                    fontSize: "13.5px",
-                    color: "#64748b",
-                    margin: 0,
-                    lineHeight: "1.4",
-                  }}
-                >
-                  Know what you are booking before you pay.
-                </p>
-              </div>
-
-              <div className="hotel-confidence-grid">
-                {HOTEL_CONFIDENCE_CARDS.map((card, idx) => {
-                  const CardIcon = card.icon;
-                  return (
-                    <div key={idx} className="hotel-confidence-card">
-                      <div className="hotel-confidence-icon-box">
-                        <CardIcon size={18} strokeWidth={2.4} />
-                      </div>
-                      <h4 className="hotel-confidence-card-title">{card.title}</h4>
-                      <p className="hotel-confidence-card-desc">{card.description}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
         </div>
       </section>
 
@@ -9889,13 +9425,6 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Toast Notification */}
-      {showToast && toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-2xl text-xs font-semibold animate-fade-in border border-slate-700">
-          <Check size={16} className="text-emerald-400 stroke-[3]" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </div >
   );
 }

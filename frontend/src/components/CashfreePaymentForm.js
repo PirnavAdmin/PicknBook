@@ -129,7 +129,9 @@ export default function CashfreePaymentForm({ cashfree, paymentSessionId, onPaym
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {/* Mock Logo / User's Brand Space */}
-          <img src="/assets/images/logo.png" alt="Pick&book" className="h-8 w-auto object-contain mx-auto" style={{ height: "32px", width: "auto", objectFit: "contain" }} />
+          <div style={{ width: "40px", height: "40px", background: "#2563eb", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "bold", fontSize: "1.2rem" }}>
+            P
+          </div>
           <div>
             <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#111827" }}>Pick&book Payments</h2>
             <p style={{ margin: "2px 0 0 0", fontSize: "0.8rem", color: "#6b7280" }}>Transaction ID: {paymentSessionId?.split('_')[0] || "10293848"}</p>

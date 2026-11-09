@@ -2052,6 +2052,7 @@ select.field-control option {
   font-weight: 600;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -3681,22 +3682,11 @@ select.field-control option {
 
 .india-static-header {
   align-items: flex-end;
-  margin-bottom: 1.5rem;
+  margin-bottom: 10px;
 }
 
 .india-static-header h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
-  letter-spacing: -0.025em;
-  margin-bottom: 1.5rem;
-  line-height: 1.25;
-}
-
-@media (min-width: 640px) {
-  .india-static-header h2 {
-    font-size: 1.875rem;
-  }
+  font-size: clamp(20px, 2.1vw, 25px);
 }
 
 .india-faq-block,
@@ -7244,11 +7234,67 @@ select.field-control option {
   margin: 0 !important;
 }
 
+/* ─── MOST BOOKED BUS ROUTES MARQUEE ─── */
+:root {
+  --bus-marquee-duration: 30s;
+  --bus-marquee-gap: 20px;
+}
+
+/* Scoped Bus Routes Auto-Scrolling Marquee */
+@keyframes pop-bus-marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-50% - 11.5px));
+  }
+}
+
+.pop-bus-marquee-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 12px 6px 20px;
+}
+
+.pop-bus-cards-track.pop-bus-marquee-track {
+  display: flex !important;
+  width: max-content !important;
+  gap: 23px !important;
+  animation: pop-bus-marquee-scroll var(--bus-marquee-duration, 40s) linear infinite !important;
+  will-change: transform;
+}
+
+/* Pause on hover and touch */
+.pop-bus-marquee-wrapper:hover .pop-bus-cards-track.pop-bus-marquee-track,
+.pop-bus-marquee-wrapper:active .pop-bus-cards-track.pop-bus-marquee-track,
+.pop-bus-marquee-wrapper.is-paused .pop-bus-cards-track.pop-bus-marquee-track,
+.pop-bus-cards-track.pop-bus-marquee-track:hover,
+.pop-bus-cards-track.pop-bus-marquee-track:active,
+.pop-bus-cards-track.pop-bus-marquee-track.is-paused {
+  animation-play-state: paused !important;
+}
+
+/* Reduced motion preference support */
+@media (prefers-reduced-motion: reduce) {
+  .pop-bus-marquee-wrapper {
+    overflow-x: auto !important;
+    scrollbar-width: thin;
+  }
+
+  .pop-bus-cards-track.pop-bus-marquee-track {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 /* ─── MOST BOOKED BUS ROUTES (Image 2 style - Compact) ─── */
 .homepage .popular-routes-marquee .pop-bus-card,
 .pop-bus-card {
-  width: 220px !important;
-  min-width: 200px !important;
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+  flex: 0 0 280px !important;
   border-radius: 12px !important;
   border: 1px solid rgba(226, 232, 240, 0.9) !important;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07) !important;
@@ -11004,9 +11050,9 @@ button:focus-visible {
 
 /* Left Content Section */
 .wavy-offer-left {
-  flex: 0 0 58% !important;
-  max-width: 60% !important;
-  padding: 14px 16px 14px 16px !important;
+  flex: 0 0 54% !important;
+  max-width: 54% !important;
+  padding: 14px 4px 14px 16px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -11070,14 +11116,11 @@ button:focus-visible {
 }
 
 .wavy-offer-validity {
-  font-size: 0.75rem !important;
+  font-size: 0.72rem !important;
   font-weight: 500 !important;
-  color: #475569 !important;
+  color: #64748b !important;
   margin: 3px 0 0 0 !important;
-  line-height: 1.4 !important;
-  white-space: normal !important;
-  word-break: break-word !important;
-  max-width: 100% !important;
+  line-height: 1 !important;
 }
 
 /* Grab Offer Pill Button */
@@ -11118,7 +11161,7 @@ button:focus-visible {
 /* Wave Divider */
 .wavy-offer-divider {
   position: absolute !important;
-  left: calc(56% - 1px) !important;
+  left: calc(54% - 1px) !important;
   top: 0 !important;
   bottom: 0 !important;
   width: 44px !important;
@@ -11267,9 +11310,8 @@ button:focus-visible {
 .bus-offers-tabs-bar {
   display: flex !important;
   align-items: center !important;
-  flex-wrap: wrap !important;
   gap: 10px !important;
-  margin: 12px 0 6px 0 !important;
+  margin: 0 !important;
 }
 
 .bus-offers-tab-btn {
@@ -15687,94 +15729,13 @@ button:focus-visible {
     min-width: 180px !important;
   }
   .pop-bus-card {
-    width: 200px !important;
-    min-width: 180px !important;
+    width: 240px !important;
+    min-width: 240px !important;
+    max-width: 240px !important;
+    flex: 0 0 240px !important;
   }
   .pop-route-city,
   .pop-bus-city {
     font-size: 0.8rem !important;
   }
 }
-
-/* Hotel Confidence Section in About Block */
-.hotel-confidence-divider {
-  height: 1px;
-  background-color: #e2e8f0;
-  margin: 22px 0;
-}
-
-.hotel-confidence-header {
-  margin-bottom: 16px;
-}
-
-.hotel-confidence-heading {
-  font-size: 18px;
-  font-weight: 600;
-  color: #0f172a;
-  margin: 0 0 4px 0;
-}
-
-.hotel-confidence-subtext {
-  font-size: 13.5px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.4;
-}
-
-.hotel-confidence-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-}
-
-@media (max-width: 1024px) {
-  .hotel-confidence-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .hotel-confidence-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.hotel-confidence-card {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-.hotel-confidence-icon-box {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background-color: #fee2e2;
-  color: #dc2626;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-  flex-shrink: 0;
-}
-
-.hotel-confidence-card-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 6px 0;
-  line-height: 1.3;
-}
-
-.hotel-confidence-card-desc {
-  font-size: 12.5px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.45;
-}
-
-

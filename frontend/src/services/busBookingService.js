@@ -2765,28 +2765,68 @@ export async function downloadBusVoucher(bookingId, bookingRef) {
   const cleanId = String(bookingId || "").trim();
   if (!cleanId) return;
 
-  const url = toAbsoluteUrl(`${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${cleanId}/voucher`);
+  const candidateUrls = [
+    toAbsoluteUrl(`${LEGACY_BUS_BOOKINGS_ROOT}/bookings/${cleanId}/voucher`),
+    toAbsoluteUrl(`${BUS_BOOKINGS_ROOT}/bookings/${cleanId}/voucher`),
+    toAbsoluteUrl(`/api/admin/bus/bookings/${cleanId}/voucher`),
+  ];
+
   const headers = getAuthHeaders();
   headers.Accept = "application/pdf";
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers,
-  });
+  let lastError = null;
+  for (const url of candidateUrls) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers,
+      });
 
-  if (!response.ok) {
-    throw new Error("Failed to download bus voucher.");
+      if (response.ok) {
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+
+        // Extract filename from Content-Disposition if present
+        let filename = `bus-voucher-${bookingRef || cleanId}.pdf`;
+        const disposition = response.headers.get("content-disposition");
+        if (disposition && disposition.includes("filename=")) {
+          const parts = disposition.split("filename=");
+          if (parts[1]) {
+            const rawName = parts[1].split(";")[0].trim();
+            filename = rawName.replace(/^["']|["']$/g, "").trim() || filename;
+          }
+        }
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        return;
+      }
+
+      let errMsg = "Failed to download bus voucher.";
+      try {
+        const errJson = await response.json();
+        if (errJson?.message) errMsg = errJson.message;
+      } catch (_) { }
+
+      // If it's a client error like 400 (unconfirmed booking) or 401 (auth required), don't fallback to other routes
+      if (response.status === 400 || response.status === 401 || response.status === 403) {
+        throw new Error(errMsg);
+      }
+      lastError = new Error(errMsg);
+    } catch (err) {
+      if (err.message && !err.message.includes("Failed to fetch") && !err.message.includes("404")) {
+        throw err;
+      }
+      lastError = err;
+    }
   }
 
-  const blob = await response.blob();
-  const blobUrl = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = blobUrl;
-  a.download = `bus-voucher-${bookingRef || cleanId}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(blobUrl);
+  throw lastError || new Error("Failed to download bus voucher.");
 }
 
 export async function listHotBusRoutes({ metric = "score" } = {}) {
