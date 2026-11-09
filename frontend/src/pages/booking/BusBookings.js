@@ -100,7 +100,6 @@ export default function BusBookings() {
   const [page, setPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState(emptyBusFilters);
-  const [statusFilter, setStatusFilter] = useState("All Bookings");
   const [appliedFilters, setAppliedFilters] = useState(emptyBusFilters);
 
   const [bookings, setBookings] = useState([]);
@@ -163,27 +162,8 @@ export default function BusBookings() {
   }, [appliedFilters.passengerPhone]);
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter((booking) => {
-      if (statusFilter !== "All Bookings") {
-        const raw = String(booking?.status || booking?.tripState || booking?.bookingStatus || "").trim().toLowerCase();
-        const target = statusFilter.toLowerCase();
-        if (target === "confirmed") {
-          if (!["confirmed", "booked", "success"].includes(raw)) return false;
-        } else if (target === "completed") {
-          if (!["completed", "past", "traveled", "travelled"].includes(raw)) return false;
-        } else if (target === "pending") {
-          if (!["pending", "processing", "initiated", "in_progress"].includes(raw)) return false;
-        } else if (target === "cancelled") {
-          if (!raw.includes("cancel")) return false;
-        } else if (target === "failed") {
-          if (!["failed", "payment failed", "fail", "expired"].includes(raw)) return false;
-        } else {
-          if (raw !== target) return false;
-        }
-      }
-      return matchesBusFilters(booking, appliedFilters);
-    });
-  }, [bookings, appliedFilters, statusFilter]);
+    return bookings.filter((booking) => matchesBusFilters(booking, appliedFilters));
+  }, [bookings, appliedFilters]);
 
   const handleSearch = () => { setAppliedFilters({ ...filters }); setPage(1); };
   const paginated = paginateBookings(filteredBookings, page);
@@ -452,42 +432,6 @@ export default function BusBookings() {
           </div>
         </section>
       )}
-      {/* Status Filter Bar [PNB/BUS/UI_110] */}
-      <div className="bus-status-filter-bar flex flex-wrap items-center justify-between gap-3 mb-4 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="hidden sm:flex flex-wrap items-center gap-2">
-          {["All Bookings", "Confirmed", "Pending", "Completed", "Cancelled", "Failed"].map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => { setStatusFilter(status); setPage(1); }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                statusFilter === status
-                  ? "bg-rose-600 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-              }`}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-
-        {/* Mobile Dropdown */}
-        <div className="sm:hidden w-full">
-          <label htmlFor="bus-mobile-status-select" className="text-xs font-bold text-slate-700 block mb-1">
-            Filter by Status:
-          </label>
-          <select
-            id="bus-mobile-status-select"
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm font-medium text-slate-800 bg-white"
-          >
-            {["All Bookings", "Confirmed", "Pending", "Completed", "Cancelled", "Failed"].map((status) => (
-              <option key={status} value={status}>{status}</option>
-            ))}
-          </select>
-        </div>
-      </div>
 
       <section className="flight-ops-table-wrap">
         {isLoading ? (
@@ -497,7 +441,7 @@ export default function BusBookings() {
           </div>
         ) : filteredBookings.length === 0 ? (
           <div className="ops-empty">
-            <p>{statusFilter !== "All Bookings" ? `No ${statusFilter.toLowerCase()} bookings found.` : "No bus bookings found for current filters."}</p>
+            <p>No bus bookings found for current filters.</p>
           </div>
         ) : (
           <div className="ops-table-scroll">
