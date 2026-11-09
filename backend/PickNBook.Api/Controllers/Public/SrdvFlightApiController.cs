@@ -1006,13 +1006,23 @@ namespace PickNBook.Api.Controllers.Public
 
             try
             {
+                var targetResultIndex = proxyRequest.ResultIndex.Trim();
+                if (targetResultIndex.Contains(','))
+                {
+                    var firstIdx = targetResultIndex.Split(',').Select(p => p.Trim()).FirstOrDefault(p => !string.IsNullOrEmpty(p));
+                    if (!string.IsNullOrEmpty(firstIdx))
+                    {
+                        targetResultIndex = firstIdx;
+                    }
+                }
+
                 var request = new AirFareRuleRequestDto
                 {
                     EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
                     SrdvType = proxyRequest.SrdvType ?? string.Empty,
                     SrdvIndex = proxyRequest.SrdvIndex ?? string.Empty,
                     TraceId = proxyRequest.TraceId,
-                    ResultIndex = proxyRequest.ResultIndex
+                    ResultIndex = targetResultIndex
                 };
                 var responseRaw = await _srdvFlightService.GetSSRRawAsync(request);
                 using var doc = JsonDocument.Parse(responseRaw);
@@ -1037,13 +1047,23 @@ namespace PickNBook.Api.Controllers.Public
 
             try
             {
+                var targetResultIndex = proxyRequest.ResultIndex.Trim();
+                if (targetResultIndex.Contains(','))
+                {
+                    var firstIdx = targetResultIndex.Split(',').Select(p => p.Trim()).FirstOrDefault(p => !string.IsNullOrEmpty(p));
+                    if (!string.IsNullOrEmpty(firstIdx))
+                    {
+                        targetResultIndex = firstIdx;
+                    }
+                }
+
                 var request = new AirFareRuleRequestDto
                 {
                     EndUserIp = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1",
                     SrdvType = proxyRequest.SrdvType ?? string.Empty,
                     SrdvIndex = proxyRequest.SrdvIndex ?? string.Empty,
                     TraceId = proxyRequest.TraceId,
-                    ResultIndex = proxyRequest.ResultIndex
+                    ResultIndex = targetResultIndex
                 };
                 var responseRaw = await _srdvFlightService.GetSeatMapRawAsync(request);
                 var outNode = JsonNode.Parse(responseRaw);
