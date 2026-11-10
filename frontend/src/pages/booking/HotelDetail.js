@@ -7,6 +7,7 @@ import {
   Users,
   MapPin,
   Share2,
+  Check,
   X,
   ChevronLeft,
   ChevronRight,
@@ -331,6 +332,12 @@ export default function HotelDetail({
   const formattedPrice = rawPrice > 0 ? `INR ${rawPrice.toLocaleString("en-IN")}` : "INR 2,055";
   const hasValidOriginalPrice = rawOriginalPrice > rawPrice && rawOriginalPrice > 0;
   const formattedOriginalPrice = hasValidOriginalPrice ? `INR ${rawOriginalPrice.toLocaleString("en-IN")}` : null;
+  const isOfferRefundable = Boolean(
+    primaryOffer?.isRefundable ??
+    primaryOffer?.IsRefundable ??
+    primaryOffer?.cancellation?.isRefundable ??
+    (primaryOffer?.cancellationPolicies?.length > 0 && Number(primaryOffer.cancellationPolicies[0]?.charge || 0) === 0)
+  );
 
   return (
     <div className="hd-container">
@@ -455,6 +462,8 @@ export default function HotelDetail({
 
         .hd-booking-card {
           width: 350px;
+          height: 100%;
+          min-height: 290px;
           background: #ffffff;
           border: 1px solid #e6e9f0;
           border-radius: 14px;
@@ -708,179 +717,260 @@ export default function HotelDetail({
         {/* Right: Booking Card (fixed 340px wide) */}
         <aside className="hd-booking-card">
           {primaryOffer && (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {/* Top Row: Hotel Logo + Name + Stars + Recommended Deal */}
-              <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: "8px" }}>
-                <img
-                  src={hotelLogo}
-                  alt={hotel.name}
-                  style={{
-                    width: "76px",
-                    height: "56px",
-                    objectFit: "contain",
-                    borderRadius: "6px",
-                    background: "#f8fafc",
-                    border: "1px solid #eef2f6",
-                    padding: "2px",
-                    flexShrink: 0
-                  }}
-                />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{
-                    fontSize: "12px",
-                    fontWeight: "bold",
-                    textTransform: "uppercase",
-                    color: "#1e3a5f",
-                    display: "block",
-                    lineHeight: "1.25",
-                    marginBottom: "3px",
+            <>
+              {/* Top / Body Section */}
+              <div className="hd-booking-card-top" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {/* Hotel Thumbnail + Name + Stars + Deal Badge */}
+                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                  <img
+                    src={hotelLogo}
+                    alt={hotel.name}
+                    style={{
+                      width: "72px",
+                      height: "54px",
+                      objectFit: "contain",
+                      borderRadius: "8px",
+                      background: "#f8fafc",
+                      border: "1px solid #eef2f6",
+                      padding: "2px",
+                      flexShrink: 0
+                    }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      color: "#1e3a5f",
+                      display: "block",
+                      lineHeight: "1.25",
+                      marginBottom: "4px",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}>
+                      {hotel.name}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      <span style={{ color: "#f59e0b", fontSize: "12px", lineHeight: "1" }}>
+                        {"★".repeat(hotel.rating ? Math.floor(hotel.rating) : 4)}
+                      </span>
+                      <span style={{
+                        background: "#e0f2fe",
+                        color: "#0284c7",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        padding: "2px 8px",
+                        borderRadius: "9999px",
+                        lineHeight: "1.2"
+                      }}>
+                        Recommended Deal
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Featured Room Category Header */}
+                <div>
+                  <span style={{ fontSize: "10.5px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", display: "block" }}>
+                    Featured Room Option
+                  </span>
+                  <h3 style={{
+                    fontSize: "16px",
+                    fontWeight: "700",
+                    color: "#0f172a",
+                    margin: "2px 0 0 0",
+                    lineHeight: "1.3",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap"
                   }}>
-                    {hotel.name}
+                    {primaryOffer.roomCategory ? primaryOffer.roomCategory.replace(/_/g, " ") : "Standard / Deluxe Room"}
+                  </h3>
+                </div>
+
+                {/* Room Key Meta & Badges */}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "12px",
+                  color: "#64748b",
+                  flexWrap: "wrap"
+                }}>
+                  <span style={{
+                    color: isOfferRefundable ? "#15803d" : "#dc2626",
+                    background: isOfferRefundable ? "#f0fdf4" : "#fef2f2",
+                    border: `1px solid ${isOfferRefundable ? "#bbf7d0" : "#fecaca"}`,
+                    padding: "2px 7px",
+                    borderRadius: "6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontWeight: "600",
+                    fontSize: "11px",
+                    whiteSpace: "nowrap"
+                  }}>
+                    {isOfferRefundable ? <Check size={12} strokeWidth={2.5} /> : <X size={12} strokeWidth={2.5} />}
+                    {isOfferRefundable ? "Refundable" : "Non-refundable"}
                   </span>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                    <span style={{ color: "#f59e0b", fontSize: "12px", lineHeight: "1" }}>
-                      {"★".repeat(hotel.rating ? Math.floor(hotel.rating) : 4)}
-                    </span>
+
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    color: "#475569",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    padding: "2px 7px",
+                    borderRadius: "6px",
+                    fontWeight: "500",
+                    fontSize: "11px",
+                    whiteSpace: "nowrap"
+                  }}>
+                    <Users size={12} /> {primaryOffer?.maxOccupancy ? `Max ${primaryOffer.maxOccupancy} Guests` : "Max 2 Guests"}
+                  </span>
+                </div>
+
+                {/* Generic Neat Room Perks Chips */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "2px" }}>
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "11px",
+                    color: "#334155",
+                    background: "#f1f5f9",
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    fontWeight: "500"
+                  }}>
+                    📶 Free High-Speed WiFi
+                  </span>
+                  <span style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "11px",
+                    color: "#334155",
+                    background: "#f1f5f9",
+                    padding: "3px 8px",
+                    borderRadius: "6px",
+                    fontWeight: "500"
+                  }}>
+                    ❄️ Air Conditioning
+                  </span>
+                  {primaryOffer?.mealPlan ? (
                     <span style={{
-                      background: "#e0f2fe",
-                      color: "#0284c7",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
                       fontSize: "11px",
-                      fontWeight: "600",
-                      padding: "2px 8px",
-                      borderRadius: "9999px",
-                      lineHeight: "1.2"
+                      color: "#15803d",
+                      background: "#f0fdf4",
+                      border: "1px solid #dcfce7",
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      fontWeight: "500"
                     }}>
-                      Recommended Deal
+                      🍳 {primaryOffer.mealPlan}
                     </span>
-                  </div>
+                  ) : (
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "11px",
+                      color: "#334155",
+                      background: "#f1f5f9",
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      fontWeight: "500"
+                    }}>
+                      ☕ Coffee/Tea Maker
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Room Name: Generic label + room type */}
-              <div style={{ margin: "6px 0 2px 0" }}>
-                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", display: "block" }}>
-                  Featured Room Option
-                </span>
-                <h3 style={{
-                  fontSize: "16px",
-                  fontWeight: "700",
-                  color: "#1e3a5f",
-                  margin: "2px 0 0 0",
-                  lineHeight: "1.3"
-                }}>
-                  {primaryOffer.roomCategory ? primaryOffer.roomCategory.replace(/_/g, " ") : "Standard / Deluxe Room"}
-                </h3>
-              </div>
+              {/* Bottom / Action Section: Pinned to bottom, filling the card */}
+              <div className="hd-booking-card-bottom" style={{ marginTop: "auto", paddingTop: "14px", borderTop: "1px solid #f1f5f9" }}>
+                {/* Price block */}
+                <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "2px" }}>
+                  <strong style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", letterSpacing: "-0.01em" }}>
+                    {formattedPrice}
+                  </strong>
+                  {hasValidOriginalPrice && (
+                    <span style={{ fontSize: "14px", color: "#94a3b8", textDecoration: "line-through", fontWeight: "normal" }}>
+                      {formattedOriginalPrice}
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: "11.5px", color: "#64748b", margin: "0 0 12px 0" }}>
+                  Per night (total with taxes &amp; fees)
+                </p>
 
-              {/* Meta Row (12px, grey): "Non-refundable" in red with cross icon, and "Max 2 Guests" with people icon */}
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                fontSize: "12px",
-                color: "#64748b",
-                margin: "4px 0 10px 0",
-                flexWrap: "wrap"
-              }}>
-                <span style={{
-                  color: "#dc2626",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  fontWeight: "500",
-                  whiteSpace: "nowrap"
-                }}>
-                  <X size={13} strokeWidth={2.5} /> Non-refundable
-                </span>
-                <span style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  color: "#64748b",
-                  whiteSpace: "nowrap"
-                }}>
-                  <Users size={13} /> {primaryOffer?.maxOccupancy ? `Max ${primaryOffer.maxOccupancy} Guests` : "Max 2 Guests"}
-                </span>
+                {/* Buttons: 2 equal columns, height 42px */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSelectOffer(primaryOffer);
+                      setCurrentStep(2);
+                    }}
+                    disabled={selectingOfferId !== ""}
+                    style={{
+                      height: "42px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      background: "#ff0000",
+                      color: "#ffffff",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      transition: "opacity 0.15s ease",
+                      padding: "0 8px",
+                      whiteSpace: "nowrap"
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
+                    onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
+                  >
+                    <BedDouble size={15} />
+                    <span>Reserve Rooms</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection("Rooms")}
+                    style={{
+                      height: "42px",
+                      borderRadius: "8px",
+                      fontSize: "13px",
+                      fontWeight: "bold",
+                      background: "#ffffff",
+                      color: "#ff0000",
+                      border: "1.5px solid #ff0000",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      transition: "background 0.15s ease",
+                      padding: "0 8px",
+                      whiteSpace: "nowrap"
+                    }}
+                    onMouseOver={(e) => (e.currentTarget.style.background = "#fff5f5")}
+                    onMouseOut={(e) => (e.currentTarget.style.background = "#ffffff")}
+                  >
+                    <Building2 size={15} />
+                    <span>View All Rooms</span>
+                  </button>
+                </div>
               </div>
-
-              {/* Price: "INR 2,055" 22px bold. Struck-through original price only if originalPrice > price. Never render "INR 0" */}
-              <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-                <strong style={{ fontSize: "22px", fontWeight: "bold", color: "#0f172a", letterSpacing: "-0.01em" }}>
-                  {formattedPrice}
-                </strong>
-                {hasValidOriginalPrice && (
-                  <span style={{ fontSize: "14px", color: "#94a3b8", textDecoration: "line-through", fontWeight: "normal" }}>
-                    {formattedOriginalPrice}
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: "12px", color: "#64748b", margin: "2px 0 12px 0" }}>
-                Per night (total with taxes &amp; fees)
-              </p>
-
-              {/* Buttons: 2 equal columns, gap 10px, height 40px, radius 8px, 13px bold */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "4px" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleSelectOffer(primaryOffer);
-                    setCurrentStep(2);
-                  }}
-                  disabled={selectingOfferId !== ""}
-                  style={{
-                    height: "40px",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                    fontWeight: "bold",
-                    background: "#ff0000",
-                    color: "#ffffff",
-                    border: "none",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    transition: "opacity 0.15s ease",
-                    padding: "0 8px",
-                    whiteSpace: "nowrap"
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.opacity = "0.9")}
-                  onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
-                >
-                  <BedDouble size={15} />
-                  <span>Reserve Rooms</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => scrollToSection("Rooms")}
-                  style={{
-                    height: "40px",
-                    borderRadius: "8px",
-                    fontSize: "13px",
-                    fontWeight: "bold",
-                    background: "#ffffff",
-                    color: "#ff0000",
-                    border: "1.5px solid #ff0000",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    transition: "background 0.15s ease",
-                    padding: "0 8px",
-                    whiteSpace: "nowrap"
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.background = "#fff5f5")}
-                  onMouseOut={(e) => (e.currentTarget.style.background = "#ffffff")}
-                >
-                  <Building2 size={15} />
-                  <span>View All Rooms</span>
-                </button>
-              </div>
-            </div>
+            </>
           )}
         </aside>
       </section>
