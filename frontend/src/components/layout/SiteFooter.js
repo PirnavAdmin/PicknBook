@@ -443,7 +443,10 @@ export default function SiteFooter() {
                 className="pnb-social-circle pnb-yt-circle"
                 title="YouTube"
               >
-                <Youtube size={17} color="#ffffff" fill="#ffffff" />
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
+                  <path d="M21.582 6.186c-.23-.86-.908-1.538-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418c-.86.23-1.538.908-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814c.23.86.908 1.538 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418c.86-.23 1.538-.908 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814z" fill="#ffffff" />
+                  <polygon points="9.75,15.02 15.5,12 9.75,8.98" fill="#ff0000" />
+                </svg>
               </a>
               <a
                 href="https://linkedin.com"

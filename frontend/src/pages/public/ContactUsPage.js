@@ -155,7 +155,7 @@ export default function ContactUsPage() {
         .contact-banner-section {
           position: relative;
           width: 100%;
-          background: url(${contactBanner}) center center / cover no-repeat;
+          background: url(${contactBanner}) center top / cover no-repeat;
           background-color: #f0f4f8;
           min-height: 380px;
           height: clamp(340px, 28vw, 440px);

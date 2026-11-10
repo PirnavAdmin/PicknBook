@@ -144,7 +144,7 @@ export default function HotelDetail({
   const [listModal, setListModal] = useState(null);
 
   const DINING_PREVIEW_COUNT = 6;
-  const ATTRACTION_PREVIEW_COUNT = 5;
+  const ATTRACTION_PREVIEW_COUNT = 6;
   const POLICY_PREVIEW_COUNT = 2;
 
   const [savedStayIds, setSavedStayIds] = useState(() => {
@@ -354,16 +354,17 @@ export default function HotelDetail({
           margin-bottom: 16px;
         }
 
-        .hd-image-grid {
+        .hd-gallery-layout {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 14px;
+          grid-template-columns: 1.55fr 1fr;
+          gap: 12px;
           width: 100%;
-          height: 100%;
+          min-height: 290px;
         }
 
-        .hd-image-card {
-          height: 260px;
+        .hd-big-image-card {
+          height: 100%;
+          min-height: 290px;
           border-radius: 14px;
           overflow: hidden;
           position: relative;
@@ -373,16 +374,66 @@ export default function HotelDetail({
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .hd-image-card:hover {
+        .hd-big-image-card:hover {
           transform: translateY(-2px);
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
         }
 
-        .hd-image-card img {
+        .hd-big-image-card img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
+        }
+
+        .hd-side-images-stack {
+          display: grid;
+          grid-template-rows: 1fr 1fr;
+          gap: 12px;
+          height: 100%;
+        }
+
+        .hd-small-image-card {
+          height: 100%;
+          border-radius: 14px;
+          overflow: hidden;
+          position: relative;
+          cursor: pointer;
+          background: #f1f5f9;
+          border: 1px solid #e6e9f0;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .hd-small-image-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .hd-small-image-card img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .hd-more-photos-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.45);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 15px;
+          letter-spacing: 0.02em;
+          border-radius: 14px;
+          backdrop-filter: blur(1px);
+          transition: background 0.2s ease;
+        }
+
+        .hd-small-image-card:hover .hd-more-photos-overlay {
+          background: rgba(15, 23, 42, 0.58);
         }
 
         .hd-photo-badge {
@@ -469,11 +520,18 @@ export default function HotelDetail({
         }
 
         @media (max-width: 619px) {
-          .hd-image-grid {
-            grid-template-columns: repeat(2, 1fr);
+          .hd-gallery-layout {
+            grid-template-columns: 1fr;
+            min-height: auto;
           }
-          .hd-image-card {
-            height: 150px;
+          .hd-big-image-card {
+            min-height: 190px;
+            height: 190px;
+          }
+          .hd-side-images-stack {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: none;
+            height: 100px;
           }
           .hd-amenities-row {
             grid-template-columns: repeat(3, 1fr);
@@ -588,27 +646,63 @@ export default function HotelDetail({
         </div>
       </section>
 
-      {/* HERO ROW: Left = 3 Image Cards, Right = Booking Card (fixed 340px) */}
+      {/* HERO ROW: Left = Gallery (1 Big + 2 Beside Small Images), Right = Booking Card */}
       <section className="hd-hero-row">
-        {/* Left: 3 Equal Image Cards */}
-        <div className="hd-image-grid">
-          {shownPhotos.map((imgUrl, idx) => (
+        {/* Gallery: 1 Big Image + 2 Small Images Stacked Beside */}
+        <div className="hd-gallery-layout">
+          {/* Big Main Image */}
+          {shownPhotos[0] && (
             <div
-              key={idx}
-              className="hd-image-card"
-              onClick={() => setLightboxIndex(idx)}
+              className="hd-big-image-card"
+              onClick={() => setLightboxIndex(0)}
               title="Click to view all photos"
             >
               <img
-                src={imgUrl}
-                alt={`${hotel.name} - photo ${idx + 1}`}
+                src={shownPhotos[0]}
+                alt={`${hotel.name} - main view`}
               />
               <div className="hd-photo-badge">
                 <Camera size={13} />
-                <span>{idx + 1} / {shownPhotos.length}</span>
+                <span>1 / {allImages.length || shownPhotos.length}</span>
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Beside: Two Small Images Stacked Vertically */}
+          <div className="hd-side-images-stack">
+            {shownPhotos[1] && (
+              <div
+                className="hd-small-image-card"
+                onClick={() => setLightboxIndex(1)}
+                title="Click to view all photos"
+              >
+                <img
+                  src={shownPhotos[1]}
+                  alt={`${hotel.name} - view 2`}
+                />
+                <div className="hd-photo-badge">
+                  <Camera size={13} />
+                  <span>2 / {allImages.length || shownPhotos.length}</span>
+                </div>
+              </div>
+            )}
+
+            {shownPhotos[2] && (
+              <div
+                className="hd-small-image-card"
+                onClick={() => setLightboxIndex(2)}
+                title="Click to view all photos"
+              >
+                <img
+                  src={shownPhotos[2]}
+                  alt={`${hotel.name} - view 3`}
+                />
+                <div className="hd-more-photos-overlay">
+                  <span>+{Math.max(1, (allImages.length || 3) - 2)} Photos</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right: Booking Card (fixed 340px wide) */}
@@ -1075,25 +1169,83 @@ export default function HotelDetail({
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: "12px" }}>
             {attractions.slice(0, ATTRACTION_PREVIEW_COUNT).map((item, idx) => {
               const isObj = typeof item === 'object' && item !== null;
               const name = isObj ? (item.name || item.title || "") : String(item);
               const distance = isObj ? (item.distance || item.dist || "") : "";
-              const categoryTag = isObj ? (item.category || item.type || "Attraction") : "Landmark";
+              const categoryTag = isObj ? (item.category || item.type || "Attraction") : "Attraction";
+              const symbol = getAttractionSymbol(name);
+
               return (
-                <div key={idx} className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100/70 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0 pr-2">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-primary-500 shrink-0">
-                      <MapPin size={16} className="text-red-500" />
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "11px 14px",
+                    background: "#f8fafc",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
+                    gap: "12px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "8px",
+                      background: "#ffffff",
+                      border: "1px solid #e2e8f0",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "15px",
+                      color: "#dc2626",
+                      flexShrink: 0
+                    }}>
+                      {symbol || <MapPin size={15} color="#dc2626" />}
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-slate-800 truncate" title={name}>{name}</div>
-                      {categoryTag && <div className="text-[11px] font-medium text-slate-400 capitalize">{categoryTag}</div>}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: "0.86rem",
+                          fontWeight: 600,
+                          color: "#1e293b",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                        title={name}
+                      >
+                        {name}
+                      </div>
+                      <div style={{
+                        fontSize: "0.72rem",
+                        fontWeight: 500,
+                        color: "#64748b",
+                        marginTop: "1px",
+                        textTransform: "capitalize"
+                      }}>
+                        {categoryTag}
+                      </div>
                     </div>
                   </div>
+
                   {distance && (
-                    <span className="text-xs font-medium text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 whitespace-nowrap shrink-0">
+                    <span style={{
+                      fontSize: "0.74rem",
+                      fontWeight: 600,
+                      color: "#2563eb",
+                      background: "#eff6ff",
+                      border: "1px solid #dbeafe",
+                      padding: "3px 8px",
+                      borderRadius: "6px",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0
+                    }}>
                       {distance}
                     </span>
                   )}
