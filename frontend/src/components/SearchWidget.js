@@ -139,7 +139,7 @@ function PlaceAutocomplete({ label, value, onChange, tripType, field, placeholde
           const normalized = rawList
             .map((item) => ({
               cityName:    typeof item === "string" ? item : item?.cityName    || "",
-              cityId:      typeof item === "object"  ? String(item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
+              cityId:      typeof item === "object"  ? String(item.searchCityId || item.cityId || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
               stateName:   typeof item === "object"  ? (item.stateName   || item.StateName   || "") : "",
               airportCode: typeof item === "object"  ? (item.airportCode || item.AirportCode || item.iataCode || "") : "",
               airportName: typeof item === "object"  ? (item.airportName || item.AirportName || "") : "",
@@ -283,7 +283,9 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
   // ── Bus state ──
   const [busTripType, setBusTripType] = useState("oneway");
   const [busFrom, setBusFrom] = useState("");
+  const [busFromCode, setBusFromCode] = useState("");
   const [busTo, setBusTo] = useState("");
+  const [busToCode, setBusToCode] = useState("");
   const [busFromError, setBusFromError] = useState("");
   const [busToError, setBusToError] = useState("");
   const [busDepartureDate, setBusDepartureDate] = useState(() => getDefaultDateString(0));
@@ -328,7 +330,10 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
 
   // ── Handlers ──
   const handleSwapFlights = () => { const t = flightFrom; setFlightFrom(flightTo); setFlightTo(t); };
-  const handleSwapBuses = () => { const t = busFrom; setBusFrom(busTo); setBusTo(t); };
+  const handleSwapBuses = () => {
+    const t = busFrom; setBusFrom(busTo); setBusTo(t);
+    const tc = busFromCode; setBusFromCode(busToCode); setBusToCode(tc);
+  };
 
   const changeAdults = (delta) => {
     setAdults((prev) => {
@@ -362,8 +367,16 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
 
   const handleFlightFromChange = (v) => { setFlightFrom(v); if (v.trim()) setFlightFromError(""); };
   const handleFlightToChange = (v) => { setFlightTo(v); if (v.trim()) setFlightToError(""); };
-  const handleBusFromChange = (v) => { setBusFrom(v); if (v.trim()) setBusFromError(""); };
-  const handleBusToChange = (v) => { setBusTo(v); if (v.trim()) setBusToError(""); };
+  const handleBusFromChange = (v, id) => {
+    setBusFrom(v);
+    if (id) setBusFromCode(String(id));
+    if (v.trim()) setBusFromError("");
+  };
+  const handleBusToChange = (v, id) => {
+    setBusTo(v);
+    if (id) setBusToCode(String(id));
+    if (v.trim()) setBusToError("");
+  };
   const handleHotelDestinationChange = (v, id) => { setHotelDestination(v); if (id) setHotelCityId(id); if (v.trim()) setHotelDestinationError(""); };
 
   // ── Navigation helpers ──
@@ -430,7 +443,11 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
     if (hasError) return;
     navigateTo("/search/buses", {
       source: fromVal,
+      sourceId: busFromCode,
+      fromCityCode: busFromCode,
       destination: toVal,
+      destinationId: busToCode,
+      toCityCode: busToCode,
       tripType: busTripType,
       departureDate: busDepartureDate.trim(),
       returnDate: busTripType === "twoway" ? busReturnDate.trim() : "",

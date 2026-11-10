@@ -111,7 +111,7 @@ export default function PlaceAutocomplete({
           const normalized = rawList
             .map((item) => ({
               cityName:    typeof item === "string" ? item : item?.cityName    || "",
-              cityId:      typeof item === "object"  ? String(item.cityId || item.cityCode || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
+              cityId:      typeof item === "object"  ? String(item.searchCityId || item.cityId || item.cityCode || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
               stateName:   typeof item === "object"  ? (item.stateName   || item.StateName   || "") : "",
               airportCode: typeof item === "object"  ? (item.airportCode || item.AirportCode || item.iataCode || "") : "",
               airportName: typeof item === "object"  ? (item.airportName || item.AirportName || "") : "",

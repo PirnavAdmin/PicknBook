@@ -1289,6 +1289,7 @@ async function resolveCityCode(cityStrOrCode) {
     const cities = await searchBusCities(searchQuery);
     const normalize = (str) => String(str || "").replace(/\s+/g, " ").trim().toLowerCase();
     const searchLower = normalize(trimmed);
+    const searchClean = normalize(searchQuery);
 
     console.log(`[DEBUG resolveCityCode] Querying API with: "${searchQuery}", Looking for exact match: "${searchLower}"`);
     console.log(`[DEBUG resolveCityCode] API returned ${cities?.length || 0} cities`);
@@ -1296,16 +1297,40 @@ async function resolveCityCode(cityStrOrCode) {
       console.log(`[DEBUG resolveCityCode] City 0: "${normalize(cities[0].cityName || cities[0].name)}" (ID: ${cities[0].cityId})`);
     }
 
-    // 1. Exact match
+    // 1. Exact match on full name
     let match = cities.find(c => {
       const cName = normalize(c.cityName || c.name);
       if (cName === searchLower) console.log(`[DEBUG resolveCityCode] EXACT MATCH FOUND: ${cName} (ID: ${c.cityId})`);
       return cName === searchLower;
     });
 
+    // 1b. Exact match on clean base name (e.g. "Anantapur (andhra pradesh)".split("(")[0] === "anantapur")
+    if (!match) {
+      match = cities.find(c => {
+        const raw = normalize(c.cityName || c.name);
+        const clean = raw.split("(")[0].trim();
+        const isMatch = clean === searchClean || clean === searchLower;
+        if (isMatch) console.log(`[DEBUG resolveCityCode] CLEAN BASE MATCH FOUND: ${raw} (ID: ${c.cityId})`);
+        return isMatch;
+      });
+    }
+
+    // 1c. Prioritize non-bypass/non-stop city hubs when query doesn't specify bypass/stop
+    if (!match) {
+      const isUserSearchingBypass = /\b(bypass|by pass|toll|cross|ring road)\b/i.test(searchLower);
+      if (!isUserSearchingBypass) {
+        match = cities.find(c => {
+          const raw = normalize(c.cityName || c.name);
+          const isStop = /\b(bypass|by pass|toll|cross|ring road)\b/i.test(raw);
+          return !isStop && raw.includes(searchClean);
+        });
+        if (match) console.log(`[DEBUG resolveCityCode] MAIN HUB MATCH FOUND: ${normalize(match.cityName || match.name)} (ID: ${match.cityId})`);
+      }
+    }
+
     // 2. Contains match
     if (!match) {
-      match = cities.find(c => normalize(c.cityName || c.name).includes(searchLower));
+      match = cities.find(c => normalize(c.cityName || c.name).includes(searchClean || searchLower));
       if (match) console.log(`[DEBUG resolveCityCode] CONTAINS MATCH FOUND: ${normalize(match.cityName || match.name)} (ID: ${match.cityId})`);
     }
 
@@ -1316,7 +1341,7 @@ async function resolveCityCode(cityStrOrCode) {
     match = match || cities[0];
 
     if (match) {
-      const resolvedId = String(match.cityId || match.code || match.id || "").trim();
+      const resolvedId = String(match.searchCityId || match.cityId || match.code || match.id || "").trim();
       console.log(`[DEBUG resolveCityCode] Resolved ID: ${resolvedId}`);
       return resolvedId;
     }
