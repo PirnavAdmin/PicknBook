@@ -7291,10 +7291,10 @@ select.field-control option {
 /* ─── MOST BOOKED BUS ROUTES (Image 2 style - Compact) ─── */
 .homepage .popular-routes-marquee .pop-bus-card,
 .pop-bus-card {
-  width: 280px !important;
-  min-width: 280px !important;
-  max-width: 280px !important;
-  flex: 0 0 280px !important;
+  width: 230px !important;
+  min-width: 230px !important;
+  max-width: 230px !important;
+  flex: 0 0 230px !important;
   border-radius: 12px !important;
   border: 1px solid rgba(226, 232, 240, 0.9) !important;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.07) !important;
@@ -10827,17 +10827,18 @@ button:focus-visible {
 
 .offer-img-marquee.offer-marquee .marquee-slide {
   width: 208px !important;
-  flex: 0 0 208px !important;
+  flex: 0 0 288px !important;
+  width: 288px !important;
   padding: 0 4px !important;
   box-sizing: border-box !important;
 }
 
 .img-offer-card {
   position: relative !important;
-  width: 200px !important;
-  height: 100px !important;
-  min-height: 100px !important;
-  border-radius: 12px !important;
+  width: 280px !important;
+  height: 135px !important;
+  min-height: 135px !important;
+  border-radius: 14px !important;
   overflow: hidden !important;
   cursor: pointer !important;
   display: flex !important;
@@ -10876,6 +10877,10 @@ button:focus-visible {
   height: 100% !important;
   overflow: hidden !important;
   z-index: 1 !important;
+  background: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .img-offer-photo {

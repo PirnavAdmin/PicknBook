@@ -144,6 +144,10 @@ export default function CancellationPolicySection({
   const isZeroRefund =
     !isAlreadyCancelled && (parsedPolicy.isNonRefundable || (estRefund !== null && estRefund <= 0 && estFee !== null && estFee > 0));
 
+  const roundedPaid = Math.round(totalPaid);
+  const roundedFee = Math.round(settledFee !== null ? settledFee : estFee);
+  const roundedRefund = Math.max(0, settledRefund !== null ? Math.round(settledRefund) : (roundedPaid - roundedFee));
+
   const roomTypeName = (() => {
     const raw = (booking?.roomCategory ? booking.roomCategory.split(",")[0].trim().replace(/\s+room$/i, "").replace(/_/g, " ") : "") ||
       booking?.roomTypeName ||
@@ -230,21 +234,21 @@ export default function CancellationPolicySection({
         <div className={`policy-calc-card ${isAlreadyCancelled ? "is-cancelled" : isZeroRefund ? "is-zero" : "is-refundable"}`}>
           <div className="policy-calc-grid">
             <div className="calc-col">
-              <span className="calc-lbl">{displayType === "Hotel" ? "ROOM FARE" : "ROOM FARE"}</span>
-              <span className="calc-val">₹{totalPaid.toFixed(2)}</span>
+              <span className="calc-lbl">ROOM FARE</span>
+              <span className="calc-val">₹{roundedPaid.toLocaleString("en-IN")}</span>
             </div>
             <span className="calc-operator">–</span>
             <div className="calc-col">
               <span className="calc-lbl">CANCELLATION FEE</span>
               <span className="calc-val text-danger">
-                ₹{(settledFee !== null ? settledFee : estFee).toFixed(2)}
+                ₹{roundedFee.toLocaleString("en-IN")}
               </span>
             </div>
             <span className="calc-operator">=</span>
             <div className={`calc-col result ${isAlreadyCancelled ? "success" : isZeroRefund ? "zero" : "success"}`}>
               <span className="calc-lbl">{isAlreadyCancelled ? "REFUND SETTLED" : "EST. REFUND"}</span>
-              <span className={`calc-val ${isAlreadyCancelled || estRefund > 0 ? "text-success" : "text-muted"}`}>
-                ₹{(settledRefund !== null ? settledRefund : estRefund).toFixed(2)}
+              <span className={`calc-val ${isAlreadyCancelled || roundedRefund > 0 ? "text-success" : "text-muted"}`}>
+                ₹{roundedRefund.toLocaleString("en-IN")}
               </span>
             </div>
           </div>
@@ -253,7 +257,7 @@ export default function CancellationPolicySection({
           <div className="policy-calc-note">
             {isAlreadyCancelled ? (
               <span>
-                ✓ Refund of ₹{(settledRefund || 0).toFixed(2)} settled to payment source
+                ✓ Refund of ₹{roundedRefund.toLocaleString("en-IN")} settled to payment source
                 {parsedPolicy.cancellationAudit?.refundId ? ` (Ref: ${parsedPolicy.cancellationAudit.refundId})` : ""}.
               </span>
             ) : isZeroRefund ? (
@@ -263,7 +267,7 @@ export default function CancellationPolicySection({
               </span>
             ) : (
               <span className="text-success">
-                ✓ Eligible refund of ₹{(settledRefund !== null ? settledRefund : estRefund).toFixed(2)} will be credited to payment source within 3–5 working days.
+                ✓ Eligible refund of ₹{roundedRefund.toLocaleString("en-IN")} will be credited to payment source within 3–5 working days.
               </span>
             )}
           </div>

@@ -2,7 +2,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  ArrowLeft, CalendarDays, Check, CheckCircle, CheckCircle2, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble, Info, X,
+  ArrowLeft, CalendarDays, Check, CheckCircle, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, Copy, Home, MapPin, ShieldCheck, Sparkles, Star, UserRound, Loader2, BedDouble, Info, X,
   Headphones,
   Phone,
   Mail
@@ -593,6 +593,7 @@ export default function HotelPassengerDetailsPage() {
   const [showChildAgeAlert, setShowChildAgeAlert] = useState(false);
   const [alertChildIndex, setAlertChildIndex] = useState(null);
   const [isOtherGuestsOpen, setIsOtherGuestsOpen] = useState(false);
+  const [isCancellationPolicyDropdownOpen, setIsCancellationPolicyDropdownOpen] = useState(false);
 
   const [rulePets, setRulePets] = useState(false);
   const [ruleFood, setRuleFood] = useState(false);
@@ -1168,6 +1169,13 @@ export default function HotelPassengerDetailsPage() {
       }
   }
 
+  // Reconcile prices at integer round off scale so Base Fare + Tax - Discount === Final Payable exactly
+  const roundedBasePrice = Math.round(Number(basePrice) || 0);
+  const roundedFinalPayable = Math.round(Number(finalPayable) || 0);
+  const effectiveDiscount = Number(couponDiscount > 0 ? couponDiscount : appliedDiscount) || 0;
+  // Ensure rounded tax reconciles cleanly without 1-rupee rounding mismatch
+  const roundedTax = Math.max(0, roundedFinalPayable - roundedBasePrice);
+
   const tierDiscount = 0;
   const volumeDiscount = 0;
   const isPrimaryAdultValid = useMemo(() => {
@@ -1415,21 +1423,21 @@ export default function HotelPassengerDetailsPage() {
       blockRoomResponse,
       currentStep,
       selectedMultiRooms,
-      payableAmount: Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)), 
-      finalPayableAmount: Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)),
+      payableAmount: Math.max(0, roundedFinalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)), 
+      finalPayableAmount: Math.max(0, roundedFinalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)),
       couponDiscount: couponDiscount > 0 ? couponDiscount : appliedDiscount,
       couponCode: couponCode.trim().toUpperCase(),
       appliedCouponCode: couponCode || "",
       fareSummary: { 
-        baseFare: basePrice, 
-        tax, 
+        baseFare: roundedBasePrice, 
+        tax: roundedTax, 
         convenienceFee, 
         markup: markupValue, 
         couponDiscount: couponDiscount > 0 ? couponDiscount : appliedDiscount,
         discount: couponDiscount > 0 ? couponDiscount : appliedDiscount,
         tierDiscount: 0, 
         volumeDiscount: 0, 
-        totalFare: Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount))
+        totalFare: Math.max(0, roundedFinalPayable - (couponDiscount > 0 ? 0 : appliedDiscount))
       } 
     };
 
@@ -1684,9 +1692,9 @@ export default function HotelPassengerDetailsPage() {
             checkInDate={checkInDate}
             checkOutDate={checkOutDate}
             guestSummary={guestSummary}
-            basePrice={basePrice}
-            tax={tax}
-            finalPayable={finalPayable}
+            basePrice={roundedBasePrice}
+            tax={roundedTax}
+            finalPayable={roundedFinalPayable}
             convenienceFee={convenienceFee}
             setCurrentStep={handleSetCurrentStep}
             gallery={gallery}
@@ -2104,7 +2112,7 @@ export default function HotelPassengerDetailsPage() {
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: "10px", marginTop: "4px" }}>
                     <span>💰 <strong>Total Payable:</strong></span>
-                    <strong style={{ color: "#10b981", fontSize: "1rem" }}>{formatCurrency(Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}</strong>
+                    <strong style={{ color: "#10b981", fontSize: "1rem" }}>{formatCurrency(Math.max(0, roundedFinalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}</strong>
                   </div>
                 </div>
 
@@ -2145,13 +2153,90 @@ export default function HotelPassengerDetailsPage() {
 
                 {/* Hotel Cancellation Policy Section & Dynamic Consent Agreement */}
                 {offer && (
-                  <div style={{ marginBottom: "16px" }}>
-                    <CancellationPolicySection
-                      booking={offer}
-                      bookingType="hotel"
-                      policyData={offer?.cancellationPolicies || offer?.cancellationPoliciesData}
-                      showConsentCheckbox={false}
-                    />
+                  <div 
+                    style={{ 
+                      marginBottom: "16px",
+                      background: "#ffffff",
+                      borderRadius: "14px",
+                      border: "1px solid rgba(0,0,0,0.08)",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                      overflow: "hidden"
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setIsCancellationPolicyDropdownOpen(prev => !prev)}
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        background: isCancellationPolicyDropdownOpen ? "#f8fafc" : "#ffffff",
+                        border: "none",
+                        cursor: "pointer",
+                        borderBottom: isCancellationPolicyDropdownOpen ? "1px solid rgba(0,0,0,0.06)" : "none",
+                        textAlign: "left"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{ 
+                          width: "30px", 
+                          height: "30px", 
+                          borderRadius: "8px", 
+                          backgroundColor: "#ecfdf5", 
+                          display: "flex", 
+                          alignItems: "center", 
+                          justifyContent: "center",
+                          color: "#059669"
+                        }}>
+                          <ShieldCheck size={17} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: "0.92rem", color: "#1e293b", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span>Cancellation & Refund Policy</span>
+                            <span style={{
+                              fontSize: "0.7rem",
+                              fontWeight: 600,
+                              padding: "2px 7px",
+                              borderRadius: "9999px",
+                              backgroundColor: "#dcfce7",
+                              color: "#15803d",
+                              border: "1px solid #bbf7d0"
+                            }}>
+                              Refundable
+                            </span>
+                          </div>
+                          <div style={{ fontSize: "0.76rem", color: "#64748b", marginTop: "2px" }}>
+                            Click to {isCancellationPolicyDropdownOpen ? "hide" : "view"} cancellation terms & refund rules
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronDown 
+                        size={18} 
+                        style={{ 
+                          color: "#64748b", 
+                          transform: isCancellationPolicyDropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                          transition: "transform 0.2s ease"
+                        }} 
+                      />
+                    </button>
+
+                    {isCancellationPolicyDropdownOpen && (
+                      <div style={{ padding: "12px 14px" }}>
+                        <CancellationPolicySection
+                          booking={{
+                            ...offer,
+                            price: roundedFinalPayable,
+                            totalPayable: roundedFinalPayable,
+                            totalFare: roundedFinalPayable
+                          }}
+                          bookingType="hotel"
+                          policyData={offer?.cancellationPolicies || offer?.cancellationPoliciesData}
+                          showConsentCheckbox={false}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -2336,7 +2421,7 @@ export default function HotelPassengerDetailsPage() {
                     <div className="hotel-fare-breakdown" style={{ display: "flex", flexDirection: "column", gap: "10px", borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: "14px", marginBottom: "14px" }}>
                       <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
                         <span>Base Fare</span>
-                        <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(basePrice)}</strong>
+                        <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(roundedBasePrice)}</strong>
                       </div>
                       {(couponDiscount > 0 || appliedDiscount > 0) && (
                         <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#16a34a" }}>
@@ -2346,14 +2431,14 @@ export default function HotelPassengerDetailsPage() {
                       )}
                       <div className="hotel-fare-row" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "var(--hotel-muted)" }}>
                         <span>Taxes & Fees (GST)</span>
-                        <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(tax)}</strong>
+                        <strong style={{ color: "var(--hotel-ink)" }}>{formatCurrency(roundedTax)}</strong>
                       </div>
                     </div>
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                       <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--hotel-ink)" }}>Total Payable</span>
                       <strong style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981" }}>
-                        {formatCurrency(Math.max(0, finalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}
+                        {formatCurrency(Math.max(0, roundedFinalPayable - (couponDiscount > 0 ? 0 : appliedDiscount)))}
                       </strong>
                     </div>
                   </>

@@ -337,7 +337,7 @@ export default function HotelDetail({
       {/* Scoped CSS for Hotel Details Page */}
       <style>{`
         .hd-container {
-          max-width: 1180px;
+          max-width: 1280px;
           margin: 0 auto;
           padding: 0 16px 32px 16px;
           box-sizing: border-box;
@@ -348,21 +348,22 @@ export default function HotelDetail({
 
         .hd-hero-row {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 340px;
-          gap: 14px;
-          align-items: start;
-          margin-bottom: 14px;
+          grid-template-columns: minmax(0, 1fr) 350px;
+          gap: 16px;
+          align-items: stretch;
+          margin-bottom: 16px;
         }
 
         .hd-image-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
+          gap: 14px;
           width: 100%;
+          height: 100%;
         }
 
         .hd-image-card {
-          height: 190px;
+          height: 260px;
           border-radius: 14px;
           overflow: hidden;
           position: relative;
@@ -402,14 +403,17 @@ export default function HotelDetail({
         }
 
         .hd-booking-card {
-          width: 340px;
+          width: 350px;
           background: #ffffff;
           border: 1px solid #e6e9f0;
           border-radius: 14px;
-          padding: 16px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+          padding: 18px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
           box-sizing: border-box;
           flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
         }
 
         .hd-content-card {
@@ -661,16 +665,21 @@ export default function HotelDetail({
                 </div>
               </div>
 
-              {/* Room Name: 16px semi-bold in navy (#1e3a5f) */}
-              <h3 style={{
-                fontSize: "16px",
-                fontWeight: "600",
-                color: "#1e3a5f",
-                margin: "6px 0",
-                lineHeight: "1.3"
-              }}>
-                {primaryOffer.roomCategory ? primaryOffer.roomCategory.replace(/_/g, " ") : "Standard Room"}
-              </h3>
+              {/* Room Name: Generic label + room type */}
+              <div style={{ margin: "6px 0 2px 0" }}>
+                <span style={{ fontSize: "11px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", display: "block" }}>
+                  Featured Room Option
+                </span>
+                <h3 style={{
+                  fontSize: "16px",
+                  fontWeight: "700",
+                  color: "#1e3a5f",
+                  margin: "2px 0 0 0",
+                  lineHeight: "1.3"
+                }}>
+                  {primaryOffer.roomCategory ? primaryOffer.roomCategory.replace(/_/g, " ") : "Standard / Deluxe Room"}
+                </h3>
+              </div>
 
               {/* Meta Row (12px, grey): "Non-refundable" in red with cross icon, and "Max 2 Guests" with people icon */}
               <div style={{
@@ -715,7 +724,7 @@ export default function HotelDetail({
                 )}
               </div>
               <p style={{ fontSize: "12px", color: "#64748b", margin: "2px 0 12px 0" }}>
-                + taxes &amp; fees, per night for 1 room
+                Per night (total with taxes &amp; fees)
               </p>
 
               {/* Buttons: 2 equal columns, gap 10px, height 40px, radius 8px, 13px bold */}
@@ -891,14 +900,26 @@ export default function HotelDetail({
                 <span>🗣️</span>
                 <span>Languages Spoken</span>
               </h3>
-              <div className="flex flex-wrap gap-2">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", alignItems: "center" }}>
                 {supportedLanguages.map((lang, lIdx) => (
                   <span
                     key={lIdx}
-                    className="px-3 py-1 bg-slate-100 text-slate-700 text-xs sm:text-sm font-medium rounded-full border border-slate-200 inline-flex items-center gap-1.5"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "5px 12px",
+                      background: "#f1f5f9",
+                      color: "#334155",
+                      fontSize: "12.5px",
+                      fontWeight: "600",
+                      borderRadius: "9999px",
+                      border: "1px solid #e2e8f0",
+                      lineHeight: "1.4"
+                    }}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                    {lang}
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#ff0000", flexShrink: 0 }}></span>
+                    <span>{lang}</span>
                   </span>
                 ))}
               </div>

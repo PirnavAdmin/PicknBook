@@ -1033,8 +1033,10 @@ function parseHotelPolicy(booking, extraPolicyData) {
             chargeType = numCharge >= 100 ? "non_refundable" : "partial";
           } else {
             flatFee = numCharge;
-            charge = `${currSymbol}${numCharge.toLocaleString("en-IN")} Fee`;
-            refund = totalPaidVal > 0 ? `${currSymbol}${Math.max(0, totalPaidVal - numCharge).toLocaleString("en-IN")} Refund` : "Balance Refunded";
+            const roundedFee = Math.round(numCharge);
+            const roundedRefund = Math.max(0, Math.round(totalPaidVal) - roundedFee);
+            charge = `${currSymbol}${roundedFee.toLocaleString("en-IN")} Fee`;
+            refund = totalPaidVal > 0 ? `${currSymbol}${roundedRefund.toLocaleString("en-IN")} Refund` : "Balance Refunded";
             chargeType = "partial";
           }
         }
@@ -1046,7 +1048,8 @@ function parseHotelPolicy(booking, extraPolicyData) {
         chargeType = refPct === 100 ? "free" : refPct === 0 ? "non_refundable" : "partial";
       } else if (item.CancellationCharge !== undefined) {
         flatFee = Number(item.CancellationCharge);
-        charge = `${currSymbol}${flatFee.toLocaleString("en-IN")} Fee`;
+        const roundedFee = Math.round(flatFee);
+        charge = `${currSymbol}${roundedFee.toLocaleString("en-IN")} Fee`;
         chargeType = "partial";
       }
 

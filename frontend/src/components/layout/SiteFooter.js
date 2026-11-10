@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Youtube, Building2, Send, Lock } from "lucide-react";
+import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Youtube, Building2, Send, Lock, Instagram, Facebook, Linkedin } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -229,45 +229,49 @@ export default function SiteFooter() {
 
             {/* Column 2: Our Services (Hotels, Flights, Buses, Packages) [PNB/UI/FOOTER_001] */}
             <div className="pnb-footer-links-col">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 mb-4 flex items-center gap-2">
-                <Bus size={18} className="text-rose-600 flex-shrink-0" />
+              <h4 className="pnb-col-heading">
+                <Bus size={18} className="pnb-col-heading-icon" />
                 <span>Our Services</span>
               </h4>
-              <ul className="space-y-2.5">
-                <li>
+              <ul className="pnb-col-links-list" style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("hotels", e)}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Hotels
+                    <span className="pnb-link-chevron">›</span>
+                    <span>Hotels</span>
                   </button>
                 </li>
-                <li>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("flights", e)}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Flights
+                    <span className="pnb-link-chevron">›</span>
+                    <span>Flights</span>
                   </button>
                 </li>
-                <li>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("buses", e)}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Buses
+                    <span className="pnb-link-chevron">›</span>
+                    <span>Buses</span>
                   </button>
                 </li>
-                <li>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("packages", e)}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Packages
+                    <span className="pnb-link-chevron">›</span>
+                    <span>Packages</span>
                   </button>
                 </li>
               </ul>
@@ -275,45 +279,49 @@ export default function SiteFooter() {
 
             {/* Column 3: Quick Links (About Us, My Bookings, Offers, Contact) [PNB/UI/FOOTER_001] */}
             <div className="pnb-footer-links-col">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 mb-4 flex items-center gap-2">
-                <Plane size={18} className="text-rose-600 flex-shrink-0" />
+              <h4 className="pnb-col-heading">
+                <Plane size={18} className="pnb-col-heading-icon" />
                 <span>Quick Links</span>
               </h4>
-              <ul className="space-y-2.5">
-                <li>
+              <ul className="pnb-col-links-list" style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={() => openFooterPage("/about-us")}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> About Us
+                    <span className="pnb-link-chevron">›</span>
+                    <span>About Us</span>
                   </button>
                 </li>
-                <li>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={() => openFooterPage("/fetch-ticket")}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> My Bookings
+                    <span className="pnb-link-chevron">›</span>
+                    <span>My Bookings</span>
                   </button>
                 </li>
-                <li>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("offers", e)}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Offers
+                    <span className="pnb-link-chevron">›</span>
+                    <span>Offers</span>
                   </button>
                 </li>
-                <li>
+                <li style={{ listStyle: "none" }}>
                   <button
                     type="button"
                     onClick={() => openFooterPage("/contact")}
-                    className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                    className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron mr-1.5 text-slate-400">›</span> Contact
+                    <span className="pnb-link-chevron">›</span>
+                    <span>Contact</span>
                   </button>
                 </li>
               </ul>
@@ -321,20 +329,21 @@ export default function SiteFooter() {
 
             {/* Column 4: Policies & Help */}
             <div className="pnb-footer-links-col">
-              <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 mb-4 flex items-center gap-2">
-                <ShieldCheck size={18} className="text-rose-600 flex-shrink-0" />
+              <h4 className="pnb-col-heading">
+                <ShieldCheck size={18} className="pnb-col-heading-icon" />
                 <span>Policies &amp; Help</span>
               </h4>
-              <ul className="space-y-2.5">
+              <ul className="pnb-col-links-list" style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
                 {POLICY_LINKS.map((link) => (
-                  <li key={link.id}>
+                  <li key={link.id} style={{ listStyle: "none" }}>
                     <a
                       href={link.path}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="pnb-footer-link flex items-center text-slate-600 hover:text-rose-600 text-sm font-medium transition-colors"
+                      className="pnb-footer-link"
                     >
-                      <span className="pnb-link-chevron mr-1.5 text-rose-600">›</span> {link.label}
+                      <span className="pnb-link-chevron">›</span>
+                      <span>{link.label}</span>
                     </a>
                   </li>
                 ))}
@@ -410,13 +419,40 @@ export default function SiteFooter() {
             <span className="pnb-pill-label">Follow Us:</span>
             <div className="pnb-social-circles-row">
               <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-ig-circle"
+                title="Instagram"
+              >
+                <Instagram size={16} color="#ffffff" />
+              </a>
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-fb-circle"
+                title="Facebook"
+              >
+                <Facebook size={16} color="#ffffff" fill="#ffffff" />
+              </a>
+              <a
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="pnb-social-circle pnb-yt-circle"
                 title="YouTube"
               >
-                <Youtube size={17} color="#ffffff" />
+                <Youtube size={17} color="#ffffff" fill="#ffffff" />
+              </a>
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-li-circle"
+                title="LinkedIn"
+              >
+                <Linkedin size={15} color="#ffffff" fill="#ffffff" />
               </a>
             </div>
           </div>

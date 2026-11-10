@@ -147,7 +147,8 @@ export default function ContactUsPage() {
           min-height: 100vh;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           background: linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, rgba(241, 245, 249, 0.6) 100%);
-          padding: 48px 16px;
+          padding: 0 0 60px 0;
+          margin: 0;
         }
 
         /* HERO BANNER */
@@ -157,6 +158,9 @@ export default function ContactUsPage() {
           background: url(${contactBanner}) center center / cover no-repeat;
           background-color: #f0f4f8;
           min-height: 380px;
+          height: clamp(340px, 28vw, 440px);
+          margin: 0;
+          padding: 0;
           overflow: hidden;
         }
 
@@ -383,7 +387,7 @@ export default function ContactUsPage() {
         }
       `}</style>
 
-      <div className="contact-page-container min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/60 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="contact-page-container min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/60 pb-16">
 
         {/* HERO BANNER — image has text built in, no overlay needed */}
         <div className="contact-banner-section" />
