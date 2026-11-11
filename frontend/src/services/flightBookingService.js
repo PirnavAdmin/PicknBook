@@ -2899,21 +2899,46 @@ export async function getCancelStatus(params = {}) {
 // ============================================================================
 
 export async function getCalendarFare(searchParams = {}) {
-  const isMultiCity = searchParams.journeyType === 3 || String(searchParams.tripType || "").toLowerCase() === "multicity";
-  if (isMultiCity) {
-    return { success: true, isMultiCity: true, data: [], results: [] };
+  const rawFrom = searchParams.sourceCode || searchParams.fromCode || searchParams.originCode || searchParams.from || searchParams.origin || "";
+  const rawTo = searchParams.destinationCode || searchParams.toCode || searchParams.to || searchParams.destination || "";
+
+  const isMultiCityWithoutRoute = (!rawFrom || !rawTo) && (searchParams.journeyType === 3 || String(searchParams.tripType || "").toLowerCase() === "multicity");
+  if (isMultiCityWithoutRoute) {
+    return { success: true, isMultiCity: true, data: [], results: [], fareMapByDate: {} };
   }
 
-  const fromCode = searchParams.sourceCode || searchParams.fromCode || searchParams.originCode || searchParams.from || searchParams.origin;
-  const toCode = searchParams.destinationCode || searchParams.toCode || searchParams.to || searchParams.destination;
+  const extractIata = (str) => {
+    if (!str) return "";
+    const clean = String(str).trim();
+    const match = clean.match(/\(([A-Za-z]{3})\)/);
+    if (match) return match[1].toUpperCase();
+    if (clean.length === 3) return clean.toUpperCase();
+    return clean.slice(0, 3).toUpperCase();
+  };
+
+  const fromCode = extractIata(rawFrom);
+  const toCode = extractIata(rawTo);
 
   if (!fromCode || !toCode) {
-    throw new Error("All flight sectors require a valid airport selection from the suggestions.");
+    return { success: false, error: "Please enter both origin and destination.", results: [], fareMapByDate: {} };
   }
   const journeyDate = formatIsoDateTime(searchParams.date || searchParams.preferredDepartureTime);
   const cabinClassCode = toCabinClassCode(searchParams.travelClass || searchParams.flightCabinClass);
 
+  let month = searchParams.month;
+  if (!month && (searchParams.date || searchParams.preferredDepartureTime)) {
+    const dStr = String(searchParams.date || searchParams.preferredDepartureTime).trim();
+    if (dStr.length >= 7) month = dStr.slice(0, 7);
+  }
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+    const now = new Date();
+    month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }
+
   const payload = {
+    Origin: fromCode,
+    Destination: toCode,
+    Month: month,
     JourneyType: Number(searchParams.journeyType || 1),
     FareType: Number(searchParams.fareType || 1),
     Segments: [
@@ -2939,18 +2964,34 @@ export async function getCalendarFare(searchParams = {}) {
     logFlightApiResponse("POST", endpoint, 200, rawData);
 
     const resObj = rawData?.Response || rawData?.data?.Response || rawData;
-    const rawResults = resObj?.SearchResults || resObj?.searchResults || resObj?.Results || resObj?.results || [];
+    if (resObj?.Error && resObj.Error.ErrorCode !== 0) {
+      return {
+        success: false,
+        error: resObj.Error.ErrorMessage || "Failed to fetch calendar fares.",
+        results: [],
+        fareMapByDate: {},
+      };
+    }
+
+    const rawResults = resObj?.Results || resObj?.results || resObj?.SearchResults || resObj?.searchResults || [];
     const resultsList = Array.isArray(rawResults) ? rawResults : [];
     const fareMapByDate = {};
 
     const normalizedResults = resultsList.map((item) => {
-      const depDateStr = String(item.DepartureDate || item.departureDate || "").trim();
+      const depDateStr = String(item.Date || item.DepartureDate || item.departureDate || "").trim();
       const dateOnly = depDateStr ? depDateStr.split("T")[0] : "";
-      const fareVal = Number(item.PublishedFare ?? item.publishedFare ?? item.OfferedFare ?? item.Fare ?? item.Price ?? 0);
+      const fareVal = Number(item.TotalFare ?? item.totalFare ?? item.PublishedFare ?? item.publishedFare ?? item.OfferedFare ?? item.Fare ?? item.Price ?? 0);
 
       if (dateOnly && fareVal > 0) {
-        if (!fareMapByDate[dateOnly] || fareVal < fareMapByDate[dateOnly]) {
-          fareMapByDate[dateOnly] = fareVal;
+        if (!fareMapByDate[dateOnly] || fareVal < (typeof fareMapByDate[dateOnly] === "object" ? fareMapByDate[dateOnly].totalFare : fareMapByDate[dateOnly])) {
+          fareMapByDate[dateOnly] = {
+            totalFare: fareVal,
+            baseFare: Number(item.BaseFare || item.baseFare || 0),
+            tax: Number(item.Tax || item.tax || 0),
+            airlineCode: item.AirlineCode || item.airlineCode || "",
+            airlineName: item.AirlineName || item.airlineName || "",
+            isLowestFareOfMonth: Boolean(item.IsLowestFareOfMonth || item.isLowestFareOfMonth),
+          };
         }
       }
 
@@ -2960,6 +3001,9 @@ export async function getCalendarFare(searchParams = {}) {
         departureDate: depDateStr,
         dateOnly,
         isLowestFareOfMonth: Boolean(item.IsLowestFareOfMonth || item.isLowestFareOfMonth),
+        totalFare: fareVal,
+        baseFare: Number(item.BaseFare || item.baseFare || 0),
+        tax: Number(item.Tax || item.tax || 0),
         fare: fareVal,
       };
     });
@@ -2968,6 +3012,8 @@ export async function getCalendarFare(searchParams = {}) {
       success: true,
       origin: fromCode,
       destination: toCode,
+      month: resObj?.Month || month,
+      lowestFare: resObj?.LowestFare ?? null,
       results: normalizedResults,
       fareMapByDate,
       raw: rawData,

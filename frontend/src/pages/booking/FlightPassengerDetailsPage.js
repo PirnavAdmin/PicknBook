@@ -46,6 +46,70 @@ function resolveCleanTravelClass(travelClass) {
   return travelClass;
 }
 
+const KNOWN_AIRPORT_CODES = {
+  hyderabad: "HYD",
+  mumbai: "BOM",
+  delhi: "DEL",
+  "new delhi": "DEL",
+  chennai: "MAA",
+  bangalore: "BLR",
+  bengaluru: "BLR",
+  kolkata: "CCU",
+  dubai: "DXB",
+  "abu dhabi": "AUH",
+  sharjah: "SHJ",
+  goa: "GOI",
+  pune: "PNQ",
+  ahmedabad: "AMD",
+  jaipur: "JAI",
+  lucknow: "LKO",
+  cochin: "COK",
+  kochi: "COK",
+  trivandrum: "TRV",
+  thiruvananthapuram: "TRV",
+  guwahati: "GAU",
+  singapore: "SIN",
+  bangkok: "BKK",
+  london: "LHR",
+  doha: "DOH",
+};
+
+const POPULAR_COUNTRIES_AND_HUBS = [
+  { name: "India", code: "IN", desc: "India (DEL, BOM, HYD, BLR)" },
+  { name: "United Arab Emirates", code: "AE", desc: "United Arab Emirates (Dubai, Abu Dhabi)" },
+  { name: "United States", code: "US", desc: "United States (NYC, SFO, CHI)" },
+  { name: "United Kingdom", code: "GB", desc: "United Kingdom (London, Manchester)" },
+  { name: "Singapore", code: "SG", desc: "Singapore (SIN)" },
+  { name: "Saudi Arabia", code: "SA", desc: "Saudi Arabia (Riyadh, Jeddah)" },
+  { name: "Qatar", code: "QA", desc: "Qatar (Doha)" },
+  { name: "Oman", code: "OM", desc: "Oman (Muscat)" },
+  { name: "Kuwait", code: "KW", desc: "Kuwait (Kuwait City)" },
+  { name: "Bahrain", code: "BH", desc: "Bahrain (Manama)" },
+  { name: "Canada", code: "CA", desc: "Canada (Toronto, Vancouver)" },
+  { name: "Australia", code: "AU", desc: "Australia (Sydney, Melbourne)" },
+  { name: "Germany", code: "DE", desc: "Germany (Frankfurt, Munich)" },
+  { name: "Malaysia", code: "MY", desc: "Malaysia (Kuala Lumpur)" },
+  { name: "Thailand", code: "TH", desc: "Thailand (Bangkok)" }
+];
+
+function resolveLegCityCode(code, name, fallback = "") {
+  if (code && typeof code === "string" && code.trim().length === 3 && code.trim() !== "--") {
+    return code.trim().toUpperCase();
+  }
+  const clean = String(name || "").trim();
+  if (clean) {
+    const match = clean.match(/\(([A-Za-z]{3})\)/);
+    if (match) return match[1].toUpperCase();
+    const lower = clean.toLowerCase();
+    if (KNOWN_AIRPORT_CODES[lower]) return KNOWN_AIRPORT_CODES[lower];
+    for (const [k, v] of Object.entries(KNOWN_AIRPORT_CODES)) {
+      if (lower.includes(k)) return v;
+    }
+    if (clean.length === 3) return clean.toUpperCase();
+  }
+  return fallback || "--";
+}
+
 function formatDobInput(value) {
   const digits = value.replace(/\D/g, "");
   let formatted = "";
@@ -276,6 +340,7 @@ export default function FlightPassengerDetailsPage() {
     flowState.specialAssistance || ""
   );
   const [activePassengerIndexForAssistance, setActivePassengerIndexForAssistance] = useState(null);
+  const [activeCountryDropdownIndex, setActiveCountryDropdownIndex] = useState(null);
 
   const ASSISTANCE_OPTIONS = [
     { value: "Person with intellectual or developmental disability (DPNA)", label: "Person with intellectual or developmental disability (DPNA)" },
@@ -416,8 +481,15 @@ export default function FlightPassengerDetailsPage() {
 
   const [fareQuoteData, setFareQuoteData] = useState(null);
 
-  const isInternational = Boolean(fareQuoteData?.isPassportRequiredAtBook ||
-    fareQuoteData?.results?.IsPassportRequiredAtTicket || flight?.IsInternational);
+  const isInternational = Boolean(
+    fareQuoteData?.isPassportRequiredAtBook ||
+    fareQuoteData?.results?.IsPassportRequiredAtTicket ||
+    flight?.IsInternational ||
+    flight?.isInternational ||
+    flight?.isInternationalFlight ||
+    selectedLegs?.some(l => l?.IsInternational || l?.isInternational || l?.isInternationalFlight) ||
+    searchContext?.isInternational
+  );
   const [fareQuoteError, setFareQuoteError] = useState("");
 
   useEffect(() => {
@@ -1059,13 +1131,17 @@ export default function FlightPassengerDetailsPage() {
       if (!p.lastName || !p.lastName.trim()) newErrors[`passenger_${idx}_lastName`] = "Required";
 
       if (isInternational) {
-        if (!p.passportNo || !p.passportNo.trim()) newErrors[`passenger_${idx}_passportNo`] = "Required";
-        if (!p.passportExpiry || !p.passportExpiry.trim()) newErrors[`passenger_${idx}_passportExpiry`] = "Required";
+        if (!p.passportNo || !p.passportNo.trim()) {
+          newErrors[`passenger_${idx}_passportNo`] = "Passport Number is required";
+        } else if (!/^[A-Za-z0-9]{6,9}$/.test(p.passportNo.trim())) {
+          newErrors[`passenger_${idx}_passportNo`] = "Passport number must be 6 to 9 alphanumeric characters";
+        }
+        if (!p.passportExpiry || !p.passportExpiry.trim()) newErrors[`passenger_${idx}_passportExpiry`] = "Passport Expiry Date is required";
         const issueCountry = (p.passportIssueCountry || p.passportIssueCountryCode || "").trim();
         if (!issueCountry) {
-          newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Required";
+          newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Passport Issue Country is required";
         } else if (!isValidCountry(issueCountry)) {
-          newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Please enter a valid country name";
+          newErrors[`passenger_${idx}_passportIssueCountryCode`] = "Please enter or select a valid country";
         }
       }
 
@@ -1117,23 +1193,27 @@ export default function FlightPassengerDetailsPage() {
     });
 
     if (!contact.email || !contact.email.trim()) {
-      newErrors.contact_email = "Required";
+      newErrors.contact_email = "Email Address is required";
     } else if (!isValidEmail(contact.email)) {
-      newErrors.contact_email = "Invalid";
+      newErrors.contact_email = "Please enter a valid email address (e.g. name@example.com)";
     }
 
     if (!contact.mobile || !contact.mobile.trim()) {
-      newErrors.contact_mobile = "Required";
+      newErrors.contact_mobile = "Mobile Number is required";
     } else if (!isValidMobile(contact.mobile)) {
-      newErrors.contact_mobile = "Invalid";
+      newErrors.contact_mobile = "Please enter a valid 10-digit mobile number";
     }
 
     if (!contact.addressLine1 || !contact.addressLine1.trim()) {
-      newErrors.contact_addressLine1 = "Address Required for Lead Passenger";
+      newErrors.contact_addressLine1 = "Address Line 1 is required";
+    } else if (contact.addressLine1.trim().length < 5) {
+      newErrors.contact_addressLine1 = "Address must be at least 5 characters";
     }
 
     if (!contact.city || !contact.city.trim()) {
-      newErrors.contact_city = "City Required for Lead Passenger";
+      newErrors.contact_city = "City is required";
+    } else if (!/^[a-zA-Z\s\-']{2,50}$/.test(contact.city.trim())) {
+      newErrors.contact_city = "Please enter a valid city name (letters only)";
     }
 
     if (contact.whatsappUpdates) {
@@ -1461,11 +1541,28 @@ export default function FlightPassengerDetailsPage() {
             <span>Passport Number *</span>
             <input
               type="text"
+              maxLength={15}
               placeholder="Passport Number (e.g. P1234567)"
               value={passenger.passportNo || ""}
-              onChange={(event) =>
-                updatePassenger(index, "passportNo", event.target.value.toUpperCase())
-              }
+              onChange={(event) => {
+                const val = event.target.value.toUpperCase();
+                updatePassenger(index, "passportNo", val);
+                if (errors[`passenger_${index}_passportNo`]) {
+                  setErrors((prev) => {
+                    const c = { ...prev };
+                    delete c[`passenger_${index}_passportNo`];
+                    return c;
+                  });
+                }
+              }}
+              onBlur={(event) => {
+                const val = event.target.value.trim();
+                if (isInternational && !val) {
+                  setErrors(prev => ({ ...prev, [`passenger_${index}_passportNo`]: "Passport Number is required" }));
+                } else if (val && !/^[A-Za-z0-9]{6,9}$/.test(val)) {
+                  setErrors(prev => ({ ...prev, [`passenger_${index}_passportNo`]: "Passport number must be 6 to 9 alphanumeric characters" }));
+                }
+              }}
               className={errors[`passenger_${index}_passportNo`] ? "field-has-error" : ""}
             />
             {errors[`passenger_${index}_passportNo`] && (
@@ -1490,20 +1587,105 @@ export default function FlightPassengerDetailsPage() {
             )}
           </label>
 
-          <label className="passenger-field">
+          <label className="passenger-field" style={{ position: "relative" }}>
             <span>Passport Issue Country *</span>
-            <input
-              type="text"
-              list="passport-country-options"
-              placeholder="Enter country name (e.g. India)"
-              value={passenger.passportIssueCountry ?? passenger.passportIssueCountryCode ?? ""}
-              onChange={(event) =>
-                handlePassportCountryChange(index, event.target.value)
-              }
-              onBlur={() => handlePassportCountryBlur(index)}
-              autoComplete="off"
-              className={errors[`passenger_${index}_passportIssueCountryCode`] ? "field-has-error" : ""}
-            />
+            <div style={{ position: "relative", width: "100%" }}>
+              <input
+                type="text"
+                placeholder="Select or enter country (e.g. India)"
+                value={passenger.passportIssueCountry ?? passenger.passportIssueCountryCode ?? ""}
+                onFocus={() => setActiveCountryDropdownIndex(index)}
+                onChange={(event) => {
+                  setActiveCountryDropdownIndex(index);
+                  handlePassportCountryChange(index, event.target.value);
+                }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    setActiveCountryDropdownIndex(null);
+                    handlePassportCountryBlur(index);
+                  }, 250);
+                }}
+                autoComplete="off"
+                className={errors[`passenger_${index}_passportIssueCountryCode`] ? "field-has-error" : ""}
+              />
+              {activeCountryDropdownIndex === index && (
+                <div
+                  className="passport-country-dropdown-menu"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 4px)",
+                    left: 0,
+                    right: 0,
+                    maxHeight: "220px",
+                    overflowY: "auto",
+                    backgroundColor: "#ffffff",
+                    borderRadius: "6px",
+                    border: "1px solid #cbd5e1",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                    zIndex: 1050,
+                    textAlign: "left"
+                  }}
+                >
+                  <div style={{ padding: "6px 10px", fontSize: "0.72rem", fontWeight: 700, color: "#64748b", background: "#f8fafc", textTransform: "uppercase" }}>
+                    Popular Countries & City Hubs
+                  </div>
+                  {POPULAR_COUNTRIES_AND_HUBS.map((c) => (
+                    <div
+                      key={`pop-${c.code}`}
+                      style={{
+                        padding: "7px 10px",
+                        fontSize: "0.82rem",
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        borderBottom: "1px solid #f1f5f9"
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handlePassportCountryChange(index, c.name);
+                        setActiveCountryDropdownIndex(null);
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    >
+                      <span style={{ fontWeight: 600, color: "#1e293b" }}>{c.desc || c.name}</span>
+                      <span style={{ fontSize: "0.72rem", color: "#64748b", background: "#e2e8f0", padding: "1px 6px", borderRadius: "4px" }}>{c.code}</span>
+                    </div>
+                  ))}
+                  <div style={{ padding: "6px 10px", fontSize: "0.72rem", fontWeight: 700, color: "#64748b", background: "#f8fafc", textTransform: "uppercase", borderTop: "1px solid #e2e8f0" }}>
+                    All Countries
+                  </div>
+                  {COUNTRIES.filter(c => {
+                    const q = (passenger.passportIssueCountry ?? passenger.passportIssueCountryCode ?? "").toLowerCase().trim();
+                    return !q || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
+                  }).slice(0, 50).map((c) => (
+                    <div
+                      key={`all-${c.code}`}
+                      style={{
+                        padding: "6px 10px",
+                        fontSize: "0.82rem",
+                        cursor: "pointer",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        borderBottom: "1px solid #f8fafc"
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handlePassportCountryChange(index, c.name);
+                        setActiveCountryDropdownIndex(null);
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#f1f5f9"}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+                    >
+                      <span style={{ color: "#334155" }}>{c.name}</span>
+                      <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>{c.code}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             {errors[`passenger_${index}_passportIssueCountryCode`] && (
               <span className="field-error-text">{errors[`passenger_${index}_passportIssueCountryCode`]}</span>
             )}
@@ -1647,7 +1829,7 @@ export default function FlightPassengerDetailsPage() {
                   </div>
                   <div className="flight-segment">
                     <div className="flight-city-info">
-                      <span className="flight-city-code">{leg?.sourceCode || "--"}</span>
+                      <span className="flight-city-code">{resolveLegCityCode(leg?.sourceCode, leg?.sourceName || leg?.fromCity || leg?.from)}</span>
                       <span className="flight-city-name">{leg?.sourceName || leg?.fromCity || "--"}</span>
                     </div>
                     <div className="flight-stops-indicator">
@@ -1655,7 +1837,7 @@ export default function FlightPassengerDetailsPage() {
                       <div className="stops-line"></div>
                     </div>
                     <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                      <span className="flight-city-code">{leg?.destinationCode || "--"}</span>
+                      <span className="flight-city-code">{resolveLegCityCode(leg?.destinationCode, leg?.destinationName || leg?.toCity || leg?.to)}</span>
                       <span className="flight-city-name">{leg?.destinationName || leg?.toCity || "--"}</span>
                     </div>
                   </div>
@@ -1681,7 +1863,7 @@ export default function FlightPassengerDetailsPage() {
                   )}
                   <div className="flight-segment">
                     <div className="flight-city-info">
-                      <span className="flight-city-code">{flight.sourceCode || "--"}</span>
+                      <span className="flight-city-code">{resolveLegCityCode(flight.sourceCode, searchContext?.source || flight.fromCity)}</span>
                       <span className="flight-city-name">{searchContext?.source || "--"}</span>
                     </div>
                     <div className="flight-stops-indicator">
@@ -1689,7 +1871,7 @@ export default function FlightPassengerDetailsPage() {
                       <div className="stops-line"></div>
                     </div>
                     <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                      <span className="flight-city-code">{flight.destinationCode || "--"}</span>
+                      <span className="flight-city-code">{resolveLegCityCode(flight.destinationCode, searchContext?.destination || flight.toCity)}</span>
                       <span className="flight-city-name">{searchContext?.destination || "--"}</span>
                     </div>
                   </div>
@@ -1713,7 +1895,7 @@ export default function FlightPassengerDetailsPage() {
                     </div>
                     <div className="flight-segment">
                       <div className="flight-city-info">
-                        <span className="flight-city-code">{returnFlightNormalized.sourceCode || "--"}</span>
+                        <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.sourceCode, searchContext?.destination || returnFlightNormalized.fromCity)}</span>
                         <span className="flight-city-name">{searchContext?.destination || "--"}</span>
                       </div>
                       <div className="flight-stops-indicator">
@@ -1721,7 +1903,7 @@ export default function FlightPassengerDetailsPage() {
                         <div className="stops-line"></div>
                       </div>
                       <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                        <span className="flight-city-code">{returnFlightNormalized.destinationCode || "--"}</span>
+                        <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.destinationCode, searchContext?.source || returnFlightNormalized.toCity)}</span>
                         <span className="flight-city-name">{searchContext?.source || "--"}</span>
                       </div>
                     </div>
@@ -2014,6 +2196,14 @@ export default function FlightPassengerDetailsPage() {
                     setContact(prev => ({ ...prev, email: e.target.value }));
                     setErrors(prev => { const c = { ...prev }; delete c.contact_email; return c; });
                   }}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+                    if (!val) {
+                      setErrors(prev => ({ ...prev, contact_email: "Email Address is required" }));
+                    } else if (!isValidEmail(val)) {
+                      setErrors(prev => ({ ...prev, contact_email: "Please enter a valid email address" }));
+                    }
+                  }}
                 />
                 {errors.contact_email && <span className="input-error-msg">{errors.contact_email}</span>}
               </div>
@@ -2038,6 +2228,14 @@ export default function FlightPassengerDetailsPage() {
                       setContact(prev => ({ ...prev, mobile: cleanValue }));
                       setErrors(prev => { const c = { ...prev }; delete c.contact_mobile; return c; });
                     }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim();
+                      if (!val) {
+                        setErrors(prev => ({ ...prev, contact_mobile: "Mobile Number is required" }));
+                      } else if (!isValidMobile(val)) {
+                        setErrors(prev => ({ ...prev, contact_mobile: "Please enter a valid 10-digit mobile number" }));
+                      }
+                    }}
                   />
                 </div>
                 {errors.contact_mobile && <span className="input-error-msg">{errors.contact_mobile}</span>}
@@ -2053,6 +2251,14 @@ export default function FlightPassengerDetailsPage() {
                     setContact(prev => ({ ...prev, addressLine1: e.target.value }));
                     setErrors(prev => { const c = { ...prev }; delete c.contact_addressLine1; return c; });
                   }}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+                    if (!val) {
+                      setErrors(prev => ({ ...prev, contact_addressLine1: "Address Line 1 is required" }));
+                    } else if (val.length < 5) {
+                      setErrors(prev => ({ ...prev, contact_addressLine1: "Address must be at least 5 characters" }));
+                    }
+                  }}
                 />
                 {errors.contact_addressLine1 && <span className="input-error-msg">{errors.contact_addressLine1}</span>}
               </div>
@@ -2067,6 +2273,14 @@ export default function FlightPassengerDetailsPage() {
                   onChange={(e) => {
                     setContact(prev => ({ ...prev, city: e.target.value }));
                     setErrors(prev => { const c = { ...prev }; delete c.contact_city; return c; });
+                  }}
+                  onBlur={(e) => {
+                    const val = e.target.value.trim();
+                    if (!val) {
+                      setErrors(prev => ({ ...prev, contact_city: "City is required" }));
+                    } else if (!/^[a-zA-Z\s\-']{2,50}$/.test(val)) {
+                      setErrors(prev => ({ ...prev, contact_city: "Please enter a valid city name (letters only)" }));
+                    }
                   }}
                 />
                 {errors.contact_city && <span className="input-error-msg">{errors.contact_city}</span>}

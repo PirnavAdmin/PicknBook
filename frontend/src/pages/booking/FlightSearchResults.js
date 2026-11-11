@@ -582,6 +582,38 @@ function normalizeTravellerSummary(value) {
   return text || "1 Adult";
 }
 
+function getWeekday(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function getFlightFareBreakdown(flight) {
+  if (!flight) return { baseFare: 0, tax: 0, publishedFare: 0, offerFare: 0, commission: 54 };
+  const total = Number(flight.fare || flight.price || 0);
+  const rawBase = Number(flight.Fare?.BaseFare || flight.FareBreakdown?.BaseFare || flight.baseFarePrice || 0);
+  const rawTax = Number(flight.Fare?.Tax || flight.FareBreakdown?.Tax || flight.taxPrice || 0);
+
+  let baseFare = rawBase > 0 && rawBase < total ? rawBase : Math.round(total * 0.7);
+  let tax = rawTax > 0 ? rawTax : Math.max(0, total - baseFare);
+  if (baseFare + tax !== total && total > 0) {
+    tax = Math.max(0, total - baseFare);
+  }
+
+  const publishedFare = Number(flight.Fare?.PublishedFare || flight.publishedFare || flight.b2cPublishedFare || total);
+  const offerFare = Number(flight.Fare?.OfferedFare || flight.offeredFare || flight.b2cFinalFare || (publishedFare > 54 ? publishedFare - 54 : publishedFare));
+  const commission = Math.max(0, publishedFare - offerFare) || 54;
+
+  return {
+    baseFare,
+    tax,
+    publishedFare,
+    offerFare,
+    commission,
+  };
+}
+
 export default function FlightSearchResults() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -625,7 +657,15 @@ export default function FlightSearchResults() {
   });
 
   const [showTravellersDropdown, setShowTravellersDropdown] = useState(false);
+  const [activeFareTooltipFlightId, setActiveFareTooltipFlightId] = useState(null);
   const travellersRef = useRef(null);
+
+  useEffect(() => {
+    if (!activeFareTooltipFlightId) return;
+    const handleDocClick = () => setActiveFareTooltipFlightId(null);
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
+  }, [activeFareTooltipFlightId]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -728,6 +768,21 @@ export default function FlightSearchResults() {
     }
     return [];
   }, [tripType, state.legs, location.search]);
+
+  useEffect(() => {
+    if (tripType === "multicity" && parsedMultiCityLegs.length > 0) {
+      const activeLeg = parsedMultiCityLegs[multiCityActiveTab] || parsedMultiCityLegs[0];
+      if (activeLeg) {
+        setModifyForm((prev) => ({
+          ...prev,
+          source: activeLeg.from || activeLeg.source || prev.source,
+          destination: activeLeg.to || activeLeg.destination || prev.destination,
+          departureDate: activeLeg.date || activeLeg.departureDate || prev.departureDate,
+          tripType: "multicity",
+        }));
+      }
+    }
+  }, [tripType, multiCityActiveTab, parsedMultiCityLegs]);
 
   let displaySourceName = sourceName;
   let displayDestinationName = destinationName;
@@ -2131,7 +2186,7 @@ export default function FlightSearchResults() {
               <div className="flight-trip-types">
                 <button
                   type="button"
-                  className={`flight-trip-chip ${modifyForm.tripType !== "twoway" ? "active" : ""}`}
+                  className={`flight-trip-chip ${modifyForm.tripType === "oneway" ? "active" : ""}`}
                   onClick={() => setModifyForm((prev) => ({ ...prev, tripType: "oneway" }))}
                 >
                   One Way
@@ -2142,6 +2197,13 @@ export default function FlightSearchResults() {
                   onClick={() => setModifyForm((prev) => ({ ...prev, tripType: "twoway" }))}
                 >
                   Round Trip
+                </button>
+                <button
+                  type="button"
+                  className={`flight-trip-chip ${modifyForm.tripType === "multicity" ? "active" : ""}`}
+                  onClick={() => setModifyForm((prev) => ({ ...prev, tripType: "multicity" }))}
+                >
+                  Multi City
                 </button>
               </div>
             </div>
@@ -2238,13 +2300,15 @@ export default function FlightSearchResults() {
                       )}
                     </div>
                   </div>
-                  <span style={{ fontSize: '13px', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    {modifyForm.tripType === "twoway" ? "ROUND TRIP" : formatFlightPillDate(modifyForm.departureDate).day}
+                  <span style={{ fontSize: '12px', color: '#475569', fontWeight: 500, letterSpacing: '0.01em', textTransform: 'capitalize' }}>
+                    {modifyForm.tripType === "twoway" ? "Round trip" : (getWeekday(modifyForm.departureDate) || formatFlightPillDate(modifyForm.departureDate).day)}
                   </span>
                   <CustomDatePicker
                     isOpen={activeDatePicker === "flight-discover-dep-date"}
                     onClose={() => setActiveDatePicker(null)}
                     value={modifyForm.departureDate}
+                    from={modifyForm.source}
+                    to={modifyForm.destination}
                     onChange={(val) => {
                       setModifyForm((previous) => ({
                         ...previous,
@@ -2258,6 +2322,8 @@ export default function FlightSearchResults() {
                       isOpen={activeDatePicker === "flight-discover-ret-date"}
                       onClose={() => setActiveDatePicker(null)}
                       value={modifyForm.returnDate}
+                      from={modifyForm.destination}
+                      to={modifyForm.source}
                       minDate={modifyForm.departureDate}
                       onChange={(val) => {
                         setModifyForm((previous) => ({
@@ -2288,8 +2354,8 @@ export default function FlightSearchResults() {
                       {currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants} Traveller{(currentTravellerCounts.adults + currentTravellerCounts.children + currentTravellerCounts.infants) > 1 ? 's' : ''}, {modifyForm.cabinClass || "All cabins"}
                     </span>
                   </div>
-                  <span style={{ fontSize: '13px', color: '#000000', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    CABIN &amp; SEATS
+                  <span style={{ fontSize: '12px', color: '#475569', fontWeight: 500, letterSpacing: '0.01em' }}>
+                    Cabin &amp; Seats
                   </span>
                 </div>
 
@@ -2400,7 +2466,7 @@ export default function FlightSearchResults() {
                 onClick={handleApplyModifySearch}
               >
                 <Search size={18} />
-                <span>Search Flights</span>
+                <span>Modify Search</span>
               </button>
             </form>
           </div>
@@ -2835,13 +2901,82 @@ export default function FlightSearchResults() {
                           </div>
                           
                           <div className="premium-compact-actions">
-                            <div className="premium-compact-price-col">
+                            <div className="premium-compact-price-col" style={{ position: "relative" }}>
                               <div className="premium-compact-price">
-                                ₹{new Intl.NumberFormat("en-IN").format(flight.fare)} <span className="info-circle">i</span>
+                                ₹{new Intl.NumberFormat("en-IN").format(flight.fare)}{" "}
+                                <button
+                                  type="button"
+                                  className="info-circle-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveFareTooltipFlightId((prev) => (prev === flight.id ? null : flight.id));
+                                  }}
+                                  aria-label="View Fare Breakdown"
+                                  style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    padding: "0 2px",
+                                    display: "inline-flex",
+                                    alignItems: "center"
+                                  }}
+                                >
+                                  <span className="info-circle" style={{ cursor: "pointer" }}>i</span>
+                                </button>
                               </div>
-                              <div className="premium-compact-published">
-                                Published ₹{new Intl.NumberFormat("en-IN").format(flight.fare + 150)}
-                              </div>
+
+                              {activeFareTooltipFlightId === flight.id && (() => {
+                                const breakdown = getFlightFareBreakdown(flight);
+                                return (
+                                  <div
+                                    className="fare-breakdown-dark-tooltip"
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                      position: "absolute",
+                                      bottom: "calc(100% + 8px)",
+                                      right: 0,
+                                      width: "240px",
+                                      backgroundColor: "#030712",
+                                      color: "#ffffff",
+                                      borderRadius: "12px",
+                                      padding: "14px 16px",
+                                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)",
+                                      zIndex: 9999,
+                                      textAlign: "left",
+                                      border: "1px solid #1f2937",
+                                      fontFamily: "inherit"
+                                    }}
+                                  >
+                                    <div style={{ fontSize: "0.82rem", fontWeight: 800, letterSpacing: "0.05em", color: "#93c5fd", textTransform: "uppercase", marginBottom: "12px" }}>
+                                      FARE BREAKDOWN
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#e5e7eb", marginBottom: "8px", fontWeight: 500 }}>
+                                      <span>Base Fare</span>
+                                      <span style={{ fontWeight: 700 }}>₹{new Intl.NumberFormat("en-IN").format(breakdown.baseFare)}</span>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#e5e7eb", marginBottom: "12px", fontWeight: 500 }}>
+                                      <span>Tax</span>
+                                      <span style={{ fontWeight: 700 }}>₹{new Intl.NumberFormat("en-IN").format(breakdown.tax)}</span>
+                                    </div>
+                                    <div style={{ height: "1px", backgroundColor: "#374151", margin: "10px 0" }} />
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#ffffff", marginBottom: "8px", fontWeight: 700 }}>
+                                      <span>Published fare</span>
+                                      <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.publishedFare)}</span>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#9ca3af", marginBottom: "10px", fontWeight: 500 }}>
+                                      <span>Offer fare</span>
+                                      <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.offerFare)}</span>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#10b981", fontWeight: 800, marginBottom: "6px" }}>
+                                      <span>Commission</span>
+                                      <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.commission)}</span>
+                                    </div>
+                                    <div style={{ fontSize: "0.68rem", color: "#6b7280", marginTop: "4px" }}>
+                                      Commission = Published – Offer
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
 
                             {flight.fareOptions?.length > 1 && (
@@ -2862,11 +2997,7 @@ export default function FlightSearchResults() {
                               className="premium-compact-select-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (flight.fareOptions?.length > 1) {
-                                  handleOpenFareSelection(flight);
-                                } else {
-                                  handleFinalizeFlightSelection(flight);
-                                }
+                                handleFinalizeFlightSelection(flight);
                               }}
                             >
                               <ArrowRight size={12} /> Select
@@ -3288,11 +3419,11 @@ export default function FlightSearchResults() {
       {/* Fare Selection Modal */}
       {activeFareSelectionModal.isOpen && activeFareSelectionModal.flight && (
         <div className="booking-modal-backdrop" onClick={handleCloseFareSelection} style={{ zIndex: 99999 }}>
-          <div className="booking-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px", width: "95%", boxSizing: "border-box", overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-            <div className="booking-modal-header" style={{ background: "var(--theme-primary, #ff0000)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "12px 12px 0 0", flexShrink: 0 }}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#ffffff", textTransform: "uppercase" }}>FLIGHT FARE LIST</h3>
-              <button type="button" onClick={handleCloseFareSelection} style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.4)", borderRadius: "6px", cursor: "pointer", color: "#ffffff", padding: "6px 12px", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}>
-                <X size={16} /> Close
+          <div className="booking-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "780px", width: "94%", boxSizing: "border-box", overflow: "hidden", display: "flex", flexDirection: "column", borderRadius: "14px", boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)" }}>
+            <div className="booking-modal-header" style={{ background: "var(--theme-primary, #ff0000)", padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "14px 14px 0 0", flexShrink: 0 }}>
+              <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#ffffff", textTransform: "uppercase" }}>Available Fares</h3>
+              <button type="button" onClick={handleCloseFareSelection} style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.4)", borderRadius: "6px", cursor: "pointer", color: "#ffffff", padding: "4px 10px", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600, fontSize: "0.8rem" }}>
+                <X size={15} /> Close
               </button>
             </div>
             
@@ -3372,19 +3503,24 @@ export default function FlightSearchResults() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <div style={{ textAlign: "right", marginRight: "16px", flex: 1 }}>
                             <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0f172a" }}>₹{new Intl.NumberFormat("en-IN").format(opt.b2cFinalFare || opt.b2cPublishedFare || opt.offeredFare)}</div>
-                            <div style={{ fontSize: "0.7rem", color: "#64748b" }}>Base ₹{new Intl.NumberFormat("en-IN").format(dBaseFare)} · Tax ₹{new Intl.NumberFormat("en-IN").format(dTax)}</div>
-                            <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "2px" }}>{opt.seatsRemaining || "Not provided"} seat(s) left</div>
+                            <div style={{ fontSize: "0.72rem", color: "#e11d48", fontWeight: 700, marginTop: "2px" }}>
+                              {opt.seatsRemaining ?? opt.availableSeats ?? opt.SeatsRemaining ?? opt.NoOfSeatAvailable ?? opt.seatsLeft ?? activeFareSelectionModal.flight.totalAvailableSeats ?? 9} seat(s) left
+                            </div>
                           </div>
                           <button
                             type="button"
                             style={{ background: "var(--theme-primary, #ff0000)", color: "#ffffff", border: "none", borderRadius: "6px", padding: "8px 16px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.9rem" }}
                             onClick={() => {
                               handleSelectFareOption(activeFareSelectionModal.flight.id, optIdx);
-                              // Use setTimeout to ensure the state update processes first
-                              setTimeout(() => {
-                                handleFinalizeFlightSelection(activeFareSelectionModal.flight);
-                                handleCloseFareSelection();
-                              }, 0);
+                              const updatedFlight = {
+                                ...activeFareSelectionModal.flight,
+                                fare: opt.b2cFinalFare || opt.b2cPublishedFare || opt.offeredFare || activeFareSelectionModal.flight.fare,
+                                price: opt.b2cFinalFare || opt.b2cPublishedFare || opt.offeredFare || activeFareSelectionModal.flight.price,
+                                resultIndex: opt.resultIndex || opt.ResultIndex || activeFareSelectionModal.flight.resultIndex,
+                                srdvIndex: opt.srdvIndex || activeFareSelectionModal.flight.srdvIndex,
+                              };
+                              handleCloseFareSelection();
+                              handleFinalizeFlightSelection(updatedFlight);
                             }}
                           >
                             <ArrowRight size={16} /> Select

@@ -2307,6 +2307,8 @@ export default function HomePage() {
   const [cabinClass, setCabinClass] = useState("All cabins");
   const [showTravellerDropdown, setShowTravellerDropdown] = useState(false);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
+  const [travellerDropPosition, setTravellerDropPosition] = useState("bottom");
+  const [classDropPosition, setClassDropPosition] = useState("bottom");
   const travellerFieldRef = useRef(null);
   const classFieldRef = useRef(null);
 
@@ -3634,13 +3636,45 @@ export default function HomePage() {
   const canResetAiChat =
     isAiTyping || aiChatInput.trim().length > 0 || aiChatMessages.length > 1;
 
+  const handleToggleTravellerDropdown = (e) => {
+    e?.stopPropagation?.();
+    if (!showTravellerDropdown && travellerFieldRef.current) {
+      const rect = travellerFieldRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      if (spaceBelow < 290 && spaceAbove > spaceBelow) {
+        setTravellerDropPosition("top");
+      } else {
+        setTravellerDropPosition("bottom");
+      }
+    }
+    setShowClassDropdown(false);
+    setShowTravellerDropdown((previous) => !previous);
+  };
+
+  const handleToggleClassDropdown = (e) => {
+    e?.stopPropagation?.();
+    if (!showClassDropdown && classFieldRef.current) {
+      const rect = classFieldRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      if (spaceBelow < 220 && spaceAbove > spaceBelow) {
+        setClassDropPosition("top");
+      } else {
+        setClassDropPosition("bottom");
+      }
+    }
+    setShowTravellerDropdown(false);
+    setShowClassDropdown((prev) => !prev);
+  };
+
   const travellerField = (
     <div className="field traveller-field" ref={travellerFieldRef}>
       <label>Travellers</label>
       <button
         type="button"
         className={`traveller-trigger ${showTravellerDropdown ? "open" : ""}`}
-        onClick={() => setShowTravellerDropdown((previous) => !previous)}
+        onClick={handleToggleTravellerDropdown}
       >
         <span
           className={`traveller-summary ${hasTravellerSelection ? "" : "placeholder"
@@ -3658,7 +3692,11 @@ export default function HomePage() {
       </button>
 
       {showTravellerDropdown && (
-        <div className="traveller-dropdown" onMouseDown={(e) => e.stopPropagation()}>
+        <div
+          className={`traveller-dropdown ${travellerDropPosition === "top" ? "drop-up" : ""}`}
+          style={travellerDropPosition === "top" ? { top: "auto", bottom: "calc(100% + 8px)" } : { top: "calc(100% + 8px)", bottom: "auto" }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <div className="counter-row">
             <div className="counter-copy">
               <strong>Adults</strong>
@@ -3745,7 +3783,7 @@ export default function HomePage() {
       <button
         type="button"
         className={`traveller-trigger ${showClassDropdown ? "open" : ""}`}
-        onClick={() => setShowClassDropdown((prev) => !prev)}
+        onClick={handleToggleClassDropdown}
       >
         <span
           className={`traveller-summary ${cabinClass ? "" : "placeholder"
@@ -3763,7 +3801,11 @@ export default function HomePage() {
       </button>
 
       {showClassDropdown && (
-        <div className="traveller-dropdown class-dropdown" onMouseDown={(e) => e.stopPropagation()}>
+        <div
+          className={`traveller-dropdown class-dropdown ${classDropPosition === "top" ? "drop-up" : ""}`}
+          style={classDropPosition === "top" ? { top: "auto", bottom: "calc(100% + 8px)" } : { top: "calc(100% + 8px)", bottom: "auto" }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <ul className="class-options-list">
             {CLASS_OPTIONS.map((item) => (
               <li key={item}>
@@ -7904,6 +7946,8 @@ export default function HomePage() {
                             {activeCalendarField === `leg-${leg.id}` && (
                               <CustomDatePicker isOpen={true}
                                 value={leg.departureDate}
+                                from={leg.from}
+                                to={leg.to}
                                 onChange={(newDate) => updateMultiCityLeg(leg.id, "departureDate", newDate)}
                                 onClose={() => setActiveCalendarField(null)}
                               />
@@ -8005,6 +8049,8 @@ export default function HomePage() {
                         {activeCalendarField === "flight-dep" && (
                           <CustomDatePicker isOpen={true}
                             value={flightDepartureDate}
+                            from={flightFrom}
+                            to={flightTo}
                             onChange={(newDate) => {
                               setFlightDepartureDate(newDate);
                               if (flightReturnDate && newDate && flightReturnDate < newDate) {
@@ -8038,6 +8084,8 @@ export default function HomePage() {
                           {activeCalendarField === "flight-ret" && (
                             <CustomDatePicker isOpen={true}
                               value={flightReturnDate}
+                              from={flightTo}
+                              to={flightFrom}
                               minDate={flightDepartureDate || ""}
                               onChange={(newDate) => setFlightReturnDate(newDate)}
                               onClose={() => setActiveCalendarField(null)}

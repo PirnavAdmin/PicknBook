@@ -1624,7 +1624,7 @@ export default function FlightSeatSelectionPage() {
                   </div>
 
                   <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    {activeSegmentIndex < segments.length - 1 ? (
+                    {activeSegmentIndex < segments.length - 1 && (
                       <button
                         type="button"
                         className="btn-primary"
@@ -1650,28 +1650,6 @@ export default function FlightSeatSelectionPage() {
                         {effectiveLegs[activeSegmentIndex + 1]?.isReturnLeg
                           ? "Select Return Flight Seats"
                           : `Next Flight Seats (${segments[activeSegmentIndex + 1]?.replace("-", " → ")})`} <ArrowRight size={16} />
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "10px 22px",
-                          borderRadius: "8px",
-                          background: "#16a34a",
-                          color: "#ffffff",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          border: "none",
-                          boxShadow: "0 2px 6px rgba(22,163,74,0.3)"
-                        }}
-                        onClick={handleContinue}
-                        disabled={selectedSeats.length > 0 && selectedSeats.length !== travellers.seatRequired}
-                      >
-                        Continue to Payment <ArrowRight size={16} />
                       </button>
                     )}
                   </div>

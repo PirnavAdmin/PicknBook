@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { getCalendarFare } from "../services/flightBookingService";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const MONTH_NAMES = [
@@ -39,6 +40,11 @@ export default function CustomDatePicker({
   onClose,
   align = "left",
   title = "Select Date",
+  from,
+  to,
+  origin,
+  destination,
+  showFares = true,
 }) {
   // anchorRef stays in the normal DOM to measure position
   const anchorRef = useRef(null);
@@ -54,6 +60,57 @@ export default function CustomDatePicker({
   });
 
   const [popupPos, setPopupPos] = useState({ top: 0, left: 0 });
+  const [faresByDate, setFaresByDate] = useState({});
+  const [isLoadingFares, setIsLoadingFares] = useState(false);
+  const faresCacheRef = useRef({});
+
+  // Fetch calendar fares when open and route is available
+  const routeOrigin = origin || from || "";
+  const routeDestination = destination || to || "";
+
+  useEffect(() => {
+    if (!isOpen || !showFares || !routeOrigin || !routeDestination) return;
+
+    const currentYear = viewDate.getFullYear();
+    const currentMonth = viewDate.getMonth() + 1;
+    const monthStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+    const cacheKey = `${routeOrigin}_${routeDestination}_${monthStr}`;
+
+    if (faresCacheRef.current[cacheKey]) {
+      setFaresByDate(faresCacheRef.current[cacheKey]);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingFares(true);
+
+    getCalendarFare({
+      origin: routeOrigin,
+      destination: routeDestination,
+      from: routeOrigin,
+      to: routeDestination,
+      month: monthStr,
+    })
+      .then((res) => {
+        if (!isMounted) return;
+        if (res?.fareMapByDate && Object.keys(res.fareMapByDate).length > 0) {
+          faresCacheRef.current[cacheKey] = res.fareMapByDate;
+          setFaresByDate(res.fareMapByDate);
+        } else {
+          setFaresByDate({});
+        }
+      })
+      .catch(() => {
+        if (isMounted) setFaresByDate({});
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingFares(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, showFares, routeOrigin, routeDestination, viewDate]);
 
   // Sync view date when opening
   useEffect(() => {
@@ -67,7 +124,7 @@ export default function CustomDatePicker({
   useEffect(() => {
     if (!isOpen || !anchorRef.current) return;
 
-    const POPUP_WIDTH = 260;
+    const POPUP_WIDTH = 280;
 
     const computePos = () => {
       const rect = anchorRef.current.getBoundingClientRect();
@@ -189,7 +246,7 @@ export default function CustomDatePicker({
         top: popupPos.top,
         left: popupPos.left,
         zIndex: 2147483647,
-        width: "260px",
+        width: "280px",
         boxSizing: "border-box",
         background: "#ffffff",
         borderRadius: "16px",
@@ -214,18 +271,27 @@ export default function CustomDatePicker({
         }
         .pnb-dp-nav-btn:hover { background: #fef2f2; border-color: #fca5a5; transform: scale(1.05); }
         .pnb-dp-day-cell {
-          width: 28px; height: 28px; border-radius: 7px;
+          width: 35px; min-height: 35px; border-radius: 7px;
           border: 1px solid transparent; background: transparent;
           font-size: 0.74rem; font-weight: 600; color: #1e293b;
-          display: flex; align-items: center; justify-content: center;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
           cursor: pointer; transition: all 0.18s ease; margin: 0 auto;
-          padding: 0; position: relative;
+          padding: 1px 0; position: relative;
+        }
+        .pnb-dp-day-num { line-height: 1.1; }
+        .pnb-dp-fare-badge {
+          font-size: 0.58rem; font-weight: 700; line-height: 1; color: #059669; margin-top: 1px;
+        }
+        .pnb-dp-fare-badge.lowest {
+          color: #15803d; font-weight: 800; background: #dcfce7; padding: 1px 3px; border-radius: 3px;
         }
         .pnb-dp-day-cell:hover:not(.disabled):not(.selected) { background: #fef2f2; color: #ff0000; border-color: #fecaca; }
         .pnb-dp-day-cell.selected { background: linear-gradient(135deg,#ef4444 0%,#ff0000 100%) !important; color:#fff !important; box-shadow: 0 4px 10px rgba(220,30,38,0.4) !important; border-color:#ff0000 !important; font-weight:700 !important; }
+        .pnb-dp-day-cell.selected .pnb-dp-fare-badge { color: #ffffff !important; background: transparent !important; }
         .pnb-dp-day-cell.today:not(.selected) { border-color: #ff0000; color: #ff0000; }
-        .pnb-dp-day-cell.today:not(.selected)::after { content:""; position:absolute; bottom:3px; width:4px; height:4px; border-radius:50%; background:#ff0000; }
+        .pnb-dp-day-cell.today:not(.selected)::after { content:""; position:absolute; bottom:2px; width:4px; height:4px; border-radius:50%; background:#ff0000; }
         .pnb-dp-day-cell.disabled { color:#cbd5e1 !important; cursor:not-allowed !important; opacity:0.45; }
+        .pnb-dp-day-cell.disabled .pnb-dp-fare-badge { opacity: 0.35; color: #94a3b8 !important; }
         .pnb-dp-quick-btn { border-radius:10px; border:1px solid #fee2e2; background:#fff5f5; color:#ff0000; font-size:0.65rem; font-weight:700; letter-spacing:0.03em; text-transform:uppercase; padding:3px 8px; cursor:pointer; transition:all 0.2s ease; }
         .pnb-dp-quick-btn:hover { background:#ff0000; color:#fff; border-color:#ff0000; box-shadow:0 2px 6px rgba(220,30,38,0.25); }
       `}</style>
@@ -235,6 +301,7 @@ export default function CustomDatePicker({
         <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
           <CalendarIcon size={13} style={{ color:"#ff0000" }} />
           <span style={{ fontSize:"0.68rem", fontWeight:800, color:"#0f172a", textTransform:"uppercase", letterSpacing:"0.06em" }}>{title}</span>
+          {isLoadingFares && <Loader2 size={12} className="animate-spin" style={{ color: "#ef4444" }} />}
         </div>
         <button type="button" onClick={onClose} style={{ background:"transparent", border:"none", color:"#94a3b8", cursor:"pointer", padding:"2px", display:"flex", alignItems:"center", borderRadius:"6px" }} aria-label="Close calendar">
           <X size={16} />
@@ -258,19 +325,28 @@ export default function CustomDatePicker({
       {/* Days Grid */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", rowGap:"2px", marginBottom:"8px" }}>
         {daysArray.map((day, idx) => {
-          if (day === null) return <div key={`empty-${idx}`} style={{ width:"28px", height:"28px" }} />;
+          if (day === null) return <div key={`empty-${idx}`} style={{ width:"35px", height:"35px" }} />;
           const disabled = isDateDisabled(currentYear, currentMonth, day);
           const selected = isDateSelected(currentYear, currentMonth, day);
           const today = isDateToday(currentYear, currentMonth, day);
+          const iso = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const fareObj = faresByDate[iso];
+          const hasFare = Boolean(fareObj && fareObj.totalFare > 0);
           return (
             <button
               key={`day-${day}`}
               type="button"
-              className={`pnb-dp-day-cell${disabled?" disabled":""}${selected?" selected":""}${today?" today":""}`}
+              className={`pnb-dp-day-cell${disabled?" disabled":""}${selected?" selected":""}${today?" today":""}${hasFare?" has-fare":""}`}
               disabled={disabled}
               onClick={() => handleSelectDay(day)}
+              title={hasFare ? `Indicative Fare: ₹${fareObj.totalFare.toLocaleString('en-IN')}${fareObj.airlineName ? ` (${fareObj.airlineName})` : ''}${fareObj.isLowestFareOfMonth ? ' - Lowest Fare' : ''}` : undefined}
             >
-              {day}
+              <span className="pnb-dp-day-num">{day}</span>
+              {hasFare && (
+                <span className={`pnb-dp-fare-badge${fareObj.isLowestFareOfMonth ? " lowest" : ""}`}>
+                  ₹{fareObj.totalFare >= 10000 ? `${(fareObj.totalFare / 1000).toFixed(1)}k` : Math.round(fareObj.totalFare)}
+                </span>
+              )}
             </button>
           );
         })}
