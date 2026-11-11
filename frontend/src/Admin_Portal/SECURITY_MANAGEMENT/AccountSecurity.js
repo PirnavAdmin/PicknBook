@@ -31,44 +31,15 @@ export default function AccountSecurity() {
     try {
       const response = await securityService.getLockedAccounts(searchQuery);
       const items = response?.data || (Array.isArray(response) ? response : []);
-      if (Array.isArray(items) && items.length > 0) {
+      if (Array.isArray(items)) {
         setLockedAccounts(items);
       } else {
-        // Mock fallback representation matching API spec when no live backend data is present
-        setLockedAccounts([
-          {
-            id: 'c1f7a04918e945c7b39886a1005bc140',
-            userId: '42',
-            userName: 'Rohan Sharma',
-            email: 'customer@example.com',
-            failedAttempts: 3,
-            maxAllowedAttempts: 3,
-            lockedOn: '2026-10-06T14:30:00Z',
-            unlockAt: '2026-10-06T14:45:00Z',
-            remainingMinutes: 11,
-            lockType: '15 Minutes',
-            reason: 'Account blocked for 15 minutes due to multiple failed attempts.',
-            status: 'Locked'
-          },
-          {
-            id: 'e892d19bca024eaeb21255c8409ba711',
-            userId: '87',
-            userName: 'Pooja Verma',
-            email: 'pooja@example.com',
-            failedAttempts: 3,
-            maxAllowedAttempts: 3,
-            lockedOn: '2026-10-06T11:00:00Z',
-            unlockAt: '2026-10-07T11:00:00Z',
-            remainingMinutes: 1215,
-            lockType: '24 Hours',
-            reason: 'Account blocked for 24 hours due to multiple failed attempts.',
-            status: 'Locked'
-          }
-        ]);
+        setLockedAccounts([]);
       }
     } catch (err) {
       console.warn('Error fetching locked accounts:', err);
       showToast('⚠️ Could not load locked accounts from server.');
+      setLockedAccounts([]);
     } finally {
       setLoadingLocked(false);
     }
@@ -178,7 +149,7 @@ export default function AccountSecurity() {
           <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', flex: 1, maxWidth: '450px' }}>
             <input
               type="text"
-              placeholder="Search by User ID, Customer Name, or Email..."
+              placeholder="Search by Mobile, User ID, Name, or Email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -261,7 +232,10 @@ export default function AccountSecurity() {
                                 <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '13px' }}>
                                   {acc.userName || `User #${acc.userId}`}
                                 </span>
-                                <span style={{ fontSize: '12px', color: '#2563eb' }}>{acc.email}</span>
+                                {acc.email && <span style={{ fontSize: '12px', color: '#2563eb' }}>{acc.email}</span>}
+                                {acc.phoneNumber && (
+                                  <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600 }}>📞 {acc.phoneNumber}</span>
+                                )}
                                 <span style={{ fontSize: '11px', color: '#64748b' }}>ID: {acc.userId}</span>
                               </div>
                             </td>
