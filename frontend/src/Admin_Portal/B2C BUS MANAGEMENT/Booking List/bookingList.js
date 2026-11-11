@@ -1055,12 +1055,14 @@ const toUnifiedAdminBooking = (record, sourceType) => {
     customerFareInr: parseNumber(record?.customerFareInr, fare),
     netFareInr: parseNumber(record?.netFareInr, 0),
     baseFareInr: parseNumber(record?.baseFareInr, 0),
+    taxInr: parseNumber(record?.taxInr, 0),
     taxableFareInr: parseNumber(record?.taxableFareInr, 0),
-    discountAmountInr: parseNumber(record?.discountAmount, 0),
-    markupAmountInr: parseNumber(record?.markupAmount, 0),
-    convenienceFeeInr: parseNumber(record?.convenienceFee, 0),
+    srdvMarginInr: parseNumber(record?.srdvMarginInr ?? record?.srdvCommercialMargin ?? record?.commercialMargin ?? record?.srdvMargin, 0),
+    discountAmountInr: parseNumber(record?.discountAmount ?? record?.discountAmountInr, 0),
+    markupAmountInr: parseNumber(record?.markupAmount ?? record?.markupAmountInr, 0),
+    convenienceFeeInr: parseNumber(record?.convenienceFee ?? record?.convenienceFeeInr, 0),
     gstPercent: parseNumber(record?.gstPercent, 0),
-    gstAmountInr: parseNumber(record?.gstAmount, 0),
+    gstAmountInr: parseNumber(record?.gstAmount ?? record?.gstAmountInr, 0),
     calculatedProfit,
     profit,
     cancellationReason: normalizeText(record?.cancellationReason, ""),
@@ -1902,11 +1904,6 @@ export default function AdminB2CBookingListPage() {
                     <td>Total fare charged to customer</td>
                   </tr>
                   <tr>
-                    <td><strong>Net Fare</strong></td>
-                    <td>{adminProfitFormatter.format(Number(selectedBooking.netFareInr || selectedBooking.fare) || 0)}</td>
-                    <td>Net payable fare amount</td>
-                  </tr>
-                  <tr>
                     <td><strong>Base Fare</strong></td>
                     <td>{adminProfitFormatter.format(Number(selectedBooking.baseFareInr) || 0)}</td>
                     <td>Base ticket fare cost</td>
@@ -1937,8 +1934,8 @@ export default function AdminB2CBookingListPage() {
                     <td>Platform convenience fee</td>
                   </tr>
                   <tr>
-                    <td><strong>GST Percent / Amount</strong></td>
-                    <td>{selectedBooking.gstPercent ? `${selectedBooking.gstPercent}%` : "0.00%"} / {adminProfitFormatter.format(Number(selectedBooking.gstAmountInr) || 0)}</td>
+                    <td><strong>GST Amount</strong></td>
+                    <td>{adminProfitFormatter.format(Number(selectedBooking.gstAmountInr) || 0)}</td>
                     <td>Applicable GST taxes</td>
                   </tr>
                   <tr className="admin-view-highlight-row">

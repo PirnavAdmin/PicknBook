@@ -1128,38 +1128,33 @@ export default function HotelBookingList() {
                     <td>Total fare charged to customer</td>
                   </tr>
                   <tr>
-                    <td>Net Fare</td>
-                    <td>{selectedBooking.srdvOfferedPrice ? formatCurrency(selectedBooking.srdvOfferedPrice) : formatCurrency(selectedBooking.totalPrice)}</td>
-                    <td>Net payable fare amount</td>
-                  </tr>
-                  <tr>
-                    <td>Base Fare</td>
-                    <td>{formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}</td>
-                    <td>Base room tariff cost</td>
-                  </tr>
-                  <tr>
                     <td>Taxable Fare</td>
-                    <td>₹0.00</td>
+                    <td>{formatCurrency(selectedBooking.taxableAmount || 0)}</td>
                     <td>Fare amount subject to taxes</td>
                   </tr>
                   <tr>
+                    <td>Tax</td>
+                    <td>{formatCurrency(selectedBooking.tax || 0)}</td>
+                    <td>Room taxes</td>
+                  </tr>
+                  <tr>
                     <td>Markup Amount</td>
-                    <td>₹0.00</td>
+                    <td>{formatCurrency(selectedBooking.markupAmount || 0)}</td>
                     <td>Admin markup added</td>
                   </tr>
                   <tr>
                     <td>Discount Amount</td>
-                    <td>₹0.00</td>
+                    <td>{formatCurrency(selectedBooking.discountAmount || 0)}</td>
                     <td>Applied coupon / promo discount</td>
                   </tr>
                   <tr>
                     <td>Convenience Fee</td>
-                    <td>₹0.00</td>
+                    <td>{formatCurrency(selectedBooking.convenienceFee || 0)}</td>
                     <td>Platform convenience fee</td>
                   </tr>
                   <tr>
-                    <td>GST Percent / Amount</td>
-                    <td>0.00% / ₹0.00</td>
+                    <td>GST Amount</td>
+                    <td>{formatCurrency(selectedBooking.totalGSTAmount || selectedBooking.gstAmount || selectedBooking.srdvGstAmount || 0)}</td>
                     <td>Applicable GST taxes</td>
                   </tr>
                   <tr className="admin-view-highlight-row" style={{ background: "#f8fafc" }}>
