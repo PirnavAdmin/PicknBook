@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Info, Tag, Mail, Check, X, Shield, ArrowRight, ShieldCheck, User, Loader2, XCircle, Plane } from "lucide-react";
+import { Info, Tag, Mail, Check, X, Shield, ArrowRight, ShieldCheck, User, Loader2, XCircle, Plane, Briefcase } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/FlightBookingFlow.css";
 
@@ -15,6 +15,94 @@ import { getWalletSummary } from "../../services/walletService";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import BookingTimer from "./BookingTimer";
 import { COUNTRIES, findCountry, isValidCountry, getCountryCode } from "../../utils/countries";
+import { formatFlightTime, formatFlightDate } from "../../utils/flightDateTimeUtils";
+
+function extractFlightSegments(flt, fareQuoteObj) {
+  let segs = [];
+  if (Array.isArray(fareQuoteObj?.results?.Segments?.[0]) && fareQuoteObj.results.Segments[0].length > 0) {
+    segs = fareQuoteObj.results.Segments[0];
+  } else if (Array.isArray(flt?.segments) && flt.segments.length > 0) {
+    segs = Array.isArray(flt.segments[0]) ? flt.segments[0] : flt.segments;
+  } else if (Array.isArray(flt?.Segments) && flt.Segments.length > 0) {
+    segs = Array.isArray(flt.Segments[0]) ? flt.Segments[0] : flt.Segments;
+  } else if (Array.isArray(flt?.FareDataMultiple?.[0]?.FareSegments) && flt.FareDataMultiple[0].FareSegments.length > 0) {
+    segs = flt.FareDataMultiple[0].FareSegments;
+  } else if (Array.isArray(flt?.fareSegments) && flt.fareSegments.length > 0) {
+    segs = flt.fareSegments;
+  }
+
+  const fareSegs = flt?.FareDataMultiple?.[0]?.FareSegments || flt?.fareSegments || [];
+
+  return segs.filter(Boolean).map((s, idx) => {
+    const originAirportCode = s.Origin?.AirportCode || s.Origin?.Airport?.AirportCode || s.FromAirportCode || s.fromAirportCode || s.sourceCode || "";
+    const originAirportName = s.Origin?.AirportName || s.Origin?.Airport?.AirportName || s.FromAirportName || s.fromAirportName || "";
+    const originCity = s.Origin?.CityName || s.Origin?.Airport?.CityName || s.FromCity || s.fromCity || "";
+    const originTerminal = s.Origin?.Terminal || s.Origin?.Airport?.Terminal || s.FromTerminal || "";
+    const depTime = s.DepTime || s.DepartureTime || s.depTime || "";
+
+    const destAirportCode = s.Destination?.AirportCode || s.Destination?.Airport?.AirportCode || s.ToAirportCode || s.toAirportCode || s.destinationCode || "";
+    const destAirportName = s.Destination?.AirportName || s.Destination?.Airport?.AirportName || s.ToAirportName || s.toAirportName || "";
+    const destCity = s.Destination?.CityName || s.Destination?.Airport?.CityName || s.ToCity || s.toCity || "";
+    const destTerminal = s.Destination?.Terminal || s.Destination?.Airport?.Terminal || s.ToTerminal || "";
+    const arrTime = s.ArrTime || s.ArrivalTime || s.arrTime || "";
+
+    const airline = s.Airline?.AirlineName || s.AirlineName || flt?.airlineName || flt?.airline || "";
+    const airlineCode = s.Airline?.AirlineCode || s.AirlineCode || flt?.airlineCode || "";
+    const flightNumber = s.Airline?.FlightNumber || s.FlightNumber || flt?.flightNumber || "";
+
+    const durationVal = s.Duration || s.duration;
+    let durationText = "";
+    if (typeof durationVal === "number" && durationVal > 0) {
+      durationText = `${Math.floor(durationVal / 60)}h ${durationVal % 60}m`;
+    } else if (typeof durationVal === "string") {
+      durationText = durationVal;
+    }
+
+    const matchingFareSeg = fareSegs[idx] || fareSegs[0] || {};
+    const baggage = s.Baggage || matchingFareSeg.Baggage || (flt?.checkedBagsWeight ? `${flt.checkedBagsWeight} ${flt.checkedBagsUnit || "KG"}` : "15 KG");
+    const cabinBaggage = s.CabinBaggage || matchingFareSeg.CabinBaggage || (flt?.cabinBagsWeight ? `${flt.cabinBagsWeight} ${flt.cabinBagsUnit || "KG"}` : "7 KG");
+    const cabinClass = s.CabinClassName || matchingFareSeg.CabinClassName || flt?.selectedTravelClass || "Economy";
+    const isRefundable = s.IsRefundable ?? matchingFareSeg.IsRefundable ?? flt?.isRefundable ?? true;
+
+    let layoverTime = "";
+    if (idx < segs.length - 1 && arrTime && segs[idx + 1]) {
+      const nextDepTime = segs[idx + 1].DepTime || segs[idx + 1].DepartureTime || segs[idx + 1].depTime;
+      if (nextDepTime) {
+        try {
+          const diffMs = new Date(nextDepTime).getTime() - new Date(arrTime).getTime();
+          if (diffMs > 0) {
+            const totalM = Math.floor(diffMs / 60000);
+            const lh = Math.floor(totalM / 60);
+            const lm = totalM % 60;
+            layoverTime = `${lh}h ${lm}m`;
+          }
+        } catch (e) { }
+      }
+    }
+
+    return {
+      originAirportCode,
+      originAirportName,
+      originCity,
+      originTerminal,
+      depTime,
+      destAirportCode,
+      destAirportName,
+      destCity,
+      destTerminal,
+      arrTime,
+      airline,
+      airlineCode,
+      flightNumber,
+      durationText,
+      baggage,
+      cabinBaggage,
+      cabinClass,
+      isRefundable,
+      layoverTime,
+    };
+  });
+}
 
 const TRAVELER_STORAGE_KEY = "my_traveler_data";
 
@@ -557,6 +645,23 @@ export default function FlightPassengerDetailsPage() {
     searchContext?.isInternational
   );
   const [fareQuoteError, setFareQuoteError] = useState("");
+
+  const onwardSegments = useMemo(() => extractFlightSegments(flight, fareQuoteData), [flight, fareQuoteData]);
+  const returnSegments = useMemo(() => returnFlightNormalized ? extractFlightSegments(returnFlightNormalized, fareQuoteData) : [], [returnFlightNormalized, fareQuoteData]);
+
+  const handleNavigateToSeats = (segmentIndex = 0) => {
+    const currentPayload = {
+      ...flowState,
+      passengers,
+      contact,
+      specialAssistance,
+      couponCode: couponCode.trim().toUpperCase(),
+      fareQuote: fareQuoteData || flowState.fareQuote,
+      activeSegmentIndex: segmentIndex,
+    };
+    writeFlightBookingFlowState(currentPayload);
+    navigate("/flight/seats", { state: { ...currentPayload, activeSegmentIndex: segmentIndex } });
+  };
 
   useEffect(() => {
     let isCurrent = true;
@@ -1927,29 +2032,90 @@ export default function FlightPassengerDetailsPage() {
                       1. Onward Flight
                     </div>
                   )}
-                  <div className="flight-segment">
-                    <div className="flight-city-info">
-                      <span className="flight-city-code">{resolveLegCityCode(flight.sourceCode, searchContext?.source || flight.fromCity)}</span>
-                      <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                  {onwardSegments && onwardSegments.length > 1 ? (
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0f172a" }}>
+                          {resolveLegCityCode(flight.sourceCode, searchContext?.source || flight.fromCity)} → {resolveLegCityCode(flight.destinationCode, searchContext?.destination || flight.toCity)}
+                        </div>
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <span style={{ fontSize: "0.72rem", background: "#fef3c7", color: "#b45309", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                            {onwardSegments.length - 1} stop
+                          </span>
+                          <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                            ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="connecting-flight-journey">
+                        {onwardSegments.map((seg, sIdx) => (
+                          <React.Fragment key={`onw-seg-${sIdx}`}>
+                            <div className="connecting-segment-card">
+                              <div className="connecting-seg-header">
+                                <span className="connecting-seg-airline">{seg.airline} {seg.airlineCode} {seg.flightNumber}</span>
+                                <span className="connecting-seg-badge">Segment {sIdx + 1}</span>
+                              </div>
+                              <div className="connecting-seg-body">
+                                <div className="connecting-time-col">
+                                  <span className="connecting-time">{formatFlightTime(seg.depTime) || seg.depTime}</span>
+                                  <span className="connecting-city">{seg.originCity || seg.originAirportCode}</span>
+                                  <span className="connecting-airport">{seg.originAirportCode}{seg.originTerminal ? ` • T${seg.originTerminal}` : ""}</span>
+                                </div>
+                                <div className="connecting-dur-col">
+                                  <span className="connecting-dur-label">{seg.durationText || "--"}</span>
+                                  <div className="connecting-dur-line" />
+                                </div>
+                                <div className="connecting-time-col" style={{ textAlign: "right" }}>
+                                  <span className="connecting-time">{formatFlightTime(seg.arrTime) || seg.arrTime}</span>
+                                  <span className="connecting-city">{seg.destCity || seg.destAirportCode}</span>
+                                  <span className="connecting-airport">{seg.destAirportCode}{seg.destTerminal ? ` • T${seg.destTerminal}` : ""}</span>
+                                </div>
+                              </div>
+                              <div className="connecting-seg-footer">
+                                <span>🧳 Cabin: {seg.cabinBaggage}</span>
+                                <span>📦 Check-in: {seg.baggage}</span>
+                              </div>
+                            </div>
+
+                            {seg.layoverTime && (
+                              <div className="connecting-layover-bar">
+                                <span className="connecting-layover-pill">
+                                  Connection at {seg.destAirportCode} ({seg.layoverTime} layover)
+                                </span>
+                              </div>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flight-stops-indicator">
-                      <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
-                      <div className="stops-line"></div>
-                    </div>
-                    <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                      <span className="flight-city-code">{resolveLegCityCode(flight.destinationCode, searchContext?.destination || flight.toCity)}</span>
-                      <span className="flight-city-name">{searchContext?.destination || "--"}</span>
-                    </div>
-                  </div>
-                  <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <span className="flight-date-badge">{flight.departDate || searchContext?.departureDate || "--"}{flight.departureTime ? ` • ${flight.departureTime}` : ""}</span>
-                      <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                        ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
-                      </span>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flight-segment">
+                        <div className="flight-city-info">
+                          <span className="flight-city-code">{resolveLegCityCode(flight.sourceCode, searchContext?.source || flight.fromCity)}</span>
+                          <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                        </div>
+                        <div className="flight-stops-indicator">
+                          <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
+                          <div className="stops-line"></div>
+                        </div>
+                        <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                          <span className="flight-city-code">{resolveLegCityCode(flight.destinationCode, searchContext?.destination || flight.toCity)}</span>
+                          <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+                        </div>
+                      </div>
+                      <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
+                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                          <span className="flight-date-badge">{flight.departDate || searchContext?.departureDate || "--"}{flight.departureTime ? ` • ${flight.departureTime}` : ""}</span>
+                          <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                            ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
+                          </span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Return Flight Segment */}
@@ -1959,29 +2125,90 @@ export default function FlightPassengerDetailsPage() {
                     <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ff0000", textTransform: "uppercase", marginBottom: 6 }}>
                       2. Return Flight
                     </div>
-                    <div className="flight-segment">
-                      <div className="flight-city-info">
-                        <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.sourceCode, searchContext?.destination || returnFlightNormalized.fromCity)}</span>
-                        <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+                    {returnSegments && returnSegments.length > 1 ? (
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0f172a" }}>
+                            {resolveLegCityCode(returnFlightNormalized.sourceCode, searchContext?.destination || returnFlightNormalized.fromCity)} → {resolveLegCityCode(returnFlightNormalized.destinationCode, searchContext?.source || returnFlightNormalized.toCity)}
+                          </div>
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.72rem", background: "#fef3c7", color: "#b45309", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
+                              {returnSegments.length - 1} stop
+                            </span>
+                            <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                              ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized.fare || returnFlightNormalized.price || returnFlightNormalized.priceInr || returnFlightNormalized.selectedTravelClassPriceInr || 0))}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="connecting-flight-journey">
+                          {returnSegments.map((seg, sIdx) => (
+                            <React.Fragment key={`ret-seg-${sIdx}`}>
+                              <div className="connecting-segment-card">
+                                <div className="connecting-seg-header">
+                                  <span className="connecting-seg-airline">{seg.airline} {seg.airlineCode} {seg.flightNumber}</span>
+                                  <span className="connecting-seg-badge">Segment {sIdx + 1}</span>
+                                </div>
+                                <div className="connecting-seg-body">
+                                  <div className="connecting-time-col">
+                                    <span className="connecting-time">{formatFlightTime(seg.depTime) || seg.depTime}</span>
+                                    <span className="connecting-city">{seg.originCity || seg.originAirportCode}</span>
+                                    <span className="connecting-airport">{seg.originAirportCode}{seg.originTerminal ? ` • T${seg.originTerminal}` : ""}</span>
+                                  </div>
+                                  <div className="connecting-dur-col">
+                                    <span className="connecting-dur-label">{seg.durationText || "--"}</span>
+                                    <div className="connecting-dur-line" />
+                                  </div>
+                                  <div className="connecting-time-col" style={{ textAlign: "right" }}>
+                                    <span className="connecting-time">{formatFlightTime(seg.arrTime) || seg.arrTime}</span>
+                                    <span className="connecting-city">{seg.destCity || seg.destAirportCode}</span>
+                                    <span className="connecting-airport">{seg.destAirportCode}{seg.destTerminal ? ` • T${seg.destTerminal}` : ""}</span>
+                                  </div>
+                                </div>
+                                <div className="connecting-seg-footer">
+                                  <span>🧳 Cabin: {seg.cabinBaggage}</span>
+                                  <span>📦 Check-in: {seg.baggage}</span>
+                                </div>
+                              </div>
+
+                              {seg.layoverTime && (
+                                <div className="connecting-layover-bar">
+                                  <span className="connecting-layover-pill">
+                                    Connection at {seg.destAirportCode} ({seg.layoverTime} layover)
+                                  </span>
+                                </div>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </div>
                       </div>
-                      <div className="flight-stops-indicator">
-                        <span className="stops-text">{Number(returnFlightNormalized.stops || 0) > 0 ? `${returnFlightNormalized.stops} stop` : "Non stop"}</span>
-                        <div className="stops-line"></div>
-                      </div>
-                      <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                        <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.destinationCode, searchContext?.source || returnFlightNormalized.toCity)}</span>
-                        <span className="flight-city-name">{searchContext?.source || "--"}</span>
-                      </div>
-                    </div>
-                    <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span>{returnFlightNormalized.airlineName || returnFlightNormalized.airline} ({returnFlightNormalized.flightNumber})</span>
-                      <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                        <span className="flight-date-badge">{returnFlightNormalized.departDate || searchContext?.returnDate || "--"}{returnFlightNormalized.departureTime ? ` • ${returnFlightNormalized.departureTime}` : ""}</span>
-                        <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                          ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized.fare || returnFlightNormalized.price || returnFlightNormalized.priceInr || returnFlightNormalized.selectedTravelClassPriceInr || 0))}
-                        </span>
-                      </div>
-                    </div>
+                    ) : (
+                      <>
+                        <div className="flight-segment">
+                          <div className="flight-city-info">
+                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.sourceCode, searchContext?.destination || returnFlightNormalized.fromCity)}</span>
+                            <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+                          </div>
+                          <div className="flight-stops-indicator">
+                            <span className="stops-text">{Number(returnFlightNormalized.stops || 0) > 0 ? `${returnFlightNormalized.stops} stop` : "Non stop"}</span>
+                            <div className="stops-line"></div>
+                          </div>
+                          <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.destinationCode, searchContext?.source || returnFlightNormalized.toCity)}</span>
+                            <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                          </div>
+                        </div>
+                        <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span>{returnFlightNormalized.airlineName || returnFlightNormalized.airline} ({returnFlightNormalized.flightNumber})</span>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                            <span className="flight-date-badge">{returnFlightNormalized.departDate || searchContext?.returnDate || "--"}{returnFlightNormalized.departureTime ? ` • ${returnFlightNormalized.departureTime}` : ""}</span>
+                            <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                              ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized.fare || returnFlightNormalized.price || returnFlightNormalized.priceInr || returnFlightNormalized.selectedTravelClassPriceInr || 0))}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </>
@@ -2491,6 +2718,132 @@ export default function FlightPassengerDetailsPage() {
             </div>
           )}
 
+
+          {/* Extras For This Traveller (Travel Add-ons & Seat Selection per Segment) */}
+          <div className="flight-main-card extras-traveller-card" style={{ marginBottom: 20 }}>
+            <h2 className="flight-main-card-title" style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#475569" }}>
+              EXTRAS FOR THIS TRAVELLER
+            </h2>
+
+            <div className="extras-card-inner">
+              {/* Travel Add-ons banner */}
+              <div className="extras-addons-banner">
+                <div className="extras-addons-info">
+                  <div className="extras-icon-circle">
+                    <Briefcase size={20} color="#0284c7" />
+                  </div>
+                  <div>
+                    <div className="extras-addons-title">Travel Add-ons</div>
+                    <div className="extras-addons-subtitle">
+                      Baggage, meals and seats for Adult 1
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-choose-addons"
+                  onClick={() => handleNavigateToSeats(0)}
+                >
+                  + Choose Add-ons
+                </button>
+              </div>
+
+              {/* Seat Selection */}
+              <div className="extras-seat-section">
+                <div className="extras-seat-heading">
+                  <div className="extras-seat-title">Seat selection</div>
+                  <div className="extras-seat-subtitle">Pick a preferred seat for each flight</div>
+                </div>
+
+                <div className="extras-seat-grid">
+                  {(onwardSegments.length > 0 ? onwardSegments : (flight ? [flight] : [])).map((seg, sIdx) => {
+                    const primaryPassenger = passengers[0];
+                    const seats = primaryPassenger?.seatDynamic || primaryPassenger?.Seat || primaryPassenger?.seat || [];
+                    let assignedSeat = null;
+                    if (Array.isArray(seats) && seats.length > 0) {
+                      const match = seats.find(s =>
+                        (s?.Origin && seg?.originAirportCode && s.Origin.toUpperCase() === seg.originAirportCode.toUpperCase()) ||
+                        (s?.FlightNumber && seg?.flightNumber && String(s.FlightNumber) === String(seg.flightNumber))
+                      ) || seats[sIdx];
+                      if (match) assignedSeat = match.SeatNumber || match.SeatName || match.Code || match.label;
+                    } else if (primaryPassenger?.seatLabel) {
+                      const parts = String(primaryPassenger.seatLabel).split("/").map(s => s.trim());
+                      if (parts[sIdx]) assignedSeat = parts[sIdx];
+                    }
+
+                    const originCode = seg.originAirportCode || seg.originCity || flight?.sourceCode || "--";
+                    const destCode = seg.destAirportCode || seg.destCity || flight?.destinationCode || "--";
+
+                    return (
+                      <div key={`extra-seat-onw-${sIdx}`} className="extras-seat-card">
+                        <div className="extras-seat-card-left">
+                          <div className="extras-seat-icon">💺</div>
+                          <div>
+                            <div className="extras-seg-route">
+                              {originCode} → {destCode}
+                            </div>
+                            <div className="extras-seg-status" style={{ color: assignedSeat ? "#059669" : "#64748b", fontWeight: assignedSeat ? 700 : 500 }}>
+                              {assignedSeat ? `Seat: ${assignedSeat}` : "Seat not selected"}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-select-seat"
+                          onClick={() => handleNavigateToSeats(sIdx)}
+                        >
+                          {assignedSeat ? "Change Seat" : "Select Seat"}
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {returnSegments.map((seg, rIdx) => {
+                    const primaryPassenger = passengers[0];
+                    const sIdx = onwardSegments.length + rIdx;
+                    const seats = primaryPassenger?.seatDynamic || primaryPassenger?.Seat || primaryPassenger?.seat || [];
+                    let assignedSeat = null;
+                    if (Array.isArray(seats) && seats.length > 0) {
+                      const match = seats.find(s =>
+                        (s?.Origin && seg?.originAirportCode && s.Origin.toUpperCase() === seg.originAirportCode.toUpperCase()) ||
+                        (s?.FlightNumber && seg?.flightNumber && String(s.FlightNumber) === String(seg.flightNumber))
+                      ) || seats[sIdx];
+                      if (match) assignedSeat = match.SeatNumber || match.SeatName || match.Code || match.label;
+                    } else if (primaryPassenger?.seatLabel) {
+                      const parts = String(primaryPassenger.seatLabel).split("/").map(s => s.trim());
+                      if (parts[sIdx]) assignedSeat = parts[sIdx];
+                    }
+
+                    const originCode = seg.originAirportCode || seg.originCity || returnFlightNormalized?.sourceCode || "--";
+                    const destCode = seg.destAirportCode || seg.destCity || returnFlightNormalized?.destinationCode || "--";
+
+                    return (
+                      <div key={`extra-seat-ret-${rIdx}`} className="extras-seat-card">
+                        <div className="extras-seat-card-left">
+                          <div className="extras-seat-icon">💺</div>
+                          <div>
+                            <div className="extras-seg-route">
+                              {originCode} → {destCode} <span style={{ fontSize: "0.72rem", color: "#64748b" }}>(Return)</span>
+                            </div>
+                            <div className="extras-seg-status" style={{ color: assignedSeat ? "#059669" : "#64748b", fontWeight: assignedSeat ? 700 : 500 }}>
+                              {assignedSeat ? `Seat: ${assignedSeat}` : "Seat not selected"}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-select-seat"
+                          onClick={() => handleNavigateToSeats(sIdx)}
+                        >
+                          {assignedSeat ? "Change Seat" : "Select Seat"}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Important Information */}
           <div className="flight-main-card important-info-card">

@@ -1854,6 +1854,7 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
       destinationAirportName: toAirportName,
       stops,
       layoverSummary,
+      connectingAirports,
       isLCC,
       isLcc: Boolean(isLCC),
       isRefundable: supplierBoolean(fareData?.IsRefundable ?? item?.IsRefundable ?? item?.isRefundable),

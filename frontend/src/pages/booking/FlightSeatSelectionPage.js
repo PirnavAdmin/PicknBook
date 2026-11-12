@@ -301,7 +301,7 @@ export default function FlightSeatSelectionPage() {
   const [selectedSeatsBySegment, setSelectedSeatsBySegment] = useState(
     {}
   );
-  const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState(location.state?.activeSegmentIndex ?? 0);
 
   const handleRestartSearch = () => {
     if (!searchContext) {
@@ -340,7 +340,17 @@ export default function FlightSeatSelectionPage() {
     }
 
     return journeys.flatMap((journey, journeyIdx) => {
-      const rawSegments = journey.segments || journey.Segments || [];
+      let rawSegments =
+        journey.segments ||
+        journey.Segments ||
+        flowState.fareQuote?.results?.Segments?.[journeyIdx] ||
+        flowState.fareQuote?.results?.Segments?.[0] ||
+        journey.FareDataMultiple?.[0]?.FareSegments ||
+        journey.fareSegments ||
+        [];
+      if (Array.isArray(rawSegments) && rawSegments.length === 1 && Array.isArray(rawSegments[0])) {
+        rawSegments = rawSegments[0];
+      }
       const legs = Array.isArray(rawSegments) ? rawSegments.flat(Infinity) : [];
       return legs.length ? legs.map((segment, segIdx) => ({
         ...journey,
@@ -628,23 +638,42 @@ export default function FlightSeatSelectionPage() {
         console.log("[SSR] Resolved baggage:", baggageList);
         console.log("[SSR] Resolved meals:", mealList);
 
-        setSsrOptionsByLeg((prev) => ({
-          ...prev,
-          [activeSegmentIndex]: { baggage: baggageList, meal: mealList }
-        }));
-
-        // Seat map: filter by route, but if result is empty use all seats
         const allSeats = seatMap.seats || [];
-        const routeFilteredSeats = allSeats.filter(seat => matchesRoute(seat.rawSeat || {}));
-        const seatsToUse = routeFilteredSeats.length > 0 ? routeFilteredSeats : allSeats;
-        const cabin = buildCabinFromSeatMap({ ...seatMap, seats: seatsToUse }, travelClass);
-        console.log("[SeatMap] Parsed cabin:", cabin);
+        const journeyOrigin = flight?.sourceCode || flight?.fromCity || "";
+        const journeyDest = flight?.destinationCode || flight?.toCity || "";
 
-        if (cabin) {
-          setSeatMapCabinByLeg((prev) => ({ ...prev, [activeSegmentIndex]: cabin }));
-        } else {
-          setSeatMapError("The supplier has not provided a seat map. You can continue without selecting seats.");
-        }
+        effectiveLegs.forEach((leg, lIdx) => {
+          const legMatchesRoute = (item) => {
+            const origin = item.Origin || item.origin || item.AirlineCode || "";
+            const dest = item.Destination || item.destination || "";
+            if (!origin && !dest) return true;
+            return origin === (leg.sourceCode || "") && dest === (leg.destinationCode || "");
+          };
+          const legSeats = allSeats.filter(seat => legMatchesRoute(seat.rawSeat || {}));
+          const seatsToUse = legSeats.length > 0 ? legSeats : (effectiveLegs.length === 1 ? allSeats : []);
+          if (seatsToUse.length > 0) {
+            const legCabin = buildCabinFromSeatMap({ ...seatMap, seats: seatsToUse }, travelClass);
+            if (legCabin) {
+              setSeatMapCabinByLeg(prev => ({ ...prev, [lIdx]: legCabin }));
+            }
+          }
+
+          const legMatchesSsr = (item) => {
+            const origin = item.Origin || item.origin || "";
+            const dest = item.Destination || item.destination || "";
+            if (!origin && !dest) return true;
+            return (origin === leg.sourceCode && dest === leg.destinationCode) ||
+                   (origin === journeyOrigin && dest === journeyDest);
+          };
+          let legBaggage = baggageList.filter(legMatchesSsr);
+          if (legBaggage.length === 0) legBaggage = baggageList;
+          let legMeal = mealList.filter(legMatchesSsr);
+          if (legMeal.length === 0) legMeal = mealList;
+          setSsrOptionsByLeg(prev => ({
+            ...prev,
+            [lIdx]: { baggage: legBaggage, meal: legMeal }
+          }));
+        });
       } catch (error) {
         if (!isCurrent) return;
         console.error("[SeatMap/SSR] Fetch error:", error);
@@ -800,8 +829,12 @@ export default function FlightSeatSelectionPage() {
           ...passenger,
           seatLabel: seatLabels.length > 0 ? seatLabels.join(" / ") : "",
           seatDynamic: pSeats.length > 0 ? pSeats : undefined,
+          Seat: pSeats.length > 0 ? pSeats : undefined,
+          seat: pSeats.length > 0 ? pSeats : undefined,
           baggage: index === 0 ? selectedBaggageItems : [],
+          Baggage: index === 0 ? selectedBaggageItems : [],
           mealDynamic: index === 0 ? selectedMeals : [],
+          MealDynamic: index === 0 ? selectedMeals : [],
         };
       })
       : [];
@@ -1054,8 +1087,26 @@ export default function FlightSeatSelectionPage() {
             </div>
             <div className="fare-row">
               <span>Taxes & Fees</span>
-              <span>₹ {(tax + seatSurcharge + mealFee + baggageFee).toLocaleString("en-IN")}</span>
+              <span>₹ {tax.toLocaleString("en-IN")}</span>
             </div>
+            {seatSurcharge > 0 && (
+              <div className="fare-row">
+                <span>Seat Selection</span>
+                <span>₹ {seatSurcharge.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {baggageFee > 0 && (
+              <div className="fare-row">
+                <span>Add-on Baggage</span>
+                <span>₹ {baggageFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
+            {mealFee > 0 && (
+              <div className="fare-row">
+                <span>Add-on Meals</span>
+                <span>₹ {mealFee.toLocaleString("en-IN")}</span>
+              </div>
+            )}
             <div className="fare-row total-amount-row">
               <span>Total Amount</span>
               <span>₹ {(baseFareTotal + tax + seatSurcharge + mealFee + baggageFee).toLocaleString("en-IN")}</span>

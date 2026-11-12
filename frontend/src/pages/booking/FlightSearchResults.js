@@ -2880,7 +2880,7 @@ export default function FlightSearchResults() {
                               <ArrowRight size={10} className="premium-arrow-end" />
                             </div>
                             <span className="premium-stops-text">
-                              {flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop`}
+                              {flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop${flight.connectingAirports && flight.connectingAirports.length > 0 ? ` via ${flight.connectingAirports.join(", ")}` : ""}`}
                             </span>
                           </div>
 
@@ -3663,26 +3663,32 @@ export default function FlightSearchResults() {
                 const flt = activeFareDetailsModal.flight;
                 const optIdx = latestFareOptionIndexRef.current[flt?.id] ?? selectedFareOptionIndexByFlight[flt?.id] ?? 0;
                 const chosenOpt = flt?.fareOptions?.[optIdx] || flt?.fareOptions?.[0];
-                const segments = Array.isArray(flt?.fullMultiSectorSegments) && flt.fullMultiSectorSegments.length > 0 
-                  ? flt.fullMultiSectorSegments 
-                  : [flt];
+                const rawSegs = (Array.isArray(flt?.fullMultiSectorSegments) && flt.fullMultiSectorSegments.length > 0)
+                  ? flt.fullMultiSectorSegments
+                  : (Array.isArray(flt?.segments) && flt.segments.length > 0)
+                    ? (Array.isArray(flt.segments[0]) ? flt.segments[0] : flt.segments)
+                    : (Array.isArray(flt?.Segments) && flt.Segments.length > 0)
+                      ? (Array.isArray(flt.Segments[0]) ? flt.Segments[0] : flt.Segments)
+                      : [flt];
+
+                const segments = rawSegs.filter(Boolean);
 
                 return (
                   <div style={{ background: "#f8fafc", padding: "16px 20px 20px 20px", borderBottom: "1px solid #e2e8f0", marginBottom: "20px" }}>
                     <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#475569", textTransform: "uppercase", marginBottom: "12px", letterSpacing: "0.5px" }}>
-                      Flight Details
+                      Flight Details {segments.length > 1 ? `(${segments.length} Segments • ${segments.length - 1} Stop)` : ""}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                       {segments.map((sec, secIdx) => {
-                        const optBaggage = chosenOpt?.fareSegments?.[secIdx]?.Baggage || chosenOpt?.fareSegments?.[0]?.Baggage || (flt?.checkedBagsWeight ? `${flt.checkedBagsWeight} ${flt.checkedBagsUnit || "kg"}` : "Not provided");
-                        const optCabinBaggage = chosenOpt?.fareSegments?.[secIdx]?.CabinBaggage || chosenOpt?.fareSegments?.[0]?.CabinBaggage || (flt?.cabinBagsWeight ? `${flt.cabinBagsWeight} ${flt.cabinBagsUnit || "kg"}` : "Not provided");
-                        const fClass = chosenOpt?.fareSegments?.[secIdx]?.Class || chosenOpt?.fareSegments?.[0]?.Class || "Not provided";
-                        const seats = chosenOpt?.seatsRemaining || "Not provided";
+                        const optBaggage = sec.Baggage || chosenOpt?.fareSegments?.[secIdx]?.Baggage || chosenOpt?.fareSegments?.[0]?.Baggage || (flt?.checkedBagsWeight ? `${flt.checkedBagsWeight} ${flt.checkedBagsUnit || "kg"}` : "15 KG");
+                        const optCabinBaggage = sec.CabinBaggage || chosenOpt?.fareSegments?.[secIdx]?.CabinBaggage || chosenOpt?.fareSegments?.[0]?.CabinBaggage || (flt?.cabinBagsWeight ? `${flt.cabinBagsWeight} ${flt.cabinBagsUnit || "kg"}` : "7 KG");
+                        const fClass = sec.Airline?.FareClass || sec.FareClass || chosenOpt?.fareSegments?.[secIdx]?.Class || chosenOpt?.fareSegments?.[0]?.Class || "Economy";
+                        const seats = chosenOpt?.seatsRemaining || "Available";
                         
-                        const sourceCode = sec.sourceCode || flt.sourceCode;
-                        const destCode = sec.destinationCode || flt.destinationCode;
-                        const depTimeStr = sec.departureTime || flt.departureTime || "";
-                        const arrTimeStr = sec.arrivalTime || flt.arrivalTime || "";
+                        const sourceCode = sec.Origin?.AirportCode || sec.FromAirportCode || sec.sourceCode || flt.sourceCode;
+                        const destCode = sec.Destination?.AirportCode || sec.ToAirportCode || sec.destinationCode || flt.destinationCode;
+                        const depTimeStr = sec.DepTime || sec.DepartureTime || sec.departureTime || flt.departureTime || "";
+                        const arrTimeStr = sec.ArrTime || sec.ArrivalTime || sec.arrivalTime || flt.arrivalTime || "";
                         
                         const parseTimeDate = (dateStr) => {
                           if (!dateStr) return { time: "", date: "" };
@@ -3694,41 +3700,75 @@ export default function FlightSearchResults() {
                         const dep = parseTimeDate(depTimeStr);
                         const arr = parseTimeDate(arrTimeStr);
                         
-                        const fareIdentifier = chosenOpt?.fareIdentifier || chosenOpt?.FareIdentifier || flt?.fareIdentifier || "Not provided";
+                        const fareIdentifier = chosenOpt?.fareIdentifier || chosenOpt?.FareIdentifier || flt?.fareIdentifier || "Saver";
+                        const airlineName = sec.Airline?.AirlineName || sec.AirlineName || sec.airline || flt.airlineName;
+                        const flightNum = sec.Airline?.FlightNumber || sec.FlightNumber || sec.flightNumber || flt.flightNumber;
+                        const craft = sec.Craft || sec.equipment || flt.equipment || "Airbus A320";
+
+                        let segDuration = sec.duration || flt.duration || "--";
+                        if (typeof sec.Duration === "number" && sec.Duration > 0) {
+                          segDuration = `${Math.floor(sec.Duration / 60)}h ${sec.Duration % 60}m`;
+                        }
+
+                        let layoverNote = null;
+                        if (secIdx < segments.length - 1 && arrTimeStr && segments[secIdx + 1]) {
+                          const nextDep = segments[secIdx + 1].DepTime || segments[secIdx + 1].DepartureTime || segments[secIdx + 1].departureTime;
+                          if (nextDep) {
+                            try {
+                              const diffMins = Math.floor((new Date(nextDep) - new Date(arrTimeStr)) / 60000);
+                              if (diffMins > 0) {
+                                layoverNote = `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
+                              }
+                            } catch (e) {}
+                          }
+                        }
 
                         return (
-                          <div key={secIdx} style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                {flt.logo && <img src={flt.logo} alt="airline" style={{ width: "20px", height: "20px", objectFit: "contain" }} />}
-                                <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.85rem" }}>{sec.airline || flt.airlineName} <span style={{ color: "#64748b", fontWeight: 600 }}>{sec.flightNumber || flt.flightNumber}</span></div>
+                          <React.Fragment key={secIdx}>
+                            <div style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                  {flt.logo && <img src={flt.logo} alt="airline" style={{ width: "20px", height: "20px", objectFit: "contain" }} />}
+                                  <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.85rem" }}>{airlineName} <span style={{ color: "#64748b", fontWeight: 600 }}>{flightNum}</span></div>
+                                  <span style={{ fontSize: "0.7rem", background: "#f1f5f9", color: "#475569", padding: "1px 6px", borderRadius: "4px", fontWeight: 700 }}>Segment {secIdx + 1}</span>
+                                </div>
+                                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700 }}>
+                                  {segDuration}
+                                </div>
                               </div>
-                              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700 }}>
-                                {sec.duration || flt.duration || "--"}
+                              
+                              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>Departure</div>
+                                  <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{sourceCode} {dep.time && <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>• {dep.time} {dep.date ? `• ${dep.date}` : ""}</span>}</div>
+                                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>{sec.Origin?.AirportName || ""}</div>
+                                </div>
+                                <div style={{ flex: 1, textAlign: "right" }}>
+                                  <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>Arrival</div>
+                                  <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{destCode} {arr.time && <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>• {arr.time} {arr.date ? `• ${arr.date}` : ""}</span>}</div>
+                                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>{sec.Destination?.AirportName || ""}</div>
+                                </div>
                               </div>
-                            </div>
-                            
-                            <div style={{ display: "flex", justifyContent: "space-between" }}>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>Departure</div>
-                                <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{sourceCode} {dep.time && <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>• {dep.time} {dep.date ? `• ${dep.date}` : ""}</span>}</div>
-                              </div>
-                              <div style={{ flex: 1, textAlign: "right" }}>
-                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>Arrival</div>
-                                <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{destCode} {arr.time && <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>• {arr.time} {arr.date ? `• ${arr.date}` : ""}</span>}</div>
+
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed #e2e8f0", fontSize: "0.7rem", color: "#475569", fontWeight: 600 }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Aircraft:</strong> {craft}</span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Cabin:</strong> {flt.className || "Economy"}</span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Fare Class:</strong> {fClass}</span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Fare Type:</strong> <span style={{ background: "#fef2f2", color: "#b91c1c", padding: "2px 6px", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase" }}>{fareIdentifier}</span></span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Check-in:</strong> {optBaggage}</span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Cabin bag:</strong> {optCabinBaggage}</span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Seats left:</strong> {seats}</span>
                               </div>
                             </div>
 
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed #e2e8f0", fontSize: "0.7rem", color: "#475569", fontWeight: 600 }}>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Aircraft:</strong> {sec.equipment || flt.equipment || "Not provided"}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Cabin:</strong> {flt.className || "Not provided"}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Fare Class:</strong> {fClass}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Fare Type:</strong> <span style={{ background: "#fef2f2", color: "#b91c1c", padding: "2px 6px", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase" }}>{fareIdentifier}</span></span>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Check-in:</strong> {optBaggage}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Cabin bag:</strong> {optCabinBaggage}</span>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><strong>Seats left:</strong> {seats}</span>
-                            </div>
-                          </div>
+                            {layoverNote && (
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", margin: "4px 0", position: "relative" }}>
+                                <div style={{ background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", padding: "4px 14px", borderRadius: "20px", fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                                  Connection at {destCode} ({layoverNote} layover)
+                                </div>
+                              </div>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </div>
