@@ -2367,6 +2367,14 @@ export default function BusPassengerDetailsPage() {
     const boardingPointTimeValue = flowState.boardingPoint?.time || flowState.boardingPoint?.Time || flowState.selectedBoardingPoint?.time || flowState.selectedBoardingPoint?.Time;
     const droppingPointTimeValue = flowState.droppingPoint?.time || flowState.droppingPoint?.Time || flowState.selectedDroppingPoint?.time || flowState.selectedDroppingPoint?.Time;
 
+    const parsedBoardingPointTime = parseBoardingTime(boardingPointTimeValue, departurePointDate);
+    let parsedDroppingPointTime = parseBoardingTime(droppingPointTimeValue, arrivalPointDate);
+    if (parsedBoardingPointTime && parsedDroppingPointTime && new Date(parsedDroppingPointTime) <= new Date(parsedBoardingPointTime)) {
+      const nextDay = new Date(parsedDroppingPointTime);
+      nextDay.setDate(nextDay.getDate() + 1);
+      parsedDroppingPointTime = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, "0")}-${String(nextDay.getDate()).padStart(2, "0")}T${String(nextDay.getHours()).padStart(2, "0")}:${String(nextDay.getMinutes()).padStart(2, "0")}:00`;
+    }
+
     const payload = {
       ...flowState,
       passengers: cleanedPassengers,
@@ -2393,9 +2401,9 @@ export default function BusPassengerDetailsPage() {
       fareSummary,
       blockKey,
       boardingPointName: String(flowState.boardingPoint?.name || flowState.boardingPoint?.Name || ""),
-      boardingPointTime: parseBoardingTime(boardingPointTimeValue, departurePointDate),
+      boardingPointTime: parsedBoardingPointTime,
       droppingPointName: String(flowState.droppingPoint?.name || flowState.droppingPoint?.Name || ""),
-      droppingPointTime: parseBoardingTime(droppingPointTimeValue, arrivalPointDate),
+      droppingPointTime: parsedDroppingPointTime,
       passengerName: String(bookingContact.fullName || ""),
       passengerPhone: String(bookingContact.mobile || bookingContact.phone || ""),
       passengerEmail: String(bookingContact.email || ""),

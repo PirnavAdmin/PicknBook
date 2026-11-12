@@ -164,7 +164,7 @@ export default function BusEmailStyleTicket({ ticket, data, id }) {
       <header className="pb-email-ticket-header">
         <div>
           <img
-            src="https://www.picknbook.in/assets/picknbook-login-q5fv1iRs.png"
+            src="https://www.picknbook.in/pick-n-book-logo.png"
             alt="Pick&book"
             className="pb-email-ticket-logo"
           />

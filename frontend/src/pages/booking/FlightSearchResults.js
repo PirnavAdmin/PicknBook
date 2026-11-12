@@ -304,13 +304,21 @@ function formatCurrency(value) {
 const KNOWN_AIRPORT_CODES = {
   hyderabad: "HYD", delhi: "DEL", "new delhi": "DEL", mumbai: "BOM", bombay: "BOM",
   bengaluru: "BLR", bangalore: "BLR", chennai: "MAA", madras: "MAA", kolkata: "CCU", calcutta: "CCU",
+  vijayawada: "VGA", visakhapatnam: "VTZ", vizag: "VTZ", tirupati: "TIR", rajahmundry: "RJA",
   pune: "PNQ", ahmedabad: "AMD", jaipur: "JAI", goa: "GOI", "north goa": "GOX", mopa: "GOX", dabolim: "GOI",
   kochi: "COK", cochin: "COK", lucknow: "LKO", varanasi: "VNS", patna: "PAT", chandigarh: "IXC",
-  srinagar: "SXR", guwahati: "GAU", bhubaneswar: "BBI", visakhapatnam: "VTZ", vizag: "VTZ", indore: "IDR",
+  srinagar: "SXR", guwahati: "GAU", bhubaneswar: "BBI", indore: "IDR",
   coimbatore: "CJB", amritsar: "ATQ", thiruvananthapuram: "TRV", trivandrum: "TRV", mangalore: "IXE",
   mangaluru: "IXE", madurai: "IXM", tiruchirappalli: "TRZ", trichy: "TRZ", nagpur: "NAG", surat: "STV",
-  vadodara: "BDQ", bhopal: "BHO", dubai: "DXB", sharjah: "SHJ", doha: "DOH", singapore: "SIN",
-  bangkok: "BKK", london: "LHR", heathrow: "LHR"
+  vadodara: "BDQ", bhopal: "BHO", ranchi: "IXR", raipur: "RPR", dehradun: "DED", jammu: "IXJ",
+  bagdogra: "IXB", "port blair": "IXZ", agartala: "IXA", imphal: "IMF", dimapur: "DMU", dibrugarh: "DIB",
+  silchar: "IXS", leh: "IXL", gaya: "GAY", aurangabad: "IXU", udaipur: "UDR", jodhpur: "JDH",
+  jaisalmer: "JSA", hubli: "HBX", belgaum: "IXG", mysore: "MYQ", shillong: "SHL", gwalior: "GWL",
+  jabalpur: "JLR", khajuraho: "HJR", kanpur: "KNU", prayagraj: "IXD", allahabad: "IXD", gorakhpur: "GOP",
+  bareilly: "BEK", pantnagar: "PGH", shirdi: "SAG", ayodhya: "AYJ",
+  calicut: "CCJ", kozhikode: "CCJ", kannur: "CNN",
+  dubai: "DXB", "abu dhabi": "AUH", sharjah: "SHJ", doha: "DOH", singapore: "SIN",
+  bangkok: "BKK", "kuala lumpur": "KUL", london: "LHR", heathrow: "LHR", gatwick: "LGW"
 };
 
 function cityCode(name, fallback) {
@@ -2235,15 +2243,17 @@ export default function FlightSearchResults() {
                 />
               </div>
 
-              {/* SWAP BUTTON */}
-              <button
-                type="button"
-                className="flight-discover-swap"
-                onClick={handleSwapModifyCities}
-                aria-label="Swap source and destination"
-              >
-                <ArrowLeftRight size={16} />
-              </button>
+              {/* SWAP BUTTON (Takes 0 width, perfectly centered on divider line) */}
+              <div style={{ position: 'relative', width: 0, flex: '0 0 0px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="flight-discover-swap"
+                  onClick={handleSwapModifyCities}
+                  aria-label="Swap source and destination"
+                >
+                  <ArrowLeftRight size={14} color="#ff0000" />
+                </button>
+              </div>
 
               {/* TO FIELD */}
               <div className="flight-discover-searchcell with-divider" style={{ flex: '1 1 0', minWidth: 0 }}>
@@ -2802,10 +2812,12 @@ export default function FlightSearchResults() {
                     (twoWayActiveTab === "onward" && selectedOnwardFlightId === flight.id) ||
                     (twoWayActiveTab === "return" && selectedReturnFlightId === flight.id)
                   );
+                  const isTooltipActive = activeFareTooltipFlightId === flight.id;
                   const flightCardJsx = (
                     <article
-                      className={`flight-card-modern ${isSelectedInTwoWay ? "selected-two-way" : ""}`}
+                      className={`flight-card-modern ${isSelectedInTwoWay ? "selected-two-way" : ""} ${isTooltipActive ? "with-active-fare-tooltip" : ""}`}
                       key={flight.id}
+                      style={isTooltipActive ? { zIndex: 1000, position: "relative", overflow: "visible" } : undefined}
                     >
                       <div className="premium-flight-card-inner">
                         {/* Top Bar */}
@@ -3419,7 +3431,7 @@ export default function FlightSearchResults() {
       {/* Fare Selection Modal */}
       {activeFareSelectionModal.isOpen && activeFareSelectionModal.flight && (
         <div className="booking-modal-backdrop" onClick={handleCloseFareSelection} style={{ zIndex: 99999 }}>
-          <div className="booking-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "780px", width: "94%", boxSizing: "border-box", overflow: "hidden", display: "flex", flexDirection: "column", borderRadius: "14px", boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)" }}>
+          <div className="booking-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "780px", width: "94%", maxHeight: "85vh", boxSizing: "border-box", overflow: "hidden", display: "flex", flexDirection: "column", borderRadius: "14px", boxShadow: "0 20px 40px rgba(0, 0, 0, 0.25)" }}>
             <div className="booking-modal-header" style={{ background: "var(--theme-primary, #ff0000)", padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "14px 14px 0 0", flexShrink: 0 }}>
               <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#ffffff", textTransform: "uppercase" }}>Available Fares</h3>
               <button type="button" onClick={handleCloseFareSelection} style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.4)", borderRadius: "6px", cursor: "pointer", color: "#ffffff", padding: "4px 10px", display: "flex", alignItems: "center", gap: "6px", fontWeight: 600, fontSize: "0.8rem" }}>
@@ -3427,7 +3439,7 @@ export default function FlightSearchResults() {
               </button>
             </div>
             
-            <div className="booking-modal-body" style={{ padding: "0", overflowY: "auto", flex: 1 }}>
+            <div className="booking-modal-body" style={{ padding: "0", overflowY: "auto", flex: 1, maxHeight: "calc(85vh - 55px)" }}>
               <div style={{ padding: "16px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#0f172a" }}>
                   <img src={activeFareSelectionModal.flight.logo} alt="airline" style={{ width: "24px", height: "24px", objectFit: "contain" }} />
@@ -3504,7 +3516,20 @@ export default function FlightSearchResults() {
                           <div style={{ textAlign: "right", marginRight: "16px", flex: 1 }}>
                             <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0f172a" }}>₹{new Intl.NumberFormat("en-IN").format(opt.b2cFinalFare || opt.b2cPublishedFare || opt.offeredFare)}</div>
                             <div style={{ fontSize: "0.72rem", color: "#e11d48", fontWeight: 700, marginTop: "2px" }}>
-                              {opt.seatsRemaining ?? opt.availableSeats ?? opt.SeatsRemaining ?? opt.NoOfSeatAvailable ?? opt.seatsLeft ?? activeFareSelectionModal.flight.totalAvailableSeats ?? 9} seat(s) left
+                              {(() => {
+                                const sRem = Number(
+                                  opt.seatsRemaining ||
+                                  opt.availableSeats ||
+                                  opt.SeatsRemaining ||
+                                  opt.NoOfSeatAvailable ||
+                                  opt.seatsLeft ||
+                                  opt.fareSegments?.[0]?.NoOfSeatAvailable ||
+                                  activeFareSelectionModal.flight.totalAvailableSeats ||
+                                  activeFareSelectionModal.flight.seats ||
+                                  9
+                                );
+                                return `${sRem > 0 ? sRem : 9} seat(s) left`;
+                              })()}
                             </div>
                           </div>
                           <button

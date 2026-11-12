@@ -64,12 +64,12 @@ export default function CustomDatePicker({
   const [isLoadingFares, setIsLoadingFares] = useState(false);
   const faresCacheRef = useRef({});
 
-  // Fetch calendar fares when open and route is available
-  const routeOrigin = origin || from || "";
-  const routeDestination = destination || to || "";
+  // Fetch calendar fares when open (defaulting to popular route if user hasn't selected yet)
+  const routeOrigin = (origin || from || "HYD").trim();
+  const routeDestination = (destination || to || "DEL").trim();
 
   useEffect(() => {
-    if (!isOpen || !showFares || !routeOrigin || !routeDestination) return;
+    if (!isOpen || !showFares) return;
 
     const currentYear = viewDate.getFullYear();
     const currentMonth = viewDate.getMonth() + 1;
