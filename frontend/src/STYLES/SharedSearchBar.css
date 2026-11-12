@@ -371,51 +371,8 @@
               border-right: none !important;
             }
 
-            .search-panel .flight-search-bar-row .swap-field {
-              flex: 0 0 0px !important;
-              width: 0 !important;
-              min-width: 0 !important;
-              height: 56px !important;
-              position: relative !important;
-              z-index: 25 !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              border: none !important;
-              display: flex !important;
-              align-items: center !important;
-              justify-content: center !important;
-            }
-
-            .search-panel .flight-search-bar-row .swap-field .swap-btn {
-              position: absolute !important;
-              left: 50% !important;
-              top: 50% !important;
-              transform: translate(-50%, -50%) !important;
-              width: 32px !important;
-              height: 32px !important;
-              min-height: 32px !important;
-              border-radius: 50% !important;
-              background: #ffffff !important;
-              border: 1px solid #e2e8f0 !important;
-              color: #dc1e26 !important;
-              display: flex !important;
-              align-items: center !important;
-              justify-content: center !important;
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
-              cursor: pointer !important;
-              transition: all 0.2s ease !important;
-              padding: 0 !important;
-            }
-
-            .search-panel .flight-search-bar-row .swap-field .swap-btn:hover {
-              background: #fef2f2 !important;
-              border-color: #fca5a5 !important;
-              color: #b91c1c !important;
-              transform: translate(-50%, -50%) rotate(180deg) !important;
-            }
-
             .search-panel .flight-search-bar-row .destination-field {
-              padding-left: 14px !important;
+              padding-left: 8px !important;
             }
 
             .search-panel .flight-search-bar-row .hotel-destination-field {

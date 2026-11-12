@@ -114,7 +114,6 @@
   width: 100%;
   max-width: none;
   margin: 0 auto;
-  box-sizing: border-box;
 }
 
 .flight-hero-top-row {
@@ -186,7 +185,6 @@
   align-items: center !important;
   justify-content: space-between !important;
   width: 100% !important;
-  max-width: none !important;
   box-sizing: border-box !important;
   position: relative !important;
   overflow: visible !important;
@@ -197,7 +195,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1 1 0;
+  flex: 1;
   min-width: 0;
   position: relative;
   overflow: visible;
@@ -217,55 +215,36 @@
 }
 
 .flight-discover-searchcell strong,
-.flight-discover-searchcell input,
-.flight-discover-searchbar input,
-.flight-discover-searchbar .inline-autocomplete-input,
-.flight-discover-searchbar .place-input,
-.flight-discover-searchbar .field-control {
+.flight-discover-searchcell input {
   color: #000000 !important;
   background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
 }
 
-.flight-discover-searchcell input:focus,
-.flight-discover-searchbar input:focus {
+.flight-discover-searchcell input:focus {
   outline: none !important;
   border: none !important;
   box-shadow: none !important;
 }
 
 .flight-discover-swap {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 50% !important;
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #ff0000 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  flex-shrink: 0 !important;
-  transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
-  margin: 0 !important;
-  z-index: 10 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  margin: 0 12px;
 }
 
 .flight-discover-swap:hover {
-  transform: translate(-50%, -50%) rotate(180deg) scale(1.08) !important;
-  background: #fef2f2 !important;
-  color: #ff0000 !important;
-  border-color: #fca5a5 !important;
-  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.25) !important;
+  transform: scale(1.08);
+  background: #cbd5e1;
 }
 
 .flight-discover-searchbutton {
@@ -456,7 +435,7 @@
   background: #ff0000;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .flight-discover-searchbar {
     flex-direction: column !important;
     border-radius: 24px !important;
@@ -464,22 +443,16 @@
     gap: 14px !important;
   }
 
-  .flight-discover-searchcell,
   .flight-discover-searchcell.with-divider {
-    flex: 1 1 100% !important;
-    width: 100%;
     border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     padding-left: 0;
-  }
-
-  .flight-discover-searchcell.with-divider {
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
     padding-top: 10px;
+    width: 100%;
   }
 
-  .flight-discover-searchcell:first-child {
-    border-top: none;
-    padding-top: 0;
+  .flight-discover-searchcell {
+    width: 100%;
   }
 
   .flight-discover-searchbutton {
@@ -1276,7 +1249,7 @@
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .metric-chip.active {
@@ -1351,7 +1324,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 8px 14px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 }
 
 .sort-by-label {
@@ -2039,15 +2012,8 @@
   margin-bottom: 0;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: visible;
-  position: relative;
+  overflow: hidden;
   cursor: pointer;
-}
-
-.flight-card-modern.with-active-fare-tooltip {
-  z-index: 1000 !important;
-  position: relative !important;
-  overflow: visible !important;
 }
 
 .flight-card-modern:hover {
@@ -2198,7 +2164,8 @@
   margin-bottom: 2px;
 }
 
-.premium-dept-block, .premium-arr-block {
+.premium-dept-block,
+.premium-arr-block {
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -2959,15 +2926,6 @@
   position: relative !important;
   z-index: 100000 !important;
   color: #1e293b !important;
-  max-height: 85vh !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.booking-modal-body {
-  overflow-y: auto !important;
-  flex: 1 1 auto !important;
-  max-height: calc(85vh - 65px) !important;
 }
 
 /* Fare Rule HTML content styling */
@@ -3043,6 +3001,7 @@
   z-index: 999999 !important;
   position: relative !important;
 }
+
 .premium-logo-fallback {
   display: inline-flex;
   align-items: center;
@@ -3051,6 +3010,7 @@
   background: #eef4f8;
   border: 1px solid #dce6ef;
 }
+
 .clear-flight-filters {
   margin-top: 7px;
   padding: 4px 8px;
@@ -3124,12 +3084,30 @@
 .section-icon {
   flex-shrink: 0;
 }
-.section-icon.flight-icon { color: #0284c7; }
-.section-icon.baggage-icon { color: #2563eb; }
-.section-icon.change-icon { color: #d97706; }
-.section-icon.cancel-icon { color: #dc2626; }
-.section-icon.fee-icon { color: #7c3aed; }
-.section-icon.general-icon { color: #475569; }
+
+.section-icon.flight-icon {
+  color: #0284c7;
+}
+
+.section-icon.baggage-icon {
+  color: #2563eb;
+}
+
+.section-icon.change-icon {
+  color: #d97706;
+}
+
+.section-icon.cancel-icon {
+  color: #dc2626;
+}
+
+.section-icon.fee-icon {
+  color: #7c3aed;
+}
+
+.section-icon.general-icon {
+  color: #475569;
+}
 
 .route-badge {
   font-size: 0.8rem;
@@ -3262,10 +3240,22 @@
   flex-shrink: 0;
   margin-top: 3px;
 }
-.point-bullet-icon.success { color: #16a34a; }
-.point-bullet-icon.change { color: #d97706; }
-.point-bullet-icon.cancel { color: #dc2626; }
-.point-bullet-icon.fee { color: #7c3aed; }
+
+.point-bullet-icon.success {
+  color: #16a34a;
+}
+
+.point-bullet-icon.change {
+  color: #d97706;
+}
+
+.point-bullet-icon.cancel {
+  color: #dc2626;
+}
+
+.point-bullet-icon.fee {
+  color: #7c3aed;
+}
 
 .point-bullet-dot {
   width: 5px;

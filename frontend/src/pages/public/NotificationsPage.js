@@ -118,36 +118,6 @@ function getSeverityMeta(severity) {
   return { cls: "unc-sev-info", label: severity || "Info", Icon: Info };
 }
 
-// ─── Local Storage Persistence Helpers (Fallback & Fast Local State) ────────
-const READ_NOTIFICATIONS_STORAGE_KEY = "pnb_read_notification_ids";
-
-function getLocalReadIds() {
-  try {
-    const raw = localStorage.getItem(READ_NOTIFICATIONS_STORAGE_KEY);
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function saveLocalReadIds(idSet) {
-  try {
-    localStorage.setItem(READ_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(Array.from(idSet)));
-  } catch {}
-}
-
-function addLocalReadId(id) {
-  const ids = getLocalReadIds();
-  ids.add(String(id));
-  saveLocalReadIds(ids);
-}
-
-function addMultipleLocalReadIds(idList) {
-  const ids = getLocalReadIds();
-  idList.forEach((id) => ids.add(String(id)));
-  saveLocalReadIds(ids);
-}
-
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -181,21 +151,10 @@ export default function NotificationsPage() {
     try {
       const result = await getNotifications({ page, pageSize: 100, ...filters });
       if (ctrl.signal.aborted) return;
-      const localReadIds = getLocalReadIds();
-      const rawItems = Array.isArray(result?.items) ? result.items : [];
-      const normalizedItems = rawItems.map((item) => ({
-        ...item,
-        isRead: Boolean(item.isRead || localReadIds.has(String(item.id))),
-      }));
-      const effectiveItems = filters.unreadOnly
-        ? normalizedItems.filter((i) => !i.isRead)
-        : normalizedItems;
-      const unreadCount = normalizedItems.filter((i) => !i.isRead).length;
-
       setData({
-        items: effectiveItems,
+        items: Array.isArray(result?.items) ? result.items : [],
         totalPages: Number(result?.totalPages) || 1,
-        unreadCount,
+        unreadCount: Number(result?.unreadCount) || 0,
       });
     } catch (err) {
       if (ctrl.signal.aborted) return;
@@ -225,71 +184,42 @@ export default function NotificationsPage() {
 
   // ─── Mark-as-read handlers ────────────────────────────────────────────────
   const handleMarkRead = async (item) => {
-    const alreadyRead = Boolean(item.isRead);
-    if (!alreadyRead) {
-      // 1. Instantly persist to localStorage so state persists across page refresh
-      addLocalReadId(item.id);
-
-      // 2. Immediate optimistic update: instantly remove "NEW", transition style, decrement count
-      setData((prev) => {
-        const nextItems = filters.unreadOnly
-          ? prev.items.filter((e) => e.id !== item.id)
-          : prev.items.map((e) => (e.id === item.id ? { ...e, isRead: true } : e));
-        const nextUnread = Math.max(0, prev.unreadCount - 1);
-        return {
-          ...prev,
-          items: nextItems,
-          unreadCount: nextUnread,
-        };
-      });
-      setStatusMessage("Notification marked as read.");
-
-      // Broadcast event for Topbar and unread badges
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("notificationsUpdated"));
-      }
-    }
-
-    // 3. Persist via API
     try {
-      if (!alreadyRead) {
-        await markNotificationRead(item.id);
-      }
+      if (!item.isRead) await markNotificationRead(item.id);
+      setStatusMessage(item.isRead ? "" : "Notification marked as read.");
+      setData((prev) => ({
+        ...prev,
+        items:
+          filters.unreadOnly && !item.isRead
+            ? prev.items.filter((e) => e.id !== item.id)
+            : prev.items.map((e) =>
+                e.id === item.id ? { ...e, isRead: true } : e
+              ),
+        unreadCount: item.isRead ? prev.unreadCount : Math.max(0, prev.unreadCount - 1),
+      }));
+      const actionPath = getNotificationActionPath(item);
+      if (actionPath) navigate(actionPath);
     } catch (err) {
-      console.warn("Could not mark notification as read via API, saved locally:", err);
+      setError(err.message || "Could not mark notification as read.");
     }
-
-    const actionPath = getNotificationActionPath(item);
-    if (actionPath) navigate(actionPath);
   };
 
   const handleMarkAll = async () => {
     setBusy(true);
     setError("");
     setStatusMessage("");
-
-    // 1. Optimistic update and persist all IDs to localStorage
-    const allIds = data.items.map((item) => item.id);
-    addMultipleLocalReadIds(allIds);
-
-    setData((prev) => ({
-      ...prev,
-      items: filters.unreadOnly
-        ? []
-        : prev.items.map((item) => ({ ...item, isRead: true })),
-      unreadCount: 0,
-    }));
-    setStatusMessage("All notifications marked as read.");
-
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("notificationsUpdated"));
-    }
-
-    // 2. Persist via API
     try {
       await markAllNotificationsRead();
+      setStatusMessage("All notifications marked as read.");
+      setData((prev) => ({
+        ...prev,
+        items: filters.unreadOnly
+          ? []
+          : prev.items.map((item) => ({ ...item, isRead: true })),
+        unreadCount: 0,
+      }));
     } catch (err) {
-      console.warn("Could not mark all notifications as read via API, saved locally:", err);
+      setError(err.message || "Could not mark notifications as read.");
     } finally {
       setBusy(false);
     }
@@ -371,7 +301,7 @@ export default function NotificationsPage() {
               title="Mark all as read"
             >
               <CheckCheck size={14} />
-              Mark all as read
+              Mark All Read
             </button>
             <button
               type="button"
@@ -539,13 +469,13 @@ function NotificationCard({ item, onMarkRead }) {
       onClick={() => onMarkRead(item)}
       aria-label={`${item.isRead ? "" : "Unread: "}${item.title}`}
     >
+      {/* Unread dot */}
+      {!item.isRead && <span className="unc-unread-dot" aria-hidden="true" />}
+
       <div className="unc-card-content">
-        {/* Top row: title + NEW badge + severity badge */}
+        {/* Top row: title + severity */}
         <div className="unc-card-top">
-          <div className="unc-notif-title-row">
-            <span className="unc-notif-title">{item.title}</span>
-            {!item.isRead && <span className="unc-new-badge">NEW</span>}
-          </div>
+          <span className="unc-notif-title">{item.title}</span>
           {item.severity && (
             <span className={`unc-sev-badge ${sevMeta.cls}`}>
               <SevIcon size={11} />
@@ -571,6 +501,7 @@ function NotificationCard({ item, onMarkRead }) {
               {formatNotificationDate(item.createdAtUtc)}
             </time>
           )}
+          {!item.isRead && <span className="unc-new-pill">NEW</span>}
         </div>
 
         {/* Hover hint */}

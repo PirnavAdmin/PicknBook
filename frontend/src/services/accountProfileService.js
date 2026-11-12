@@ -186,7 +186,7 @@ export async function updateAccountProfile(formData) {
 
   if (!response.ok) {
     const errorPayload = await response.json().catch(() => null);
-    const error = new Error(errorPayload?.message || errorPayload?.title || `Profile update failed: ${response.status}`);
+    const error = new Error(errorPayload?.title || `Profile update failed: ${response.status}`);
     error.status = response.status;
     error.validationErrors = errorPayload?.errors || errorPayload?.Errors || {};
     throw error;

@@ -266,33 +266,7 @@
   min-height: 224px;
 }
  
-.hotel-checkout-layout {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 24px;
-  align-items: start;
-  max-width: 80rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  margin-bottom: 24px;
-}
-
-@media (min-width: 640px) {
-  .hotel-checkout-layout {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .hotel-checkout-layout {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-}
-
+.hotel-checkout-layout,
 .hotel-confirm-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
@@ -302,35 +276,18 @@
 }
  
 .hotel-checkout-main {
-  grid-column: span 12 / span 12;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  gap: 12px;
   min-width: 0;
+  height: max-content;
+  align-content: start;
   align-self: start;
-}
-
-@media (min-width: 1024px) {
-  .hotel-checkout-main {
-    grid-column: span 8 / span 8;
-  }
 }
 
 .hotel-checkout-side {
-  grid-column: span 12 / span 12;
-  display: flex;
-  flex-direction: column;
-  gap: 16px !important;
   min-width: 0;
   align-self: start;
-}
-
-@media (min-width: 1024px) {
-  .hotel-checkout-side {
-    grid-column: span 4 / span 4;
-    position: sticky;
-    top: 1.5rem;
-  }
+  gap: 12px !important;
 }
 
 .hotel-checkout-main,
@@ -2021,4 +1978,60 @@
   color: #94a3b8 !important;
   cursor: not-allowed !important;
 }
+
+/* ── Confirm Container & Button Styling ── */
+.hotel-confirm-container {
+  border: 1px solid #fecdd3 !important;
+  border-radius: 16px !important;
+  background: #fff1f2 !important;
+  padding: 20px !important;
+  margin-top: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.hotel-confirm-checkbox {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 14px !important;
+  cursor: pointer !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  color: #1f2a44 !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
+}
+
+.hotel-confirm-checkbox input[type="checkbox"] {
+  margin-top: 3px !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0 !important;
+  cursor: pointer !important;
+  accent-color: #ff0000 !important;
+}
+
+.hotel-confirm-btn {
+  min-height: 44px !important;
+  padding: 0 24px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 0.95rem !important;
+  border: none !important;
+  transition: all 0.2s ease !important;
+}
+
+.hotel-confirm-btn:disabled {
+  background: #c9ccd1 !important;
+  color: #7b8088 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.hotel-confirm-btn:not(:disabled) {
+  background: #ff0000 !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.3) !important;
+}
+
 

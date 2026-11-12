@@ -1,6 +1,5 @@
 /* eslint-disable */
-import React, { useState } from "react";
-import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
+import React from "react";
 import {
   CalendarCheck,
   Clock3,
@@ -9,12 +8,6 @@ import {
   Search,
   ShieldCheck,
   TicketCheck,
-  Info,
-  X,
-  AlertTriangle,
-  CheckCircle2,
-  Copy,
-  ChevronRight
 } from "lucide-react";
 import goIndigoLogo from "../../assets/images/airlines/indigo.png";
 import airIndiaExpressLogo from "../../assets/images/airlines/Air-India_express.jpg";
@@ -38,21 +31,6 @@ const CHECKIN_STEPS = [
 ];
 
 const WebCheckInPage = () => {
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  const [pnr, setPnr] = useState(() => location.state?.pnr || location.state?.bookingReference || searchParams.get("pnr") || "");
-  const [passengerName, setPassengerName] = useState(() => location.state?.passengerName || searchParams.get("passengerName") || "");
-  const [departureTime, setDepartureTime] = useState(() => location.state?.departureTime || searchParams.get("departureTime") || "");
-  const [airlineParam, setAirlineParam] = useState(() => location.state?.airline || searchParams.get("airline") || "");
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalPnr, setModalPnr] = useState(pnr);
-  const [modalPassengerName, setModalPassengerName] = useState(passengerName);
-  const [modalSelectedAirline, setModalSelectedAirline] = useState(airlineParam || "Go Indigo");
-  const [copiedPnr, setCopiedPnr] = useState(false);
-
   const airlines = [
     {
       id: 1,
@@ -121,48 +99,6 @@ const WebCheckInPage = () => {
 
   const handleCardClick = (url) => {
     window.open(url, "_blank", "noopener,noreferrer");
-  };
-
-  const checkInTiming = (() => {
-    if (!departureTime) return null;
-    try {
-      const depDate = new Date(departureTime);
-      if (isNaN(depDate.getTime())) return null;
-      const diffHours = (depDate.getTime() - Date.now()) / (1000 * 60 * 60);
-      if (diffHours < 0) {
-        return { isOpen: false, isPast: true, message: "This flight has already departed." };
-      }
-      if (diffHours > 24) {
-        const hoursLeft = Math.round(diffHours);
-        return {
-          isOpen: false,
-          isPast: false,
-          hoursLeft,
-          message: `Web check-in is not yet open for this flight. Web check-in opens 24 hours prior to departure (in approx. ${hoursLeft} hours). Please check back closer to departure.`
-        };
-      }
-      return {
-        isOpen: true,
-        isPast: false,
-        message: "Web check-in is now OPEN! You can proceed to select seats and generate boarding passes."
-      };
-    } catch {
-      return null;
-    }
-  })();
-
-  const handleModalSubmit = (e) => {
-    e.preventDefault();
-    if (!modalPnr.trim()) return;
-    setPnr(modalPnr.trim());
-    setPassengerName(modalPassengerName.trim());
-    setAirlineParam(modalSelectedAirline);
-    setIsModalOpen(false);
-
-    const matched = airlines.find(a => a.name.toLowerCase().includes(modalSelectedAirline.toLowerCase()) || modalSelectedAirline.toLowerCase().includes(a.name.toLowerCase()));
-    if (matched) {
-      window.open(matched.checkInUrl, "_blank", "noopener,noreferrer");
-    }
   };
 
   return (
@@ -609,16 +545,6 @@ const WebCheckInPage = () => {
                   </article>
                 ))}
               </div>
-              <div style={{ marginTop: "12px" }}>
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm inline-flex items-center gap-2 cursor-pointer"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  <Search size={14} />
-                  <span>Enter PNR &amp; Select Airline</span>
-                </button>
-              </div>
             </div>
 
             <div className="web-checkin-pass" aria-hidden="true">
@@ -648,106 +574,6 @@ const WebCheckInPage = () => {
               </div>
             </div>
           </section>
-
-          {/* Pre-populated PNR Card if invoked from Booking Card or with parameters */}
-          {pnr && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm text-left my-2">
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
-                    <Plane size={18} />
-                  </span>
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Flight Booking
-                    </span>
-                    <h3 className="text-base font-bold text-slate-900 leading-none">
-                      {airlineParam || "Flight Journey"}
-                    </h3>
-                  </div>
-                </div>
-                {checkInTiming && (
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${checkInTiming.isOpen ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                    {checkInTiming.isOpen ? '● Check-in Open' : '○ Check-in Not Yet Open'}
-                  </span>
-                )}
-              </div>
-
-              {checkInTiming && !checkInTiming.isOpen && (
-                <div className="flex items-start gap-2.5 p-3.5 my-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium">
-                  <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-                  <span>{checkInTiming.message}</span>
-                </div>
-              )}
-
-              {checkInTiming && checkInTiming.isOpen && (
-                <div className="flex items-start gap-2.5 p-3.5 my-3 bg-emerald-50/80 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-medium">
-                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
-                  <span>{checkInTiming.message}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2 text-xs">
-                <div>
-                  <span className="block text-slate-400 font-medium">PNR / Reference</span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <strong className="text-slate-900 font-bold text-sm tracking-wide">{pnr}</strong>
-                    <button
-                      type="button"
-                      className="text-slate-400 hover:text-rose-600 p-0.5 rounded cursor-pointer"
-                      title="Copy PNR"
-                      onClick={() => {
-                        if (navigator.clipboard?.writeText) {
-                          navigator.clipboard.writeText(pnr);
-                        }
-                        setCopiedPnr(true);
-                        setTimeout(() => setCopiedPnr(false), 2000);
-                      }}
-                    >
-                      <Copy size={13} />
-                    </button>
-                    {copiedPnr && <span className="text-[10px] text-emerald-600 font-bold">Copied!</span>}
-                  </div>
-                </div>
-
-                <div>
-                  <span className="block text-slate-400 font-medium">Passenger Name</span>
-                  <strong className="text-slate-900 font-bold text-sm mt-0.5 block truncate">
-                    {passengerName || "--"}
-                  </strong>
-                </div>
-
-                <div>
-                  <span className="block text-slate-400 font-medium">Airline</span>
-                  <strong className="text-slate-900 font-bold text-sm mt-0.5 block truncate">
-                    {airlineParam || "Partner Airline"}
-                  </strong>
-                </div>
-
-                <div>
-                  <span className="block text-slate-400 font-medium">Departure</span>
-                  <strong className="text-slate-900 font-bold text-sm mt-0.5 block truncate">
-                    {departureTime ? new Date(departureTime).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : "--"}
-                  </strong>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-2 justify-end">
-                <button
-                  type="button"
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-                  onClick={() => {
-                    const matchedAirline = airlines.find(a => (airlineParam || "").toLowerCase().includes(a.name.toLowerCase()) || a.name.toLowerCase().includes((airlineParam || "").toLowerCase()));
-                    const targetUrl = matchedAirline ? matchedAirline.checkInUrl : "https://www.goindigo.in/web-check-in.html";
-                    window.open(targetUrl, "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  <span>Proceed to Airline Web Check-in</span>
-                  <ExternalLink size={13} />
-                </button>
-              </div>
-            </div>
-          )}
 
           <section className="web-checkin-airlines" aria-label="Airline web check-in links">
             {airlines.map((airline) => (
@@ -785,97 +611,6 @@ const WebCheckInPage = () => {
             </article>
           </section>
         </div>
-
-        {/* Airline Selection & PNR Modal */}
-        {isModalOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
-            onClick={() => setIsModalOpen(false)}
-          >
-            <div
-              className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left relative"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <Plane size={20} className="text-rose-600" />
-                  <h3 className="text-lg font-bold text-slate-900">Airline Check-in</h3>
-                </div>
-                <button
-                  type="button"
-                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
-                  onClick={() => setIsModalOpen(false)}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              <form onSubmit={handleModalSubmit} className="space-y-4 mt-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                    Select Airline
-                  </label>
-                  <select
-                    value={modalSelectedAirline}
-                    onChange={(e) => setModalSelectedAirline(e.target.value)}
-                    className="w-full h-11 px-3.5 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-rose-500 bg-white"
-                  >
-                    {airlines.map((a) => (
-                      <option key={a.id} value={a.name}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                    PNR / Booking Reference
-                  </label>
-                  <input
-                    type="text"
-                    value={modalPnr}
-                    onChange={(e) => setModalPnr(e.target.value.toUpperCase())}
-                    placeholder="e.g. ABCDEF or PNB-123456"
-                    required
-                    className="w-full h-11 px-3.5 border border-slate-300 rounded-xl text-sm font-semibold tracking-wide text-slate-800 focus:outline-none focus:border-rose-500 uppercase"
-                  >
-                  </input>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                    Passenger Last Name / Full Name (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={modalPassengerName}
-                    onChange={(e) => setModalPassengerName(e.target.value)}
-                    placeholder="e.g. Sharma"
-                    className="w-full h-11 px-3.5 border border-slate-300 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-rose-500"
-                  />
-                </div>
-
-                <div className="pt-2 flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="flex-1 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-all cursor-pointer"
-                    onClick={() => setIsModalOpen(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 h-11 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Go to Check-in</span>
-                    <ExternalLink size={14} />
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </main>
     </>
   );

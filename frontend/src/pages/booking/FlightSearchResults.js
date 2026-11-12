@@ -2189,8 +2189,8 @@ export default function FlightSearchResults() {
       <div className="flight-results-shell">
         <section className="flight-search-hero">
           <div className="flight-hero-wallpaper-overlay" />
-          <div className="flight-hero-content-wrapper">
-            <div className="flight-hero-top-row" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <div className="flight-hero-content-wrapper" style={{ width: '100%', maxWidth: 'none', margin: 0, boxSizing: 'border-box' }}>
+            <div className="flight-hero-top-row" style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '8px' }}>
               <div className="flight-trip-types">
                 <button
                   type="button"

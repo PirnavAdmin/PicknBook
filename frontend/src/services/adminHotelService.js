@@ -282,14 +282,9 @@ export async function cancelHotelBookingByAdmin(bookingId, { reason, cancellatio
   return handleResponse(response);
 }
 
-export async function listHotelSearchHistory({ searchTerm, startDate, endDate, dateFilter, page, limit } = {}, options = {}) {
+export async function listHotelSearchHistory({ searchTerm } = {}, options = {}) {
   const query = new URLSearchParams();
   if (searchTerm) query.set("searchTerm", searchTerm);
-  if (startDate) query.set("startDate", startDate);
-  if (endDate) query.set("endDate", endDate);
-  if (dateFilter) query.set("dateFilter", dateFilter);
-  if (page) query.set("page", page);
-  if (limit) query.set("limit", limit);
   const queryString = query.toString() ? `?${query.toString()}` : "";
 
   const response = await fetch(toApiUrl(`/api/admin/hotel/search-history${queryString}`), {

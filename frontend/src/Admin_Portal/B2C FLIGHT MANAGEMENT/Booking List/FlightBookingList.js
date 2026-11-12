@@ -1279,16 +1279,14 @@ export default function AdminFlightBookingListPage() {
       "passengerName",
       "passengerPhone",
       "customerFare",
-      "baseFare",
-      "tax",
+      "netFare",
       "profit",
     ];
 
     const rows = filteredBookings.map((booking) => {
       const fare = Number(booking.fare) || 0;
       const profit = Number(booking.profit) || 0;
-      const baseFare = Number(booking.baseFareInr) || 0;
-      const tax = Number(booking.taxInr) || 0;
+      const netFare = resolveNetFare(booking);
       const flightNumber = safeValue(booking.raw?.tripNumber, "");
 
       return [
@@ -1305,8 +1303,7 @@ export default function AdminFlightBookingListPage() {
         booking.passengerName,
         booking.passengerPhone,
         fare,
-        baseFare,
-        tax,
+        netFare,
         profit,
       ];
     });
@@ -1864,8 +1861,13 @@ export default function AdminFlightBookingListPage() {
                     <td>Total fare charged to customer</td>
                   </tr>
                   <tr>
+                    <td>Net Fare</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.netFareInr) || resolveNetFare(selectedBooking))}</td>
+                    <td>Net payable supplier cost</td>
+                  </tr>
+                  <tr>
                     <td>Base Fare</td>
-                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.baseFareInr ?? selectedBooking.raw?.baseFareInr) || 0)}</td>
+                    <td>{adminCurrencyFormatter.format(Number(selectedBooking.baseFareInr || selectedBooking.raw?.baseFareInr || selectedBooking.fare) || 0)}</td>
                     <td>Base ticket fare cost</td>
                   </tr>
                   <tr>

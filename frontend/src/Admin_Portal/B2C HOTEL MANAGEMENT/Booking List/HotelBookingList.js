@@ -820,47 +820,10 @@ export default function HotelBookingList() {
                   </div>
 
                   <div className="admin-table-cell admin-cell-centered">
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "3px", marginBottom: "4px" }}>
-                      {/* Internal Hotel Reference */}
-                      <span
-                        className="font-mono font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-xs"
-                        title="Internal Hotel Reference ID"
-                        style={{
-                          fontFamily: "monospace",
-                          fontWeight: 600,
-                          color: "#1e293b",
-                          backgroundColor: "#f1f5f9",
-                          padding: "2px 6px",
-                          borderRadius: "4px",
-                          fontSize: "0.72rem",
-                          display: "inline-block",
-                          wordBreak: "break-all",
-                        }}
-                      >
-                        Ref ID: {safeValue(b.bookingReference || (b.bookingId ? `HT-${b.bookingId}` : b.id), "--")}
-                      </span>
-
-                      {/* Supplier Confirmation Number if exists */}
-                      {(b.confirmationNo || b.supplierConfirmationNo || b.hotelConfirmationNo || b.providerBookingId) &&
-                       (b.confirmationNo !== b.bookingReference && b.supplierConfirmationNo !== b.bookingReference) && (
-                        <span
-                          className="font-mono font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-xs"
-                          style={{
-                            fontFamily: "monospace",
-                            fontWeight: 600,
-                            color: "#1e293b",
-                            backgroundColor: "#e2e8f0",
-                            padding: "2px 6px",
-                            borderRadius: "4px",
-                            fontSize: "0.68rem",
-                            marginTop: "2px"
-                          }}
-                          title="Hotel Confirmation Number"
-                        >
-                          Hotel Conf: {safeValue(b.confirmationNo || b.supplierConfirmationNo || b.hotelConfirmationNo || b.providerBookingId)}
-                        </span>
-                      )}
-                    </div>
+                    <strong style={{ fontSize: "0.72rem", color: "#475569", fontWeight: 700, marginBottom: "3px", wordBreak: "break-all" }}>
+                      <small style={{ color: "#64748b", fontSize: "0.65rem" }}>Booking Ref</small>
+                      {safeValue(b.bookingReference || b.confirmationNo || b.providerBookingId, "--")}
+                    </strong>
                     <span className={`admin-status-pill ${statusClass}`}>
                       {safeValue(displayStatus)}
                     </span>
@@ -1062,7 +1025,7 @@ export default function HotelBookingList() {
                     <td>{safeValue(selectedBooking.bookingReference, "--")}</td>
                   </tr>
                   <tr>
-                    <th>Confirmation No</th>
+                    <th>PNR / Conf No</th>
                     <td>{safeValue(selectedBooking.confirmationNo || selectedBooking.bookingReference, "--")}</td>
                     <th>Booking Date (B.D.)</th>
                     <td>{formatAdminDate(selectedBooking.createdAt || selectedBooking.bookedAt)}</td>
@@ -1128,33 +1091,38 @@ export default function HotelBookingList() {
                     <td>Total fare charged to customer</td>
                   </tr>
                   <tr>
+                    <td>Net Fare</td>
+                    <td>{selectedBooking.srdvOfferedPrice ? formatCurrency(selectedBooking.srdvOfferedPrice) : formatCurrency(selectedBooking.totalPrice)}</td>
+                    <td>Net payable fare amount</td>
+                  </tr>
+                  <tr>
+                    <td>Base Fare</td>
+                    <td>{formatCurrency(selectedBooking.totalPrice || selectedBooking.totalPaid)}</td>
+                    <td>Base room tariff cost</td>
+                  </tr>
+                  <tr>
                     <td>Taxable Fare</td>
-                    <td>{formatCurrency(selectedBooking.taxableAmount || 0)}</td>
+                    <td>₹0.00</td>
                     <td>Fare amount subject to taxes</td>
                   </tr>
                   <tr>
-                    <td>Tax</td>
-                    <td>{formatCurrency(selectedBooking.tax || 0)}</td>
-                    <td>Room taxes</td>
-                  </tr>
-                  <tr>
                     <td>Markup Amount</td>
-                    <td>{formatCurrency(selectedBooking.markupAmount || 0)}</td>
+                    <td>₹0.00</td>
                     <td>Admin markup added</td>
                   </tr>
                   <tr>
                     <td>Discount Amount</td>
-                    <td>{formatCurrency(selectedBooking.discountAmount || 0)}</td>
+                    <td>₹0.00</td>
                     <td>Applied coupon / promo discount</td>
                   </tr>
                   <tr>
                     <td>Convenience Fee</td>
-                    <td>{formatCurrency(selectedBooking.convenienceFee || 0)}</td>
+                    <td>₹0.00</td>
                     <td>Platform convenience fee</td>
                   </tr>
                   <tr>
-                    <td>GST Amount</td>
-                    <td>{formatCurrency(selectedBooking.totalGSTAmount || selectedBooking.gstAmount || selectedBooking.srdvGstAmount || 0)}</td>
+                    <td>GST Percent / Amount</td>
+                    <td>0.00% / ₹0.00</td>
                     <td>Applicable GST taxes</td>
                   </tr>
                   <tr className="admin-view-highlight-row" style={{ background: "#f8fafc" }}>

@@ -2,7 +2,6 @@
 import BookingStatusTabs from "../../components/booking/BookingStatusTabs";
 import { bookingStatusOptions, bookingStatusLabel, bookingStatusClass, bookingCategory } from "../../utils/bookingStatus";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Download,
   Eye,
@@ -13,7 +12,6 @@ import {
   SlidersHorizontal,
   X,
   XCircle,
-  Plane,
 } from "lucide-react";
 import {
   getFlightBookingById,
@@ -79,7 +77,6 @@ function formatBookedAt(dateStr) {
 }
 
 export default function FlightBookings() {
-  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState(emptyFlightFilters);
@@ -509,25 +506,6 @@ export default function FlightBookings() {
                           <button
                             type="button"
                             className="ops-btn-action"
-                            title="Web Check-in"
-                            onClick={() => {
-                              navigate("/dashboard/web-checkin", {
-                                state: {
-                                  pnr: booking.pnr || booking.bookingReference,
-                                  passengerName: booking.passengers?.[0]?.name || booking.passengerName || "Passenger",
-                                  departureTime: booking.departureTime || booking.departureDate,
-                                  airline: booking.airline || booking.providerName || "Flight"
-                                }
-                              });
-                            }}
-                          >
-                            <Plane size={15} />
-                          </button>
-                        )}
-                        {bookingCategory(booking) !== "cancelled" && bookingCategory(booking) !== "payment failed" && (
-                          <button
-                            type="button"
-                            className="ops-btn-action"
                             title="Download Voucher PDF"
                             onClick={() => handleDownloadVoucher(booking)}
                             disabled={downloadingVoucherId === (booking.bookingId || booking.bookingReference || booking.pnr || booking.id)}
@@ -575,37 +553,6 @@ export default function FlightBookings() {
             <header>
               <h3>{bookingCategory(selectedBooking) === "cancelled" ? "Flight Cancellation Details" : "Flight Booking Details"}</h3>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {bookingCategory(selectedBooking) !== "cancelled" && bookingCategory(selectedBooking) !== "payment failed" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigate("/dashboard/web-checkin", {
-                        state: {
-                          pnr: selectedBooking.pnr || selectedBooking.bookingReference,
-                          passengerName: selectedBooking.passengers?.[0]?.name || selectedBooking.passengerName || "Passenger",
-                          departureTime: selectedBooking.departureTime || selectedBooking.departureDate,
-                          airline: selectedBooking.airline || selectedBooking.providerName || "Flight"
-                        }
-                      });
-                    }}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      background: "#dc2626",
-                      color: "#fff",
-                      border: "none",
-                      padding: "6px 12px",
-                      borderRadius: 6,
-                      fontSize: "0.82rem",
-                      fontWeight: 600,
-                      cursor: "pointer"
-                    }}
-                  >
-                    <Plane size={14} />
-                    <span>Web Check-in</span>
-                  </button>
-                )}
                 {bookingCategory(selectedBooking) !== "cancelled" && bookingCategory(selectedBooking) !== "payment failed" && (
                   <button
                     type="button"

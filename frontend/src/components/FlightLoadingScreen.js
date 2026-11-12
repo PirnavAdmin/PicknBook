@@ -94,35 +94,6 @@ export default function FlightLoadingScreen({
 }) {
   const [progress, setProgress] = useState(15);
   const [activeSlide, setActiveSlide] = useState(0);
-  const [resolvedLogo, setResolvedLogo] = useState(pickNBookLogo);
-
-  // Dynamic branding logo resolution with fallback to official Pick&Book logo
-  useEffect(() => {
-    try {
-      const storedTheme = localStorage.getItem("b2c_header_custom_theme");
-      if (storedTheme) {
-        const parsed = JSON.parse(storedTheme);
-        const activeHeader =
-          parsed.createdHeaders?.find((h) => h.settings?.isActive) ||
-          parsed.createdHeaders?.[0];
-        if (activeHeader?.logoUrl && typeof activeHeader.logoUrl === "string" && activeHeader.logoUrl.trim()) {
-          setResolvedLogo(activeHeader.logoUrl.trim());
-          return;
-        }
-      }
-      const storedLayout = localStorage.getItem("b2c_layout_config");
-      if (storedLayout) {
-        const parsed = JSON.parse(storedLayout);
-        if (parsed.header?.logoUrl && typeof parsed.header.logoUrl === "string" && parsed.header.logoUrl.trim()) {
-          setResolvedLogo(parsed.header.logoUrl.trim());
-          return;
-        }
-      }
-    } catch {
-      // Use official default logo
-    }
-    setResolvedLogo(pickNBookLogo);
-  }, []);
 
   // Auto-progress bar from 15% to 94%
   useEffect(() => {
@@ -193,7 +164,7 @@ export default function FlightLoadingScreen({
           <div className="fls-brand-row">
             <div className="fls-brand-logo">
               <img
-                src={resolvedLogo}
+                src={pickNBookLogo}
                 alt="Pick&book"
                 className="fls-brand-logo-img"
               />
@@ -229,7 +200,7 @@ export default function FlightLoadingScreen({
             {currentSlide.type === "deals" && (
               <h1 className="fls-headline fls-slide-anim">
                 Unlock Exclusive Flight{" "}
-                <span className="fls-red-accent">Deals</span>
+                <span className="fls-magenta">Deals</span>
               </h1>
             )}
 
@@ -237,7 +208,7 @@ export default function FlightLoadingScreen({
               <h1 className="fls-headline fls-slide-anim">
                 Welcome to
                 <br />
-                Pick<span className="fls-red-accent">&amp;</span>book
+                Pick<span className="fls-magenta">&amp;</span>book
               </h1>
             )}
 
@@ -245,14 +216,14 @@ export default function FlightLoadingScreen({
               <h1 className="fls-headline fls-slide-anim">
                 It’s the details that
                 <br />
-                make a <span className="fls-red-accent">journey perfect</span>
+                make a <span className="fls-serif-magenta">journey perfect</span>
               </h1>
             )}
 
             {currentSlide.type === "comfort" && (
               <h1 className="fls-headline fls-slide-anim">
                 Enjoy Premium{" "}
-                <span className="fls-red-accent">Comfort & Speed</span>
+                <span className="fls-magenta">Comfort & Speed</span>
               </h1>
             )}
 

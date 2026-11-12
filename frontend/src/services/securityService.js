@@ -266,10 +266,9 @@ export const securityService = {
   },
 
   /** Get Locked Accounts List (GET /api/SecurityAdmin/locked-accounts) */
-  async getLockedAccounts(search = '') {
+  async getLockedAccounts() {
     try {
-      const url = search ? `/SecurityAdmin/locked-accounts?search=${encodeURIComponent(search)}` : '/SecurityAdmin/locked-accounts';
-      const response = await apiClient.get(url);
+      const response = await apiClient.get('/SecurityAdmin/locked-accounts');
       return response.data?.data || response.data || [];
     } catch (error) {
       console.warn('Locked accounts error:', error);

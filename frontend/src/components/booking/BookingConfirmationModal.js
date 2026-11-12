@@ -5,7 +5,6 @@ import { useCashfreePayment } from "../../hooks/useCashfreePayment";
 import { prepareFlightBookingPayload, buildBookingPayload as buildBusBookingPayload } from "../../utils/checkoutPayloadBuilders";
 import { getWalletSummary } from "../../services/walletService";
 import "../../STYLES/FlightBookingFlow.css";
-import pickNBookLogo from "../../assets/images/brand/pick-n-book-logo.png";
 
 function roundCurrency(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
@@ -366,9 +365,6 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           <X size={24} />
         </button>
 
-        <div style={{ textAlign: "center", marginBottom: "16px" }}>
-          <img src={pickNBookLogo || "/pick-n-book-logo.png"} alt="Pick&book" className="h-8 w-auto object-contain mx-auto" style={{ height: "32px", width: "auto", objectFit: "contain", margin: "0 auto" }} onError={(e) => { e.currentTarget.src = "/pick-n-book-logo.png"; }} />
-        </div>
         <h2 style={{ marginTop: 0, marginBottom: "20px", fontSize: "1.5rem" }}>Review Booking ({bookingType})</h2>
 
         {isBlocked && blockTimeRemaining > 0 && (

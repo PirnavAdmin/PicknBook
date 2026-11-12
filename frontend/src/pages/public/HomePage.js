@@ -2307,8 +2307,6 @@ export default function HomePage() {
   const [cabinClass, setCabinClass] = useState("All cabins");
   const [showTravellerDropdown, setShowTravellerDropdown] = useState(false);
   const [showClassDropdown, setShowClassDropdown] = useState(false);
-  const [travellerDropPosition, setTravellerDropPosition] = useState("bottom");
-  const [classDropPosition, setClassDropPosition] = useState("bottom");
   const travellerFieldRef = useRef(null);
   const classFieldRef = useRef(null);
 
@@ -3636,45 +3634,13 @@ export default function HomePage() {
   const canResetAiChat =
     isAiTyping || aiChatInput.trim().length > 0 || aiChatMessages.length > 1;
 
-  const handleToggleTravellerDropdown = (e) => {
-    e?.stopPropagation?.();
-    if (!showTravellerDropdown && travellerFieldRef.current) {
-      const rect = travellerFieldRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      if (spaceBelow < 290 && spaceAbove > spaceBelow) {
-        setTravellerDropPosition("top");
-      } else {
-        setTravellerDropPosition("bottom");
-      }
-    }
-    setShowClassDropdown(false);
-    setShowTravellerDropdown((previous) => !previous);
-  };
-
-  const handleToggleClassDropdown = (e) => {
-    e?.stopPropagation?.();
-    if (!showClassDropdown && classFieldRef.current) {
-      const rect = classFieldRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const spaceAbove = rect.top;
-      if (spaceBelow < 220 && spaceAbove > spaceBelow) {
-        setClassDropPosition("top");
-      } else {
-        setClassDropPosition("bottom");
-      }
-    }
-    setShowTravellerDropdown(false);
-    setShowClassDropdown((prev) => !prev);
-  };
-
   const travellerField = (
     <div className="field traveller-field" ref={travellerFieldRef}>
       <label>Travellers</label>
       <button
         type="button"
         className={`traveller-trigger ${showTravellerDropdown ? "open" : ""}`}
-        onClick={handleToggleTravellerDropdown}
+        onClick={() => setShowTravellerDropdown((previous) => !previous)}
       >
         <span
           className={`traveller-summary ${hasTravellerSelection ? "" : "placeholder"
@@ -3692,11 +3658,7 @@ export default function HomePage() {
       </button>
 
       {showTravellerDropdown && (
-        <div
-          className={`traveller-dropdown ${travellerDropPosition === "top" ? "drop-up" : ""}`}
-          style={travellerDropPosition === "top" ? { top: "auto", bottom: "calc(100% + 8px)" } : { top: "calc(100% + 8px)", bottom: "auto" }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+        <div className="traveller-dropdown" onMouseDown={(e) => e.stopPropagation()}>
           <div className="counter-row">
             <div className="counter-copy">
               <strong>Adults</strong>
@@ -3783,7 +3745,7 @@ export default function HomePage() {
       <button
         type="button"
         className={`traveller-trigger ${showClassDropdown ? "open" : ""}`}
-        onClick={handleToggleClassDropdown}
+        onClick={() => setShowClassDropdown((prev) => !prev)}
       >
         <span
           className={`traveller-summary ${cabinClass ? "" : "placeholder"
@@ -3801,11 +3763,7 @@ export default function HomePage() {
       </button>
 
       {showClassDropdown && (
-        <div
-          className={`traveller-dropdown class-dropdown ${classDropPosition === "top" ? "drop-up" : ""}`}
-          style={classDropPosition === "top" ? { top: "auto", bottom: "calc(100% + 8px)" } : { top: "calc(100% + 8px)", bottom: "auto" }}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+        <div className="traveller-dropdown class-dropdown" onMouseDown={(e) => e.stopPropagation()}>
           <ul className="class-options-list">
             {CLASS_OPTIONS.map((item) => (
               <li key={item}>
@@ -4984,13 +4942,12 @@ export default function HomePage() {
 
         .homepage .pop-bus-card,
         .pop-bus-card {
-           flex: 0 0 230px !important;
-           min-width: 230px !important;
-           max-width: 230px !important;
-           width: 230px !important;
+           flex: 0 0 calc((100% - 56px) / 5) !important;
+           min-width: calc((100% - 56px) / 5) !important;
+           max-width: calc((100% - 56px) / 5) !important;
            background: #ffffff !important;
            border: 1px solid #e2e8f0 !important;
-           border-radius: 14px !important;
+           border-radius: 18px !important;
            overflow: hidden !important;
            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05) !important;
            display: flex !important;
@@ -5053,7 +5010,7 @@ export default function HomePage() {
         .pop-bus-card .pop-route-img-wrap {
            position: relative !important;
            width: 100% !important;
-           height: 100px !important;
+           height: 125px !important;
            overflow: hidden !important;
            background: #ffffff !important;
            margin: 0 !important;
@@ -5124,7 +5081,7 @@ export default function HomePage() {
            bottom: -2px !important;
            left: 0 !important;
            width: 100% !important;
-           height: 20px !important;
+           height: 32px !important;
            z-index: 3 !important;
            pointer-events: none !important;
            line-height: 0 !important;
@@ -5147,9 +5104,9 @@ export default function HomePage() {
         }
 
         .pop-bus-body {
-           padding: 8px 10px 4px 10px !important;
+           padding: 14px 14px 10px 14px !important;
            background: #ffffff !important;
-           margin-top: -3px !important;
+           margin-top: -4px !important;
            position: relative !important;
            z-index: 4 !important;
            border: none !important;
@@ -5228,14 +5185,14 @@ export default function HomePage() {
         }
 
         .pop-bus-footer {
-           padding: 0 10px 10px 10px !important;
+           padding: 0 14px 14px 14px !important;
            background: #ffffff !important;
            margin-top: auto !important;
         }
 
         .pop-bus-book-btn {
            width: 100% !important;
-           height: 32px !important;
+           height: 38px !important;
            background: #ff0000 !important;
            color: #ffffff !important;
            border-radius: 9999px !important;
@@ -5243,12 +5200,12 @@ export default function HomePage() {
            display: flex !important;
            align-items: center !important;
            justify-content: center !important;
-           gap: 6px !important;
-           font-size: 0.75rem !important;
+           gap: 8px !important;
+           font-size: 0.8rem !important;
            font-weight: 800 !important;
            letter-spacing: 0.04em !important;
            cursor: pointer !important;
-           box-shadow: 0 3px 10px rgba(255, 0, 0, 0.24) !important;
+           box-shadow: 0 4px 12px rgba(255, 0, 0, 0.28) !important;
            transition: all 0.2s ease !important;
         }
 
@@ -5509,8 +5466,8 @@ export default function HomePage() {
         }
 
         .offer-img-marquee.offer-marquee .marquee-slide {
-            width: 288px !important;
-            flex: 0 0 288px !important;
+            width: 208px !important;
+            flex: 0 0 208px !important;
            padding: 0 4px !important;
            box-sizing: border-box !important;
            display: flex !important;
@@ -5521,10 +5478,10 @@ export default function HomePage() {
 
         .img-offer-card {
            position: relative !important;
-            width: 280px !important;
-            height: 135px !important;
-            min-height: 135px !important;
-           border-radius: 14px !important;
+            width: 200px !important;
+            height: 100px !important;
+            min-height: 100px !important;
+           border-radius: 12px !important;
            overflow: hidden !important;
            cursor: pointer !important;
            display: flex !important;
@@ -5552,10 +5509,6 @@ export default function HomePage() {
            height: 100% !important;
            overflow: hidden !important;
            z-index: 1 !important;
-           background: #ffffff !important;
-           display: flex !important;
-           align-items: center !important;
-           justify-content: center !important;
         }
 
         .img-offer-photo {
@@ -7946,8 +7899,6 @@ export default function HomePage() {
                             {activeCalendarField === `leg-${leg.id}` && (
                               <CustomDatePicker isOpen={true}
                                 value={leg.departureDate}
-                                from={leg.from}
-                                to={leg.to}
                                 onChange={(newDate) => updateMultiCityLeg(leg.id, "departureDate", newDate)}
                                 onClose={() => setActiveCalendarField(null)}
                               />
@@ -8049,8 +8000,6 @@ export default function HomePage() {
                         {activeCalendarField === "flight-dep" && (
                           <CustomDatePicker isOpen={true}
                             value={flightDepartureDate}
-                            from={flightFrom}
-                            to={flightTo}
                             onChange={(newDate) => {
                               setFlightDepartureDate(newDate);
                               if (flightReturnDate && newDate && flightReturnDate < newDate) {
@@ -8084,8 +8033,6 @@ export default function HomePage() {
                           {activeCalendarField === "flight-ret" && (
                             <CustomDatePicker isOpen={true}
                               value={flightReturnDate}
-                              from={flightTo}
-                              to={flightFrom}
                               minDate={flightDepartureDate || ""}
                               onChange={(newDate) => setFlightReturnDate(newDate)}
                               onClose={() => setActiveCalendarField(null)}

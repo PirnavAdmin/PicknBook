@@ -348,7 +348,7 @@ export default function HotelBookings() {
               <table className="ops-table booking-table-rows">
                 <thead>
                   <tr>
-                    <th>CONFIRMATION NO. / DATE</th>
+                    <th>BOOKING REF / DATE</th>
                     <th>HOTEL NAME</th>
                     <th>GUEST NAME</th>
                     <th>CHECKIN DATE / TIME</th>
@@ -371,30 +371,11 @@ export default function HotelBookings() {
                     return (
                       <tr key={booking.id || booking.bookingReference}>
                         <td>
-                          <div style={{ display: "flex", flexDirection: "column", gap: "2px", alignItems: "flex-start" }}>
-                            <span
-                              className="font-mono font-medium text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-xs"
-                              title="Hotel Reference ID"
-                              style={{
-                                fontFamily: "monospace",
-                                fontWeight: 600,
-                                color: "#1e293b",
-                                backgroundColor: "#f1f5f9",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                                fontSize: "0.78rem",
-                                display: "inline-block",
-                                letterSpacing: "0.02em"
-                              }}
-                            >
-                              {booking.providerBookingId || booking.bookingId || booking.bookingReference}
-                            </span>
-                            <small style={{ color: "#64748b", fontSize: "0.68rem" }}>Hotel Reference ID</small>
-                          </div>
+                          <strong>{booking.providerBookingId || booking.bookingId || booking.bookingReference}</strong>
                           {booking.bookingReference && booking.bookingReference !== (booking.providerBookingId || booking.bookingId) && (
-                            <small style={{ color: "#64748b", display: "block", marginTop: "2px" }}>Ref: {booking.bookingReference}</small>
+                            <small style={{ color: "#64748b", display: "block" }}>Ref: {booking.bookingReference}</small>
                           )}
-                          {bookedAt && <small style={{ display: "block", marginTop: "1px" }}>Booked: {bookedAt}</small>}
+                          {bookedAt && <small>Booked: {bookedAt}</small>}
                         </td>
                         <td>
                           <strong>{booking.hotelName}</strong>
@@ -417,20 +398,9 @@ export default function HotelBookings() {
                           )}
                         </td>
                         <td>
-                          {displayStatus === "Confirmed" || displayStatus === "Upcoming" ? (
-      <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 font-semibold px-3 py-1 rounded-full text-xs inline-flex items-center gap-1.5">
-        <CheckCircle size={13} className="text-emerald-700" />
-        {displayStatus}
-      </span>
-    ) : displayStatus === "Pending" ? (
-      <span className="bg-amber-100 text-amber-800 border border-amber-300 font-semibold px-3 py-1 rounded-full text-xs inline-flex items-center gap-1.5">
-        {displayStatus}
-      </span>
-    ) : (
-      <span className="bg-rose-100 text-rose-800 border border-rose-300 font-semibold px-3 py-1 rounded-full text-xs inline-flex items-center gap-1.5">
-        {displayStatus}
-      </span>
-    )}
+                          <span className={`status-badge ${bookingStatusClass(booking)}`}>
+                            {displayStatus}
+                          </span>
                         </td>
                         <td>
                           <div className="table-actions">

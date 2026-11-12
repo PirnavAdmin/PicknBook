@@ -25,7 +25,6 @@ export default function PlaceAutocomplete({
   placeholder,
   className,
   error,
-  errorMessage,
   isInline = false,
   sublabel,
   hideLabel = false,
@@ -111,7 +110,7 @@ export default function PlaceAutocomplete({
           const normalized = rawList
             .map((item) => ({
               cityName:    typeof item === "string" ? item : item?.cityName    || "",
-              cityId:      typeof item === "object"  ? String(item.searchCityId || item.cityId || item.cityCode || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
+              cityId:      typeof item === "object"  ? String(item.cityId || item.cityCode || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
               stateName:   typeof item === "object"  ? (item.stateName   || item.StateName   || "") : "",
               airportCode: typeof item === "object"  ? (item.airportCode || item.AirportCode || item.iataCode || "") : "",
               airportName: typeof item === "object"  ? (item.airportName || item.AirportName || "") : "",
@@ -161,7 +160,7 @@ export default function PlaceAutocomplete({
   return (
     <div className={`${isInline ? "" : "field"} place-autocomplete ${className || ""}`} ref={wrapperRef} style={{ position: "relative", width: isInline ? "100%" : undefined, minWidth: 0 }}>
       {label && !isInline && !hideLabel && <label>{label}</label>}
-      <div className={isInline ? "inline-autocomplete-wrap" : "control-wrap"} style={isInline ? { display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 } : {}}>
+      <div className={isInline ? "inline-autocomplete-wrap" : "control-wrap"} style={isInline ? { display: 'flex', alignItems: 'center', width: '100%', minWidth: 0 } : {}}>
         {!isInline && (
           tripType === "flight" ? (
             <Plane size={18} color="currentColor" style={{ flexShrink: 0 }} />
@@ -174,56 +173,42 @@ export default function PlaceAutocomplete({
           )
         )}
         {isInline ? (
-          <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', minWidth: 0 }}>
-              <span
-                id={`label-${field || 'place'}`}
-                style={{ fontSize: '13px', fontWeight: 600, color: '#000000', letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                {label || (tripType === "hotel" ? "STAY DESTINATION" : (field === "to" || field === "destination") ? "TO" : "FROM")}
-              </span>
-              <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-                {tripType === "flight" ? (
-                  <Plane size={14} color="#000000" style={{ flexShrink: 0 }} />
-                ) : tripType === "hotel" ? (
-                  <MapPin size={14} color="#000000" style={{ flexShrink: 0 }} />
-                ) : isBusMode && (field === "to" || field === "destination") ? (
-                  <MapPin size={14} color="#000000" style={{ flexShrink: 0 }} />
-                ) : (
-                  <Bus size={14} color="#000000" style={{ flexShrink: 0 }} />
-                )}
-              </span>
-              <input
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                onFocus={() => setOpen(inputValue.trim().length > 0)}
-                className={`inline-autocomplete-input ${error || errorMessage ? "error" : ""}`}
-                placeholder={placeholder || (tripType === "hotel" ? "Enter city, area or hotel" : "Enter city")}
-                autoComplete="off"
-                aria-labelledby={`label-${field || 'place'}`}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  boxShadow: 'none',
-                  color: '#000000',
-                  fontWeight: 400, fontSize: '13px',
-                  padding: 0,
-                  margin: 0,
-                  flex: '1 1 0',
-                  minWidth: 0,
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden'
-                }}
-              />
-            </div>
-            {(errorMessage || (typeof error === 'string' && error)) && (
-              <span className="field-error-text" style={{ color: '#dc2626', fontSize: '11px', marginTop: '2px', fontWeight: 500, lineHeight: 1.2 }}>
-                {errorMessage || error}
-              </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', minWidth: 0 }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#000000', letterSpacing: '0.04em', textTransform: 'uppercase', flexShrink: 0, whiteSpace: 'nowrap' }}>
+              {label || (tripType === "hotel" ? "STAY DESTINATION" : (field === "to" || field === "destination") ? "TO" : "FROM")}
+            </span>
+            {tripType === "flight" ? (
+              <Plane size={14} color="#000000" style={{ flexShrink: 0 }} />
+            ) : tripType === "hotel" ? (
+              <MapPin size={14} color="#000000" style={{ flexShrink: 0 }} />
+            ) : isBusMode && (field === "to" || field === "destination") ? (
+              <MapPin size={14} color="#000000" style={{ flexShrink: 0 }} />
+            ) : (
+              <Bus size={14} color="#000000" style={{ flexShrink: 0 }} />
             )}
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onFocus={() => setOpen(inputValue.trim().length > 0)}
+              className={`inline-autocomplete-input ${error ? "error" : ""}`}
+              placeholder={placeholder || (tripType === "hotel" ? "Enter city, area or hotel" : "Enter city")}
+              autoComplete="off"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                boxShadow: 'none',
+                color: '#000000',
+                fontWeight: 400,
+                fontSize: '13px',
+                padding: 0,
+                margin: 0,
+                width: '100%',
+                flex: 1,
+                minWidth: 0
+              }}
+            />
           </div>
         ) : (
           <input

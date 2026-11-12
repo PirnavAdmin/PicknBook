@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Youtube, Building2, Send, Lock, Instagram, Facebook, Linkedin } from "lucide-react";
+import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Twitter, Instagram, Youtube, Linkedin, Building2, Send, Lock } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -66,24 +66,6 @@ function BlogCardCover({ src, title, category }) {
     />
   );
 }
-
-const POLICY_LINKS = [
-  {
-    id: "terms-conditions",
-    label: "Terms & Conditions",
-    path: "/legal/terms-conditions",
-  },
-  {
-    id: "privacy-policy",
-    label: "Privacy Policy",
-    path: "/legal/privacy-policy",
-  },
-  {
-    id: "refund-cancellation-policy",
-    label: "Refund & Cancellation Policy",
-    path: "/legal/refund-cancellation-policy",
-  },
-];
 
 function isStandardLegalDuplicate(page) {
   const normTitle = String(page?.title || "")
@@ -206,10 +188,10 @@ export default function SiteFooter() {
 
         {/* ── 2. Main Content Card (Large White Card) ──────────── */}
         <div className="pnb-footer-main-card">
-          <div className="pnb-footer-main-grid max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 items-start">
+          <div className="pnb-footer-main-grid">
 
-            {/* Column 1: Logo & Brand Description with social media icons [PNB/UI/FOOTER_001] */}
-            <div className="pnb-footer-brand-col flex flex-col items-start">
+            {/* Column 1: Brand Info */}
+            <div className="pnb-footer-brand-col">
               <div
                 className="pnb-footer-brand-logo-wrap"
                 onClick={() => navigate("/")}
@@ -222,131 +204,146 @@ export default function SiteFooter() {
                   className="pnb-footer-brand-logo-img"
                 />
               </div>
-              <p className="pnb-footer-brand-desc text-sm text-slate-600 mb-4 leading-relaxed">
+              <p className="pnb-footer-brand-desc">
                 India's most trusted travel platform for instant bus, flight, and hotel bookings with guaranteed low fares &amp; 24/7 support.
               </p>
             </div>
 
-            {/* Column 2: Our Services (Hotels, Flights, Buses, Packages) [PNB/UI/FOOTER_001] */}
+            {/* Column 2: Our Services */}
             <div className="pnb-footer-links-col">
               <h4 className="pnb-col-heading">
-                <Bus size={18} className="pnb-col-heading-icon" />
+                <Bus size={20} className="pnb-col-heading-icon" color="#E10600" />
                 <span>Our Services</span>
               </h4>
-              <ul className="pnb-col-links-list" style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
-                <li style={{ listStyle: "none" }}>
-                  <button
-                    type="button"
-                    onClick={(e) => handleServiceClick("hotels", e)}
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>Hotels</span>
-                  </button>
-                </li>
-                <li style={{ listStyle: "none" }}>
-                  <button
-                    type="button"
-                    onClick={(e) => handleServiceClick("flights", e)}
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>Flights</span>
-                  </button>
-                </li>
-                <li style={{ listStyle: "none" }}>
+              <ul className="pnb-col-links-list">
+                <li>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("buses", e)}
                     className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>Buses</span>
+                    <span className="pnb-link-chevron">›</span> Bus Ticket Booking
                   </button>
                 </li>
-                <li style={{ listStyle: "none" }}>
+                <li>
                   <button
                     type="button"
-                    onClick={(e) => handleServiceClick("packages", e)}
+                    onClick={(e) => handleServiceClick("flights", e)}
                     className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>Packages</span>
+                    <span className="pnb-link-chevron">›</span> Flight Booking
                   </button>
                 </li>
-              </ul>
-            </div>
-
-            {/* Column 3: Quick Links (About Us, My Bookings, Offers, Contact) [PNB/UI/FOOTER_001] */}
-            <div className="pnb-footer-links-col">
-              <h4 className="pnb-col-heading">
-                <Plane size={18} className="pnb-col-heading-icon" />
-                <span>Quick Links</span>
-              </h4>
-              <ul className="pnb-col-links-list" style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
-                <li style={{ listStyle: "none" }}>
+                <li>
                   <button
                     type="button"
-                    onClick={() => openFooterPage("/about-us")}
+                    onClick={(e) => handleServiceClick("hotels", e)}
                     className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>About Us</span>
+                    <span className="pnb-link-chevron">›</span> Hotel Reservations
                   </button>
                 </li>
-                <li style={{ listStyle: "none" }}>
-                  <button
-                    type="button"
-                    onClick={() => openFooterPage("/fetch-ticket")}
-                    className="pnb-footer-link"
-                  >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>My Bookings</span>
-                  </button>
-                </li>
-                <li style={{ listStyle: "none" }}>
+                <li>
                   <button
                     type="button"
                     onClick={(e) => handleServiceClick("offers", e)}
                     className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>Offers</span>
+                    <span className="pnb-link-chevron">›</span> Exclusive Offers
                   </button>
                 </li>
-                <li style={{ listStyle: "none" }}>
+              </ul>
+            </div>
+
+            {/* Column 3: Quick Links */}
+            <div className="pnb-footer-links-col">
+              <h4 className="pnb-col-heading">
+                <Plane size={20} className="pnb-col-heading-icon" color="#E10600" />
+                <span>Quick Links</span>
+              </h4>
+              <ul className="pnb-col-links-list">
+                <li>
                   <button
                     type="button"
                     onClick={() => openFooterPage("/contact")}
                     className="pnb-footer-link"
                   >
-                    <span className="pnb-link-chevron">›</span>
-                    <span>Contact</span>
+                    <span className="pnb-link-chevron">›</span> Contact Us
                   </button>
                 </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => openFooterPage("/travel-guide")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Travel Guide &amp; Blogs
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => openFooterPage("/fetch-ticket")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Track Booking Status
+                  </button>
+                </li>
+
               </ul>
             </div>
 
             {/* Column 4: Policies & Help */}
             <div className="pnb-footer-links-col">
               <h4 className="pnb-col-heading">
-                <ShieldCheck size={18} className="pnb-col-heading-icon" />
+                <ShieldCheck size={20} className="pnb-col-heading-icon" color="#E10600" />
                 <span>Policies &amp; Help</span>
               </h4>
-              <ul className="pnb-col-links-list" style={{ listStyle: "none", paddingLeft: 0, margin: 0 }}>
-                {POLICY_LINKS.map((link) => (
-                  <li key={link.id} style={{ listStyle: "none" }}>
-                    <a
-                      href={link.path}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="pnb-footer-link"
-                    >
-                      <span className="pnb-link-chevron">›</span>
-                      <span>{link.label}</span>
-                    </a>
-                  </li>
-                ))}
+              <ul className="pnb-col-links-list">
+                <li>
+                  <a
+                    href="/legal/terms-conditions"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Terms &amp; Conditions
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/legal/privacy-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Privacy Policy
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="/legal/refund-cancellation-policy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> Refund &amp; Cancellation Policy
+                  </a>
+                </li>
+                {cmsPages
+                  .filter((page) => !isStandardLegalDuplicate(page))
+                  .map((page) => (
+                    <li key={page.id || page.slug}>
+                      <a
+                        href={`/online/${encodeURIComponent(page.slug)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pnb-footer-link"
+                      >
+                        <span className="pnb-link-chevron">›</span> {page.title}
+                      </a>
+                    </li>
+                  ))}
               </ul>
             </div>
 
@@ -425,16 +422,7 @@ export default function SiteFooter() {
                 className="pnb-social-circle pnb-ig-circle"
                 title="Instagram"
               >
-                <Instagram size={16} color="#ffffff" />
-              </a>
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pnb-social-circle pnb-fb-circle"
-                title="Facebook"
-              >
-                <Facebook size={16} color="#ffffff" fill="#ffffff" />
+                <Instagram size={17} color="#ffffff" />
               </a>
               <a
                 href="https://youtube.com"
@@ -443,10 +431,7 @@ export default function SiteFooter() {
                 className="pnb-social-circle pnb-yt-circle"
                 title="YouTube"
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style={{ display: "block" }}>
-                  <path d="M21.582 6.186c-.23-.86-.908-1.538-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418c-.86.23-1.538.908-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814c.23.86.908 1.538 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418c.86-.23 1.538-.908 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814z" fill="#ffffff" />
-                  <polygon points="9.75,15.02 15.5,12 9.75,8.98" fill="#ff0000" />
-                </svg>
+                <Youtube size={17} color="#ffffff" />
               </a>
               <a
                 href="https://linkedin.com"
@@ -455,7 +440,7 @@ export default function SiteFooter() {
                 className="pnb-social-circle pnb-li-circle"
                 title="LinkedIn"
               >
-                <Linkedin size={15} color="#ffffff" fill="#ffffff" />
+                <Linkedin size={17} color="#ffffff" />
               </a>
             </div>
           </div>

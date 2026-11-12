@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { UserContext } from "../../contexts/UserContext";
 import { submitContactQuery } from "../../services/queryService";
-import { 
+import {
   Mail,
   Phone,
   MapPin,
@@ -16,7 +16,7 @@ import {
   User,
   Shield,
   Clock3
-, ChevronDown } from "lucide-react";
+} from "lucide-react";
 import contactBanner from "../../assets/images/contact_hero_image.png";
 import journeyIllustration from "../../assets/images/contact_hero_image.png";
 
@@ -144,23 +144,20 @@ export default function ContactUsPage() {
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         .contact-page-container {
+          background-color: #f5f6fa;
           min-height: 100vh;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          background: linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, rgba(241, 245, 249, 0.6) 100%);
-          padding: 0 0 60px 0;
-          margin: 0;
+          padding-bottom: 24px;
+          margin-top: -35px;
         }
 
         /* HERO BANNER */
         .contact-banner-section {
           position: relative;
           width: 100%;
-          background: url(${contactBanner}) center top / cover no-repeat;
+          background: url(${contactBanner}) center center / cover no-repeat;
           background-color: #f0f4f8;
           min-height: 380px;
-          height: clamp(340px, 28vw, 440px);
-          margin: 0;
-          padding: 0;
           overflow: hidden;
         }
 
@@ -187,18 +184,11 @@ export default function ContactUsPage() {
 
         /* CARDS */
         .contact-card-box {
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(4px);
-          border-radius: 1rem;
-          padding: 24px;
-          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-          border: 1px solid rgba(226, 232, 240, 0.8);
-        }
-
-        @media (min-width: 640px) {
-          .contact-card-box {
-            padding: 32px;
-          }
+          background: #ffffff;
+          border-radius: 20px;
+          padding: 36px;
+          box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+          border: 1px solid #ecedf2;
         }
 
         .contact-card-title {
@@ -265,28 +255,7 @@ export default function ContactUsPage() {
         .contact-field.has-error:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.1) !important; }
         .contact-select-field { appearance: none; cursor: pointer; padding: 0 36px 0 44px; height: 46px; line-height: 43px; }
         .contact-select-chevron { position: absolute; right: 14px; color: #94a3b8; pointer-events: none; font-size: 14px; }
-        .contact-textarea {
-          min-height: 140px;
-          resize: vertical;
-          padding: 12px;
-          background-color: #ffffff !important;
-          color: #1e293b !important;
-          border: 1px solid #cbd5e1 !important;
-          border-radius: 0.5rem !important;
-          accent-color: auto !important;
-          caret-color: #1e293b !important;
-          box-shadow: none !important;
-        }
-        .contact-textarea::before,
-        .contact-textarea::after {
-          content: none !important;
-          display: none !important;
-        }
-        .contact-textarea:focus {
-          border-color: #e11d48 !important;
-          box-shadow: 0 0 0 2px #ffe4e6 !important;
-          background-color: #ffffff !important;
-        }
+        .contact-textarea { min-height: 140px; resize: vertical; padding-top: 13px; }
 
         .contact-submit-btn {
           background: linear-gradient(135deg, #cc1034, #e8003a);
@@ -387,7 +356,7 @@ export default function ContactUsPage() {
         }
       `}</style>
 
-      <div className="contact-page-container min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100/60 pb-16">
+      <div className="contact-page-container">
 
         {/* HERO BANNER — image has text built in, no overlay needed */}
         <div className="contact-banner-section" />
@@ -396,7 +365,7 @@ export default function ContactUsPage() {
         <div className="contact-content-grid">
 
           {/* Left Panel */}
-          <div className="contact-card-box bg-white/90 backdrop-blur-sm shadow-sm border border-slate-200/80 rounded-2xl p-6 sm:p-8">
+          <div className="contact-card-box">
             <h3 className="contact-card-title">Send Us a Message</h3>
             <p className="contact-card-subtitle">Fill in the form below and we'll get back to you within 24 hours.</p>
 
@@ -490,7 +459,7 @@ export default function ContactUsPage() {
                       value={formData.message}
                       onChange={handleChange}
                       required
-                      className={`contact-field contact-textarea w-full bg-white text-slate-800 placeholder-slate-400 border border-slate-300 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 rounded-lg p-3 text-sm resize-y outline-none transition-all accent-auto caret-slate-800 ${errors.message ? "has-error" : ""}`}
+                      className={`contact-field contact-textarea ${errors.message ? "has-error" : ""}`}
                     />
                     {errors.message && <span style={{ position: "absolute", bottom: "-18px", left: "0", color: "#ef4444", fontSize: "0.72rem", fontWeight: 600 }}>{errors.message}</span>}
                   </div>
@@ -515,7 +484,7 @@ export default function ContactUsPage() {
 
           {/* Right Panel: Contact Information */}
           <div>
-            <div className="contact-card-box bg-white/90 backdrop-blur-sm shadow-sm border border-slate-200/80 rounded-2xl p-6 sm:p-8">
+            <div className="contact-card-box">
               <h3 className="contact-card-title">Contact Information</h3>
               <p className="contact-card-subtitle">Reach us through any of the channels below.</p>
 
@@ -540,15 +509,17 @@ export default function ContactUsPage() {
                   </div>
                 </div>
 
-                <div className="contact-info-item flex items-start gap-3">
-                  <div className="contact-info-icon-box shrink-0">
+                <div className="contact-info-item">
+                  <div className="contact-info-icon-box">
                     <MapPin size={18} />
                   </div>
                   <div className="contact-info-text-box">
-                    <h4 className="text-sm font-bold text-slate-800">Address</h4>
-                    <div className="text-sm text-slate-600 leading-relaxed break-words">
-                      Pirnav Software Solutions Private Limited, 4th Floor, Jain Sadguru Images Capital Park, Madhapur, Hyderabad, Telangana, India <span className="whitespace-nowrap">(PIN: 500081)</span>
-                    </div>
+                    <h4>Address</h4>
+                    <p>
+                      Pirnav Software Solutions Private Limited,<br />
+                      4th Floor, Jain Sadguru Images Capital Park,<br />
+                      Madhapur, Hyderabad, Telangana, India <span style={{ whiteSpace: "nowrap" }}>(500081)</span>
+                    </p>
                   </div>
                 </div>
 
