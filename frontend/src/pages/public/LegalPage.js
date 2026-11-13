@@ -211,8 +211,9 @@ function renderTermsDocument(lines, pageTitle) {
   );
 }
 
-export default function LegalPage() {
-  const { slug } = useParams();
+export default function LegalPage({ forcedSlug }) {
+  const params = useParams();
+  const slug = forcedSlug || params?.slug || (typeof window !== "undefined" && window.location.pathname.includes("about-us") ? "about-us" : "");
   const fallbackPage = DEFAULT_CMS_PAGES.find(
     (candidate) => normalizePolicySlug(candidate.slug) === normalizePolicySlug(slug)
   );
@@ -300,10 +301,11 @@ export default function LegalPage() {
   const contentLines = isHtml ? [] : formatLegalContent(rawDescription);
   const isPrivacyPolicy = normalizePolicySlug(slug) === "privacy-policy";
   const isRefundPolicy = normalizePolicySlug(slug) === "refund-cancellation-policy";
-  const isTermsDocument = normalizePolicySlug(slug) === "terms-conditions" || isPrivacyPolicy || isRefundPolicy;
+  const isAboutUs = normalizePolicySlug(slug) === "about-us";
+  const isTermsDocument = normalizePolicySlug(slug) === "terms-conditions" || isPrivacyPolicy || isRefundPolicy || isAboutUs;
 
   return (
-    <main className={`legal-page${isTermsDocument ? " legal-page-terms" : ""}${isPrivacyPolicy ? " legal-page-privacy" : ""}`}>
+    <main className={`legal-page${isTermsDocument ? " legal-page-terms" : ""}${(isPrivacyPolicy || isAboutUs) ? " legal-page-privacy" : ""}${isAboutUs ? " legal-page-about" : ""}`}>
       <section className="legal-shell">
 
 
@@ -315,6 +317,7 @@ export default function LegalPage() {
         )}
 
         <article className="legal-content-card">
+          {isAboutUs && <h1 className="terms-document-title">ABOUT US</h1>}
           {isHtml ? (
             <div className="legal-rendered-content" dangerouslySetInnerHTML={{ __html: rawDescription }} />
           ) : isTermsDocument ? (

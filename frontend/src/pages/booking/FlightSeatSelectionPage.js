@@ -27,6 +27,7 @@ import {
 } from "./flightBookingFlowStore";
 import { normalizeCabinClass } from "../../utils/seatMapUtils";
 import BookingTimer from "./BookingTimer";
+import FlightStepperHeader from "../../components/booking/FlightStepperHeader";
 
 function formatCurrency(amount) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -305,7 +306,7 @@ export default function FlightSeatSelectionPage() {
 
   const handleRestartSearch = () => {
     if (!searchContext) {
-      navigate("/");
+      navigate("/search/flights");
       return;
     }
     const qs = new URLSearchParams();
@@ -316,7 +317,34 @@ export default function FlightSeatSelectionPage() {
     if (searchContext.travellers) qs.set("travellers", searchContext.travellers);
     if (searchContext.departureDate) qs.set("departureDate", searchContext.departureDate);
     if (searchContext.returnDate) qs.set("returnDate", searchContext.returnDate);
-    navigate(`/flight-search?${qs.toString()}`, { state: searchContext });
+    if (searchContext.multiCityLegs) {
+      try {
+        qs.set(
+          "multiCityLegs",
+          typeof searchContext.multiCityLegs === "string"
+            ? searchContext.multiCityLegs
+            : JSON.stringify(searchContext.multiCityLegs)
+        );
+      } catch { }
+    }
+    navigate(`/search/flights?${qs.toString()}`, { state: searchContext });
+  };
+
+  const handleBackToReviewAndTraveller = () => {
+    const updatedState = {
+      ...flowState,
+      selectedSeatsBySegment,
+      selectedSeatLabels,
+      selectedSeats,
+      mealPreference,
+      baggagePlan,
+      selectedMeal,
+      selectedBaggage,
+      travelAssistanceAdded,
+      zeroCancellationAdded,
+    };
+    writeFlightBookingFlowState(updatedState);
+    navigate("/flight/passenger-details", { state: updatedState });
   };
 
   const [seatMapCabinByLeg, setSeatMapCabinByLeg] = useState({});
@@ -1012,27 +1040,7 @@ export default function FlightSeatSelectionPage() {
     <main className="flight-flow-page flight-seat-selection-page">
       <BookingTimer onRestartSearch={handleRestartSearch} mode="banner" />
       {/* ── STEPPER PROGRESS HEADER ── */}
-      <div className="flight-stepper-header">
-        <div className="step-item completed">
-          <span className="step-circle">✓</span>
-          <span>Flight Selection</span>
-        </div>
-        <div className="step-line completed"></div>
-        <div className="step-item completed">
-          <span className="step-circle">✓</span>
-          <span>Review & Traveller Details</span>
-        </div>
-        <div className="step-line completed"></div>
-        <div className="step-item active">
-          <span className="step-circle">3</span>
-          <span>Add-ons</span>
-        </div>
-        <div className="step-line"></div>
-        <div className="step-item">
-          <span className="step-circle">4</span>
-          <span>Payment</span>
-        </div>
-      </div>
+      <FlightStepperHeader currentStage={3} onBack={handleBackToReviewAndTraveller} />
 
       <div className="flight-booking-container">
         {/* ── LEFT COLUMN SIDEBAR ── */}

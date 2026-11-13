@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useCashfreePayment } from "../../hooks/useCashfreePayment";
 import { prepareFlightBookingPayload, buildBookingPayload as buildBusBookingPayload } from "../../utils/checkoutPayloadBuilders";
 import { getWalletSummary } from "../../services/walletService";
+import FlightStepperHeader from "./FlightStepperHeader";
 import "../../STYLES/FlightBookingFlow.css";
 
 function roundCurrency(value) {
@@ -358,12 +359,18 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
       alignItems: "center", justifyContent: "center"
     }}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{
-        backgroundColor: "#fff", width: "100%", maxWidth: "500px",
+        backgroundColor: "#fff", width: "100%", maxWidth: bookingType === "Flight" ? "680px" : "500px",
         borderRadius: "12px", padding: "24px", maxHeight: "90vh", overflowY: "auto", position: "relative"
       }}>
-        <button onClick={onClose} style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer" }}>
+        <button onClick={onClose} aria-label="Close modal" style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer", zIndex: 10 }}>
           <X size={24} />
         </button>
+
+        {bookingType === "Flight" && (
+          <div style={{ marginTop: "8px", marginBottom: "20px" }}>
+            <FlightStepperHeader currentStage={4} onBack={onClose} compact={true} />
+          </div>
+        )}
 
         <h2 style={{ marginTop: 0, marginBottom: "20px", fontSize: "1.5rem" }}>Review Booking ({bookingType})</h2>
 

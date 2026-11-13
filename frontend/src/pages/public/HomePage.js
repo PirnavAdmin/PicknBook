@@ -2309,6 +2309,10 @@ export default function HomePage() {
   const [showClassDropdown, setShowClassDropdown] = useState(false);
   const travellerFieldRef = useRef(null);
   const classFieldRef = useRef(null);
+  const travellerPopupRef = useRef(null);
+  const classPopupRef = useRef(null);
+  const [travellerPos, setTravellerPos] = useState({ top: 0, left: 0 });
+  const [classPos, setClassPos] = useState({ top: 0, left: 0 });
 
   const [multiCityLegs, setMultiCityLegs] = useState(() => [
     createMultiCityLeg("", "", 0),
@@ -2602,7 +2606,7 @@ export default function HomePage() {
       videoEl.muted = true;
       const playPromise = videoEl.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {});
+        playPromise.catch(() => { });
       }
     };
 
@@ -2617,23 +2621,36 @@ export default function HomePage() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        travellerFieldRef.current &&
-        !travellerFieldRef.current.contains(event.target)
-      ) {
+      const clickedTravellerField =
+        travellerFieldRef.current && travellerFieldRef.current.contains(event.target);
+      const clickedTravellerPopup =
+        travellerPopupRef.current && travellerPopupRef.current.contains(event.target);
+      if (!clickedTravellerField && !clickedTravellerPopup) {
         setShowTravellerDropdown(false);
       }
 
-      if (
-        classFieldRef.current &&
-        !classFieldRef.current.contains(event.target)
-      ) {
+      const clickedClassField =
+        classFieldRef.current && classFieldRef.current.contains(event.target);
+      const clickedClassPopup =
+        classPopupRef.current && classPopupRef.current.contains(event.target);
+      if (!clickedClassField && !clickedClassPopup) {
+        setShowClassDropdown(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setShowTravellerDropdown(false);
         setShowClassDropdown(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -2850,7 +2867,7 @@ export default function HomePage() {
             </button>
 
             <div className={`offer-detail-layout ${(offerForDetailPopup.imageUrl || offerForDetailPopup.image || offerForDetailPopup.OfferImage) ? 'has-image' : 'no-image'}`}>
-              
+
               {(offerForDetailPopup.imageUrl || offerForDetailPopup.image || offerForDetailPopup.OfferImage) && (
                 <div className="offer-detail-image-pane">
                   <img
@@ -2858,7 +2875,7 @@ export default function HomePage() {
                     alt={offerForDetailPopup.title || "Offer preview"}
                   />
                   <div className="offer-detail-image-overlay">
-                     <span className="offer-detail-badge">Limited Time Offer</span>
+                    <span className="offer-detail-badge">Limited Time Offer</span>
                   </div>
                 </div>
               )}
@@ -3634,13 +3651,91 @@ export default function HomePage() {
   const canResetAiChat =
     isAiTyping || aiChatInput.trim().length > 0 || aiChatMessages.length > 1;
 
+  const computeTravellerPos = () => {
+    if (!travellerFieldRef.current) return;
+    const rect = travellerFieldRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const popupWidth = Math.min(320, (window.innerWidth || 360) - 16);
+
+    let left = rect.left + scrollX;
+    const maxLeft = window.innerWidth + scrollX - popupWidth - 8;
+    if (left > maxLeft) left = maxLeft;
+    if (left < 8 + scrollX) left = 8 + scrollX;
+
+    setTravellerPos({
+      top: rect.bottom + scrollY + 8,
+      left,
+    });
+  };
+
+  const computeClassPos = () => {
+    if (!classFieldRef.current) return;
+    const rect = classFieldRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const scrollX = window.scrollX || document.documentElement.scrollLeft;
+    const popupWidth = Math.min(200, (window.innerWidth || 240) - 16);
+
+    let left = rect.left + scrollX;
+    const maxLeft = window.innerWidth + scrollX - popupWidth - 8;
+    if (left > maxLeft) left = maxLeft;
+    if (left < 8 + scrollX) left = 8 + scrollX;
+
+    setClassPos({
+      top: rect.bottom + scrollY + 8,
+      left,
+    });
+  };
+
+  useEffect(() => {
+    if (!showTravellerDropdown) return;
+    computeTravellerPos();
+    window.addEventListener("resize", computeTravellerPos);
+    window.addEventListener("scroll", computeTravellerPos, true);
+    return () => {
+      window.removeEventListener("resize", computeTravellerPos);
+      window.removeEventListener("scroll", computeTravellerPos, true);
+    };
+  }, [showTravellerDropdown]);
+
+  useEffect(() => {
+    if (!showClassDropdown) return;
+    computeClassPos();
+    window.addEventListener("resize", computeClassPos);
+    window.addEventListener("scroll", computeClassPos, true);
+    return () => {
+      window.removeEventListener("resize", computeClassPos);
+      window.removeEventListener("scroll", computeClassPos, true);
+    };
+  }, [showClassDropdown]);
+
+  const handleToggleTravellerDropdown = (e) => {
+    e?.stopPropagation?.();
+    setActiveCalendarField(null);
+    setShowClassDropdown(false);
+    if (!showTravellerDropdown) {
+      computeTravellerPos();
+    }
+    setShowTravellerDropdown((previous) => !previous);
+  };
+
+  const handleToggleClassDropdown = (e) => {
+    e?.stopPropagation?.();
+    setActiveCalendarField(null);
+    setShowTravellerDropdown(false);
+    if (!showClassDropdown) {
+      computeClassPos();
+    }
+    setShowClassDropdown((prev) => !prev);
+  };
+
   const travellerField = (
     <div className="field traveller-field" ref={travellerFieldRef}>
       <label>Travellers</label>
       <button
         type="button"
         className={`traveller-trigger ${showTravellerDropdown ? "open" : ""}`}
-        onClick={() => setShowTravellerDropdown((previous) => !previous)}
+        onClick={handleToggleTravellerDropdown}
       >
         <span
           className={`traveller-summary ${hasTravellerSelection ? "" : "placeholder"
@@ -3657,85 +3752,101 @@ export default function HomePage() {
         />
       </button>
 
-      {showTravellerDropdown && (
-        <div className="traveller-dropdown" onMouseDown={(e) => e.stopPropagation()}>
-          <div className="counter-row">
-            <div className="counter-copy">
-              <strong>Adults</strong>
-              <span>12 years and above</span>
-            </div>
-            <div className="counter-box">
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeAdults(-1); }}
-                disabled={adults <= 0}
-              >
-                <Minus size={14} />
-              </button>
-              <span>{adults}</span>
-              <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeAdults(1); }}>
-                <Plus size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div className="counter-row">
-            <div className="counter-copy">
-              <strong>Child</strong>
-              <span>2 to 11 years</span>
-            </div>
-            <div className="counter-box">
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeChildren(-1); }}
-                disabled={children <= 0}
-              >
-                <Minus size={14} />
-              </button>
-              <span>{children}</span>
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeChildren(1); }}
-                disabled={adults <= 0}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-          </div>
-
-          <div className="counter-row">
-            <div className="counter-copy">
-              <strong>Infant</strong>
-              <span>Under 2 years</span>
-            </div>
-            <div className="counter-box">
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeInfants(-1); }}
-                disabled={infants <= 0}
-              >
-                <Minus size={14} />
-              </button>
-              <span>{infants}</span>
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeInfants(1); }}
-                disabled={adults <= 0 || infants >= adults}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="traveller-done"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTravellerDropdown(false); }}
+      {showTravellerDropdown &&
+        createPortal(
+          <div
+            ref={travellerPopupRef}
+            className="traveller-dropdown"
+            style={{
+              position: "absolute",
+              top: `${travellerPos.top}px`,
+              left: `${travellerPos.left}px`,
+              zIndex: 2147483647,
+              boxShadow: "0 20px 34px rgba(18, 28, 41, 0.2)",
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Traveller selection"
           >
-            Done
-          </button>
-        </div>
-      )}
+            <div className="counter-row">
+              <div className="counter-copy">
+                <strong>Adults</strong>
+                <span>12 years and above</span>
+              </div>
+              <div className="counter-box">
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeAdults(-1); }}
+                  disabled={adults <= 0}
+                >
+                  <Minus size={14} />
+                </button>
+                <span>{adults}</span>
+                <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeAdults(1); }}>
+                  <Plus size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="counter-row">
+              <div className="counter-copy">
+                <strong>Child</strong>
+                <span>2 to 11 years</span>
+              </div>
+              <div className="counter-box">
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeChildren(-1); }}
+                  disabled={children <= 0}
+                >
+                  <Minus size={14} />
+                </button>
+                <span>{children}</span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeChildren(1); }}
+                  disabled={adults <= 0}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="counter-row">
+              <div className="counter-copy">
+                <strong>Infant</strong>
+                <span>Under 2 years</span>
+              </div>
+              <div className="counter-box">
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeInfants(-1); }}
+                  disabled={infants <= 0}
+                >
+                  <Minus size={14} />
+                </button>
+                <span>{infants}</span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); changeInfants(1); }}
+                  disabled={adults <= 0 || infants >= adults}
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="traveller-done"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTravellerDropdown(false); }}
+            >
+              Done
+            </button>
+          </div>,
+          document.body
+        )}
     </div>
   );
 
@@ -3745,7 +3856,7 @@ export default function HomePage() {
       <button
         type="button"
         className={`traveller-trigger ${showClassDropdown ? "open" : ""}`}
-        onClick={() => setShowClassDropdown((prev) => !prev)}
+        onClick={handleToggleClassDropdown}
       >
         <span
           className={`traveller-summary ${cabinClass ? "" : "placeholder"
@@ -3762,27 +3873,43 @@ export default function HomePage() {
         />
       </button>
 
-      {showClassDropdown && (
-        <div className="traveller-dropdown class-dropdown" onMouseDown={(e) => e.stopPropagation()}>
-          <ul className="class-options-list">
-            {CLASS_OPTIONS.map((item) => (
-              <li key={item}>
-                <button
-                  type="button"
-                  className={`class-option-btn ${cabinClass === item ? "selected" : ""}`}
-                  onClick={(e) => {
-                    e.preventDefault(); e.stopPropagation();
-                    setCabinClass(item);
-                    setShowClassDropdown(false);
-                  }}
-                >
-                  {item}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {showClassDropdown &&
+        createPortal(
+          <div
+            ref={classPopupRef}
+            className="traveller-dropdown class-dropdown"
+            style={{
+              position: "absolute",
+              top: `${classPos.top}px`,
+              left: `${classPos.left}px`,
+              zIndex: 2147483647,
+              boxShadow: "0 20px 34px rgba(18, 28, 41, 0.2)",
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Cabin class selection"
+          >
+            <ul className="class-options-list">
+              {CLASS_OPTIONS.map((item) => (
+                <li key={item}>
+                  <button
+                    type="button"
+                    className={`class-option-btn ${cabinClass === item ? "selected" : ""}`}
+                    onClick={(e) => {
+                      e.preventDefault(); e.stopPropagation();
+                      setCabinClass(item);
+                      setShowClassDropdown(false);
+                    }}
+                  >
+                    {item}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>,
+          document.body
+        )}
     </div>
   );
 
@@ -3865,8 +3992,8 @@ export default function HomePage() {
                         {section.items.map((item) => {
                           const isOpen = faqModalOpenQuestionId === item.id;
                           return (
-                            <details 
-                              className="india-faq-item faq-modal-question" 
+                            <details
+                              className="india-faq-item faq-modal-question"
                               key={item.id}
                               open={isOpen}
                             >
@@ -4942,12 +5069,13 @@ export default function HomePage() {
 
         .homepage .pop-bus-card,
         .pop-bus-card {
-           flex: 0 0 calc((100% - 56px) / 5) !important;
-           min-width: calc((100% - 56px) / 5) !important;
-           max-width: calc((100% - 56px) / 5) !important;
+           flex: 0 0 230px !important;
+           min-width: 230px !important;
+           max-width: 230px !important;
+           width: 230px !important;
            background: #ffffff !important;
            border: 1px solid #e2e8f0 !important;
-           border-radius: 18px !important;
+           border-radius: 14px !important;
            overflow: hidden !important;
            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05) !important;
            display: flex !important;
@@ -5010,7 +5138,7 @@ export default function HomePage() {
         .pop-bus-card .pop-route-img-wrap {
            position: relative !important;
            width: 100% !important;
-           height: 125px !important;
+           height: 100px !important;
            overflow: hidden !important;
            background: #ffffff !important;
            margin: 0 !important;
@@ -5081,7 +5209,7 @@ export default function HomePage() {
            bottom: -2px !important;
            left: 0 !important;
            width: 100% !important;
-           height: 32px !important;
+           height: 20px !important;
            z-index: 3 !important;
            pointer-events: none !important;
            line-height: 0 !important;
@@ -5104,9 +5232,9 @@ export default function HomePage() {
         }
 
         .pop-bus-body {
-           padding: 14px 14px 10px 14px !important;
+           padding: 8px 10px 4px 10px !important;
            background: #ffffff !important;
-           margin-top: -4px !important;
+           margin-top: -3px !important;
            position: relative !important;
            z-index: 4 !important;
            border: none !important;
@@ -5185,14 +5313,14 @@ export default function HomePage() {
         }
 
         .pop-bus-footer {
-           padding: 0 14px 14px 14px !important;
+           padding: 0 10px 10px 10px !important;
            background: #ffffff !important;
            margin-top: auto !important;
         }
 
         .pop-bus-book-btn {
            width: 100% !important;
-           height: 38px !important;
+           height: 32px !important;
            background: #ff0000 !important;
            color: #ffffff !important;
            border-radius: 9999px !important;
@@ -5200,12 +5328,12 @@ export default function HomePage() {
            display: flex !important;
            align-items: center !important;
            justify-content: center !important;
-           gap: 8px !important;
-           font-size: 0.8rem !important;
+           gap: 6px !important;
+           font-size: 0.75rem !important;
            font-weight: 800 !important;
            letter-spacing: 0.04em !important;
            cursor: pointer !important;
-           box-shadow: 0 4px 12px rgba(255, 0, 0, 0.28) !important;
+           box-shadow: 0 3px 10px rgba(255, 0, 0, 0.24) !important;
            transition: all 0.2s ease !important;
         }
 
@@ -5466,8 +5594,8 @@ export default function HomePage() {
         }
 
         .offer-img-marquee.offer-marquee .marquee-slide {
-            width: 208px !important;
-            flex: 0 0 208px !important;
+            width: 288px !important;
+            flex: 0 0 288px !important;
            padding: 0 4px !important;
            box-sizing: border-box !important;
            display: flex !important;
@@ -5478,10 +5606,10 @@ export default function HomePage() {
 
         .img-offer-card {
            position: relative !important;
-            width: 200px !important;
-            height: 100px !important;
-            min-height: 100px !important;
-           border-radius: 12px !important;
+            width: 280px !important;
+            height: 135px !important;
+            min-height: 135px !important;
+           border-radius: 14px !important;
            overflow: hidden !important;
            cursor: pointer !important;
            display: flex !important;
@@ -5509,6 +5637,10 @@ export default function HomePage() {
            height: 100% !important;
            overflow: hidden !important;
            z-index: 1 !important;
+           background: #ffffff !important;
+           display: flex !important;
+           align-items: center !important;
+           justify-content: center !important;
         }
 
         .img-offer-photo {
@@ -7897,8 +8029,16 @@ export default function HomePage() {
                               </div>
                             </div>
                             {activeCalendarField === `leg-${leg.id}` && (
-                              <CustomDatePicker isOpen={true}
+                              <CustomDatePicker
+                                isOpen={true}
                                 value={leg.departureDate}
+                                from={leg.from}
+                                to={leg.to}
+                                travelClass={cabinClass}
+                                adults={adults}
+                                children={children}
+                                infants={infants}
+                                isFlight={true}
                                 onChange={(newDate) => updateMultiCityLeg(leg.id, "departureDate", newDate)}
                                 onClose={() => setActiveCalendarField(null)}
                               />
@@ -7998,8 +8138,16 @@ export default function HomePage() {
                           </div>
                         </div>
                         {activeCalendarField === "flight-dep" && (
-                          <CustomDatePicker isOpen={true}
+                          <CustomDatePicker
+                            isOpen={true}
                             value={flightDepartureDate}
+                            from={flightFrom}
+                            to={flightTo}
+                            travelClass={cabinClass}
+                            adults={adults}
+                            children={children}
+                            infants={infants}
+                            isFlight={true}
                             onChange={(newDate) => {
                               setFlightDepartureDate(newDate);
                               if (flightReturnDate && newDate && flightReturnDate < newDate) {
@@ -8031,9 +8179,17 @@ export default function HomePage() {
                             </div>
                           </div>
                           {activeCalendarField === "flight-ret" && (
-                            <CustomDatePicker isOpen={true}
+                            <CustomDatePicker
+                              isOpen={true}
                               value={flightReturnDate}
+                              from={flightTo}
+                              to={flightFrom}
                               minDate={flightDepartureDate || ""}
+                              travelClass={cabinClass}
+                              adults={adults}
+                              children={children}
+                              infants={infants}
+                              isFlight={true}
                               onChange={(newDate) => setFlightReturnDate(newDate)}
                               onClose={() => setActiveCalendarField(null)}
                             />
@@ -8198,8 +8354,8 @@ export default function HomePage() {
                 {activeTab === "buses"
                   ? "Best deals on buses. Grab them before they're gone!"
                   : activeTab === "flights"
-                  ? "Best deals on flights. Grab them before they're gone!"
-                  : "Best deals on hotels. Grab them before they're gone!"}
+                    ? "Best deals on flights. Grab them before they're gone!"
+                    : "Best deals on hotels. Grab them before they're gone!"}
               </p>
             </div>
           </div>
@@ -8459,8 +8615,8 @@ export default function HomePage() {
                       {config.vehicleCursiveOverlay && (
                         <div className="td-flight-cursive-badge">
                           <svg className="td-flight-arc-svg" viewBox="0 0 90 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 24 Q20 10 45 8 Q70 6 86 14" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" fill="none"/>
-                            <path d="M84 10 L86 14 L82 14" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                            <path d="M4 24 Q20 10 45 8 Q70 6 86 14" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeDasharray="4 3" strokeLinecap="round" fill="none" />
+                            <path d="M84 10 L86 14 L82 14" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                           </svg>
                           <span className="td-flight-cursive-line1">New Destinations</span>
                           <span className="td-flight-cursive-line2">New Stories</span>
@@ -8601,88 +8757,88 @@ export default function HomePage() {
                       const routeIdentifier = route.id || `${route.fromCity}-${route.toCity}`;
                       const uniqueKey = `${route.id || routeIdentifier}-${copyIndex}`;
 
-                    return (
-                      <article
-                        className="pop-route-card pop-bus-card"
-                        key={uniqueKey}
-                        role="button"
-                        tabIndex={0}
-                        style={{ outline: "none" }}
-                        onClick={() => handlePopularRouteBooking(route)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            handlePopularRouteBooking(route);
-                          }
-                        }}
-                      >
-                        <div className="pop-route-img-wrap">
-                          <img
-                            src={busImg}
-                            alt={`${route.fromCity} to ${route.toCity}`}
-                            loading="lazy"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length];
-                            }}
-                          />
-                          <div className="pop-bus-badge-top-left">
-                            <Bus size={11} strokeWidth={2.4} />
-                            <span>BUS</span>
-                          </div>
-                          <button
-                            type="button"
-                            className={`pop-bus-bookmark-btn ${savedBusRouteIds.has(routeIdentifier) ? "is-saved" : ""}`}
-                            aria-label="Save route"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleSaveBusRoute(routeIdentifier);
-                            }}
-                          >
-                            <Bookmark
-                              size={14}
-                              strokeWidth={2}
-                              fill={savedBusRouteIds.has(routeIdentifier) ? "#dc2626" : "none"}
-                              color={savedBusRouteIds.has(routeIdentifier) ? "#dc2626" : "#1f2937"}
-                            />
-                          </button>
-                          <div className="pop-bus-wave-wrap">
-                            <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="pop-bus-wave-svg">
-                              <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" fill="#ffffff" />
-                            </svg>
-                          </div>
-                        </div>
-
-                        <div className="pop-bus-body">
-                          <div className="pop-bus-cities-row">
-                            <span className="pop-bus-city from" title={route.fromCity}>{route.fromCity}</span>
-                            <div className="pop-bus-connector">
-                              <span className="pop-bus-line" />
-                              <div className="pop-bus-icon-circle">
-                                <Bus size={13} strokeWidth={2.4} />
-                              </div>
-                              <span className="pop-bus-line" />
-                            </div>
-                            <span className="pop-bus-city to" title={route.toCity}>{route.toCity}</span>
-                          </div>
-                        </div>
-
-                        <div className="pop-bus-footer">
-                          <button
-                            type="button"
-                            className="pop-bus-book-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                      return (
+                        <article
+                          className="pop-route-card pop-bus-card"
+                          key={uniqueKey}
+                          role="button"
+                          tabIndex={0}
+                          style={{ outline: "none" }}
+                          onClick={() => handlePopularRouteBooking(route)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
                               handlePopularRouteBooking(route);
-                            }}
-                          >
-                            <span>BOOK BUS</span>
-                            <ArrowRight size={13} strokeWidth={2.5} />
-                          </button>
-                        </div>
-                      </article>
-                    );
-                  }))}
+                            }
+                          }}
+                        >
+                          <div className="pop-route-img-wrap">
+                            <img
+                              src={busImg}
+                              alt={`${route.fromCity} to ${route.toCity}`}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = BUS_PHOTOS[idx % BUS_PHOTOS.length];
+                              }}
+                            />
+                            <div className="pop-bus-badge-top-left">
+                              <Bus size={11} strokeWidth={2.4} />
+                              <span>BUS</span>
+                            </div>
+                            <button
+                              type="button"
+                              className={`pop-bus-bookmark-btn ${savedBusRouteIds.has(routeIdentifier) ? "is-saved" : ""}`}
+                              aria-label="Save route"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSaveBusRoute(routeIdentifier);
+                              }}
+                            >
+                              <Bookmark
+                                size={14}
+                                strokeWidth={2}
+                                fill={savedBusRouteIds.has(routeIdentifier) ? "#dc2626" : "none"}
+                                color={savedBusRouteIds.has(routeIdentifier) ? "#dc2626" : "#1f2937"}
+                              />
+                            </button>
+                            <div className="pop-bus-wave-wrap">
+                              <svg viewBox="0 0 500 150" preserveAspectRatio="none" className="pop-bus-wave-svg">
+                                <path d="M0.00,49.98 C150.00,150.00 349.81,-49.98 500.00,49.98 L500.00,150.00 L0.00,150.00 Z" fill="#ffffff" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          <div className="pop-bus-body">
+                            <div className="pop-bus-cities-row">
+                              <span className="pop-bus-city from" title={route.fromCity}>{route.fromCity}</span>
+                              <div className="pop-bus-connector">
+                                <span className="pop-bus-line" />
+                                <div className="pop-bus-icon-circle">
+                                  <Bus size={13} strokeWidth={2.4} />
+                                </div>
+                                <span className="pop-bus-line" />
+                              </div>
+                              <span className="pop-bus-city to" title={route.toCity}>{route.toCity}</span>
+                            </div>
+                          </div>
+
+                          <div className="pop-bus-footer">
+                            <button
+                              type="button"
+                              className="pop-bus-book-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePopularRouteBooking(route);
+                              }}
+                            >
+                              <span>BOOK BUS</span>
+                              <ArrowRight size={13} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    }))}
                 </div>
               </div>
             )}
@@ -9105,23 +9261,22 @@ export default function HomePage() {
               activeTab === "hotels"
                 ? hotelOffersBanner
                 : activeTab === "flights"
-                ? flightLandingBanner
-                : exclusiveDealsBanner
+                  ? flightLandingBanner
+                  : exclusiveDealsBanner
             }
             alt={
               activeTab === "hotels"
                 ? "Exclusive Hotel Deals Straight to Your Inbox"
                 : activeTab === "flights"
-                ? "Exclusive Flight Deals Straight to Your Inbox"
-                : "Exclusive Travel Deals Straight to Your Inbox"
+                  ? "Exclusive Flight Deals Straight to Your Inbox"
+                  : "Exclusive Travel Deals Straight to Your Inbox"
             }
-            className={`modern-signup-full-img ${
-              activeTab === "hotels"
+            className={`modern-signup-full-img ${activeTab === "hotels"
                 ? "hotel-banner-img"
                 : activeTab === "flights"
-                ? "flight-banner-img"
-                : ""
-            }`}
+                  ? "flight-banner-img"
+                  : ""
+              }`}
           />
           <div className="modern-signup-banner-overlay" />
           <div className="modern-signup-banner-content">
@@ -9145,8 +9300,8 @@ export default function HomePage() {
                 {activeTab === "hotels"
                   ? "Sign up to receive secret member-only hotel rates, resort discount coupons & complimentary room upgrades directly in your inbox."
                   : activeTab === "flights"
-                  ? "Sign up to receive secret flight deals, airline discount coupons & promo codes directly in your inbox."
-                  : "Sign up to receive secret flight deals, hotel discount coupons & promo codes directly in your inbox."}
+                    ? "Sign up to receive secret flight deals, airline discount coupons & promo codes directly in your inbox."
+                    : "Sign up to receive secret flight deals, hotel discount coupons & promo codes directly in your inbox."}
               </p>
               <div className="modern-signup-trust-row">
                 {activeTab === "hotels" ? (

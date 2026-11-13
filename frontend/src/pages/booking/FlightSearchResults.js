@@ -61,7 +61,8 @@ import StructuredFareRules from "../../components/StructuredFareRules";
 import BookingPagination from "../../components/booking/BookingPagination";
 import "../../STYLES/FlightSearchResults.css";
 import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
-import { writeFlightBookingFlowState, clearFlightBookingFlowState } from "./flightBookingFlowStore";
+import { writeFlightBookingFlowState, clearFlightBookingFlowState, readFlightBookingFlowState } from "./flightBookingFlowStore";
+import FlightStepperHeader from "../../components/booking/FlightStepperHeader";
 
 function formatFlightPillDate(dateStr) {
   if (!dateStr) return { date: "Select Date", day: "DATE OF TRAVEL" };
@@ -1221,6 +1222,8 @@ export default function FlightSearchResults() {
           b2cMarkupAmount: chosenOpt.b2cMarkupAmount || baseFlight.b2cMarkupAmount || 0,
           source: chosenOpt.source || baseFlight.source,
           className: chosenOpt.className || baseFlight.className || "",
+          segments: baseFlight.segments || baseFlight.Segments || chosenOpt.segments || chosenOpt.Segments || chosenOpt.fareSegments || [],
+          Segments: baseFlight.Segments || baseFlight.segments || chosenOpt.Segments || chosenOpt.segments || chosenOpt.fareSegments || [],
         };
       }
     }
@@ -1348,6 +1351,8 @@ export default function FlightSearchResults() {
           cabinBagsUnit: flight.cabinBagsUnit,
           fareOptions: Array.isArray(flight.fareOptions) ? flight.fareOptions : [],
           fullMultiSectorSegments: Array.isArray(flight.fullMultiSectorSegments) ? flight.fullMultiSectorSegments : [],
+          segments: Array.isArray(flight.segments) ? flight.segments : (Array.isArray(flight.Segments) ? flight.Segments : []),
+          Segments: Array.isArray(flight.Segments) ? flight.Segments : (Array.isArray(flight.segments) ? flight.segments : []),
         };
       }).filter(Boolean),
     [
@@ -1949,10 +1954,14 @@ export default function FlightSearchResults() {
       flight: onwardFlightObj ? {
         ...onwardFlightObj,
         className: selectedClass || onwardFlightObj.className || "",
+        segments: Array.isArray(onwardFlightObj.segments) ? onwardFlightObj.segments : (Array.isArray(onwardFlightObj.Segments) ? onwardFlightObj.Segments : []),
+        Segments: Array.isArray(onwardFlightObj.Segments) ? onwardFlightObj.Segments : (Array.isArray(onwardFlightObj.segments) ? onwardFlightObj.segments : []),
       } : {},
       returnFlight: returnFlightObj ? {
         ...returnFlightObj,
         className: returnFlightObj.className || "",
+        segments: Array.isArray(returnFlightObj.segments) ? returnFlightObj.segments : (Array.isArray(returnFlightObj.Segments) ? returnFlightObj.Segments : []),
+        Segments: Array.isArray(returnFlightObj.Segments) ? returnFlightObj.Segments : (Array.isArray(returnFlightObj.segments) ? returnFlightObj.segments : []),
       } : null,
       isTwoWay: tripType === "twoway" && allSelectedLegs.length > 1,
       isMultiCity: tripType === "multicity",
@@ -1999,9 +2008,17 @@ export default function FlightSearchResults() {
       if (resolvedTraceId) sessionStorage.setItem("flight_trace_id", resolvedTraceId);
     } catch (e) { }
 
-    clearFlightBookingFlowState();
-    writeFlightBookingFlowState(flowPayload);
-    navigate("/flight/passenger-details", { state: flowPayload });
+    const existingSaved = readFlightBookingFlowState() || {};
+    const mergedPayload = {
+      ...flowPayload,
+      passengers: (existingSaved.passengers && existingSaved.passengers.length > 0) ? existingSaved.passengers : flowPayload.passengers,
+      contact: (existingSaved.contact && existingSaved.contact.email) ? existingSaved.contact : flowPayload.contact,
+      gstInfo: existingSaved.gstInfo || flowPayload.gstInfo,
+      specialAssistance: existingSaved.specialAssistance || flowPayload.specialAssistance,
+      couponCode: existingSaved.couponCode || flowPayload.couponCode,
+    };
+    writeFlightBookingFlowState(mergedPayload);
+    navigate("/flight/passenger-details", { state: mergedPayload });
   };
   const handleStartBookingJourneyMultiCity = (selectionsMap, firstLegFlight) => {
     setBookingError("");
@@ -2103,9 +2120,17 @@ export default function FlightSearchResults() {
       if (resolvedTraceId) sessionStorage.setItem("flight_trace_id", resolvedTraceId);
     } catch (e) { }
 
-    clearFlightBookingFlowState();
-    writeFlightBookingFlowState(flowPayload);
-    navigate("/flight/passenger-details", { state: flowPayload });
+    const existingSaved = readFlightBookingFlowState() || {};
+    const mergedPayload = {
+      ...flowPayload,
+      passengers: (existingSaved.passengers && existingSaved.passengers.length > 0) ? existingSaved.passengers : flowPayload.passengers,
+      contact: (existingSaved.contact && existingSaved.contact.email) ? existingSaved.contact : flowPayload.contact,
+      gstInfo: existingSaved.gstInfo || flowPayload.gstInfo,
+      specialAssistance: existingSaved.specialAssistance || flowPayload.specialAssistance,
+      couponCode: existingSaved.couponCode || flowPayload.couponCode,
+    };
+    writeFlightBookingFlowState(mergedPayload);
+    navigate("/flight/passenger-details", { state: mergedPayload });
   };
 
   const closeBookingModal = () => {
@@ -2319,6 +2344,11 @@ export default function FlightSearchResults() {
                     value={modifyForm.departureDate}
                     from={modifyForm.source}
                     to={modifyForm.destination}
+                    travelClass={modifyForm.cabinClass || modifyForm.travelClass || "Economy"}
+                    adults={modifyForm.adults}
+                    children={modifyForm.children}
+                    infants={modifyForm.infants}
+                    isFlight={true}
                     onChange={(val) => {
                       setModifyForm((previous) => ({
                         ...previous,
@@ -2335,6 +2365,11 @@ export default function FlightSearchResults() {
                       from={modifyForm.destination}
                       to={modifyForm.source}
                       minDate={modifyForm.departureDate}
+                      travelClass={modifyForm.cabinClass || modifyForm.travelClass || "Economy"}
+                      adults={modifyForm.adults}
+                      children={modifyForm.children}
+                      infants={modifyForm.infants}
+                      isFlight={true}
                       onChange={(val) => {
                         setModifyForm((previous) => ({
                           ...previous,
@@ -2495,6 +2530,9 @@ export default function FlightSearchResults() {
             <span>{bookingSuccess}</span>
           </div>
         )}
+
+        {/* ── STEPPER PROGRESS HEADER (STAGE 1: FLIGHT SELECTION) ── */}
+        <FlightStepperHeader currentStage={1} />
 
         <div className="results-layout">
           <aside className="filters-rail">
@@ -2806,255 +2844,255 @@ export default function FlightSearchResults() {
               ) : (
                 (() => {
                   const globalCheapestFlightId = flightSummaries.cheapest?.id;
-                  
+
                   return paginatedFlights.map((flight) => {
-                  const isSelectedInTwoWay = tripType === "twoway" && (
-                    (twoWayActiveTab === "onward" && selectedOnwardFlightId === flight.id) ||
-                    (twoWayActiveTab === "return" && selectedReturnFlightId === flight.id)
-                  );
-                  const isTooltipActive = activeFareTooltipFlightId === flight.id;
-                  const flightCardJsx = (
-                    <article
-                      className={`flight-card-modern ${isSelectedInTwoWay ? "selected-two-way" : ""} ${isTooltipActive ? "with-active-fare-tooltip" : ""}`}
-                      key={flight.id}
-                      style={isTooltipActive ? { zIndex: 1000, position: "relative", overflow: "visible" } : undefined}
-                    >
-                      <div className="premium-flight-card-inner">
-                        {/* Top Bar */}
-                        <div className="premium-top-bar">
-                          <div className="premium-airline-info">
-                            {flight.logo ? (
-                              <img
-                                src={flight.logo}
-                                alt={`${flight.airlineName} logo`}
-                                className="premium-logo"
-                                onError={(event) => { event.currentTarget.style.display = "none"; }}
-                              />
-                            ) : (
-                              <span className="premium-logo premium-logo-fallback" aria-label={`${flight.airlineName || "Airline"} logo unavailable`}>
-                                <Plane size={18} aria-hidden="true" />
-                              </span>
-                            )}
-                            <div className="premium-airline-details">
-                              <div className="premium-airline-title-row">
-                                <span className="premium-airline-name">{flight.airlineName}</span>
-                                {globalCheapestFlightId === flight.id && (
-                                  <span className="premium-cheapest-badge"><LineChart size={9} /> CHEAPEST</span>
-                                )}
-                              </div>
-                              <div className="premium-flight-numbers">
-                                {flight.flightNumber}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="premium-top-actions">
-                            <span className="premium-compact-tag">
-                              <CheckCircle2 size={10} /> {flight.isRefundable ? "REFUNDABLE" : "NON-REFUNDABLE"}
-                            </span>
-                            <span className="premium-compact-tag">
-                              <Briefcase size={10} /> {(flight.className || flight.cabinClass || (cabinClass && !cabinClass.toLowerCase().includes("all") ? cabinClass : "ECONOMY")).toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Middle Schedule Row */}
-                        <div className="premium-schedule-row">
-                          <div className="premium-dept-block">
-                            <div className="premium-time-code">
-                              <span className="premium-large-time">{flight.departureTime}</span>
-                              <span className="premium-city-code">{flight.sourceCode}</span>
-                              <span className="premium-time-tag">
-                                {isDayTime(flight.departureTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
-                              </span>
-                            </div>
-                            <div className="premium-airport-desc">
-                              {getAirportName(flight.sourceCode, sourceName)}
-                            </div>
-                          </div>
-
-                          <div className="premium-duration-block">
-                            <span className="premium-duration-text">{flight.duration}</span>
-                            <div className="premium-path-line">
-                              <div className="premium-circle-start"></div>
-                              <div className="premium-solid-line"></div>
-                              <ArrowRight size={10} className="premium-arrow-end" />
-                            </div>
-                            <span className="premium-stops-text">
-                              {flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop${flight.connectingAirports && flight.connectingAirports.length > 0 ? ` via ${flight.connectingAirports.join(", ")}` : ""}`}
-                            </span>
-                          </div>
-
-                          <div className="premium-arr-block">
-                            <div className="premium-time-code right">
-                              <span className="premium-time-tag">
-                                {isDayTime(flight.arrivalTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
-                              </span>
-                              <span className="premium-city-code">{flight.destinationCode}</span>
-                              <span className="premium-large-time">{flight.arrivalTime}</span>
-                              {flight.isNextDay && (
-                                <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#b45309", background: "#fef3c7", padding: "1px 4px", borderRadius: "4px", marginLeft: "4px" }}>
-                                  +1 Day
+                    const isSelectedInTwoWay = tripType === "twoway" && (
+                      (twoWayActiveTab === "onward" && selectedOnwardFlightId === flight.id) ||
+                      (twoWayActiveTab === "return" && selectedReturnFlightId === flight.id)
+                    );
+                    const isTooltipActive = activeFareTooltipFlightId === flight.id;
+                    const flightCardJsx = (
+                      <article
+                        className={`flight-card-modern ${isSelectedInTwoWay ? "selected-two-way" : ""} ${isTooltipActive ? "with-active-fare-tooltip" : ""}`}
+                        key={flight.id}
+                        style={isTooltipActive ? { zIndex: 1000, position: "relative", overflow: "visible" } : undefined}
+                      >
+                        <div className="premium-flight-card-inner">
+                          {/* Top Bar */}
+                          <div className="premium-top-bar">
+                            <div className="premium-airline-info">
+                              {flight.logo ? (
+                                <img
+                                  src={flight.logo}
+                                  alt={`${flight.airlineName} logo`}
+                                  className="premium-logo"
+                                  onError={(event) => { event.currentTarget.style.display = "none"; }}
+                                />
+                              ) : (
+                                <span className="premium-logo premium-logo-fallback" aria-label={`${flight.airlineName || "Airline"} logo unavailable`}>
+                                  <Plane size={18} aria-hidden="true" />
                                 </span>
                               )}
-                            </div>
-                            <div className="premium-airport-desc">
-                              {getAirportName(flight.destinationCode, destinationName)}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Bottom Metadata & Price / Action Row */}
-                        <div className="premium-bottom-compact-row">
-                          <div className="premium-baggage-chips">
-                            <span className="premium-bag-chip"><Briefcase size={9} /> Check-in {flight.checkedBagsWeight || "N/A"}</span>
-                            <span className="premium-bag-chip"><Briefcase size={9} /> Cabin {flight.cabinBagsWeight || "N/A"}</span>
-                            <span className="premium-bag-chip"><Armchair size={9} /> Class {flight.bookingClass || flight.className || "N/A"}</span>
-                            <span className="premium-bag-chip"><Users size={9} /> Seats {flight.totalAvailableSeats != null && flight.totalAvailableSeats !== "" ? flight.totalAvailableSeats : "N/A"}</span>
-                          </div>
-                          
-                          <div className="premium-compact-actions">
-                            <div className="premium-compact-price-col" style={{ position: "relative" }}>
-                              <div className="premium-compact-price">
-                                ₹{new Intl.NumberFormat("en-IN").format(flight.fare)}{" "}
-                                <button
-                                  type="button"
-                                  className="info-circle-btn"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveFareTooltipFlightId((prev) => (prev === flight.id ? null : flight.id));
-                                  }}
-                                  aria-label="View Fare Breakdown"
-                                  style={{
-                                    background: "transparent",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    padding: "0 2px",
-                                    display: "inline-flex",
-                                    alignItems: "center"
-                                  }}
-                                >
-                                  <span className="info-circle" style={{ cursor: "pointer" }}>i</span>
-                                </button>
-                              </div>
-
-                              {activeFareTooltipFlightId === flight.id && (() => {
-                                const breakdown = getFlightFareBreakdown(flight);
-                                return (
-                                  <div
-                                    className="fare-breakdown-dark-tooltip"
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{
-                                      position: "absolute",
-                                      bottom: "calc(100% + 8px)",
-                                      right: 0,
-                                      width: "240px",
-                                      backgroundColor: "#030712",
-                                      color: "#ffffff",
-                                      borderRadius: "12px",
-                                      padding: "14px 16px",
-                                      boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)",
-                                      zIndex: 9999,
-                                      textAlign: "left",
-                                      border: "1px solid #1f2937",
-                                      fontFamily: "inherit"
-                                    }}
-                                  >
-                                    <div style={{ fontSize: "0.82rem", fontWeight: 800, letterSpacing: "0.05em", color: "#93c5fd", textTransform: "uppercase", marginBottom: "12px" }}>
-                                      FARE BREAKDOWN
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#e5e7eb", marginBottom: "8px", fontWeight: 500 }}>
-                                      <span>Base Fare</span>
-                                      <span style={{ fontWeight: 700 }}>₹{new Intl.NumberFormat("en-IN").format(breakdown.baseFare)}</span>
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#e5e7eb", marginBottom: "12px", fontWeight: 500 }}>
-                                      <span>Tax</span>
-                                      <span style={{ fontWeight: 700 }}>₹{new Intl.NumberFormat("en-IN").format(breakdown.tax)}</span>
-                                    </div>
-                                    <div style={{ height: "1px", backgroundColor: "#374151", margin: "10px 0" }} />
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#ffffff", marginBottom: "8px", fontWeight: 700 }}>
-                                      <span>Published fare</span>
-                                      <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.publishedFare)}</span>
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#9ca3af", marginBottom: "10px", fontWeight: 500 }}>
-                                      <span>Offer fare</span>
-                                      <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.offerFare)}</span>
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#10b981", fontWeight: 800, marginBottom: "6px" }}>
-                                      <span>Commission</span>
-                                      <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.commission)}</span>
-                                    </div>
-                                    <div style={{ fontSize: "0.68rem", color: "#6b7280", marginTop: "4px" }}>
-                                      Commission = Published – Offer
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-
-                            {flight.fareOptions?.length > 1 && (
-                              <button 
-                                type="button" 
-                                className="premium-compact-fares-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenFareSelection(flight);
-                                }}
-                              >
-                                +{flight.fareOptions.length - 1} Fares
-                              </button>
-                            )}
-                            
-                            <button 
-                              type="button" 
-                              className="premium-compact-select-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleFinalizeFlightSelection(flight);
-                              }}
-                            >
-                              <ArrowRight size={12} /> Select
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {Array.isArray(flight.fullMultiSectorSegments) && flight.fullMultiSectorSegments.length > 1 && (
-                        <div style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", padding: "10px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                          <div style={{ fontSize: "0.74rem", fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <span>All Flights in this Multi-City Journey ({flight.fullMultiSectorSegments.length} Sectors)</span>
-                            <span style={{ color: "#ff0000", fontWeight: 800 }}>Total Combined Fare: ₹{new Intl.NumberFormat("en-IN").format(flight.fare)}</span>
-                          </div>
-                          <div style={{ display: "grid", gridTemplateColumns: `repeat(${flight.fullMultiSectorSegments.length}, minmax(0, 1fr))`, gap: "8px" }}>
-                            {flight.fullMultiSectorSegments.map((sec, secIdx) => (
-                              <div key={`mc-sec-${secIdx}`} style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "6px 10px", fontSize: "0.78rem" }}>
-                                <div style={{ fontWeight: 800, color: "#ff0000", fontSize: "0.7rem" }}>LEG {secIdx + 1}</div>
-                                <strong style={{ color: "#0f172a", fontSize: "0.82rem" }}>{sec.sourceCode} ➔ {sec.destinationCode}</strong>
-                                <div style={{ color: "#64748b", fontSize: "0.72rem" }}>{sec.airline} ({sec.flightNumber})</div>
-                                <div style={{ color: "#334155", fontSize: "0.72rem", marginTop: "2px", fontWeight: 600 }}>
-                                  {formatFlightTime(sec.departureTime)} ➔ {formatFlightTime(sec.arrivalTime)}
+                              <div className="premium-airline-details">
+                                <div className="premium-airline-title-row">
+                                  <span className="premium-airline-name">{flight.airlineName}</span>
+                                  {globalCheapestFlightId === flight.id && (
+                                    <span className="premium-cheapest-badge"><LineChart size={9} /> CHEAPEST</span>
+                                  )}
+                                </div>
+                                <div className="premium-flight-numbers">
+                                  {flight.flightNumber}
                                 </div>
                               </div>
-                            ))}
+                            </div>
+                            <div className="premium-top-actions">
+                              <span className="premium-compact-tag">
+                                <CheckCircle2 size={10} /> {flight.isRefundable ? "REFUNDABLE" : "NON-REFUNDABLE"}
+                              </span>
+                              <span className="premium-compact-tag">
+                                <Briefcase size={10} /> {(flight.className || flight.cabinClass || (cabinClass && !cabinClass.toLowerCase().includes("all") ? cabinClass : "ECONOMY")).toUpperCase()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Middle Schedule Row */}
+                          <div className="premium-schedule-row">
+                            <div className="premium-dept-block">
+                              <div className="premium-time-code">
+                                <span className="premium-large-time">{flight.departureTime}</span>
+                                <span className="premium-city-code">{flight.sourceCode}</span>
+                                <span className="premium-time-tag">
+                                  {isDayTime(flight.departureTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
+                                </span>
+                              </div>
+                              <div className="premium-airport-desc">
+                                {getAirportName(flight.sourceCode, sourceName)}
+                              </div>
+                            </div>
+
+                            <div className="premium-duration-block">
+                              <span className="premium-duration-text">{flight.duration}</span>
+                              <div className="premium-path-line">
+                                <div className="premium-circle-start"></div>
+                                <div className="premium-solid-line"></div>
+                                <ArrowRight size={10} className="premium-arrow-end" />
+                              </div>
+                              <span className="premium-stops-text">
+                                {flight.stops === 0 ? "Non-stop" : `${flight.stops} Stop${flight.connectingAirports && flight.connectingAirports.length > 0 ? ` via ${flight.connectingAirports.join(", ")}` : ""}`}
+                              </span>
+                            </div>
+
+                            <div className="premium-arr-block">
+                              <div className="premium-time-code right">
+                                <span className="premium-time-tag">
+                                  {isDayTime(flight.arrivalTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
+                                </span>
+                                <span className="premium-city-code">{flight.destinationCode}</span>
+                                <span className="premium-large-time">{flight.arrivalTime}</span>
+                                {flight.isNextDay && (
+                                  <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#b45309", background: "#fef3c7", padding: "1px 4px", borderRadius: "4px", marginLeft: "4px" }}>
+                                    +1 Day
+                                  </span>
+                                )}
+                              </div>
+                              <div className="premium-airport-desc">
+                                {getAirportName(flight.destinationCode, destinationName)}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bottom Metadata & Price / Action Row */}
+                          <div className="premium-bottom-compact-row">
+                            <div className="premium-baggage-chips">
+                              <span className="premium-bag-chip"><Briefcase size={9} /> Check-in {flight.checkedBagsWeight || "N/A"}</span>
+                              <span className="premium-bag-chip"><Briefcase size={9} /> Cabin {flight.cabinBagsWeight || "N/A"}</span>
+                              <span className="premium-bag-chip"><Armchair size={9} /> Class {flight.bookingClass || flight.className || "N/A"}</span>
+                              <span className="premium-bag-chip"><Users size={9} /> Seats {flight.totalAvailableSeats != null && flight.totalAvailableSeats !== "" ? flight.totalAvailableSeats : "N/A"}</span>
+                            </div>
+
+                            <div className="premium-compact-actions">
+                              <div className="premium-compact-price-col" style={{ position: "relative" }}>
+                                <div className="premium-compact-price">
+                                  ₹{new Intl.NumberFormat("en-IN").format(flight.fare)}{" "}
+                                  <button
+                                    type="button"
+                                    className="info-circle-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveFareTooltipFlightId((prev) => (prev === flight.id ? null : flight.id));
+                                    }}
+                                    aria-label="View Fare Breakdown"
+                                    style={{
+                                      background: "transparent",
+                                      border: "none",
+                                      cursor: "pointer",
+                                      padding: "0 2px",
+                                      display: "inline-flex",
+                                      alignItems: "center"
+                                    }}
+                                  >
+                                    <span className="info-circle" style={{ cursor: "pointer" }}>i</span>
+                                  </button>
+                                </div>
+
+                                {activeFareTooltipFlightId === flight.id && (() => {
+                                  const breakdown = getFlightFareBreakdown(flight);
+                                  return (
+                                    <div
+                                      className="fare-breakdown-dark-tooltip"
+                                      onClick={(e) => e.stopPropagation()}
+                                      style={{
+                                        position: "absolute",
+                                        bottom: "calc(100% + 8px)",
+                                        right: 0,
+                                        width: "240px",
+                                        backgroundColor: "#030712",
+                                        color: "#ffffff",
+                                        borderRadius: "12px",
+                                        padding: "14px 16px",
+                                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)",
+                                        zIndex: 9999,
+                                        textAlign: "left",
+                                        border: "1px solid #1f2937",
+                                        fontFamily: "inherit"
+                                      }}
+                                    >
+                                      <div style={{ fontSize: "0.82rem", fontWeight: 800, letterSpacing: "0.05em", color: "#93c5fd", textTransform: "uppercase", marginBottom: "12px" }}>
+                                        FARE BREAKDOWN
+                                      </div>
+                                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#e5e7eb", marginBottom: "8px", fontWeight: 500 }}>
+                                        <span>Base Fare</span>
+                                        <span style={{ fontWeight: 700 }}>₹{new Intl.NumberFormat("en-IN").format(breakdown.baseFare)}</span>
+                                      </div>
+                                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#e5e7eb", marginBottom: "12px", fontWeight: 500 }}>
+                                        <span>Tax</span>
+                                        <span style={{ fontWeight: 700 }}>₹{new Intl.NumberFormat("en-IN").format(breakdown.tax)}</span>
+                                      </div>
+                                      <div style={{ height: "1px", backgroundColor: "#374151", margin: "10px 0" }} />
+                                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#ffffff", marginBottom: "8px", fontWeight: 700 }}>
+                                        <span>Published fare</span>
+                                        <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.publishedFare)}</span>
+                                      </div>
+                                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#9ca3af", marginBottom: "10px", fontWeight: 500 }}>
+                                        <span>Offer fare</span>
+                                        <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.offerFare)}</span>
+                                      </div>
+                                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.88rem", color: "#10b981", fontWeight: 800, marginBottom: "6px" }}>
+                                        <span>Commission</span>
+                                        <span>₹{new Intl.NumberFormat("en-IN").format(breakdown.commission)}</span>
+                                      </div>
+                                      <div style={{ fontSize: "0.68rem", color: "#6b7280", marginTop: "4px" }}>
+                                        Commission = Published – Offer
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+
+                              {flight.fareOptions?.length > 1 && (
+                                <button
+                                  type="button"
+                                  className="premium-compact-fares-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenFareSelection(flight);
+                                  }}
+                                >
+                                  +{flight.fareOptions.length - 1} Fares
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                className="premium-compact-select-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleFinalizeFlightSelection(flight);
+                                }}
+                              >
+                                <ArrowRight size={12} /> Select
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      )}
 
-                    </article>
-                  );
+                        {Array.isArray(flight.fullMultiSectorSegments) && flight.fullMultiSectorSegments.length > 1 && (
+                          <div style={{ background: "#f8fafc", borderTop: "1px solid #e2e8f0", padding: "10px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                            <div style={{ fontSize: "0.74rem", fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.5px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <span>All Flights in this Multi-City Journey ({flight.fullMultiSectorSegments.length} Sectors)</span>
+                              <span style={{ color: "#ff0000", fontWeight: 800 }}>Total Combined Fare: ₹{new Intl.NumberFormat("en-IN").format(flight.fare)}</span>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: `repeat(${flight.fullMultiSectorSegments.length}, minmax(0, 1fr))`, gap: "8px" }}>
+                              {flight.fullMultiSectorSegments.map((sec, secIdx) => (
+                                <div key={`mc-sec-${secIdx}`} style={{ background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", padding: "6px 10px", fontSize: "0.78rem" }}>
+                                  <div style={{ fontWeight: 800, color: "#ff0000", fontSize: "0.7rem" }}>LEG {secIdx + 1}</div>
+                                  <strong style={{ color: "#0f172a", fontSize: "0.82rem" }}>{sec.sourceCode} ➔ {sec.destinationCode}</strong>
+                                  <div style={{ color: "#64748b", fontSize: "0.72rem" }}>{sec.airline} ({sec.flightNumber})</div>
+                                  <div style={{ color: "#334155", fontSize: "0.72rem", marginTop: "2px", fontWeight: 600 }}>
+                                    {formatFlightTime(sec.departureTime)} ➔ {formatFlightTime(sec.arrivalTime)}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-                  return flightCardJsx;
-                });
-              })()
-            )}
-            {totalPages > 1 && (
-              <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
-                <BookingPagination
-                  page={validCurrentPage}
-                  pageCount={totalPages}
-                  onChange={(p) => setCurrentPage(p)}
-                />
-              </div>
-            )}
+                      </article>
+                    );
+
+                    return flightCardJsx;
+                  });
+                })()
+              )}
+              {totalPages > 1 && (
+                <div style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
+                  <BookingPagination
+                    page={validCurrentPage}
+                    pageCount={totalPages}
+                    onChange={(p) => setCurrentPage(p)}
+                  />
+                </div>
+              )}
             </div>
           </section>
         </div>
@@ -3228,8 +3266,8 @@ export default function FlightSearchResults() {
                   // React state hasn't flushed yet at the time of button click.
                   const returnOverride = latestSelectedReturnFlightRef.current
                     || (selectedReturnFlightId
-                        ? returnFlights.find(f => f.id === selectedReturnFlightId)
-                        : null)
+                      ? returnFlights.find(f => f.id === selectedReturnFlightId)
+                      : null)
                     || (returnFlights.length > 0 ? returnFlights[0] : null);
                   handleStartBookingJourney(
                     selectedOnwardFlightObj,
@@ -3438,7 +3476,7 @@ export default function FlightSearchResults() {
                 <X size={15} /> Close
               </button>
             </div>
-            
+
             <div className="booking-modal-body" style={{ padding: "0", overflowY: "auto", flex: 1, maxHeight: "calc(85vh - 55px)" }}>
               <div style={{ padding: "16px 20px", background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "#0f172a" }}>
@@ -3563,7 +3601,7 @@ export default function FlightSearchResults() {
         </div>
       )}
 
-{/* Dynamic Fare Rules Modal */}
+      {/* Dynamic Fare Rules Modal */}
       {activeFareRuleModal.isOpen && (
         <div
           className="booking-modal-backdrop"
@@ -3657,7 +3695,7 @@ export default function FlightSearchResults() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="booking-modal-body" style={{ padding: "0" }}>
               {(() => {
                 const flt = activeFareDetailsModal.flight;
@@ -3684,12 +3722,12 @@ export default function FlightSearchResults() {
                         const optCabinBaggage = sec.CabinBaggage || chosenOpt?.fareSegments?.[secIdx]?.CabinBaggage || chosenOpt?.fareSegments?.[0]?.CabinBaggage || (flt?.cabinBagsWeight ? `${flt.cabinBagsWeight} ${flt.cabinBagsUnit || "kg"}` : "7 KG");
                         const fClass = sec.Airline?.FareClass || sec.FareClass || chosenOpt?.fareSegments?.[secIdx]?.Class || chosenOpt?.fareSegments?.[0]?.Class || "Economy";
                         const seats = chosenOpt?.seatsRemaining || "Available";
-                        
+
                         const sourceCode = sec.Origin?.AirportCode || sec.FromAirportCode || sec.sourceCode || flt.sourceCode;
                         const destCode = sec.Destination?.AirportCode || sec.ToAirportCode || sec.destinationCode || flt.destinationCode;
                         const depTimeStr = sec.DepTime || sec.DepartureTime || sec.departureTime || flt.departureTime || "";
                         const arrTimeStr = sec.ArrTime || sec.ArrivalTime || sec.arrivalTime || flt.arrivalTime || "";
-                        
+
                         const parseTimeDate = (dateStr) => {
                           if (!dateStr) return { time: "", date: "" };
                           return {
@@ -3699,7 +3737,7 @@ export default function FlightSearchResults() {
                         };
                         const dep = parseTimeDate(depTimeStr);
                         const arr = parseTimeDate(arrTimeStr);
-                        
+
                         const fareIdentifier = chosenOpt?.fareIdentifier || chosenOpt?.FareIdentifier || flt?.fareIdentifier || "Saver";
                         const airlineName = sec.Airline?.AirlineName || sec.AirlineName || sec.airline || flt.airlineName;
                         const flightNum = sec.Airline?.FlightNumber || sec.FlightNumber || sec.flightNumber || flt.flightNumber;
@@ -3719,7 +3757,7 @@ export default function FlightSearchResults() {
                               if (diffMins > 0) {
                                 layoverNote = `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
                               }
-                            } catch (e) {}
+                            } catch (e) { }
                           }
                         }
 
@@ -3736,7 +3774,7 @@ export default function FlightSearchResults() {
                                   {segDuration}
                                 </div>
                               </div>
-                              
+
                               <div style={{ display: "flex", justifyContent: "space-between" }}>
                                 <div style={{ flex: 1 }}>
                                   <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", marginBottom: "2px" }}>Departure</div>
@@ -3776,101 +3814,101 @@ export default function FlightSearchResults() {
                 );
               })()}
               <div style={{ padding: "0 20px 20px 20px" }}>
-              {(() => {
-                const flt = activeFareDetailsModal.flight;
-                const optIdx = latestFareOptionIndexRef.current[flt?.id] ?? selectedFareOptionIndexByFlight[flt?.id] ?? 0;
-                const chosenOpt = flt?.fareOptions?.[optIdx] || flt?.fareOptions?.[0];
-                const dMarkup = chosenOpt?.b2cMarkupAmount || flt?.b2cMarkupAmount || 0;
-                const dTotal = chosenOpt?.b2cFinalFare || chosenOpt?.b2cPublishedFare || chosenOpt?.offeredFare || flt?.fare || 0;
-                let rawTax = chosenOpt?.tax || chosenOpt?.Fare?.Tax || chosenOpt?.fareBreakdown?.Tax || flt?.taxPrice || flt?.Fare?.Tax || flt?.FareBreakdown?.Tax || 0;
-                let dBaseFare = chosenOpt?.baseFare || chosenOpt?.Fare?.BaseFare || chosenOpt?.fareBreakdown?.BaseFare || flt?.baseFarePrice || flt?.Fare?.BaseFare || flt?.FareBreakdown?.BaseFare || 0;
-                if (dBaseFare === 0 && dTotal > 0) dBaseFare = Math.max(0, dTotal - rawTax - dMarkup);
-                
-                const breakdownList = Array.isArray(chosenOpt?.fareBreakdown) ? chosenOpt.fareBreakdown : 
-                                      Array.isArray(chosenOpt?.FareBreakdown) ? chosenOpt.FareBreakdown : 
-                                      Array.isArray(flt?.FareBreakdown) ? flt.FareBreakdown : [];
+                {(() => {
+                  const flt = activeFareDetailsModal.flight;
+                  const optIdx = latestFareOptionIndexRef.current[flt?.id] ?? selectedFareOptionIndexByFlight[flt?.id] ?? 0;
+                  const chosenOpt = flt?.fareOptions?.[optIdx] || flt?.fareOptions?.[0];
+                  const dMarkup = chosenOpt?.b2cMarkupAmount || flt?.b2cMarkupAmount || 0;
+                  const dTotal = chosenOpt?.b2cFinalFare || chosenOpt?.b2cPublishedFare || chosenOpt?.offeredFare || flt?.fare || 0;
+                  let rawTax = chosenOpt?.tax || chosenOpt?.Fare?.Tax || chosenOpt?.fareBreakdown?.Tax || flt?.taxPrice || flt?.Fare?.Tax || flt?.FareBreakdown?.Tax || 0;
+                  let dBaseFare = chosenOpt?.baseFare || chosenOpt?.Fare?.BaseFare || chosenOpt?.fareBreakdown?.BaseFare || flt?.baseFarePrice || flt?.Fare?.BaseFare || flt?.FareBreakdown?.BaseFare || 0;
+                  if (dBaseFare === 0 && dTotal > 0) dBaseFare = Math.max(0, dTotal - rawTax - dMarkup);
 
-                let sumPaxTotal = 0;
-                if (breakdownList.length > 0) {
-                  sumPaxTotal = breakdownList.reduce((acc, fb) => acc + ((fb.BaseFare || 0) + (fb.Tax || 0)) * (fb.PassengerCount || 1), 0);
-                } else {
-                  sumPaxTotal = dBaseFare + rawTax;
-                }
-                
-                // There are often un-tabulated taxes (like YQTax, Convenience Fees, Markups) that cause a discrepancy
-                // between the sum of passenger rows and the actual grand total. We explicitly capture the difference.
-                const remainingFees = Math.max(0, dTotal - sumPaxTotal);
+                  const breakdownList = Array.isArray(chosenOpt?.fareBreakdown) ? chosenOpt.fareBreakdown :
+                    Array.isArray(chosenOpt?.FareBreakdown) ? chosenOpt.FareBreakdown :
+                      Array.isArray(flt?.FareBreakdown) ? flt.FareBreakdown : [];
 
-                const getPaxName = (type) => {
-                  if (type == 1 || type === "Adult") return "Adult";
-                  if (type == 2 || type === "Child") return "Child";
-                  if (type == 3 || type === "Infant") return "Infant";
-                  return "Passenger";
-                };
-                
-                return (
-                  <div style={{ width: "100%", overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem", whiteSpace: "nowrap" }}>
-                      <thead>
-                        <tr style={{ background: "var(--theme-primary, #ff0000)", color: "#ffffff", textTransform: "uppercase", fontSize: "0.75rem", fontWeight: 800 }}>
-                          <th style={{ padding: "16px 16px" }}>PASSENGER</th>
-                          <th style={{ padding: "16px 8px" }}>COUNT</th>
-                          <th style={{ padding: "16px 8px" }}>BASE FARE</th>
-                          <th style={{ padding: "16px 8px" }}>TAXES</th>
-                          <th style={{ padding: "16px 16px", textAlign: "right" }}>TOTAL</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {breakdownList.length > 0 ? (
-                          breakdownList.map((fb, idx) => {
-                            const bFare = fb.BaseFare || 0;
-                            const tFare = fb.Tax || 0;
-                            return (
-                              <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                                <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>{getPaxName(fb.PassengerType)}</td>
-                                <td style={{ padding: "16px 8px", color: "#334155", fontWeight: 600 }}>{fb.PassengerCount || 1}</td>
-                                <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(bFare)}</td>
-                                <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(tFare)}</td>
-                                <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format((bFare + tFare) * (fb.PassengerCount || 1))}</td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                            <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>All Passengers</td>
-                            <td style={{ padding: "16px 8px", color: "#334155", fontWeight: 600 }}>{travellerCounts.adults + travellerCounts.children + travellerCounts.infants}</td>
-                            <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(dBaseFare)}</td>
-                            <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(rawTax)}</td>
-                            <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(dBaseFare + rawTax)}</td>
+                  let sumPaxTotal = 0;
+                  if (breakdownList.length > 0) {
+                    sumPaxTotal = breakdownList.reduce((acc, fb) => acc + ((fb.BaseFare || 0) + (fb.Tax || 0)) * (fb.PassengerCount || 1), 0);
+                  } else {
+                    sumPaxTotal = dBaseFare + rawTax;
+                  }
+
+                  // There are often un-tabulated taxes (like YQTax, Convenience Fees, Markups) that cause a discrepancy
+                  // between the sum of passenger rows and the actual grand total. We explicitly capture the difference.
+                  const remainingFees = Math.max(0, dTotal - sumPaxTotal);
+
+                  const getPaxName = (type) => {
+                    if (type == 1 || type === "Adult") return "Adult";
+                    if (type == 2 || type === "Child") return "Child";
+                    if (type == 3 || type === "Infant") return "Infant";
+                    return "Passenger";
+                  };
+
+                  return (
+                    <div style={{ width: "100%", overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.85rem", whiteSpace: "nowrap" }}>
+                        <thead>
+                          <tr style={{ background: "var(--theme-primary, #ff0000)", color: "#ffffff", textTransform: "uppercase", fontSize: "0.75rem", fontWeight: 800 }}>
+                            <th style={{ padding: "16px 16px" }}>PASSENGER</th>
+                            <th style={{ padding: "16px 8px" }}>COUNT</th>
+                            <th style={{ padding: "16px 8px" }}>BASE FARE</th>
+                            <th style={{ padding: "16px 8px" }}>TAXES</th>
+                            <th style={{ padding: "16px 16px", textAlign: "right" }}>TOTAL</th>
                           </tr>
-                        )}
-                        {remainingFees > 0 && (
-                          <tr style={{ borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
-                            <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>Other Taxes & Fees</td>
-                            <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
-                            <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
-                            <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
-                            <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(remainingFees)}</td>
+                        </thead>
+                        <tbody>
+                          {breakdownList.length > 0 ? (
+                            breakdownList.map((fb, idx) => {
+                              const bFare = fb.BaseFare || 0;
+                              const tFare = fb.Tax || 0;
+                              return (
+                                <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                                  <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>{getPaxName(fb.PassengerType)}</td>
+                                  <td style={{ padding: "16px 8px", color: "#334155", fontWeight: 600 }}>{fb.PassengerCount || 1}</td>
+                                  <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(bFare)}</td>
+                                  <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(tFare)}</td>
+                                  <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format((bFare + tFare) * (fb.PassengerCount || 1))}</td>
+                                </tr>
+                              );
+                            })
+                          ) : (
+                            <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
+                              <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>All Passengers</td>
+                              <td style={{ padding: "16px 8px", color: "#334155", fontWeight: 600 }}>{travellerCounts.adults + travellerCounts.children + travellerCounts.infants}</td>
+                              <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(dBaseFare)}</td>
+                              <td style={{ padding: "16px 8px", color: "#334155" }}>₹{new Intl.NumberFormat("en-IN").format(rawTax)}</td>
+                              <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(dBaseFare + rawTax)}</td>
+                            </tr>
+                          )}
+                          {remainingFees > 0 && (
+                            <tr style={{ borderBottom: "1px solid #f1f5f9", background: "#f8fafc" }}>
+                              <td style={{ padding: "16px 16px", fontWeight: 700, color: "#1e293b" }}>Other Taxes & Fees</td>
+                              <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
+                              <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
+                              <td style={{ padding: "16px 8px", color: "#334155" }}>-</td>
+                              <td style={{ padding: "16px 16px", fontWeight: 800, color: "#0f172a", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(remainingFees)}</td>
+                            </tr>
+                          )}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan={4} style={{ padding: "20px 16px", fontWeight: 800, color: "#1e293b", fontSize: "1rem" }}>GRAND TOTAL</td>
+                            <td style={{ padding: "20px 16px", fontWeight: 900, color: "var(--theme-primary, #ff0000)", fontSize: "1.2rem", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(dTotal)}</td>
                           </tr>
-                        )}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colSpan={4} style={{ padding: "20px 16px", fontWeight: 800, color: "#1e293b", fontSize: "1rem" }}>GRAND TOTAL</td>
-                          <td style={{ padding: "20px 16px", fontWeight: 900, color: "var(--theme-primary, #ff0000)", fontSize: "1.2rem", textAlign: "right" }}>₹{new Intl.NumberFormat("en-IN").format(dTotal)}</td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                );
-              })()}
-            </div>
+                        </tfoot>
+                      </table>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      
+
       <FareCalendarModal
         isOpen={isFareCalendarOpen}
         onClose={() => setIsFareCalendarOpen(false)}

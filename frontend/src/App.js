@@ -46,6 +46,7 @@ import DeleteAccountPage from "./pages/account/DeleteAccountPage";
 import UserWalletDashboard from "./pages/account/UserWalletDashboard";
 import WebCheckinPage from "./pages/public/WebCheckinPage";
 import LegalPage from "./pages/public/LegalPage";
+import AboutUsPage from "./pages/public/AboutUsPage";
 import ContactUsPage from "./pages/public/ContactUsPage";
 import BlogListPage from "./pages/public/BlogListPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
@@ -462,6 +463,9 @@ function AppContent() {
         <Route path="/register" element={<AuthPage />} />
         <Route path="/verify" element={<AuthPage />} />
         <Route path="/forgot-password" element={<AuthPage />} />
+        <Route path="/about-us" element={<AboutUsPage />} />
+        <Route path="/about" element={<Navigate to="/about-us" replace />} />
+        <Route path="/aboutus" element={<Navigate to="/about-us" replace />} />
         <Route path="/online/:slug" element={<LegalPage />} />
         <Route path="/legal/:slug" element={<LegalPage />} />
         <Route path="/contact-us" element={<ContactUsPage />} />

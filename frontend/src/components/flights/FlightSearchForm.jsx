@@ -325,6 +325,13 @@ export default function FlightSearchForm({ onSearch, initialValues = {} }) {
                     isOpen={true}
                     value={leg.departureDate}
                     minDate={today}
+                    from={leg.from}
+                    to={leg.to}
+                    travelClass={cabinClass}
+                    adults={adults}
+                    children={children}
+                    infants={infants}
+                    isFlight={true}
                     onChange={(newDate) => {
                       updateLeg(leg.id, "departureDate", newDate);
                       setActiveCalendarField(null);
@@ -575,6 +582,13 @@ export default function FlightSearchForm({ onSearch, initialValues = {} }) {
                 isOpen={true}
                 value={departureDate}
                 minDate={today}
+                from={source}
+                to={destination}
+                travelClass={cabinClass}
+                adults={adults}
+                children={children}
+                infants={infants}
+                isFlight={true}
                 onChange={(newDate) => {
                   setDepartureDate(newDate);
                   if (returnDate && newDate && returnDate < newDate) {
@@ -616,6 +630,13 @@ export default function FlightSearchForm({ onSearch, initialValues = {} }) {
                   isOpen={true}
                   value={returnDate}
                   minDate={departureDate || today}
+                  from={destination}
+                  to={source}
+                  travelClass={cabinClass}
+                  adults={adults}
+                  children={children}
+                  infants={infants}
+                  isFlight={true}
                   onChange={(newDate) => {
                     setReturnDate(newDate);
                     setErrors((prev) => ({ ...prev, returnDate: "" }));

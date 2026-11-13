@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Info, Tag, Mail, Check, X, Shield, ArrowRight, ShieldCheck, User, Loader2, XCircle, Plane, Briefcase } from "lucide-react";
+import { Info, Tag, Mail, Check, X, Shield, ArrowRight, ShieldCheck, User, Loader2, XCircle, Plane, Briefcase, ChevronDown } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/FlightBookingFlow.css";
 
@@ -16,15 +16,70 @@ import { listTravelers, normalizeTraveler } from "../../services/travelerService
 import BookingTimer from "./BookingTimer";
 import { COUNTRIES, findCountry, isValidCountry, getCountryCode } from "../../utils/countries";
 import { formatFlightTime, formatFlightDate } from "../../utils/flightDateTimeUtils";
+import FlightStepperHeader from "../../components/booking/FlightStepperHeader";
+
+function formatTimeParts(timeVal) {
+  if (!timeVal) return { time: "--:--", ampm: "" };
+  const formatted = formatFlightTime(timeVal) || String(timeVal || "").trim();
+  const match = formatted.match(/^(\d{1,2}:\d{2})\s*([AP]M)?$/i);
+  if (match) {
+    return {
+      time: match[1],
+      ampm: match[2] ? match[2].toUpperCase() : "",
+    };
+  }
+  const parts = formatted.split(" ");
+  if (parts.length === 2 && /^[AP]M$/i.test(parts[1])) {
+    return { time: parts[0], ampm: parts[1].toUpperCase() };
+  }
+  return { time: formatted, ampm: "" };
+}
+
+function formatLayoverText(seg, nextSeg) {
+  let layover = "";
+  if (seg?.layoverTime && typeof seg.layoverTime === "string" && seg.layoverTime.trim()) {
+    layover = seg.layoverTime.trim().toUpperCase().replace(/H\s*/, "H ").replace(/M\s*/, "M").trim();
+  } else if (seg?.arrTime && nextSeg?.depTime) {
+    try {
+      const diffMs = new Date(nextSeg.depTime).getTime() - new Date(seg.arrTime).getTime();
+      if (diffMs > 0) {
+        const totalM = Math.floor(diffMs / 60000);
+        const lh = Math.floor(totalM / 60);
+        const lm = totalM % 60;
+        layover = lh > 0 ? `${lh}H ${lm}M` : `${lm}M`;
+      }
+    } catch (e) { }
+  }
+  const code = seg?.destAirportCode || seg?.destCity || "AIRPORT";
+  if (layover) {
+    return `CONNECTION AT ${code.toUpperCase()} (${layover} LAYOVER)`;
+  }
+  return `CONNECTION AT ${code.toUpperCase()}`;
+}
+
+function formatBaggageText(val, fallback) {
+  if (!val) return fallback;
+  const s = String(val).trim();
+  if (/kg$/i.test(s)) return s;
+  return `${s} Kg`;
+}
 
 function extractFlightSegments(flt, fareQuoteObj) {
   let segs = [];
-  if (Array.isArray(fareQuoteObj?.results?.Segments?.[0]) && fareQuoteObj.results.Segments[0].length > 0) {
-    segs = fareQuoteObj.results.Segments[0];
+  const rawFqSegments =
+    fareQuoteObj?.results?.Segments ||
+    fareQuoteObj?.rawResponse?.Results?.Segments ||
+    fareQuoteObj?.rawResponse?.Response?.Results?.Segments ||
+    fareQuoteObj?.Results?.Segments;
+
+  if (Array.isArray(rawFqSegments) && rawFqSegments.length > 0) {
+    segs = Array.isArray(rawFqSegments[0]) ? rawFqSegments[0] : rawFqSegments;
   } else if (Array.isArray(flt?.segments) && flt.segments.length > 0) {
     segs = Array.isArray(flt.segments[0]) ? flt.segments[0] : flt.segments;
   } else if (Array.isArray(flt?.Segments) && flt.Segments.length > 0) {
     segs = Array.isArray(flt.Segments[0]) ? flt.Segments[0] : flt.Segments;
+  } else if (Array.isArray(flt?.fullMultiSectorSegments) && flt.fullMultiSectorSegments.length > 0) {
+    segs = Array.isArray(flt.fullMultiSectorSegments[0]) ? flt.fullMultiSectorSegments[0] : flt.fullMultiSectorSegments;
   } else if (Array.isArray(flt?.FareDataMultiple?.[0]?.FareSegments) && flt.FareDataMultiple[0].FareSegments.length > 0) {
     segs = flt.FareDataMultiple[0].FareSegments;
   } else if (Array.isArray(flt?.fareSegments) && flt.fareSegments.length > 0) {
@@ -38,24 +93,36 @@ function extractFlightSegments(flt, fareQuoteObj) {
     const originAirportName = s.Origin?.AirportName || s.Origin?.Airport?.AirportName || s.FromAirportName || s.fromAirportName || "";
     const originCity = s.Origin?.CityName || s.Origin?.Airport?.CityName || s.FromCity || s.fromCity || "";
     const originTerminal = s.Origin?.Terminal || s.Origin?.Airport?.Terminal || s.FromTerminal || "";
-    const depTime = s.DepTime || s.DepartureTime || s.depTime || "";
+    const depTime = s.DepTime || s.DepartureTime || s.depTime || s.departureTime || "";
 
     const destAirportCode = s.Destination?.AirportCode || s.Destination?.Airport?.AirportCode || s.ToAirportCode || s.toAirportCode || s.destinationCode || "";
     const destAirportName = s.Destination?.AirportName || s.Destination?.Airport?.AirportName || s.ToAirportName || s.toAirportName || "";
     const destCity = s.Destination?.CityName || s.Destination?.Airport?.CityName || s.ToCity || s.toCity || "";
     const destTerminal = s.Destination?.Terminal || s.Destination?.Airport?.Terminal || s.ToTerminal || "";
-    const arrTime = s.ArrTime || s.ArrivalTime || s.arrTime || "";
+    const arrTime = s.ArrTime || s.ArrivalTime || s.arrTime || s.arrivalTime || "";
 
-    const airline = s.Airline?.AirlineName || s.AirlineName || flt?.airlineName || flt?.airline || "";
-    const airlineCode = s.Airline?.AirlineCode || s.AirlineCode || flt?.airlineCode || "";
-    const flightNumber = s.Airline?.FlightNumber || s.FlightNumber || flt?.flightNumber || "";
+    const airline = s.Airline?.AirlineName || s.airline?.airlineName || s.AirlineName || flt?.airlineName || flt?.airline || "";
+    const airlineCode = s.Airline?.AirlineCode || s.airline?.airlineCode || s.AirlineCode || flt?.airlineCode || "";
+    const flightNumber = s.Airline?.FlightNumber || s.airline?.flightNumber || s.FlightNumber || flt?.flightNumber || "";
 
-    const durationVal = s.Duration || s.duration;
+    const durationVal = s.Duration || s.duration || s.durationMinutes || s.DurationMinutes;
     let durationText = "";
     if (typeof durationVal === "number" && durationVal > 0) {
-      durationText = `${Math.floor(durationVal / 60)}h ${durationVal % 60}m`;
+      const dh = Math.floor(durationVal / 60);
+      const dm = durationVal % 60;
+      durationText = `${dh}h ${dm}m`;
     } else if (typeof durationVal === "string") {
       durationText = durationVal;
+    } else if (depTime && arrTime) {
+      try {
+        const diffMs = new Date(arrTime).getTime() - new Date(depTime).getTime();
+        if (diffMs > 0) {
+          const totalM = Math.floor(diffMs / 60000);
+          const dh = Math.floor(totalM / 60);
+          const dm = totalM % 60;
+          durationText = `${dh}h ${dm}m`;
+        }
+      } catch (e) { }
     }
 
     const matchingFareSeg = fareSegs[idx] || fareSegs[0] || {};
@@ -66,7 +133,7 @@ function extractFlightSegments(flt, fareQuoteObj) {
 
     let layoverTime = "";
     if (idx < segs.length - 1 && arrTime && segs[idx + 1]) {
-      const nextDepTime = segs[idx + 1].DepTime || segs[idx + 1].DepartureTime || segs[idx + 1].depTime;
+      const nextDepTime = segs[idx + 1].DepTime || segs[idx + 1].DepartureTime || segs[idx + 1].depTime || segs[idx + 1].departureTime;
       if (nextDepTime) {
         try {
           const diffMs = new Date(nextDepTime).getTime() - new Date(arrTime).getTime();
@@ -74,7 +141,7 @@ function extractFlightSegments(flt, fareQuoteObj) {
             const totalM = Math.floor(diffMs / 60000);
             const lh = Math.floor(totalM / 60);
             const lm = totalM % 60;
-            layoverTime = `${lh}h ${lm}m`;
+            layoverTime = lh > 0 ? `${lh}H ${lm}M` : `${lm}M`;
           }
         } catch (e) { }
       }
@@ -102,6 +169,103 @@ function extractFlightSegments(flt, fareQuoteObj) {
       layoverTime,
     };
   });
+}
+
+function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, stopCount, price) {
+  return (
+    <div className="yf-journey">
+      <div className="yf-head">
+        <div className="yf-head__route">
+          {fromCode} → {toCode}
+        </div>
+        <div className="yf-head__badges">
+          <span className="yf-badge yf-badge--stop">
+            {stopCount} {stopCount === 1 ? "stop" : "stops"}
+          </span>
+          <span className="yf-badge yf-badge--price">
+            ₹{new Intl.NumberFormat("en-IN").format(price)}
+          </span>
+        </div>
+      </div>
+
+      {segments.map((seg, sIdx) => {
+        const depTime = formatTimeParts(seg.depTime);
+        const arrTime = formatTimeParts(seg.arrTime);
+        const nextSeg = segments[sIdx + 1];
+
+        return (
+          <React.Fragment key={`yf-seg-${sIdx}`}>
+            <div className="yf-seg">
+              <div className="yf-seg__head">
+                <div className="yf-seg__airline">
+                  <span className="yf-seg__airline-name">{seg.airline || legFlight?.airlineName || legFlight?.airline || "Flight"}</span>
+                  <span className="yf-seg__flight-no">
+                    {seg.airlineCode ? `${seg.airlineCode} ` : ""}{seg.flightNumber || ""}
+                  </span>
+                </div>
+                <span className="yf-seg__label">Segment {sIdx + 1}</span>
+              </div>
+
+              <div className="yf-seg__times">
+                {/* Departure */}
+                <div className="yf-seg__pt">
+                  <div className="yf-seg__time-box">
+                    <span className="yf-seg__time">{depTime.time}</span>
+                    {depTime.ampm && <span className="yf-seg__ampm">{depTime.ampm}</span>}
+                  </div>
+                  <span className="yf-seg__place" title={seg.originCity || seg.originAirportCode}>
+                    {seg.originCity || seg.originAirportCode}
+                  </span>
+                  <span className="yf-seg__code">
+                    {seg.originAirportCode}
+                    {seg.originTerminal ? ` • T${String(seg.originTerminal).replace(/^T/i, "")}` : ""}
+                  </span>
+                </div>
+
+                {/* Middle indicator */}
+                <div className="yf-seg__mid">
+                  <span className="yf-seg__dur">{seg.durationText || "--"}</span>
+                  <div className="yf-seg__line">
+                    <span className="yf-seg__plane">
+                      <Plane size={11} style={{ transform: "rotate(90deg)" }} />
+                    </span>
+                  </div>
+                </div>
+
+                {/* Arrival */}
+                <div className="yf-seg__pt yf-seg__pt--arr">
+                  <div className="yf-seg__time-box">
+                    <span className="yf-seg__time">{arrTime.time}</span>
+                    {arrTime.ampm && <span className="yf-seg__ampm">{arrTime.ampm}</span>}
+                  </div>
+                  <span className="yf-seg__place" title={seg.destCity || seg.destAirportCode}>
+                    {seg.destCity || seg.destAirportCode}
+                  </span>
+                  <span className="yf-seg__code">
+                    {seg.destAirportCode}
+                    {seg.destTerminal ? ` • T${String(seg.destTerminal).replace(/^T/i, "")}` : ""}
+                  </span>
+                </div>
+              </div>
+
+              <div className="yf-seg__bag">
+                <span className="yf-seg__bag-item">🧳 Cabin: {formatBaggageText(seg.cabinBaggage, "7 Kg")}</span>
+                <span className="yf-seg__bag-item">📦 Check-in: {formatBaggageText(seg.baggage, "15 Kg")}</span>
+              </div>
+            </div>
+
+            {sIdx < segments.length - 1 && (
+              <div className="yf-conn">
+                <span className="yf-conn__pill">
+                  {formatLayoverText(seg, nextSeg)}
+                </span>
+              </div>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
 }
 
 const TRAVELER_STORAGE_KEY = "my_traveler_data";
@@ -437,7 +601,7 @@ export default function FlightPassengerDetailsPage() {
 
   const handleRestartSearch = () => {
     if (!searchContext) {
-      navigate("/");
+      navigate("/search/flights");
       return;
     }
     const qs = new URLSearchParams();
@@ -448,7 +612,32 @@ export default function FlightPassengerDetailsPage() {
     if (searchContext.travellers) qs.set("travellers", searchContext.travellers);
     if (searchContext.departureDate) qs.set("departureDate", searchContext.departureDate);
     if (searchContext.returnDate) qs.set("returnDate", searchContext.returnDate);
-    navigate(`/flight-search?${qs.toString()}`, { state: searchContext });
+    if (searchContext.multiCityLegs) {
+      try {
+        qs.set(
+          "multiCityLegs",
+          typeof searchContext.multiCityLegs === "string"
+            ? searchContext.multiCityLegs
+            : JSON.stringify(searchContext.multiCityLegs)
+        );
+      } catch { }
+    }
+    navigate(`/search/flights?${qs.toString()}`, { state: searchContext });
+  };
+
+  const handleBackToFlightSelection = () => {
+    const updatedState = {
+      ...flowState,
+      passengers,
+      contact,
+      gstInfo,
+      specialAssistance,
+      couponCode,
+      selectedFeaturedOfferId,
+      agreedToTerms,
+    };
+    writeFlightBookingFlowState(updatedState);
+    handleRestartSearch();
   };
 
   const filledPassengers = useMemo(() => {
@@ -485,6 +674,8 @@ export default function FlightPassengerDetailsPage() {
       : ""
   );
   const [isWalletExpanded, setIsWalletExpanded] = useState(false);
+  const [isImportantInfoExpanded, setIsImportantInfoExpanded] = useState(false);
+  const [isTravellerDetailsExpanded, setIsTravellerDetailsExpanded] = useState(true);
 
   const [isApplying, setIsApplying] = useState(false);
   const [couponError, setCouponError] = useState("");
@@ -669,7 +860,7 @@ export default function FlightPassengerDetailsPage() {
       if (!flight) return;
       try {
         const legsToQuote = selectedLegs.length > 0 ? selectedLegs : (flight ? [flight] : []);
-        
+
         // Deduplicate itineraries based on resultIndex
         const uniqueItineraries = [];
         const seenIndices = new Set();
@@ -680,12 +871,12 @@ export default function FlightPassengerDetailsPage() {
             uniqueItineraries.push(leg);
           }
         }
-        
+
         // Fallback to primary flight if uniqueItineraries is empty
         if (uniqueItineraries.length === 0) uniqueItineraries.push(flight);
 
         let quoteRes;
-        
+
         // Determine if all legs share the same TraceId (standard OneWay, RoundTrip, or MultiCity search)
         // vs. true MixAPI independent itineraries with distinct TraceIds.
         const uniqueTraceIds = new Set(
@@ -706,16 +897,16 @@ export default function FlightPassengerDetailsPage() {
             adults: travellers.adults, children: travellers.children, infants: travellers.infants,
             isMultiCity: false
           }));
-          
+
           const results = await Promise.all(promises);
           const failed = results.find(r => !r.success);
-          
+
           if (failed) {
             quoteRes = failed;
           } else {
             let sumFinal = 0, sumBase = 0, sumTax = 0;
             let isPassportRequired = false;
-            
+
             for (const r of results) {
               const fqRes = r.results || r.rawResponse?.Results || r.rawResponse?.Response?.Results || {};
               const fqF = fqRes?.Fare || r.fare || {};
@@ -724,7 +915,7 @@ export default function FlightPassengerDetailsPage() {
               sumTax += Number(fqRes?.DisplayTax ?? fqRes?.B2CTax ?? fqRes?.Tax ?? fqF?.Tax ?? 0);
               isPassportRequired = isPassportRequired || r.isPassportRequiredAtBook || fqRes?.IsPassportRequiredAtTicket;
             }
-            
+
             quoteRes = {
               success: true,
               results: {
@@ -746,7 +937,7 @@ export default function FlightPassengerDetailsPage() {
           // Standard single FareQuote (OneWay, RoundTrip with shared TraceId, or MultiCity with shared TraceId)
           const combinedResultIndex = uniqueItineraries.map(leg => leg.resultIndex || leg.ResultIndex).filter(Boolean).join(',');
           const resolvedResultIndex = (isMultiCityNormalized || isTwoWayNormalized || uniqueItineraries.length > 1)
-            ? combinedResultIndex 
+            ? combinedResultIndex
             : (uniqueItineraries[0]?.resultIndex || uniqueItineraries[0]?.ResultIndex);
           quoteRes = await getFareQuote({
             flight,
@@ -997,9 +1188,11 @@ export default function FlightPassengerDetailsPage() {
         selectedFeaturedOfferId: offerId || null
       };
 
-      const pricing = await getFlightPricingPreview({ ...payload, couponCode: code || null,
+      const pricing = await getFlightPricingPreview({
+        ...payload, couponCode: code || null,
         journeyType: isMultiCityNormalized ? 3 : isTwoWayNormalized ? 2 : 1,
-        adults: travellers.adults, children: travellers.children, infants: travellers.infants });
+        adults: travellers.adults, children: travellers.children, infants: travellers.infants
+      });
       setFareQuoteData(pricing);
       writeFlightBookingFlowState({ fareQuote: pricing });
 
@@ -1423,6 +1616,7 @@ export default function FlightPassengerDetailsPage() {
     const isValid = validateForm();
     if (!isValid) {
       setFormError("Please correct the errors in the form to proceed.");
+      setIsTravellerDetailsExpanded(true);
       return;
     }
 
@@ -1581,9 +1775,11 @@ export default function FlightPassengerDetailsPage() {
       payload.gatewayPayableAmount = refreshedGatewayPayable;
       payload.paymentMethod = refreshedPaymentMethod;
       payload.useWallet = refreshedWalletApplied > 0;
-      payload.fareSummary = { ...payload.fareSummary, baseFare: currentQuote.baseFare,
+      payload.fareSummary = {
+        ...payload.fareSummary, baseFare: currentQuote.baseFare,
         tax: currentQuote.tax, totalFare: currentQuote.totalFare, markup: 0, convenienceFee: 0,
-        discount: currentQuote.pickNBookDiscount };
+        discount: currentQuote.pickNBookDiscount
+      };
       if (currentQuote?.identity?.TraceId) {
         payload.TraceId = currentQuote.identity.TraceId;
         payload.traceId = currentQuote.identity.TraceId;
@@ -1704,6 +1900,9 @@ export default function FlightPassengerDetailsPage() {
           }}
           className={errors[`passenger_${index}_dob`] ? "field-has-error" : ""}
         />
+        {errors[`passenger_${index}_dob`] && (
+          <span className="field-error-text">{errors[`passenger_${index}_dob`]}</span>
+        )}
       </label>
 
       {isInternational && (
@@ -1957,34 +2156,14 @@ export default function FlightPassengerDetailsPage() {
       <BookingTimer onRestartSearch={handleRestartSearch} mode="banner" />
 
       {/* ── STEPPER PROGRESS HEADER ── */}
-      <div className="flight-stepper-header">
-        <div className="step-item completed">
-          <span className="step-circle">✓</span>
-          <span>Flight Selection</span>
-        </div>
-        <div className="step-line completed"></div>
-        <div className="step-item active">
-          <span className="step-circle">2</span>
-          <span>Review & Traveller Details</span>
-        </div>
-        <div className="step-line"></div>
-        <div className="step-item">
-          <span className="step-circle">3</span>
-          <span>Add-ons</span>
-        </div>
-        <div className="step-line"></div>
-        <div className="step-item">
-          <span className="step-circle">4</span>
-          <span>Payment</span>
-        </div>
-      </div>
+      <FlightStepperHeader currentStage={2} onBack={handleBackToFlightSelection} />
 
       <div className="flight-booking-container">
         {/* ── LEFT COLUMN SIDEBAR ── */}
         <aside className="flight-checkout-sidebar">
           {/* Your Flight Details */}
-          <div className="sidebar-card your-flight-card">
-            <h3 className="sidebar-card-title">
+          <div className="sidebar-card your-flight-card yf-panel">
+            <h3 className="sidebar-card-title yf-panel__title">
               {isMultiCityNormalized
                 ? "Your Flights (Multi-city)"
                 : isTwoWayNormalized
@@ -1993,124 +2172,88 @@ export default function FlightPassengerDetailsPage() {
             </h3>
 
             {isMultiCityNormalized && Array.isArray(flowState.selectedLegs) && flowState.selectedLegs.length > 0 ? (
-              flowState.selectedLegs.map((leg, index) => (
-                <div key={`mc-pax-leg-${index}`} style={{ marginTop: index > 0 ? 16 : 0, paddingTop: index > 0 ? 16 : 0, borderTop: index > 0 ? "1px dashed #cbd5e1" : "none" }}>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
-                    {index + 1}. Leg {index + 1}
+              flowState.selectedLegs.map((leg, index) => {
+                const legSegments = extractFlightSegments(leg, fareQuoteData);
+                const fromCode = resolveLegCityCode(leg?.sourceCode, leg?.sourceName || leg?.fromCity || leg?.from);
+                const toCode = resolveLegCityCode(leg?.destinationCode, leg?.destinationName || leg?.toCity || leg?.to);
+                const price = Number(leg?.fare || leg?.price || leg?.priceInr || leg?.selectedTravelClassPriceInr || 0);
+                const stopCount = Number(leg?.stops || (legSegments.length > 1 ? legSegments.length - 1 : 0));
+
+                return (
+                  <div key={`mc-pax-leg-${index}`} style={{ marginTop: index > 0 ? 16 : 0, paddingTop: index > 0 ? 16 : 0, borderTop: index > 0 ? "1px dashed #cbd5e1" : "none" }}>
+                    <div className="yf-leg-title">
+                      {index + 1}. Leg {index + 1}
+                    </div>
+                    {legSegments && legSegments.length > 1 ? (
+                      renderConnectingFlightJourney(legSegments, leg, fromCode, toCode, stopCount, price)
+                    ) : (
+                      <>
+                        <div className="flight-segment">
+                          <div className="flight-city-info">
+                            <span className="flight-city-code">{fromCode}</span>
+                            <span className="flight-city-name">{leg?.sourceName || leg?.fromCity || "--"}</span>
+                          </div>
+                          <div className="flight-stops-indicator">
+                            <span className="stops-text">{stopCount > 0 ? `${stopCount} stop` : "Non stop"}</span>
+                            <div className="stops-line"></div>
+                          </div>
+                          <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
+                            <span className="flight-city-code">{toCode}</span>
+                            <span className="flight-city-name">{leg?.destinationName || leg?.toCity || "--"}</span>
+                          </div>
+                        </div>
+                        <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span>{leg?.airlineName || leg?.airline || "Flight"} ({leg?.flightNumber || "--"})</span>
+                          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                            <span className="flight-date-badge">{leg?.departDate || leg?.departureDate || "--"}{leg?.departureTime ? ` • ${leg.departureTime}` : ""}</span>
+                            <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
+                              ₹{new Intl.NumberFormat("en-IN").format(price)}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div className="flight-segment">
-                    <div className="flight-city-info">
-                      <span className="flight-city-code">{resolveLegCityCode(leg?.sourceCode, leg?.sourceName || leg?.fromCity || leg?.from)}</span>
-                      <span className="flight-city-name">{leg?.sourceName || leg?.fromCity || "--"}</span>
-                    </div>
-                    <div className="flight-stops-indicator">
-                      <span className="stops-text">{Number(leg?.stops || 0) > 0 ? `${leg.stops} stop` : "Non stop"}</span>
-                      <div className="stops-line"></div>
-                    </div>
-                    <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                      <span className="flight-city-code">{resolveLegCityCode(leg?.destinationCode, leg?.destinationName || leg?.toCity || leg?.to)}</span>
-                      <span className="flight-city-name">{leg?.destinationName || leg?.toCity || "--"}</span>
-                    </div>
-                  </div>
-                  <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span>{leg?.airlineName || leg?.airline || "Flight"} ({leg?.flightNumber || "--"})</span>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                      <span className="flight-date-badge">{leg?.departDate || leg?.departureDate || "--"}{leg?.departureTime ? ` • ${leg.departureTime}` : ""}</span>
-                      <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                        ₹{new Intl.NumberFormat("en-IN").format(Number(leg?.fare || leg?.price || leg?.priceInr || leg?.selectedTravelClassPriceInr || 0))}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <>
                 {/* Onward Flight Segment */}
                 <div style={{ marginBottom: isTwoWayNormalized ? 16 : 0 }}>
-                  {isTwoWayNormalized && (
-                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#d32f2f", textTransform: "uppercase", marginBottom: 6 }}>
-                      1. Onward Flight
-                    </div>
-                  )}
+                  <div className="yf-leg-title">
+                    1. Onward Flight
+                  </div>
                   {onwardSegments && onwardSegments.length > 1 ? (
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                        <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0f172a" }}>
-                          {resolveLegCityCode(flight.sourceCode, searchContext?.source || flight.fromCity)} → {resolveLegCityCode(flight.destinationCode, searchContext?.destination || flight.toCity)}
-                        </div>
-                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                          <span style={{ fontSize: "0.72rem", background: "#fef3c7", color: "#b45309", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
-                            {onwardSegments.length - 1} stop
-                          </span>
-                          <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                            ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="connecting-flight-journey">
-                        {onwardSegments.map((seg, sIdx) => (
-                          <React.Fragment key={`onw-seg-${sIdx}`}>
-                            <div className="connecting-segment-card">
-                              <div className="connecting-seg-header">
-                                <span className="connecting-seg-airline">{seg.airline} {seg.airlineCode} {seg.flightNumber}</span>
-                                <span className="connecting-seg-badge">Segment {sIdx + 1}</span>
-                              </div>
-                              <div className="connecting-seg-body">
-                                <div className="connecting-time-col">
-                                  <span className="connecting-time">{formatFlightTime(seg.depTime) || seg.depTime}</span>
-                                  <span className="connecting-city">{seg.originCity || seg.originAirportCode}</span>
-                                  <span className="connecting-airport">{seg.originAirportCode}{seg.originTerminal ? ` • T${seg.originTerminal}` : ""}</span>
-                                </div>
-                                <div className="connecting-dur-col">
-                                  <span className="connecting-dur-label">{seg.durationText || "--"}</span>
-                                  <div className="connecting-dur-line" />
-                                </div>
-                                <div className="connecting-time-col" style={{ textAlign: "right" }}>
-                                  <span className="connecting-time">{formatFlightTime(seg.arrTime) || seg.arrTime}</span>
-                                  <span className="connecting-city">{seg.destCity || seg.destAirportCode}</span>
-                                  <span className="connecting-airport">{seg.destAirportCode}{seg.destTerminal ? ` • T${seg.destTerminal}` : ""}</span>
-                                </div>
-                              </div>
-                              <div className="connecting-seg-footer">
-                                <span>🧳 Cabin: {seg.cabinBaggage}</span>
-                                <span>📦 Check-in: {seg.baggage}</span>
-                              </div>
-                            </div>
-
-                            {seg.layoverTime && (
-                              <div className="connecting-layover-bar">
-                                <span className="connecting-layover-pill">
-                                  Connection at {seg.destAirportCode} ({seg.layoverTime} layover)
-                                </span>
-                              </div>
-                            )}
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    </div>
+                    renderConnectingFlightJourney(
+                      onwardSegments,
+                      flight,
+                      resolveLegCityCode(flight?.sourceCode, searchContext?.source || flight?.fromCity),
+                      resolveLegCityCode(flight?.destinationCode, searchContext?.destination || flight?.toCity),
+                      onwardSegments.length - 1,
+                      Number(flight?.fare || flight?.price || flight?.priceInr || flight?.selectedTravelClassPriceInr || 0)
+                    )
                   ) : (
                     <>
                       <div className="flight-segment">
                         <div className="flight-city-info">
-                          <span className="flight-city-code">{resolveLegCityCode(flight.sourceCode, searchContext?.source || flight.fromCity)}</span>
+                          <span className="flight-city-code">{resolveLegCityCode(flight?.sourceCode, searchContext?.source || flight?.fromCity)}</span>
                           <span className="flight-city-name">{searchContext?.source || "--"}</span>
                         </div>
                         <div className="flight-stops-indicator">
-                          <span className="stops-text">{Number(flight.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
+                          <span className="stops-text">{Number(flight?.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
                           <div className="stops-line"></div>
                         </div>
                         <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                          <span className="flight-city-code">{resolveLegCityCode(flight.destinationCode, searchContext?.destination || flight.toCity)}</span>
+                          <span className="flight-city-code">{resolveLegCityCode(flight?.destinationCode, searchContext?.destination || flight?.toCity)}</span>
                           <span className="flight-city-name">{searchContext?.destination || "--"}</span>
                         </div>
                       </div>
                       <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span>{flight.airlineName || flight.airline} ({flight.flightNumber})</span>
+                        <span>{flight?.airlineName || flight?.airline} ({flight?.flightNumber})</span>
                         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                          <span className="flight-date-badge">{flight.departDate || searchContext?.departureDate || "--"}{flight.departureTime ? ` • ${flight.departureTime}` : ""}</span>
+                          <span className="flight-date-badge">{flight?.departDate || searchContext?.departureDate || "--"}{flight?.departureTime ? ` • ${flight?.departureTime}` : ""}</span>
                           <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                            ₹{new Intl.NumberFormat("en-IN").format(Number(flight.fare || flight.price || flight.priceInr || flight.selectedTravelClassPriceInr || 0))}
+                            ₹{new Intl.NumberFormat("en-IN").format(Number(flight?.fare || flight?.price || flight?.priceInr || flight?.selectedTravelClassPriceInr || 0))}
                           </span>
                         </div>
                       </div>
@@ -2122,88 +2265,40 @@ export default function FlightPassengerDetailsPage() {
                 {/* Return Flight Segment — uses returnFlightNormalized which falls back to selectedLegs[1] */}
                 {isTwoWayNormalized && returnFlightNormalized && (
                   <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px dashed #cbd5e1" }}>
-                    <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#ff0000", textTransform: "uppercase", marginBottom: 6 }}>
+                    <div className="yf-leg-title">
                       2. Return Flight
                     </div>
                     {returnSegments && returnSegments.length > 1 ? (
-                      <div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0f172a" }}>
-                            {resolveLegCityCode(returnFlightNormalized.sourceCode, searchContext?.destination || returnFlightNormalized.fromCity)} → {resolveLegCityCode(returnFlightNormalized.destinationCode, searchContext?.source || returnFlightNormalized.toCity)}
-                          </div>
-                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                            <span style={{ fontSize: "0.72rem", background: "#fef3c7", color: "#b45309", padding: "2px 6px", borderRadius: "4px", fontWeight: 700 }}>
-                              {returnSegments.length - 1} stop
-                            </span>
-                            <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                              ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized.fare || returnFlightNormalized.price || returnFlightNormalized.priceInr || returnFlightNormalized.selectedTravelClassPriceInr || 0))}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="connecting-flight-journey">
-                          {returnSegments.map((seg, sIdx) => (
-                            <React.Fragment key={`ret-seg-${sIdx}`}>
-                              <div className="connecting-segment-card">
-                                <div className="connecting-seg-header">
-                                  <span className="connecting-seg-airline">{seg.airline} {seg.airlineCode} {seg.flightNumber}</span>
-                                  <span className="connecting-seg-badge">Segment {sIdx + 1}</span>
-                                </div>
-                                <div className="connecting-seg-body">
-                                  <div className="connecting-time-col">
-                                    <span className="connecting-time">{formatFlightTime(seg.depTime) || seg.depTime}</span>
-                                    <span className="connecting-city">{seg.originCity || seg.originAirportCode}</span>
-                                    <span className="connecting-airport">{seg.originAirportCode}{seg.originTerminal ? ` • T${seg.originTerminal}` : ""}</span>
-                                  </div>
-                                  <div className="connecting-dur-col">
-                                    <span className="connecting-dur-label">{seg.durationText || "--"}</span>
-                                    <div className="connecting-dur-line" />
-                                  </div>
-                                  <div className="connecting-time-col" style={{ textAlign: "right" }}>
-                                    <span className="connecting-time">{formatFlightTime(seg.arrTime) || seg.arrTime}</span>
-                                    <span className="connecting-city">{seg.destCity || seg.destAirportCode}</span>
-                                    <span className="connecting-airport">{seg.destAirportCode}{seg.destTerminal ? ` • T${seg.destTerminal}` : ""}</span>
-                                  </div>
-                                </div>
-                                <div className="connecting-seg-footer">
-                                  <span>🧳 Cabin: {seg.cabinBaggage}</span>
-                                  <span>📦 Check-in: {seg.baggage}</span>
-                                </div>
-                              </div>
-
-                              {seg.layoverTime && (
-                                <div className="connecting-layover-bar">
-                                  <span className="connecting-layover-pill">
-                                    Connection at {seg.destAirportCode} ({seg.layoverTime} layover)
-                                  </span>
-                                </div>
-                              )}
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      </div>
+                      renderConnectingFlightJourney(
+                        returnSegments,
+                        returnFlightNormalized,
+                        resolveLegCityCode(returnFlightNormalized?.sourceCode, searchContext?.destination || returnFlightNormalized?.fromCity),
+                        resolveLegCityCode(returnFlightNormalized?.destinationCode, searchContext?.source || returnFlightNormalized?.toCity),
+                        returnSegments.length - 1,
+                        Number(returnFlightNormalized?.fare || returnFlightNormalized?.price || returnFlightNormalized?.priceInr || returnFlightNormalized?.selectedTravelClassPriceInr || 0)
+                      )
                     ) : (
                       <>
                         <div className="flight-segment">
                           <div className="flight-city-info">
-                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.sourceCode, searchContext?.destination || returnFlightNormalized.fromCity)}</span>
+                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized?.sourceCode, searchContext?.destination || returnFlightNormalized?.fromCity)}</span>
                             <span className="flight-city-name">{searchContext?.destination || "--"}</span>
                           </div>
                           <div className="flight-stops-indicator">
-                            <span className="stops-text">{Number(returnFlightNormalized.stops || 0) > 0 ? `${returnFlightNormalized.stops} stop` : "Non stop"}</span>
+                            <span className="stops-text">{Number(returnFlightNormalized?.stops || 0) > 0 ? `${returnFlightNormalized.stops} stop` : "Non stop"}</span>
                             <div className="stops-line"></div>
                           </div>
                           <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized.destinationCode, searchContext?.source || returnFlightNormalized.toCity)}</span>
+                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized?.destinationCode, searchContext?.source || returnFlightNormalized?.toCity)}</span>
                             <span className="flight-city-name">{searchContext?.source || "--"}</span>
                           </div>
                         </div>
                         <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span>{returnFlightNormalized.airlineName || returnFlightNormalized.airline} ({returnFlightNormalized.flightNumber})</span>
+                          <span>{returnFlightNormalized?.airlineName || returnFlightNormalized?.airline} ({returnFlightNormalized?.flightNumber})</span>
                           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                            <span className="flight-date-badge">{returnFlightNormalized.departDate || searchContext?.returnDate || "--"}{returnFlightNormalized.departureTime ? ` • ${returnFlightNormalized.departureTime}` : ""}</span>
+                            <span className="flight-date-badge">{returnFlightNormalized?.departDate || searchContext?.returnDate || "--"}{returnFlightNormalized?.departureTime ? ` • ${returnFlightNormalized?.departureTime}` : ""}</span>
                             <span className="flight-fare-badge" style={{ backgroundColor: "#ecfdf5", color: "#047857", padding: "2px 8px", borderRadius: "6px", fontWeight: 700, fontSize: "0.85rem", border: "1px solid #a7f3d0" }}>
-                              ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized.fare || returnFlightNormalized.price || returnFlightNormalized.priceInr || returnFlightNormalized.selectedTravelClassPriceInr || 0))}
+                              ₹{new Intl.NumberFormat("en-IN").format(Number(returnFlightNormalized?.fare || returnFlightNormalized?.price || returnFlightNormalized?.priceInr || returnFlightNormalized?.selectedTravelClassPriceInr || 0))}
                             </span>
                           </div>
                         </div>
@@ -2399,222 +2494,249 @@ export default function FlightPassengerDetailsPage() {
             </div>
           )}
 
-          {/* Passenger Details input */}
-          <div className="flight-main-card flight-main-card--compact">
-            <h2 className="flight-main-card-title">
-              <User size={20} className="header-icon" />
-              Enter Traveller Details
-            </h2>
+          {/* Traveller Details */}
+          <div className={`flight-main-card traveller-details-card ${isTravellerDetailsExpanded ? "is-expanded" : "is-collapsed"}`}>
+            <div
+              className="traveller-details-header"
+              onClick={() => setIsTravellerDetailsExpanded(prev => !prev)}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isTravellerDetailsExpanded}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsTravellerDetailsExpanded(prev => !prev);
+                }
+              }}
+            >
+              <div className="traveller-details-title-wrap">
+                <User size={20} className="header-icon" />
+                <span className="traveller-details-title">Traveller Details</span>
+              </div>
+              <ChevronDown
+                size={20}
+                className={`traveller-details-chevron ${isTravellerDetailsExpanded ? "rotated" : ""}`}
+                aria-hidden="true"
+              />
+            </div>
 
-            {passengers.map((passenger, index) => {
-              const isExisting = passengerModes[index];
-              return (
-                <div key={passenger.id} className="flight-passenger-row">
-                  <header className="flight-passenger-row-header">
-                    <h4 className="flight-passenger-row-title">
-                      Passenger {index + 1} ({passenger.passengerType})
-                    </h4>
+            {isTravellerDetailsExpanded && (
+              <div className="traveller-details-content">
+                {/* Enter Traveller Details Subheading */}
 
-                    <div className="passenger-mode-toggle">
-                      <button
-                        type="button"
-                        className={`btn-action-outline ${isExisting ? "active" : ""}`}
-                        onClick={() => setPassengerMode(index, true)}
-                      >
-                        Existing Traveler
-                      </button>
-                      <button
-                        type="button"
-                        className={`btn-action-outline ${!isExisting ? "active" : ""}`}
-                        onClick={() => setPassengerMode(index, false)}
-                      >
-                        Add New
-                      </button>
-                    </div>
-                  </header>
 
-                  <div className="flight-passenger-row-body">
-                    {isExisting ? (
-                      <div className="passenger-existing-wrap">
-                        {travelerLoadError && (
-                          <p className="pmode-warn">{travelerLoadError}</p>
+                {passengers.map((passenger, index) => {
+                  const isExisting = passengerModes[index];
+                  return (
+                    <div key={passenger.id} className="flight-passenger-row">
+                      <header className="flight-passenger-row-header">
+                        <h4 className="flight-passenger-row-title">
+                          Passenger {index + 1} ({passenger.passengerType || (passenger.isChild ? "Child" : passenger.isInfant ? "Infant" : "Adult")})
+                        </h4>
+
+                        <div className="passenger-mode-toggle">
+                          <button
+                            type="button"
+                            className={`btn-action-outline ${isExisting ? "active" : ""}`}
+                            onClick={() => setPassengerMode(index, true)}
+                          >
+                            Existing Traveller
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn-action-outline ${!isExisting ? "active" : ""}`}
+                            onClick={() => setPassengerMode(index, false)}
+                          >
+                            Add New
+                          </button>
+                        </div>
+                      </header>
+
+                      <div className="flight-passenger-row-body">
+                        {isExisting ? (
+                          <div className="passenger-existing-wrap">
+                            {travelerLoadError && (
+                              <p className="pmode-warn">{travelerLoadError}</p>
+                            )}
+                            <select
+                              className="input-control"
+                              value={passenger.selectedTravelerId || ""}
+                              onChange={(e) => handleSelectExistingTraveler(index, e.target.value)}
+                            >
+                              <option value="">-- Select Existing Traveller --</option>
+                              {savedTravelers.length === 0 ? (
+                                <option disabled>No saved travellers found</option>
+                              ) : (
+                                savedTravelers.map((t) => (
+                                  <option key={t.id} value={String(t.id)}>
+                                    {[t.title, t.firstName, t.lastName].filter(Boolean).join(" ")}
+                                  </option>
+                                ))
+                              )}
+                            </select>
+
+                            {passenger.selectedTravelerId && renderPassengerFields(passenger, index)}
+                          </div>
+                        ) : (
+                          renderPassengerFields(passenger, index)
                         )}
-                        <select
-                          className="input-control"
-                          value={passenger.selectedTravelerId || ""}
-                          onChange={(e) => handleSelectExistingTraveler(index, e.target.value)}
-                        >
-                          <option value="">-- Select Existing Traveler --</option>
-                          {savedTravelers.length === 0 ? (
-                            <option disabled>No saved travelers found</option>
-                          ) : (
-                            savedTravelers.map((t) => (
-                              <option key={t.id} value={String(t.id)}>
-                                {[t.title, t.firstName, t.lastName].filter(Boolean).join(" ")}
-                              </option>
-                            ))
-                          )}
-                        </select>
-
-                        {passenger.selectedTravelerId && renderPassengerFields(passenger, index)}
                       </div>
-                    ) : (
-                      renderPassengerFields(passenger, index)
+                    </div>
+                  );
+                })}
+
+                {/* Contact Details Section */}
+                <div className="traveller-contact-section">
+                  <div className="traveller-contact-header">
+                    <Mail size={18} className="header-icon" />
+                    <h3 className="traveller-contact-title">Contact Details</h3>
+                  </div>
+                  <p className="traveller-contact-subtitle">
+                    Your ticket and flight information will be sent here
+                  </p>
+
+                  <div className="form-grid-2">
+                    <div className="input-group">
+                      <label>Email Address *</label>
+                      <input
+                        className={`input-control ${errors.contact_email ? "error-state" : ""}`}
+                        type="email"
+                        placeholder="Email ID"
+                        value={contact.email}
+                        onChange={(e) => {
+                          setContact(prev => ({ ...prev, email: e.target.value }));
+                          setErrors(prev => { const c = { ...prev }; delete c.contact_email; return c; });
+                        }}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (!val) {
+                            setErrors(prev => ({ ...prev, contact_email: "Email Address is required" }));
+                          } else if (!isValidEmail(val)) {
+                            setErrors(prev => ({ ...prev, contact_email: "Please enter a valid email address" }));
+                          }
+                        }}
+                      />
+                      {errors.contact_email && <span className="input-error-msg">{errors.contact_email}</span>}
+                    </div>
+
+                    <div className="input-group">
+                      <label>Mobile Number *</label>
+                      <div className="contact-phone-row">
+                        <select
+                          className="phone-code-select"
+                          disabled
+                        >
+                          <option>+91</option>
+                        </select>
+                        <input
+                          className={`input-control contact-phone-input ${errors.contact_mobile ? "error-state" : ""}`}
+                          type="text"
+                          maxLength={10}
+                          placeholder="Mobile Number"
+                          value={contact.mobile}
+                          onChange={(e) => {
+                            const cleanValue = e.target.value.replace(/\D/g, "");
+                            setContact(prev => ({ ...prev, mobile: cleanValue }));
+                            setErrors(prev => { const c = { ...prev }; delete c.contact_mobile; return c; });
+                          }}
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if (!val) {
+                              setErrors(prev => ({ ...prev, contact_mobile: "Mobile Number is required" }));
+                            } else if (!isValidMobile(val)) {
+                              setErrors(prev => ({ ...prev, contact_mobile: "Please enter a valid 10-digit mobile number" }));
+                            }
+                          }}
+                        />
+                      </div>
+                      {errors.contact_mobile && <span className="input-error-msg">{errors.contact_mobile}</span>}
+                    </div>
+
+                    <div className="input-group">
+                      <label>Address Line 1 *</label>
+                      <input
+                        className={`input-control ${errors.contact_addressLine1 ? "error-state" : ""}`}
+                        type="text"
+                        placeholder="Address Line 1"
+                        value={contact.addressLine1}
+                        onChange={(e) => {
+                          setContact(prev => ({ ...prev, addressLine1: e.target.value }));
+                          setErrors(prev => { const c = { ...prev }; delete c.contact_addressLine1; return c; });
+                        }}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (!val) {
+                            setErrors(prev => ({ ...prev, contact_addressLine1: "Address Line 1 is required" }));
+                          } else if (val.length < 5) {
+                            setErrors(prev => ({ ...prev, contact_addressLine1: "Address must be at least 5 characters" }));
+                          }
+                        }}
+                      />
+                      {errors.contact_addressLine1 && <span className="input-error-msg">{errors.contact_addressLine1}</span>}
+                    </div>
+
+                    <div className="input-group">
+                      <label>City *</label>
+                      <input
+                        className={`input-control ${errors.contact_city ? "error-state" : ""}`}
+                        type="text"
+                        placeholder="City"
+                        value={contact.city}
+                        onChange={(e) => {
+                          setContact(prev => ({ ...prev, city: e.target.value }));
+                          setErrors(prev => { const c = { ...prev }; delete c.contact_city; return c; });
+                        }}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (!val) {
+                            setErrors(prev => ({ ...prev, contact_city: "City is required" }));
+                          } else if (!/^[a-zA-Z\s\-']{2,50}$/.test(val)) {
+                            setErrors(prev => ({ ...prev, contact_city: "Please enter a valid city name (letters only)" }));
+                          }
+                        }}
+                      />
+                      {errors.contact_city && <span className="input-error-msg">{errors.contact_city}</span>}
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: "16px", marginBottom: "8px" }}>
+                    <label style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={contact.whatsappUpdates}
+                        onChange={(e) => {
+                          setContact(prev => ({
+                            ...prev,
+                            whatsappUpdates: e.target.checked,
+                            whatsappNumber: e.target.checked ? prev.whatsappNumber || prev.mobile : ""
+                          }));
+                          setErrors(prev => { const c = { ...prev }; delete c.contact_whatsappNumber; return c; });
+                        }}
+                        style={{ width: "16px", height: "16px", margin: 0, padding: 0, cursor: "pointer" }}
+                      />
+                      <span style={{ fontSize: "0.875rem", color: "var(--text-main)", marginLeft: "8px", fontWeight: "normal" }}>
+                        Send updates on WhatsApp
+                      </span>
+                    </label>
+                    {contact.whatsappUpdates && (
+                      <div style={{ marginTop: "8px" }}>
+                        <input
+                          className="input-control"
+                          type="text"
+                          maxLength={10}
+                          placeholder="WhatsApp number (defaults to mobile)"
+                          value={contact.whatsappNumber}
+                          onChange={(e) => {
+                            const cleanValue = e.target.value.replace(/\D/g, "");
+                            setContact(prev => ({ ...prev, whatsappNumber: cleanValue }));
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Contact Details */}
-          <div className="flight-main-card">
-            <h2 className="flight-main-card-title">
-              <Mail size={20} className="header-icon" />
-              Contact Details
-            </h2>
-            <p style={{ fontSize: "0.813rem", color: "var(--text-muted)", marginTop: "-12px", marginBottom: 16 }}>
-              Your ticket and flight information will be sent here
-            </p>
-
-            <div className="form-grid-2">
-              <div className="input-group">
-                <label>Email Address *</label>
-                <input
-                  className={`input-control ${errors.contact_email ? "error-state" : ""}`}
-                  type="email"
-                  placeholder="Email ID"
-                  value={contact.email}
-                  onChange={(e) => {
-                    setContact(prev => ({ ...prev, email: e.target.value }));
-                    setErrors(prev => { const c = { ...prev }; delete c.contact_email; return c; });
-                  }}
-                  onBlur={(e) => {
-                    const val = e.target.value.trim();
-                    if (!val) {
-                      setErrors(prev => ({ ...prev, contact_email: "Email Address is required" }));
-                    } else if (!isValidEmail(val)) {
-                      setErrors(prev => ({ ...prev, contact_email: "Please enter a valid email address" }));
-                    }
-                  }}
-                />
-                {errors.contact_email && <span className="input-error-msg">{errors.contact_email}</span>}
               </div>
-
-              <div className="input-group">
-                <label>Mobile Number *</label>
-                <div className="contact-phone-row">
-                  <select
-                    className="phone-code-select"
-                    disabled
-                  >
-                    <option>+91</option>
-                  </select>
-                  <input
-                    className={`input-control contact-phone-input ${errors.contact_mobile ? "error-state" : ""}`}
-                    type="text"
-                    maxLength={10}
-                    placeholder="Mobile Number"
-                    value={contact.mobile}
-                    onChange={(e) => {
-                      const cleanValue = e.target.value.replace(/\D/g, "");
-                      setContact(prev => ({ ...prev, mobile: cleanValue }));
-                      setErrors(prev => { const c = { ...prev }; delete c.contact_mobile; return c; });
-                    }}
-                    onBlur={(e) => {
-                      const val = e.target.value.trim();
-                      if (!val) {
-                        setErrors(prev => ({ ...prev, contact_mobile: "Mobile Number is required" }));
-                      } else if (!isValidMobile(val)) {
-                        setErrors(prev => ({ ...prev, contact_mobile: "Please enter a valid 10-digit mobile number" }));
-                      }
-                    }}
-                  />
-                </div>
-                {errors.contact_mobile && <span className="input-error-msg">{errors.contact_mobile}</span>}
-              </div>
-              <div className="input-group">
-                <label>Address Line 1 *</label>
-                <input
-                  className={`input-control ${errors.contact_addressLine1 ? "error-state" : ""}`}
-                  type="text"
-                  placeholder="Address Line 1"
-                  value={contact.addressLine1}
-                  onChange={(e) => {
-                    setContact(prev => ({ ...prev, addressLine1: e.target.value }));
-                    setErrors(prev => { const c = { ...prev }; delete c.contact_addressLine1; return c; });
-                  }}
-                  onBlur={(e) => {
-                    const val = e.target.value.trim();
-                    if (!val) {
-                      setErrors(prev => ({ ...prev, contact_addressLine1: "Address Line 1 is required" }));
-                    } else if (val.length < 5) {
-                      setErrors(prev => ({ ...prev, contact_addressLine1: "Address must be at least 5 characters" }));
-                    }
-                  }}
-                />
-                {errors.contact_addressLine1 && <span className="input-error-msg">{errors.contact_addressLine1}</span>}
-              </div>
-
-              <div className="input-group">
-                <label>City *</label>
-                <input
-                  className={`input-control ${errors.contact_city ? "error-state" : ""}`}
-                  type="text"
-                  placeholder="City"
-                  value={contact.city}
-                  onChange={(e) => {
-                    setContact(prev => ({ ...prev, city: e.target.value }));
-                    setErrors(prev => { const c = { ...prev }; delete c.contact_city; return c; });
-                  }}
-                  onBlur={(e) => {
-                    const val = e.target.value.trim();
-                    if (!val) {
-                      setErrors(prev => ({ ...prev, contact_city: "City is required" }));
-                    } else if (!/^[a-zA-Z\s\-']{2,50}$/.test(val)) {
-                      setErrors(prev => ({ ...prev, contact_city: "Please enter a valid city name (letters only)" }));
-                    }
-                  }}
-                />
-                {errors.contact_city && <span className="input-error-msg">{errors.contact_city}</span>}
-              </div>
-            </div>
-
-            <div style={{ marginTop: "16px", marginBottom: "16px" }}>
-              <label style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}>
-                <input
-                  type="checkbox"
-                  checked={contact.whatsappUpdates}
-                  onChange={(e) => {
-                    setContact(prev => ({
-                      ...prev,
-                      whatsappUpdates: e.target.checked,
-                      whatsappNumber: e.target.checked ? prev.whatsappNumber || prev.mobile : ""
-                    }));
-                    setErrors(prev => { const c = { ...prev }; delete c.contact_whatsappNumber; return c; });
-                  }}
-                  style={{ width: "16px", height: "16px", margin: 0, padding: 0, cursor: "pointer" }}
-                />
-                <span style={{ fontSize: "0.875rem", color: "var(--text-main)", marginLeft: "8px", fontWeight: "normal" }}>
-                  Send updates on WhatsApp
-                </span>
-              </label>
-              {contact.whatsappUpdates && (
-                <div style={{ marginTop: "8px" }}>
-                  <input
-                    className="input-control"
-                    type="text"
-                    maxLength={10}
-                    placeholder="WhatsApp number (defaults to mobile)"
-                    value={contact.whatsappNumber}
-                    onChange={(e) => {
-                      const cleanValue = e.target.value.replace(/\D/g, "");
-                      setContact(prev => ({ ...prev, whatsappNumber: cleanValue }));
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
           {/* GST Details */}
@@ -2718,177 +2840,72 @@ export default function FlightPassengerDetailsPage() {
             </div>
           )}
 
-
-          {/* Extras For This Traveller (Travel Add-ons & Seat Selection per Segment) */}
-          <div className="flight-main-card extras-traveller-card" style={{ marginBottom: 20 }}>
-            <h2 className="flight-main-card-title" style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.5px", color: "#475569" }}>
-              EXTRAS FOR THIS TRAVELLER
-            </h2>
-
-            <div className="extras-card-inner">
-              {/* Travel Add-ons banner */}
-              <div className="extras-addons-banner">
-                <div className="extras-addons-info">
-                  <div className="extras-icon-circle">
-                    <Briefcase size={20} color="#0284c7" />
-                  </div>
-                  <div>
-                    <div className="extras-addons-title">Travel Add-ons</div>
-                    <div className="extras-addons-subtitle">
-                      Baggage, meals and seats for Adult 1
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn-choose-addons"
-                  onClick={() => handleNavigateToSeats(0)}
-                >
-                  + Choose Add-ons
-                </button>
-              </div>
-
-              {/* Seat Selection */}
-              <div className="extras-seat-section">
-                <div className="extras-seat-heading">
-                  <div className="extras-seat-title">Seat selection</div>
-                  <div className="extras-seat-subtitle">Pick a preferred seat for each flight</div>
-                </div>
-
-                <div className="extras-seat-grid">
-                  {(onwardSegments.length > 0 ? onwardSegments : (flight ? [flight] : [])).map((seg, sIdx) => {
-                    const primaryPassenger = passengers[0];
-                    const seats = primaryPassenger?.seatDynamic || primaryPassenger?.Seat || primaryPassenger?.seat || [];
-                    let assignedSeat = null;
-                    if (Array.isArray(seats) && seats.length > 0) {
-                      const match = seats.find(s =>
-                        (s?.Origin && seg?.originAirportCode && s.Origin.toUpperCase() === seg.originAirportCode.toUpperCase()) ||
-                        (s?.FlightNumber && seg?.flightNumber && String(s.FlightNumber) === String(seg.flightNumber))
-                      ) || seats[sIdx];
-                      if (match) assignedSeat = match.SeatNumber || match.SeatName || match.Code || match.label;
-                    } else if (primaryPassenger?.seatLabel) {
-                      const parts = String(primaryPassenger.seatLabel).split("/").map(s => s.trim());
-                      if (parts[sIdx]) assignedSeat = parts[sIdx];
-                    }
-
-                    const originCode = seg.originAirportCode || seg.originCity || flight?.sourceCode || "--";
-                    const destCode = seg.destAirportCode || seg.destCity || flight?.destinationCode || "--";
-
-                    return (
-                      <div key={`extra-seat-onw-${sIdx}`} className="extras-seat-card">
-                        <div className="extras-seat-card-left">
-                          <div className="extras-seat-icon">💺</div>
-                          <div>
-                            <div className="extras-seg-route">
-                              {originCode} → {destCode}
-                            </div>
-                            <div className="extras-seg-status" style={{ color: assignedSeat ? "#059669" : "#64748b", fontWeight: assignedSeat ? 700 : 500 }}>
-                              {assignedSeat ? `Seat: ${assignedSeat}` : "Seat not selected"}
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn-select-seat"
-                          onClick={() => handleNavigateToSeats(sIdx)}
-                        >
-                          {assignedSeat ? "Change Seat" : "Select Seat"}
-                        </button>
-                      </div>
-                    );
-                  })}
-
-                  {returnSegments.map((seg, rIdx) => {
-                    const primaryPassenger = passengers[0];
-                    const sIdx = onwardSegments.length + rIdx;
-                    const seats = primaryPassenger?.seatDynamic || primaryPassenger?.Seat || primaryPassenger?.seat || [];
-                    let assignedSeat = null;
-                    if (Array.isArray(seats) && seats.length > 0) {
-                      const match = seats.find(s =>
-                        (s?.Origin && seg?.originAirportCode && s.Origin.toUpperCase() === seg.originAirportCode.toUpperCase()) ||
-                        (s?.FlightNumber && seg?.flightNumber && String(s.FlightNumber) === String(seg.flightNumber))
-                      ) || seats[sIdx];
-                      if (match) assignedSeat = match.SeatNumber || match.SeatName || match.Code || match.label;
-                    } else if (primaryPassenger?.seatLabel) {
-                      const parts = String(primaryPassenger.seatLabel).split("/").map(s => s.trim());
-                      if (parts[sIdx]) assignedSeat = parts[sIdx];
-                    }
-
-                    const originCode = seg.originAirportCode || seg.originCity || returnFlightNormalized?.sourceCode || "--";
-                    const destCode = seg.destAirportCode || seg.destCity || returnFlightNormalized?.destinationCode || "--";
-
-                    return (
-                      <div key={`extra-seat-ret-${rIdx}`} className="extras-seat-card">
-                        <div className="extras-seat-card-left">
-                          <div className="extras-seat-icon">💺</div>
-                          <div>
-                            <div className="extras-seg-route">
-                              {originCode} → {destCode} <span style={{ fontSize: "0.72rem", color: "#64748b" }}>(Return)</span>
-                            </div>
-                            <div className="extras-seg-status" style={{ color: assignedSeat ? "#059669" : "#64748b", fontWeight: assignedSeat ? 700 : 500 }}>
-                              {assignedSeat ? `Seat: ${assignedSeat}` : "Seat not selected"}
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn-select-seat"
-                          onClick={() => handleNavigateToSeats(sIdx)}
-                        >
-                          {assignedSeat ? "Change Seat" : "Select Seat"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Important Information */}
-          <div className="flight-main-card important-info-card">
-            <h2 className="flight-main-card-title">
-              <Info size={20} className="header-icon" />
-              Important Information
-            </h2>
-            <div className="important-info-content">
-              <div className="info-grid">
-                <div className="info-section">
-                  <h4 className="info-section-title">Travel Guidelines</h4>
-                  <ul className="info-list">
-                    <li>Carry a valid government-issued Photo ID (Aadhaar, Passport, Driving License, or Voter ID).</li>
-                    <li>For international travel, make sure your passport is valid for at least 6 months and you have all required visas.</li>
-                    <li>Report at the airport at least 2 hours before domestic departures and 3 hours before international departures.</li>
-                  </ul>
-                </div>
+          <div className={`flight-main-card important-info-card ${isImportantInfoExpanded ? "is-expanded" : "is-collapsed"}`}>
+            <div
+              className="important-info-header"
+              onClick={() => setIsImportantInfoExpanded(prev => !prev)}
+              role="button"
+              tabIndex={0}
+              aria-expanded={isImportantInfoExpanded}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsImportantInfoExpanded(prev => !prev);
+                }
+              }}
+            >
+              <div className="important-info-title-wrap">
+                <Info size={20} className="header-icon" />
+                <span className="important-info-title">Important Information</span>
+              </div>
+              <ChevronDown
+                size={20}
+                className={`important-info-chevron ${isImportantInfoExpanded ? "rotated" : ""}`}
+                aria-hidden="true"
+              />
+            </div>
 
-                <div className="info-section">
-                  <h4 className="info-section-title">Baggage Rules</h4>
-                  <ul className="info-list">
-                    <li><strong>Cabin and check-in baggage:</strong> Allowances are supplied by the selected TicketLCC fare and shown with the live fare details.</li>
-                    <li>Prohibited items (like power banks, batteries, liquids above 100ml) must not be carried in check-in baggage.</li>
-                  </ul>
-                </div>
+            {isImportantInfoExpanded && (
+              <div className="important-info-content">
+                <div className="info-grid">
+                  <div className="info-section">
+                    <h4 className="info-section-title">Travel Guidelines</h4>
+                    <ul className="info-list">
+                      <li>Carry a valid government-issued Photo ID (Aadhaar, Passport, Driving License, or Voter ID).</li>
+                      <li>For international travel, make sure your passport is valid for at least 6 months and you have all required visas.</li>
+                      <li>Report at the airport at least 2 hours before domestic departures and 3 hours before international departures.</li>
+                    </ul>
+                  </div>
 
-                <div className="info-section">
-                  <h4 className="info-section-title">Boarding Pass & Check-in</h4>
-                  <ul className="info-list">
-                    <li><strong>Web Check-in:</strong> Mandated by airlines. Web check-in opens 48 hours to 60 minutes before departure.</li>
-                    <li>Boarding pass will be generated after successful check-in. You can download or print it before arriving at the airport.</li>
-                    <li>Alternatively, boarding passes can be collected at the airline's airport check-in counter (fees may apply).</li>
-                  </ul>
-                </div>
+                  <div className="info-section">
+                    <h4 className="info-section-title">Baggage Rules</h4>
+                    <ul className="info-list">
+                      <li><strong>Cabin and check-in baggage:</strong> Allowances are supplied by the selected TicketLCC fare and shown with the live fare details.</li>
+                      <li>Prohibited items (like power banks, batteries, liquids above 100ml) must not be carried in check-in baggage.</li>
+                    </ul>
+                  </div>
 
-                <div className="info-section">
-                  <h4 className="info-section-title">Unaccompanied Minors</h4>
-                  <ul className="info-list">
-                    <li>Children aged 5–12 years traveling alone are classified as Unaccompanied Minors.</li>
-                    <li>Direct booking and separate coordination with the airline is required to request escort services.</li>
-                    <li>Special forms and parent/guardian contact details must be provided at the airport check-in counter.</li>
-                  </ul>
+                  <div className="info-section">
+                    <h4 className="info-section-title">Boarding Pass & Check-in</h4>
+                    <ul className="info-list">
+                      <li><strong>Web Check-in:</strong> Mandated by airlines. Web check-in opens 48 hours to 60 minutes before departure.</li>
+                      <li>Boarding pass will be generated after successful check-in. You can download or print it before arriving at the airport.</li>
+                      <li>Alternatively, boarding passes can be collected at the airline's airport check-in counter (fees may apply).</li>
+                    </ul>
+                  </div>
+
+                  <div className="info-section">
+                    <h4 className="info-section-title">Unaccompanied Minors</h4>
+                    <ul className="info-list">
+                      <li>Children aged 5–12 years traveling alone are classified as Unaccompanied Minors.</li>
+                      <li>Direct booking and separate coordination with the airline is required to request escort services.</li>
+                      <li>Special forms and parent/guardian contact details must be provided at the airport check-in counter.</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flight-main-card">

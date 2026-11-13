@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Twitter, Instagram, Youtube, Linkedin, Building2, Send, Lock } from "lucide-react";
+import { Mail, MapPin, Phone, PhoneCall, X, ArrowLeft, Calendar, Tag, ShieldCheck, Bus, Plane, Sparkles, User, Bed, Headphones, Twitter, Facebook, Instagram, Youtube, Linkedin, Building2, Send, Lock } from "lucide-react";
 import "../../STYLES/SiteFooter.css";
 import {
   TERMS_CONDITIONS_TEXT,
@@ -179,6 +179,23 @@ export default function SiteFooter() {
     }
   };
 
+  const getSocialLink = (platformName, defaultUrl) => {
+    if (footerConfig?.socialLinks && Array.isArray(footerConfig.socialLinks)) {
+      const found = footerConfig.socialLinks.find(
+        (link) =>
+          String(link?.platform || link?.id || "").toLowerCase().includes(platformName.toLowerCase())
+      );
+      if (found?.url && typeof found.url === "string" && found.url.trim() && found.url.trim() !== "#") {
+        return found.url.trim();
+      }
+    }
+    return defaultUrl;
+  };
+
+  const instagramUrl = getSocialLink("instagram", "https://instagram.com");
+  const facebookUrl = getSocialLink("facebook", "https://facebook.com");
+  const youtubeUrl = getSocialLink("youtube", "https://youtube.com");
+  const linkedinUrl = getSocialLink("linkedin", "https://linkedin.com");
 
   return (
     <footer className="pnb-site-footer">
@@ -262,6 +279,15 @@ export default function SiteFooter() {
                 <span>Quick Links</span>
               </h4>
               <ul className="pnb-col-links-list">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigate("/about-us")}
+                    className="pnb-footer-link"
+                  >
+                    <span className="pnb-link-chevron">›</span> About Us
+                  </button>
+                </li>
                 <li>
                   <button
                     type="button"
@@ -416,7 +442,7 @@ export default function SiteFooter() {
             <span className="pnb-pill-label">Follow Us:</span>
             <div className="pnb-social-circles-row">
               <a
-                href="https://instagram.com"
+                href={instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="pnb-social-circle pnb-ig-circle"
@@ -425,7 +451,16 @@ export default function SiteFooter() {
                 <Instagram size={17} color="#ffffff" />
               </a>
               <a
-                href="https://youtube.com"
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pnb-social-circle pnb-fb-circle"
+                title="Facebook"
+              >
+                <Facebook size={17} color="#ffffff" fill="#ffffff" />
+              </a>
+              <a
+                href={youtubeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="pnb-social-circle pnb-yt-circle"
@@ -434,7 +469,7 @@ export default function SiteFooter() {
                 <Youtube size={17} color="#ffffff" />
               </a>
               <a
-                href="https://linkedin.com"
+                href={linkedinUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="pnb-social-circle pnb-li-circle"

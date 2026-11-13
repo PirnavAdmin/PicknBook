@@ -638,7 +638,23 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                           <CalendarDays size={18} />
                           <input type="text" readOnly value={toDisplayDate(leg.departureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                         </div>
-                        <CustomDatePicker isOpen={activeDatePicker === `leg-dep-${leg.id}`} onClose={() => setActiveDatePicker(null)} value={leg.departureDate} minDate={getDefaultDateString(0)} onChange={(v) => { updateMultiCityLeg(leg.id, "departureDate", v); setActiveDatePicker(null); }} />
+                        <CustomDatePicker
+                          isOpen={activeDatePicker === `leg-dep-${leg.id}`}
+                          onClose={() => setActiveDatePicker(null)}
+                          value={leg.departureDate}
+                          minDate={getDefaultDateString(0)}
+                          from={leg.from}
+                          to={leg.to}
+                          travelClass={cabinClass}
+                          adults={adults}
+                          children={children}
+                          infants={infants}
+                          isFlight={true}
+                          onChange={(v) => {
+                            updateMultiCityLeg(leg.id, "departureDate", v);
+                            setActiveDatePicker(null);
+                          }}
+                        />
                       </div>
                       <div className="multi-actions">
                         <button type="button" className="action-circle action-add" onClick={addMultiCityLeg} title="Add row"><Plus size={16} /></button>
@@ -664,7 +680,23 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                       <CalendarDays size={18} />
                       <input type="text" readOnly value={toDisplayDate(flightDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                     </div>
-                    <CustomDatePicker isOpen={activeDatePicker === "flight-dep"} onClose={() => setActiveDatePicker(null)} value={flightDepartureDate} minDate={getDefaultDateString(0)} onChange={(v) => { setFlightDepartureDate(v); setActiveDatePicker(null); }} />
+                    <CustomDatePicker
+                      isOpen={activeDatePicker === "flight-dep"}
+                      onClose={() => setActiveDatePicker(null)}
+                      value={flightDepartureDate}
+                      minDate={getDefaultDateString(0)}
+                      from={flightFrom}
+                      to={flightTo}
+                      travelClass={cabinClass}
+                      adults={adults}
+                      children={children}
+                      infants={infants}
+                      isFlight={true}
+                      onChange={(v) => {
+                        setFlightDepartureDate(v);
+                        setActiveDatePicker(null);
+                      }}
+                    />
                   </div>
                   {isFlightTwoWay && (
                     <div className="field field-with-icon return-field" style={{ position: "relative", flex: 1, minWidth: 0 }}>
@@ -673,7 +705,24 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                         <CalendarDays size={18} />
                         <input type="text" readOnly value={toDisplayDate(flightReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                       </div>
-                      <CustomDatePicker isOpen={activeDatePicker === "flight-ret"} onClose={() => setActiveDatePicker(null)} value={flightReturnDate} minDate={flightDepartureDate || getDefaultDateString(0)} onChange={(v) => { setFlightReturnDate(v); setActiveDatePicker(null); }} align="right" />
+                      <CustomDatePicker
+                        isOpen={activeDatePicker === "flight-ret"}
+                        onClose={() => setActiveDatePicker(null)}
+                        value={flightReturnDate}
+                        minDate={flightDepartureDate || getDefaultDateString(0)}
+                        from={flightTo}
+                        to={flightFrom}
+                        travelClass={cabinClass}
+                        adults={adults}
+                        children={children}
+                        infants={infants}
+                        isFlight={true}
+                        onChange={(v) => {
+                          setFlightReturnDate(v);
+                          setActiveDatePicker(null);
+                        }}
+                        align="right"
+                      />
                     </div>
                   )}
                   {travellerField}
@@ -698,7 +747,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(busDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <CustomDatePicker isOpen={activeDatePicker === "bus-dep"} onClose={() => setActiveDatePicker(null)} value={busDepartureDate} minDate={getDefaultDateString(0)} onChange={(v) => { setBusDepartureDate(v); setActiveDatePicker(null); }} />
+                  <CustomDatePicker isOpen={activeDatePicker === "bus-dep"} onClose={() => setActiveDatePicker(null)} value={busDepartureDate} minDate={getDefaultDateString(0)} isFlight={false} onChange={(v) => { setBusDepartureDate(v); setActiveDatePicker(null); }} />
                 </div>
                 {isBusTwoWay && (
                   <div className="field field-with-icon return-field" style={{ position: "relative" }}>
@@ -707,7 +756,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                       <CalendarDays size={18} />
                       <input type="text" readOnly value={toDisplayDate(busReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                     </div>
-                    <CustomDatePicker isOpen={activeDatePicker === "bus-ret"} onClose={() => setActiveDatePicker(null)} value={busReturnDate} minDate={busDepartureDate || getDefaultDateString(0)} onChange={(v) => { setBusReturnDate(v); setActiveDatePicker(null); }} align="right" />
+                    <CustomDatePicker isOpen={activeDatePicker === "bus-ret"} onClose={() => setActiveDatePicker(null)} value={busReturnDate} minDate={busDepartureDate || getDefaultDateString(0)} isFlight={false} onChange={(v) => { setBusReturnDate(v); setActiveDatePicker(null); }} align="right" />
                   </div>
                 )}
               </div>
@@ -725,7 +774,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(hotelCheckInDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <CustomDatePicker isOpen={activeDatePicker === "hotel-ci"} onClose={() => setActiveDatePicker(null)} value={hotelCheckInDate} minDate={getDefaultDateString(0)} onChange={(v) => { setHotelCheckInDate(v); setActiveDatePicker(null); if (!hotelCheckOutDate || hotelCheckOutDate <= v) { const d = new Date(v); d.setDate(d.getDate() + 1); const yyyy = d.getFullYear(); const mm = String(d.getMonth() + 1).padStart(2, "0"); const dd = String(d.getDate()).padStart(2, "0"); setHotelCheckOutDate(`${yyyy}-${mm}-${dd}`); } }} />
+                  <CustomDatePicker isOpen={activeDatePicker === "hotel-ci"} onClose={() => setActiveDatePicker(null)} value={hotelCheckInDate} minDate={getDefaultDateString(0)} isFlight={false} onChange={(v) => { setHotelCheckInDate(v); setActiveDatePicker(null); if (!hotelCheckOutDate || hotelCheckOutDate <= v) { const d = new Date(v); d.setDate(d.getDate() + 1); const yyyy = d.getFullYear(); const mm = String(d.getMonth() + 1).padStart(2, "0"); const dd = String(d.getDate()).padStart(2, "0"); setHotelCheckOutDate(`${yyyy}-${mm}-${dd}`); } }} />
                 </div>
                 <div className="field field-with-icon checkout-field" style={{ position: "relative" }}>
                   <label>Check-out</label>
@@ -733,7 +782,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(hotelCheckOutDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <CustomDatePicker isOpen={activeDatePicker === "hotel-co"} onClose={() => setActiveDatePicker(null)} value={hotelCheckOutDate} minDate={hotelCheckInDate || getDefaultDateString(0)} onChange={(v) => { setHotelCheckOutDate(v); setActiveDatePicker(null); }} align="right" />
+                  <CustomDatePicker isOpen={activeDatePicker === "hotel-co"} onClose={() => setActiveDatePicker(null)} value={hotelCheckOutDate} minDate={hotelCheckInDate || getDefaultDateString(0)} isFlight={false} onChange={(v) => { setHotelCheckOutDate(v); setActiveDatePicker(null); }} align="right" />
                 </div>
                 {hotelGuestField}
               </div>

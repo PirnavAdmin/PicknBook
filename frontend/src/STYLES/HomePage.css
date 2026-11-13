@@ -807,6 +807,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -851,6 +852,7 @@
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -891,9 +893,11 @@
 .place-dropdown-list::-webkit-scrollbar {
   width: 5px;
 }
+
 .place-dropdown-list::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .place-dropdown-list::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
@@ -3818,8 +3822,13 @@ select.field-control option {
 }
 
 @keyframes faqBackdropIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .faq-modal {
@@ -3837,8 +3846,15 @@ select.field-control option {
 }
 
 @keyframes faqModalSlideUp {
-  from { opacity: 0; transform: translateY(32px) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .faq-modal-header {
@@ -3926,7 +3942,7 @@ select.field-control option {
   overflow: hidden;
 }
 
-.faq-modal-category > summary {
+.faq-modal-category>summary {
   min-height: 68px;
   padding: 12px 16px;
   display: flex;
@@ -3938,7 +3954,7 @@ select.field-control option {
   transition: background-color 0.15s ease;
 }
 
-.faq-modal-category > summary::-webkit-details-marker {
+.faq-modal-category>summary::-webkit-details-marker {
   display: none;
 }
 
@@ -3953,7 +3969,7 @@ select.field-control option {
   color: #dc2626;
 }
 
-.faq-modal-category > summary::after {
+.faq-modal-category>summary::after {
   content: "⌄";
   order: 3;
   color: #64748b;
@@ -3962,11 +3978,11 @@ select.field-control option {
   transition: transform 0.2s ease, color 0.2s ease;
 }
 
-.faq-modal-category[open] > summary {
+.faq-modal-category[open]>summary {
   background: #fff7f7;
 }
 
-.faq-modal-category[open] > summary::after {
+.faq-modal-category[open]>summary::after {
   color: #dc2626;
   transform: rotate(180deg);
 }
@@ -4041,13 +4057,14 @@ select.field-control option {
     max-height: calc(100dvh - 24px);
     border-radius: 16px;
   }
+
   .faq-modal-header,
   .faq-modal-body {
     padding-left: 18px;
     padding-right: 18px;
   }
 
-  .faq-modal-category > summary {
+  .faq-modal-category>summary {
     min-height: 62px;
     padding: 10px 12px;
   }
@@ -7245,7 +7262,9 @@ select.field-control option {
   0% {
     transform: translateX(0);
   }
+
   100% {
+    transform: translateX(calc(-50% - (var(--bus-marquee-gap, 20px) / 2)));
     transform: translateX(calc(-50% - 11.5px));
   }
 }
@@ -7254,12 +7273,15 @@ select.field-control option {
   width: 100%;
   overflow: hidden;
   position: relative;
+  padding: 10px 0 16px 0;
   padding: 12px 6px 20px;
 }
 
 .pop-bus-cards-track.pop-bus-marquee-track {
   display: flex !important;
   width: max-content !important;
+  gap: var(--bus-marquee-gap, 20px) !important;
+  animation: pop-bus-marquee-scroll var(--bus-marquee-duration, 30s) linear infinite !important;
   gap: 23px !important;
   animation: pop-bus-marquee-scroll var(--bus-marquee-duration, 40s) linear infinite !important;
   will-change: transform;
@@ -10855,6 +10877,7 @@ button:focus-visible {
 .img-offer-card.theme-hotel {
   border-color: #fce7f3 !important;
 }
+
 .img-offer-card.theme-bus:hover,
 .img-offer-card.theme-flight:hover,
 .img-offer-card.theme-hotel:hover {
@@ -10910,7 +10933,9 @@ button:focus-visible {
 
 .img-offer-corner-badge.badge-bus,
 .img-offer-corner-badge.badge-flight,
-.img-offer-corner-badge.badge-hotel { background: #dc1e26 !important; }
+.img-offer-corner-badge.badge-hotel {
+  background: #dc1e26 !important;
+}
 
 /* S-Curve SVG */
 .img-offer-divider-svg {
@@ -10950,7 +10975,10 @@ button:focus-visible {
 
 .img-offer-cat-circle.circle-flight,
 .img-offer-cat-circle.circle-hotel,
-.img-offer-cat-circle.circle-bus { background: #ffe4e6 !important; color: #dc1e26 !important; }
+.img-offer-cat-circle.circle-bus {
+  background: #ffe4e6 !important;
+  color: #dc1e26 !important;
+}
 
 .img-offer-cat-text {
   font-size: 0.55rem !important;
@@ -10964,7 +10992,9 @@ button:focus-visible {
 
 .img-offer-cat-text.text-flight,
 .img-offer-cat-text.text-hotel,
-.img-offer-cat-text.text-bus { color: #dc1e26 !important; }
+.img-offer-cat-text.text-bus {
+  color: #dc1e26 !important;
+}
 
 .img-offer-title {
   font-size: 0.98rem !important;
@@ -11014,10 +11044,16 @@ button:focus-visible {
 
 .img-offer-grab-btn.btn-flight,
 .img-offer-grab-btn.btn-hotel,
-.img-offer-grab-btn.btn-bus { background: #dc1e26 !important; box-shadow: 0 3px 8px rgba(220, 30, 38, 0.35) !important; }
+.img-offer-grab-btn.btn-bus {
+  background: #dc1e26 !important;
+  box-shadow: 0 3px 8px rgba(220, 30, 38, 0.35) !important;
+}
+
 .img-offer-grab-btn.btn-flight:hover,
 .img-offer-grab-btn.btn-hotel:hover,
-.img-offer-grab-btn.btn-bus:hover { background: #b8141b !important; }
+.img-offer-grab-btn.btn-bus:hover {
+  background: #b8141b !important;
+}
 
 /* ==========================================================================
    FEATURED OFFERS - WAVY / CURVED S-SHAPE CARD DESIGN (User Mockup)
@@ -11404,11 +11440,13 @@ button:focus-visible {
     align-items: flex-start !important;
     gap: 16px !important;
   }
+
   .bus-offers-tabs-bar {
     width: 100% !important;
     overflow-x: auto !important;
     padding-bottom: 4px !important;
   }
+
   .bus-offers-view-all {
     align-self: flex-start !important;
   }
@@ -12473,7 +12511,7 @@ button:focus-visible {
   font-size: 0.90rem;
   font-weight: 700;
   color: #ffffff;
-  text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
   letter-spacing: 0.01em;
 }
 
@@ -12482,8 +12520,8 @@ button:focus-visible {
   font-style: italic;
   font-size: 0.80rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.9);
-  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Flight Booking Card (modern white card, no dark phone bezel) */
@@ -12608,13 +12646,11 @@ button:focus-visible {
   position: absolute;
   inset: 0;
   border-radius: 20px;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.94) 0%,
-    rgba(0, 0, 0, 0.82) 34%,
-    rgba(0, 0, 0, 0.30) 54%,
-    rgba(0, 0, 0, 0) 74%
-  );
+  background: linear-gradient(90deg,
+      rgba(0, 0, 0, 0.94) 0%,
+      rgba(0, 0, 0, 0.82) 34%,
+      rgba(0, 0, 0, 0.30) 54%,
+      rgba(0, 0, 0, 0) 74%);
 }
 
 .td-hotel-overlay-text {
@@ -12644,7 +12680,8 @@ button:focus-visible {
   font-style: italic;
   font-size: 1.25rem;
   font-weight: 800;
-  color: #f59e0b; /* warm gold */
+  color: #f59e0b;
+  /* warm gold */
   line-height: 1.15;
   margin: 3px 0 8px 0;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
@@ -13020,20 +13057,16 @@ button:focus-visible {
   position: relative !important;
   padding: 10px 0 16px 0 !important;
   outline: none !important;
-  mask-image: linear-gradient(
-    to right,
-    transparent 0px,
-    black 70px,
-    black calc(100% - 50px),
-    transparent 100%
-  ) !important;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0px,
-    black 70px,
-    black calc(100% - 50px),
-    transparent 100%
-  ) !important;
+  mask-image: linear-gradient(to right,
+      transparent 0px,
+      black 70px,
+      black calc(100% - 50px),
+      transparent 100%) !important;
+  -webkit-mask-image: linear-gradient(to right,
+      transparent 0px,
+      black 70px,
+      black calc(100% - 50px),
+      transparent 100%) !important;
 }
 
 .client-testimonials-status {
@@ -13366,13 +13399,11 @@ button:focus-visible {
 .intercity-banner-overlay {
   position: absolute !important;
   inset: 0 !important;
-  background: linear-gradient(
-    90deg,
-    rgba(7, 16, 30, 0.52) 0%,
-    rgba(7, 16, 30, 0.40) 30%,
-    rgba(7, 16, 30, 0.14) 52%,
-    rgba(7, 16, 30, 0) 70%
-  ) !important;
+  background: linear-gradient(90deg,
+      rgba(7, 16, 30, 0.52) 0%,
+      rgba(7, 16, 30, 0.40) 30%,
+      rgba(7, 16, 30, 0.14) 52%,
+      rgba(7, 16, 30, 0) 70%) !important;
   z-index: 2 !important;
   pointer-events: none !important;
   border-radius: 26px !important;
@@ -13481,9 +13512,11 @@ button:focus-visible {
   0% {
     transform: translate(0px, 0px);
   }
+
   50% {
     transform: translate(8px, -10px);
   }
+
   100% {
     transform: translate(0px, 0px);
   }
@@ -13491,10 +13524,13 @@ button:focus-visible {
 
 /* Subtle breathing glow on badge circles */
 @keyframes statIconPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   }
+
   50% {
     transform: scale(1.08);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
@@ -13584,9 +13620,11 @@ button:focus-visible {
     0% {
       transform: translate(0px, 0px);
     }
+
     50% {
       transform: translate(6px, -6px);
     }
+
     100% {
       transform: translate(0px, 0px);
     }
@@ -13599,12 +13637,15 @@ button:focus-visible {
     flex-direction: column !important;
     align-items: flex-start !important;
   }
+
   .intercity-banner-overlay {
     background: rgba(7, 16, 30, 0.55) !important;
   }
+
   .intercity-banner-content {
     padding: 30px 24px 16px 24px !important;
   }
+
   .intercity-animated-stats-pill {
     margin: 0 0 24px 24px !important;
   }
@@ -13617,6 +13658,7 @@ button:focus-visible {
     gap: 14px !important;
     padding: 12px 18px !important;
   }
+
   .intercity-stat-vsep {
     display: none !important;
   }
@@ -13653,13 +13695,11 @@ button:focus-visible {
 .world-class-banner-overlay {
   position: absolute !important;
   inset: 0 !important;
-  background: linear-gradient(
-    90deg,
-    rgba(14, 23, 38, 0.96) 0%,
-    rgba(14, 23, 38, 0.90) 36%,
-    rgba(14, 23, 38, 0.60) 65%,
-    rgba(14, 23, 38, 0.22) 100%
-  ) !important;
+  background: linear-gradient(90deg,
+      rgba(14, 23, 38, 0.96) 0%,
+      rgba(14, 23, 38, 0.90) 36%,
+      rgba(14, 23, 38, 0.60) 65%,
+      rgba(14, 23, 38, 0.22) 100%) !important;
   z-index: 2 !important;
   pointer-events: none !important;
 }
@@ -14221,853 +14261,853 @@ button:focus-visible {
   }
 }
 
-  /* ==========================================================================
+/* ==========================================================================
    MODERN MOBILE APP DOWNLOAD CARD REDESIGN
    ========================================================================== */
-  .india-app-card {
-    background: linear-gradient(135deg, #0b1728 0%, #1e293b 60%, #0f1d31 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 28px !important;
-    padding: 32px 38px !important;
-    box-shadow: 0 24px 60px rgba(11, 23, 40, 0.35) !important;
-    display: grid !important;
-    grid-template-columns: 90px minmax(0, 1fr) minmax(420px, 0.85fr) !important;
-    align-items: center !important;
-    gap: 24px !important;
-    box-sizing: border-box !important;
-  }
+.india-app-card {
+  background: linear-gradient(135deg, #0b1728 0%, #1e293b 60%, #0f1d31 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 28px !important;
+  padding: 32px 38px !important;
+  box-shadow: 0 24px 60px rgba(11, 23, 40, 0.35) !important;
+  display: grid !important;
+  grid-template-columns: 90px minmax(0, 1fr) minmax(420px, 0.85fr) !important;
+  align-items: center !important;
+  gap: 24px !important;
+  box-sizing: border-box !important;
+}
 
-  .india-app-mark {
-    width: 90px !important;
-    height: 90px !important;
-    border-radius: 22px !important;
-    background: linear-gradient(135deg, #dc1e26 0%, #b8141b 100%) !important;
-    box-shadow: 0 12px 28px rgba(220, 30, 38, 0.45) !important;
-    display: grid !important;
-    place-items: center !important;
-    position: relative !important;
-  }
+.india-app-mark {
+  width: 90px !important;
+  height: 90px !important;
+  border-radius: 22px !important;
+  background: linear-gradient(135deg, #dc1e26 0%, #b8141b 100%) !important;
+  box-shadow: 0 12px 28px rgba(220, 30, 38, 0.45) !important;
+  display: grid !important;
+  place-items: center !important;
+  position: relative !important;
+}
 
-  .india-app-mark svg {
-    transform: translateY(-6px) !important;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) !important;
-  }
+.india-app-mark svg {
+  transform: translateY(-6px) !important;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) !important;
+}
 
-  .india-app-mark span {
-    bottom: 12px !important;
-    font-size: 0.72rem !important;
-    font-weight: 900 !important;
-    letter-spacing: 0.1em !important;
-    color: #ffffff !important;
-  }
+.india-app-mark span {
+  bottom: 12px !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.1em !important;
+  color: #ffffff !important;
+}
 
-  .india-app-copy .section-kicker {
-    color: #ff4d56 !important;
-    font-size: 0.72rem !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.08em !important;
-    margin-bottom: 4px !important;
-  }
+.india-app-copy .section-kicker {
+  color: #ff4d56 !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  margin-bottom: 4px !important;
+}
 
-  .india-app-copy h2 {
-    color: #ffffff !important;
-    font-size: clamp(1.6rem, 2.2vw, 2.1rem) !important;
-    font-weight: 900 !important;
-    margin: 4px 0 6px 0 !important;
-    line-height: 1.2 !important;
-  }
+.india-app-copy h2 {
+  color: #ffffff !important;
+  font-size: clamp(1.6rem, 2.2vw, 2.1rem) !important;
+  font-weight: 900 !important;
+  margin: 4px 0 6px 0 !important;
+  line-height: 1.2 !important;
+}
 
-  .india-app-copy p {
-    color: #94a3b8 !important;
-    font-size: 0.88rem !important;
-    line-height: 1.55 !important;
-    margin: 0 !important;
-  }
+.india-app-copy p {
+  color: #94a3b8 !important;
+  font-size: 0.88rem !important;
+  line-height: 1.55 !important;
+  margin: 0 !important;
+}
 
-  .india-offer-chip {
-    margin-top: 14px !important;
-    display: inline-block !important;
-    background: rgba(220, 30, 38, 0.18) !important;
-    border: 1px dashed #ff4d56 !important;
-    color: #ff4d56 !important;
-    border-radius: 12px !important;
-    padding: 6px 14px !important;
-    font-size: 0.78rem !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.04em !important;
-  }
+.india-offer-chip {
+  margin-top: 14px !important;
+  display: inline-block !important;
+  background: rgba(220, 30, 38, 0.18) !important;
+  border: 1px dashed #ff4d56 !important;
+  color: #ff4d56 !important;
+  border-radius: 12px !important;
+  padding: 6px 14px !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+}
 
-  .india-app-benefits li {
-    color: #cbd5e1 !important;
-    font-size: 0.84rem !important;
-    font-weight: 600 !important;
-  }
+.india-app-benefits li {
+  color: #cbd5e1 !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+}
 
-  .india-app-benefits li::before {
-    background: #dc1e26 !important;
-    box-shadow: 0 0 8px rgba(220, 30, 38, 0.8) !important;
-  }
+.india-app-benefits li::before {
+  background: #dc1e26 !important;
+  box-shadow: 0 0 8px rgba(220, 30, 38, 0.8) !important;
+}
 
-  .india-app-qr {
-    background: rgba(255, 255, 255, 0.96) !important;
-    border-radius: 18px !important;
-    padding: 10px 14px !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25) !important;
-    border: 1px solid #ffffff !important;
-  }
+.india-app-qr {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border-radius: 18px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid #ffffff !important;
+}
 
-  .india-app-qr-code {
-    border-color: #e2e8f0 !important;
-  }
+.india-app-qr-code {
+  border-color: #e2e8f0 !important;
+}
 
-  .india-app-qr-code span.filled {
-    background: #0f172a !important;
-  }
+.india-app-qr-code span.filled {
+  background: #0f172a !important;
+}
 
-  .india-app-qr strong {
-    color: #0f172a !important;
-  }
+.india-app-qr strong {
+  color: #0f172a !important;
+}
 
-  .india-app-qr span {
-    color: #64748b !important;
-  }
+.india-app-qr span {
+  color: #64748b !important;
+}
 
-  .store-badge {
-    transition: transform 0.25s ease !important;
-  }
+.store-badge {
+  transition: transform 0.25s ease !important;
+}
 
-  .store-badge:hover {
-    transform: translateY(-3px) !important;
-  }
+.store-badge:hover {
+  transform: translateY(-3px) !important;
+}
 
-  /* ==========================================================================
+/* ==========================================================================
    POPULAR HOTEL CARDS & MARQUEE - COMPACT (NO EMPTY SPACE)
    ========================================================================== */
-  .hotel-routes-marquee .marquee-track {
-    align-items: flex-start !important;
-  }
+.hotel-routes-marquee .marquee-track {
+  align-items: flex-start !important;
+}
 
-  .hotel-routes-marquee .marquee-slide {
-    height: auto !important;
-    align-self: flex-start !important;
-  }
+.hotel-routes-marquee .marquee-slide {
+  height: auto !important;
+  align-self: flex-start !important;
+}
 
-  .pop-hotel-card {
-    width: 170px !important;
-    min-width: 170px !important;
-    height: auto !important;
-    min-height: unset !important;
-    max-height: none !important;
-    background: #ffffff !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-start !important;
-    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
-  }
+.pop-hotel-card {
+  width: 170px !important;
+  min-width: 170px !important;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: none !important;
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
 
-  .pop-hotel-card:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
-    border-color: #cbd5e1 !important;
-  }
+.pop-hotel-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1) !important;
+  border-color: #cbd5e1 !important;
+}
 
-  .pop-hotel-card .pop-route-img-wrap {
-    position: relative !important;
-    width: 100% !important;
-    height: 85px !important;
-    background-color: #1e293b !important;
-    overflow: hidden !important;
-    display: block !important;
-    flex: 0 0 85px !important;
-  }
+.pop-hotel-card .pop-route-img-wrap {
+  position: relative !important;
+  width: 100% !important;
+  height: 85px !important;
+  background-color: #1e293b !important;
+  overflow: hidden !important;
+  display: block !important;
+  flex: 0 0 85px !important;
+}
 
-  .pop-hotel-card .pop-route-img-wrap img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center !important;
-    display: block !important;
-    transition: transform 0.4s ease !important;
-  }
+.pop-hotel-card .pop-route-img-wrap img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+  transition: transform 0.4s ease !important;
+}
 
-  .pop-hotel-card:hover .pop-route-img-wrap img {
-    transform: scale(1.05) !important;
-  }
+.pop-hotel-card:hover .pop-route-img-wrap img {
+  transform: scale(1.05) !important;
+}
 
-  .pop-hotel-card .pop-route-img-overlay {
-    position: absolute !important;
-    top: 6px !important;
-    right: 6px !important;
-    bottom: auto !important;
-    left: auto !important;
-    padding: 0 !important;
-    background: none !important;
-    z-index: 2 !important;
-  }
+.pop-hotel-card .pop-route-img-overlay {
+  position: absolute !important;
+  top: 6px !important;
+  right: 6px !important;
+  bottom: auto !important;
+  left: auto !important;
+  padding: 0 !important;
+  background: none !important;
+  z-index: 2 !important;
+}
 
-  .pop-hotel-card .pop-route-tag-search {
-    display: inline-block !important;
-    background: rgba(220, 30, 38, 0.9) !important;
-    color: #ffffff !important;
-    font-size: 0.52rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.05em !important;
-    padding: 2px 7px !important;
-    border-radius: 20px !important;
-    backdrop-filter: blur(4px) !important;
-    text-transform: uppercase !important;
-  }
+.pop-hotel-card .pop-route-tag-search {
+  display: inline-block !important;
+  background: rgba(220, 30, 38, 0.9) !important;
+  color: #ffffff !important;
+  font-size: 0.52rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  padding: 2px 7px !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(4px) !important;
+  text-transform: uppercase !important;
+}
 
-  .pop-hotel-card .pop-route-body {
-    padding: 6px 9px 3px 9px !important;
-    flex: 0 0 auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-start !important;
-    margin: 0 !important;
-  }
+.pop-hotel-card .pop-route-body {
+  padding: 6px 9px 3px 9px !important;
+  flex: 0 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  margin: 0 !important;
+}
 
-  .pop-hotel-card .pop-hotel-name {
-    margin: 0 !important;
-    font-weight: 700 !important;
-    font-size: 0.74rem !important;
-    line-height: 1.25 !important;
-    color: #0f172a !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
+.pop-hotel-card .pop-hotel-name {
+  margin: 0 !important;
+  font-weight: 700 !important;
+  font-size: 0.74rem !important;
+  line-height: 1.25 !important;
+  color: #0f172a !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
 
-  .pop-hotel-card .pop-hotel-sub {
-    margin: 2px 0 0 0 !important;
-    font-size: 0.62rem !important;
-    line-height: 1.2 !important;
-    color: #64748b !important;
-    font-weight: 500 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
+.pop-hotel-card .pop-hotel-sub {
+  margin: 2px 0 0 0 !important;
+  font-size: 0.62rem !important;
+  line-height: 1.2 !important;
+  color: #64748b !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
 
-  .pop-hotel-card .pop-route-book-btn {
-    margin-top: 4px !important;
-    padding: 5px 0 !important;
-    font-size: 0.62rem !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.05em !important;
-    border-radius: 0 0 12px 12px !important;
-    width: 100% !important;
-    flex: 0 0 auto !important;
-  }
+.pop-hotel-card .pop-route-book-btn {
+  margin-top: 4px !important;
+  padding: 5px 0 !important;
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  border-radius: 0 0 12px 12px !important;
+  width: 100% !important;
+  flex: 0 0 auto !important;
+}
 
-  /* ==========================================================================
+/* ==========================================================================
    ASSURANCE PARAGRAPH CARD FORMAT (BACKGROUND CONTAINER)
    ========================================================================== */
+.assurance-section {
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 8px auto 14px auto !important;
+  box-sizing: border-box !important;
+}
+
+.assurance-paragraph-card {
+  width: 100% !important;
+  background: #ffffff !important;
+  border-radius: 14px !important;
+  padding: 16px 24px !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
+  border: 1px solid #e2e8f0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+
+.assurance-paragraph-card:hover {
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08) !important;
+  border-color: #cbd5e1 !important;
+}
+
+.assurance-paragraph-header {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-bottom: 8px !important;
+}
+
+.assurance-paragraph-header .assurance-badge {
+  align-self: flex-start !important;
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #2563eb !important;
+  font-size: 0.65rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  padding: 3px 10px !important;
+  border-radius: 9999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  text-transform: uppercase !important;
+}
+
+.assurance-paragraph-title {
+  font-size: 1.18rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+  letter-spacing: -0.015em !important;
+  line-height: 1.25 !important;
+}
+
+.assurance-paragraph-text {
+  font-size: 0.82rem !important;
+  line-height: 1.5 !important;
+  color: #475569 !important;
+  margin: 0 !important;
+  font-weight: 400 !important;
+}
+
+@media (max-width: 768px) {
   .assurance-section {
-    width: 100% !important;
-    padding: 0 !important;
-    margin: 8px auto 14px auto !important;
-    box-sizing: border-box !important;
+    margin: 6px auto 10px auto !important;
   }
 
   .assurance-paragraph-card {
-    width: 100% !important;
-    background: #ffffff !important;
-    border-radius: 14px !important;
-    padding: 16px 24px !important;
-    color: #0f172a !important;
-    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02) !important;
-    border: 1px solid #e2e8f0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    position: relative !important;
-    overflow: hidden !important;
-    transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
-  }
-
-  .assurance-paragraph-card:hover {
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08) !important;
-    border-color: #cbd5e1 !important;
-  }
-
-  .assurance-paragraph-header {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-    margin-bottom: 8px !important;
-  }
-
-  .assurance-paragraph-header .assurance-badge {
-    align-self: flex-start !important;
-    background: #eff6ff !important;
-    border: 1px solid #bfdbfe !important;
-    color: #2563eb !important;
-    font-size: 0.65rem !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.05em !important;
-    padding: 3px 10px !important;
-    border-radius: 9999px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-    text-transform: uppercase !important;
+    padding: 14px 16px !important;
+    border-radius: 12px !important;
   }
 
   .assurance-paragraph-title {
-    font-size: 1.18rem !important;
-    font-weight: 800 !important;
-    color: #0f172a !important;
-    margin: 0 !important;
-    letter-spacing: -0.015em !important;
-    line-height: 1.25 !important;
+    font-size: 1.05rem !important;
   }
 
   .assurance-paragraph-text {
-    font-size: 0.82rem !important;
-    line-height: 1.5 !important;
-    color: #475569 !important;
-    margin: 0 !important;
-    font-weight: 400 !important;
+    font-size: 0.78rem !important;
+    line-height: 1.45 !important;
   }
+}
 
-  @media (max-width: 768px) {
-    .assurance-section {
-      margin: 6px auto 10px auto !important;
-    }
+/* Hero Section Video Wallpaper Positioning & Dark Fallback */
+.flight-hero-wallpaper {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  z-index: 0 !important;
+  background-color: #0b1728 !important;
+}
 
-    .assurance-paragraph-card {
-      padding: 14px 16px !important;
-      border-radius: 12px !important;
-    }
+.flight-hero-wallpaper-video {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  transform: scale(1.25) !important;
+  transform-origin: center center !important;
+}
 
-    .assurance-paragraph-title {
-      font-size: 1.05rem !important;
-    }
+.homepage-buses .flight-hero-wallpaper-video,
+.homepage-hotels .flight-hero-wallpaper-video {
+  transform: scale(1) !important;
+  object-position: center !important;
+}
 
-    .assurance-paragraph-text {
-      font-size: 0.78rem !important;
-      line-height: 1.45 !important;
-    }
-  }
-
-  /* Hero Section Video Wallpaper Positioning & Dark Fallback */
-  .flight-hero-wallpaper {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden !important;
-    z-index: 0 !important;
-    background-color: #0b1728 !important;
-  }
-
-  .flight-hero-wallpaper-video {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center !important;
-    transform: scale(1.25) !important;
-    transform-origin: center center !important;
-  }
-
-  .homepage-buses .flight-hero-wallpaper-video,
-  .homepage-hotels .flight-hero-wallpaper-video {
-    transform: scale(1) !important;
-    object-position: center !important;
-  }
-
-  /* ==========================================================================
+/* ==========================================================================
    FLIGHT KEY HIGHLIGHTS (MASTER BACKGROUND CARD + 4 MODERN CARDS)
    ========================================================================== */
-  .flight-highlights-section {
-    margin-top: 24px !important;
-    margin-bottom: 24px !important;
-  }
+.flight-highlights-section {
+  margin-top: 24px !important;
+  margin-bottom: 24px !important;
+}
 
-  /* 1. Master Background Card */
-  .flight-master-bg-card {
-    background: #ffffff !important;
-    border-radius: 18px !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 10px 32px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
-    padding: 18px 22px 20px !important;
-    position: relative !important;
-    overflow: hidden !important;
-    margin: 0 auto !important;
-    max-width: 1240px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
+/* 1. Master Background Card */
+.flight-master-bg-card {
+  background: #ffffff !important;
+  border-radius: 18px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+  padding: 18px 22px 20px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 auto !important;
+  max-width: 1240px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
 
-  /* Subtle decorative ambient glow inside master card */
-  .flight-master-bg-card::before {
-    content: "" !important;
-    position: absolute !important;
-    top: -60px !important;
-    right: -60px !important;
-    width: 220px !important;
-    height: 220px !important;
-    background: radial-gradient(circle, rgba(220, 30, 38, 0.06), transparent 70%) !important;
-    pointer-events: none !important;
-    border-radius: 50% !important;
-  }
+/* Subtle decorative ambient glow inside master card */
+.flight-master-bg-card::before {
+  content: "" !important;
+  position: absolute !important;
+  top: -60px !important;
+  right: -60px !important;
+  width: 220px !important;
+  height: 220px !important;
+  background: radial-gradient(circle, rgba(220, 30, 38, 0.06), transparent 70%) !important;
+  pointer-events: none !important;
+  border-radius: 50% !important;
+}
 
-  .flight-master-bg-card::after {
-    content: "" !important;
-    position: absolute !important;
-    bottom: -60px !important;
-    left: -60px !important;
-    width: 220px !important;
-    height: 220px !important;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.05), transparent 70%) !important;
-    pointer-events: none !important;
-    border-radius: 50% !important;
-  }
+.flight-master-bg-card::after {
+  content: "" !important;
+  position: absolute !important;
+  bottom: -60px !important;
+  left: -60px !important;
+  width: 220px !important;
+  height: 220px !important;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.05), transparent 70%) !important;
+  pointer-events: none !important;
+  border-radius: 50% !important;
+}
 
-  /* 2. Master Header */
+/* 2. Master Header */
+.flight-master-header {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  margin-bottom: 14px !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.flight-master-header-left {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.flight-master-kicker {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: rgba(220, 30, 38, 0.08) !important;
+  color: #dc1e26 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  padding: 4px 12px !important;
+  border-radius: 20px !important;
+  margin-bottom: 6px !important;
+  align-self: flex-start !important;
+}
+
+.flight-master-title {
+  margin: 0 !important;
+  font-size: 22px !important;
+  font-weight: 850 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.25 !important;
+}
+
+.flight-master-subtitle {
+  margin: 4px 0 0 0 !important;
+  font-size: 13px !important;
+  color: #64748b !important;
+  line-height: 1.45 !important;
+  font-weight: 450 !important;
+}
+
+.flight-master-header-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #0f172a !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 7px 15px !important;
+  border-radius: 30px !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+.flight-master-header-badge svg {
+  color: #059669 !important;
+}
+
+/* 3. Cards Grid inside the Background Card */
+.flight-cards-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.flight-elevated-card {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important;
+  border-radius: 14px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02) !important;
+  padding: 14px 14px 12px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.28s ease, background 0.28s ease !important;
+  cursor: default !important;
+}
+
+.flight-elevated-card:hover {
+  transform: translateY(-5px) !important;
+  background: #ffffff !important;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.03) !important;
+}
+
+/* Glowing Top Accent Bar */
+.flight-elevated-card .f-card-accent-bar {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 3.5px !important;
+}
+
+.card-theme-blue .f-card-accent-bar {
+  background: linear-gradient(90deg, #2563eb, #60a5fa) !important;
+}
+
+.card-theme-purple .f-card-accent-bar {
+  background: linear-gradient(90deg, #7c3aed, #a78bfa) !important;
+}
+
+.card-theme-red .f-card-accent-bar {
+  background: linear-gradient(90deg, #dc1e26, #f87171) !important;
+}
+
+.card-theme-green .f-card-accent-bar {
+  background: linear-gradient(90deg, #059669, #34d399) !important;
+}
+
+.flight-elevated-card.card-theme-blue:hover {
+  border-color: #bfdbfe !important;
+}
+
+.flight-elevated-card.card-theme-purple:hover {
+  border-color: #ddd6fe !important;
+}
+
+.flight-elevated-card.card-theme-red:hover {
+  border-color: #fecaca !important;
+}
+
+.flight-elevated-card.card-theme-green:hover {
+  border-color: #a7f3d0 !important;
+}
+
+/* Card Header: Icon Bubble + Pill Badge */
+.f-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 10px !important;
+}
+
+.f-card-icon-bubble {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.25s ease !important;
+}
+
+.flight-elevated-card:hover .f-card-icon-bubble {
+  transform: scale(1.08) !important;
+}
+
+.card-theme-blue .f-card-icon-bubble {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+  color: #2563eb !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12) !important;
+}
+
+.card-theme-purple .f-card-icon-bubble {
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe) !important;
+  color: #7c3aed !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.12) !important;
+}
+
+.card-theme-red .f-card-icon-bubble {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+  color: #dc1e26 !important;
+  box-shadow: 0 4px 12px rgba(220, 30, 38, 0.12) !important;
+}
+
+.card-theme-green .f-card-icon-bubble {
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5) !important;
+  color: #059669 !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.12) !important;
+}
+
+.f-card-badge {
+  font-size: 8.5px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 2px 7px !important;
+  border-radius: 20px !important;
+  line-height: 1.3 !important;
+}
+
+.card-theme-blue .f-card-badge {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+.card-theme-purple .f-card-badge {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
+  border: 1px solid #ddd6fe !important;
+}
+
+.card-theme-red .f-card-badge {
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fecaca !important;
+}
+
+.card-theme-green .f-card-badge {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  border: 1px solid #a7f3d0 !important;
+}
+
+/* Card Body */
+.f-card-body {
+  margin-bottom: 8px !important;
+  flex: 1 !important;
+}
+
+.f-card-title {
+  margin: 0 0 2px 0 !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.01em !important;
+}
+
+.f-card-subtitle {
+  margin: 0 0 3px 0 !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+}
+
+.card-theme-blue .f-card-subtitle {
+  color: #2563eb !important;
+}
+
+.card-theme-purple .f-card-subtitle {
+  color: #7c3aed !important;
+}
+
+.card-theme-red .f-card-subtitle {
+  color: #dc1e26 !important;
+}
+
+.card-theme-green .f-card-subtitle {
+  color: #059669 !important;
+}
+
+.f-card-text {
+  margin: 0 !important;
+  font-size: 10.5px !important;
+  color: #64748b !important;
+  line-height: 1.45 !important;
+  font-weight: 450 !important;
+}
+
+/* Card Footer: Subtle Benefit Pill */
+.f-card-footer {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding-top: 7px !important;
+  border-top: 1px dashed #e2e8f0 !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+}
+
+.f-card-sparkle {
+  color: #eab308 !important;
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 1024px) {
   .flight-master-header {
-    display: flex !important;
-    align-items: flex-end !important;
-    justify-content: space-between !important;
-    gap: 16px !important;
-    margin-bottom: 14px !important;
-    position: relative !important;
-    z-index: 2 !important;
-  }
-
-  .flight-master-header-left {
-    display: flex !important;
     flex-direction: column !important;
-    gap: 2px !important;
-  }
-
-  .flight-master-kicker {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    background: rgba(220, 30, 38, 0.08) !important;
-    color: #dc1e26 !important;
-    font-size: 11px !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    padding: 4px 12px !important;
-    border-radius: 20px !important;
-    margin-bottom: 6px !important;
-    align-self: flex-start !important;
-  }
-
-  .flight-master-title {
-    margin: 0 !important;
-    font-size: 22px !important;
-    font-weight: 850 !important;
-    color: #0f172a !important;
-    letter-spacing: -0.02em !important;
-    line-height: 1.25 !important;
-  }
-
-  .flight-master-subtitle {
-    margin: 4px 0 0 0 !important;
-    font-size: 13px !important;
-    color: #64748b !important;
-    line-height: 1.45 !important;
-    font-weight: 450 !important;
-  }
-
-  .flight-master-header-badge {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    background: #f8fafc !important;
-    border: 1px solid #e2e8f0 !important;
-    color: #0f172a !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    padding: 7px 15px !important;
-    border-radius: 30px !important;
-    flex-shrink: 0 !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
-  }
-
-  .flight-master-header-badge svg {
-    color: #059669 !important;
-  }
-
-  /* 3. Cards Grid inside the Background Card */
-  .flight-cards-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
+    align-items: flex-start !important;
     gap: 12px !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-    position: relative !important;
-    z-index: 2 !important;
   }
 
-  .flight-elevated-card {
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important;
-    border-radius: 14px !important;
-    border: 1px solid #e2e8f0 !important;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02) !important;
-    padding: 14px 14px 12px 14px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-    position: relative !important;
-    overflow: hidden !important;
-    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.28s ease, background 0.28s ease !important;
-    cursor: default !important;
+  .flight-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .flight-master-bg-card {
+    padding: 20px 16px 22px !important;
+    border-radius: 18px !important;
   }
 
-  .flight-elevated-card:hover {
-    transform: translateY(-5px) !important;
-    background: #ffffff !important;
-    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.03) !important;
+  .flight-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
+}
 
-  /* Glowing Top Accent Bar */
-  .flight-elevated-card .f-card-accent-bar {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    height: 3.5px !important;
-  }
+/* ─── Modern Aerodynamic Airline Brand Cards & Spacing ─────────────────────── */
+.brands-section,
+.homepage .brands-section {
+  margin-top: 32px !important;
+  margin-bottom: 16px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
 
-  .card-theme-blue .f-card-accent-bar {
-    background: linear-gradient(90deg, #2563eb, #60a5fa) !important;
-  }
+.homepage>.brands-section+.td-services-section,
+.homepage>section.brands-section+section.td-services-section,
+.homepage .td-services-section,
+.td-services-section {
+  margin-top: -14px !important;
+}
 
-  .card-theme-purple .f-card-accent-bar {
-    background: linear-gradient(90deg, #7c3aed, #a78bfa) !important;
-  }
+.brand-marquee .marquee-slide,
+.homepage .brand-marquee .marquee-slide {
+  width: 184px !important;
+  padding-right: 28px !important;
+  /* Generous space in between brand cards */
+  flex: 0 0 184px !important;
+}
 
-  .card-theme-red .f-card-accent-bar {
-    background: linear-gradient(90deg, #dc1e26, #f87171) !important;
-  }
+.brand-slide,
+.homepage .brand-slide {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  padding: 10px 16px 8px !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1.5px solid #e2e8f0 !important;
+  border-radius: 24px 8px 24px 8px !important;
+  /* Dynamic aerodynamic airline wing curve */
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
 
-  .card-theme-green .f-card-accent-bar {
-    background: linear-gradient(90deg, #059669, #34d399) !important;
-  }
+.brand-slide::before,
+.homepage .brand-slide::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 2.5px !important;
+  background: linear-gradient(90deg, #dc1e26 0%, #f97316 50%, #2563eb 100%) !important;
+  opacity: 0 !important;
+  transition: opacity 0.25s ease !important;
+}
 
-  .flight-elevated-card.card-theme-blue:hover {
-    border-color: #bfdbfe !important;
-  }
+.brand-slide:hover,
+.homepage .brand-slide:hover {
+  transform: translateY(-4px) !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
 
-  .flight-elevated-card.card-theme-purple:hover {
-    border-color: #ddd6fe !important;
-  }
+.brand-slide:hover::before,
+.homepage .brand-slide:hover::before {
+  opacity: 1 !important;
+}
 
-  .flight-elevated-card.card-theme-red:hover {
-    border-color: #fecaca !important;
-  }
+.brand-slide .brand-logo,
+.homepage .brand-slide .brand-logo {
+  max-width: 86% !important;
+  max-height: 26px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  filter: none !important;
+  display: block !important;
+}
 
-  .flight-elevated-card.card-theme-green:hover {
-    border-color: #a7f3d0 !important;
-  }
+.brand-slide span,
+.homepage .brand-slide span {
+  color: #475569 !important;
+  font-size: 10.5px !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
 
-  /* Card Header: Icon Bubble + Pill Badge */
-  .f-card-header {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    margin-bottom: 10px !important;
-  }
+@media (max-width: 640px) {
 
-  .f-card-icon-bubble {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 10px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: transform 0.25s ease !important;
-  }
-
-  .flight-elevated-card:hover .f-card-icon-bubble {
-    transform: scale(1.08) !important;
-  }
-
-  .card-theme-blue .f-card-icon-bubble {
-    background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
-    color: #2563eb !important;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12) !important;
-  }
-
-  .card-theme-purple .f-card-icon-bubble {
-    background: linear-gradient(135deg, #f5f3ff, #ede9fe) !important;
-    color: #7c3aed !important;
-    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.12) !important;
-  }
-
-  .card-theme-red .f-card-icon-bubble {
-    background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
-    color: #dc1e26 !important;
-    box-shadow: 0 4px 12px rgba(220, 30, 38, 0.12) !important;
-  }
-
-  .card-theme-green .f-card-icon-bubble {
-    background: linear-gradient(135deg, #ecfdf5, #d1fae5) !important;
-    color: #059669 !important;
-    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.12) !important;
-  }
-
-  .f-card-badge {
-    font-size: 8.5px !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    padding: 2px 7px !important;
-    border-radius: 20px !important;
-    line-height: 1.3 !important;
-  }
-
-  .card-theme-blue .f-card-badge {
-    background: #eff6ff !important;
-    color: #1d4ed8 !important;
-    border: 1px solid #bfdbfe !important;
-  }
-
-  .card-theme-purple .f-card-badge {
-    background: #f5f3ff !important;
-    color: #6d28d9 !important;
-    border: 1px solid #ddd6fe !important;
-  }
-
-  .card-theme-red .f-card-badge {
-    background: #fef2f2 !important;
-    color: #b91c1c !important;
-    border: 1px solid #fecaca !important;
-  }
-
-  .card-theme-green .f-card-badge {
-    background: #ecfdf5 !important;
-    color: #047857 !important;
-    border: 1px solid #a7f3d0 !important;
-  }
-
-  /* Card Body */
-  .f-card-body {
-    margin-bottom: 8px !important;
-    flex: 1 !important;
-  }
-
-  .f-card-title {
-    margin: 0 0 2px 0 !important;
-    font-size: 13.5px !important;
-    font-weight: 800 !important;
-    color: #0f172a !important;
-    letter-spacing: -0.01em !important;
-  }
-
-  .f-card-subtitle {
-    margin: 0 0 3px 0 !important;
-    font-size: 10.5px !important;
-    font-weight: 700 !important;
-  }
-
-  .card-theme-blue .f-card-subtitle {
-    color: #2563eb !important;
-  }
-
-  .card-theme-purple .f-card-subtitle {
-    color: #7c3aed !important;
-  }
-
-  .card-theme-red .f-card-subtitle {
-    color: #dc1e26 !important;
-  }
-
-  .card-theme-green .f-card-subtitle {
-    color: #059669 !important;
-  }
-
-  .f-card-text {
-    margin: 0 !important;
-    font-size: 10.5px !important;
-    color: #64748b !important;
-    line-height: 1.45 !important;
-    font-weight: 450 !important;
-  }
-
-  /* Card Footer: Subtle Benefit Pill */
-  .f-card-footer {
-    display: flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-    padding-top: 7px !important;
-    border-top: 1px dashed #e2e8f0 !important;
-    font-size: 9.5px !important;
-    font-weight: 600 !important;
-    color: #475569 !important;
-  }
-
-  .f-card-sparkle {
-    color: #eab308 !important;
-    flex-shrink: 0 !important;
-  }
-
-  @media (max-width: 1024px) {
-    .flight-master-header {
-      flex-direction: column !important;
-      align-items: flex-start !important;
-      gap: 12px !important;
-    }
-
-    .flight-cards-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      gap: 14px !important;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .flight-master-bg-card {
-      padding: 20px 16px 22px !important;
-      border-radius: 18px !important;
-    }
-
-    .flight-cards-grid {
-      grid-template-columns: 1fr !important;
-      gap: 12px !important;
-    }
-  }
-
-  /* ─── Modern Aerodynamic Airline Brand Cards & Spacing ─────────────────────── */
   .brands-section,
   .homepage .brands-section {
-    margin-top: 32px !important;
+    margin-top: 24px !important;
     margin-bottom: 16px !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-  }
-
-  .homepage>.brands-section+.td-services-section,
-  .homepage>section.brands-section+section.td-services-section,
-  .homepage .td-services-section,
-  .td-services-section {
-    margin-top: -14px !important;
   }
 
   .brand-marquee .marquee-slide,
   .homepage .brand-marquee .marquee-slide {
-    width: 184px !important;
-    padding-right: 28px !important;
-    /* Generous space in between brand cards */
-    flex: 0 0 184px !important;
+    width: 154px !important;
+    padding-right: 22px !important;
+    flex: 0 0 154px !important;
   }
 
   .brand-slide,
   .homepage .brand-slide {
-    width: 100% !important;
-    box-sizing: border-box !important;
-    height: 78px !important;
-    min-height: 78px !important;
-    max-height: 78px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 7px !important;
-    padding: 10px 16px 8px !important;
-    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
-    border: 1.5px solid #e2e8f0 !important;
-    border-radius: 24px 8px 24px 8px !important;
-    /* Dynamic aerodynamic airline wing curve */
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
-    position: relative !important;
-    overflow: hidden !important;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  }
-
-  .brand-slide::before,
-  .homepage .brand-slide::before {
-    content: "" !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 2.5px !important;
-    background: linear-gradient(90deg, #dc1e26 0%, #f97316 50%, #2563eb 100%) !important;
-    opacity: 0 !important;
-    transition: opacity 0.25s ease !important;
-  }
-
-  .brand-slide:hover,
-  .homepage .brand-slide:hover {
-    transform: translateY(-4px) !important;
-    border-color: #cbd5e1 !important;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
-  }
-
-  .brand-slide:hover::before,
-  .homepage .brand-slide:hover::before {
-    opacity: 1 !important;
+    height: 66px !important;
+    min-height: 66px !important;
+    max-height: 66px !important;
+    padding: 6px 12px !important;
+    gap: 6px !important;
   }
 
   .brand-slide .brand-logo,
   .homepage .brand-slide .brand-logo {
-    max-width: 86% !important;
-    max-height: 26px !important;
-    width: auto !important;
-    height: auto !important;
-    object-fit: contain !important;
-    filter: none !important;
-    display: block !important;
+    max-height: 22px !important;
   }
 
   .brand-slide span,
   .homepage .brand-slide span {
-    color: #475569 !important;
-    font-size: 10.5px !important;
-    font-weight: 750 !important;
-    letter-spacing: 0.1em !important;
-    text-transform: uppercase !important;
-    line-height: 1.2 !important;
-    white-space: nowrap !important;
+    font-size: 9.5px !important;
   }
-
-  @media (max-width: 640px) {
-
-    .brands-section,
-    .homepage .brands-section {
-      margin-top: 24px !important;
-      margin-bottom: 16px !important;
-    }
-
-    .brand-marquee .marquee-slide,
-    .homepage .brand-marquee .marquee-slide {
-      width: 154px !important;
-      padding-right: 22px !important;
-      flex: 0 0 154px !important;
-    }
-
-    .brand-slide,
-    .homepage .brand-slide {
-      height: 66px !important;
-      min-height: 66px !important;
-      max-height: 66px !important;
-      padding: 6px 12px !important;
-      gap: 6px !important;
-    }
-
-    .brand-slide .brand-logo,
-    .homepage .brand-slide .brand-logo {
-      max-height: 22px !important;
-    }
-
-    .brand-slide span,
-    .homepage .brand-slide span {
-      font-size: 9.5px !important;
-    }
-  }
+}
 
 .brand-marquee .marquee-slide,
 .homepage .brand-marquee .marquee-slide {
@@ -15241,8 +15281,8 @@ button:focus-visible {
   width: min(1100px, 92vw);
   max-height: min(86vh, 820px);
   overflow: auto;
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.97));
-  border: 1px solid rgba(148,163,184,0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.97));
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 28px;
   box-shadow: 0 30px 80px -24px rgba(15, 23, 42, 0.35);
   padding: 22px 20px 20px;
@@ -15255,7 +15295,7 @@ button:focus-visible {
   gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(148,163,184,0.2);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .section-kicker {
@@ -15283,7 +15323,7 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid rgba(148,163,184,0.38);
+  border: 1px solid rgba(148, 163, 184, 0.38);
   background: #ffffff;
   color: #0f172a;
   border-radius: 999px;
@@ -15295,7 +15335,7 @@ button:focus-visible {
 }
 
 .deals-dialog-close:hover {
-  border-color: rgba(225,29,72,0.5);
+  border-color: rgba(225, 29, 72, 0.5);
   background: #fff1f2;
   color: #be123c;
   transform: translateY(-1px);
@@ -15322,8 +15362,13 @@ button:focus-visible {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .offer-detail-modal {
@@ -15342,8 +15387,15 @@ button:focus-visible {
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(40px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .offer-detail-layout {
@@ -15375,7 +15427,7 @@ button:focus-visible {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.5));
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.5));
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
@@ -15509,7 +15561,7 @@ button:focus-visible {
   background: linear-gradient(to right, #f8fafc, #f1f5f9);
   border: 1px solid #cbd5e1;
   border-radius: 12px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
   padding: 20px;
   margin-top: auto;
   text-align: left;
@@ -15728,12 +15780,14 @@ button:focus-visible {
     width: 200px !important;
     min-width: 180px !important;
   }
+
   .pop-bus-card {
     width: 240px !important;
     min-width: 240px !important;
     max-width: 240px !important;
     flex: 0 0 240px !important;
   }
+
   .pop-route-city,
   .pop-bus-city {
     font-size: 0.8rem !important;

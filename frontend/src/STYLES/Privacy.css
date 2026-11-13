@@ -83,3 +83,66 @@
 .terms-contact-line::marker {
   content: "" !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   About Us Page Styling (Matches Privacy Policy Layout & Theme)
+   ═══════════════════════════════════════════════════════════════ */
+.legal-page-about .terms-document-title {
+  margin: 8px 0 28px 0 !important;
+  color: var(--theme-primary, #ff0000) !important;
+  font-size: 1.6rem !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.02em !important;
+}
+
+.legal-page-about .legal-section {
+  margin-bottom: 24px !important;
+}
+
+.legal-page-about .legal-section h2 {
+  color: #0f172a !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  margin: 24px 0 10px 0 !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+}
+
+.legal-page-about .legal-section h3 {
+  color: #0f172a !important;
+  font-size: 1.08rem !important;
+  font-weight: 700 !important;
+  margin: 18px 0 8px 0 !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+}
+
+.legal-page-about .legal-section:first-of-type h2 {
+  margin-top: 0 !important;
+}
+
+.legal-page-about .legal-rendered-content p {
+  color: #334155 !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  margin: 0 0 12px 0 !important;
+  text-align: left !important;
+}
+
+.legal-page-about .legal-rendered-content ul {
+  margin: 12px 0 16px 0 !important;
+  padding-left: 28px !important;
+  list-style: disc !important;
+  list-style-type: disc !important;
+}
+
+.legal-page-about .legal-rendered-content li {
+  color: #334155 !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  margin-bottom: 8px !important;
+  text-align: left !important;
+}
+
