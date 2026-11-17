@@ -184,14 +184,42 @@ const KNOWN_AIRPORT_CODES = {
 
 export function resolveAirportCode(input) {
   if (!input) return "";
+  if (typeof input === "object") {
+    const code = input.airportCode || input.AirportCode || input.code || input.Code || input.cityId || input.cityCode || "";
+    if (code && /^[A-Za-z]{3}$/.test(String(code).trim())) {
+      return String(code).trim().toUpperCase();
+    }
+    input = input.cityName || input.CityName || input.name || input.label || "";
+  }
   const str = String(input).trim();
-  const match = str.match(/\(([A-Za-z]{3})\)/);
-  if (match) return match[1].toUpperCase();
+  if (!str) return "";
+
+  // 1. Explicit 3-letter code inside parentheses: "Hyderabad (HYD)" -> "HYD"
+  const parenMatch = str.match(/\(([A-Za-z]{3})\)/);
+  if (parenMatch) return parenMatch[1].toUpperCase();
+
+  // 2. Direct exact 3-letter code: "HYD" -> "HYD"
   if (/^[A-Za-z]{3}$/.test(str)) return str.toUpperCase();
+
+  // 3. Leading or trailing 3-letter code separated by hyphen/slash/comma: "HYD - Hyderabad" or "Hyderabad - HYD"
+  const prefixMatch = str.match(/^([A-Za-z]{3})\s*[-–—,/]/);
+  if (prefixMatch) return prefixMatch[1].toUpperCase();
+  const suffixMatch = str.match(/[-–—,/]\s*([A-Za-z]{3})$/);
+  if (suffixMatch) return suffixMatch[1].toUpperCase();
+
+  // 4. Known city/airport dictionary lookup (case-insensitive substring)
   const lower = str.toLowerCase();
   for (const [city, code] of Object.entries(KNOWN_AIRPORT_CODES)) {
     if (lower.includes(city)) return code;
   }
+
+  // 5. Look for any standalone 3-uppercase-letter word: "Rajiv Gandhi HYD Airport"
+  const wordMatch = str.match(/\b([A-Z]{3})\b/);
+  if (wordMatch && wordMatch[1] !== "THE" && wordMatch[1] !== "AND" && wordMatch[1] !== "ALL") {
+    return wordMatch[1].toUpperCase();
+  }
+
+  // 6. Clean letters fallback
   const clean = str.replace(/[^A-Za-z]/g, "");
   return clean.length >= 3 ? clean.substring(0, 3).toUpperCase() : str.toUpperCase();
 }
@@ -223,6 +251,20 @@ function resolveAuthToken(urlOrPath = "") {
   }
 }
 
+export function parseValidSeatCount(val) {
+  if (val === null || val === undefined) return null;
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (!trimmed) return null;
+    const num = Number(trimmed);
+    return !Number.isNaN(num) && num > 0 ? num : null;
+  }
+  if (typeof val === "number") {
+    return !Number.isNaN(val) && val > 0 ? val : null;
+  }
+  return null;
+}
+
 function normalizeFlightClassOption(option) {
   const travelClass = String(
     pickFirst(option, ["travelClass", "TravelClass"], "")
@@ -231,9 +273,8 @@ function normalizeFlightClassOption(option) {
   return {
     travelClass,
     priceInr: Number(pickFirst(option, ["priceInr", "PriceInr"], 0)) || 0,
-    availableSeats:
-      Number(pickFirst(option, ["availableSeats", "AvailableSeats"], 0)) || 0,
-    totalSeats: Number(pickFirst(option, ["totalSeats", "TotalSeats"], 0)) || 0,
+    availableSeats: parseValidSeatCount(pickFirst(option, ["availableSeats", "AvailableSeats"], null)),
+    totalSeats: parseValidSeatCount(pickFirst(option, ["totalSeats", "TotalSeats"], null)),
   };
 }
 
@@ -430,10 +471,10 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
 
   const price = extractPrice(primaryFare) || extractPrice(record);
   const availableSeats =
-    Number(pickFirst(primaryFareSegment || {}, ["NoOfSeatAvailable", "noOfSeatAvailable"], 0)) ||
-    Number(pickFirst(record, ["availableSeats", "AvailableSeats"], 0)) ||
-    Number(firstSegment?.NoOfSeatAvailable || firstSegment?.noOfSeatAvailable || 0) ||
-    0;
+    parseValidSeatCount(pickFirst(primaryFareSegment || {}, ["NoOfSeatAvailable", "noOfSeatAvailable"], null)) ??
+    parseValidSeatCount(pickFirst(record, ["availableSeats", "AvailableSeats"], null)) ??
+    parseValidSeatCount(firstSegment?.NoOfSeatAvailable || firstSegment?.noOfSeatAvailable) ??
+    null;
 
   const segmentCabinCode = primaryFareSegment?.CabinClass || firstSegment?.CabinClass;
   const cabinFromCode = cabinClassCodeToName(segmentCabinCode);
@@ -559,15 +600,14 @@ function normalizeFlightSearchRecord(record, index = 0, topTraceId = null, backe
     tax: Number(fd.Fare?.Tax || 0),
     currency: fd.Fare?.Currency || "",
     fareSegments: fd.FareSegments || [],
-    seatsRemaining: Number(
-      fd.FareSegments?.[0]?.NoOfSeatAvailable ??
-      fd.FareSegments?.[0]?.noOfSeatAvailable ??
-      fd.NoOfSeatAvailable ??
-      primaryFareSegment?.NoOfSeatAvailable ??
-      firstSegment?.NoOfSeatAvailable ??
+    seatsRemaining:
+      parseValidSeatCount(fd.FareSegments?.[0]?.NoOfSeatAvailable) ??
+      parseValidSeatCount(fd.FareSegments?.[0]?.noOfSeatAvailable) ??
+      parseValidSeatCount(fd.NoOfSeatAvailable) ??
+      parseValidSeatCount(primaryFareSegment?.NoOfSeatAvailable) ??
+      parseValidSeatCount(firstSegment?.NoOfSeatAvailable) ??
       availableSeats ??
-      9
-    ) || 9
+      null,
   }));
 
   return {
@@ -1769,16 +1809,15 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
           fare: optFare,
           fareSegments: optSegments,
           fareBreakdown: fd?.FareBreakdown || [],
-          seatsRemaining: Number(
-            optSegments?.[0]?.NoOfSeatAvailable ??
-            optSegments?.[0]?.noOfSeatAvailable ??
-            fd?.NoOfSeatAvailable ??
-            fd?.noOfSeatAvailable ??
-            fareSegment?.NoOfSeatAvailable ??
-            item?.NoOfSeatAvailable ??
-            item?.seats ??
-            9
-          ) || 9,
+          seatsRemaining:
+            parseValidSeatCount(optSegments?.[0]?.NoOfSeatAvailable) ??
+            parseValidSeatCount(optSegments?.[0]?.noOfSeatAvailable) ??
+            parseValidSeatCount(fd?.NoOfSeatAvailable) ??
+            parseValidSeatCount(fd?.noOfSeatAvailable) ??
+            parseValidSeatCount(fareSegment?.NoOfSeatAvailable) ??
+            parseValidSeatCount(item?.NoOfSeatAvailable) ??
+            parseValidSeatCount(item?.seats) ??
+            null,
         };
       })
       : [];
@@ -1860,8 +1899,18 @@ export function mapFlightResults(data, fromCode, toCode, searchParams = {}) {
       isRefundable: supplierBoolean(fareData?.IsRefundable ?? item?.IsRefundable ?? item?.isRefundable),
       selectedTravelClass: resolvedTravelClass,
       selectedTravelClassPriceInr: offeredFare,
-      selectedTravelClassAvailableSeats: Number(fareSegment?.NoOfSeatAvailable ?? item?.seats ?? null),
-      seats: Number(fareSegment?.NoOfSeatAvailable ?? item?.seats ?? null),
+      selectedTravelClassAvailableSeats:
+        parseValidSeatCount(fareSegment?.NoOfSeatAvailable) ??
+        parseValidSeatCount(firstSegment?.NoOfSeatAvailable) ??
+        parseValidSeatCount(item?.NoOfSeatAvailable) ??
+        parseValidSeatCount(item?.seats) ??
+        null,
+      seats:
+        parseValidSeatCount(fareSegment?.NoOfSeatAvailable) ??
+        parseValidSeatCount(firstSegment?.NoOfSeatAvailable) ??
+        parseValidSeatCount(item?.NoOfSeatAvailable) ??
+        parseValidSeatCount(item?.seats) ??
+        null,
       fareOptions,
       segments: rawSegments,
       legIndex,
@@ -3024,6 +3073,27 @@ function generateIndicativeCalendarFares(fromCode, toCode, month) {
   };
 }
 
+function normalizeToDateKey(rawDateStr) {
+  if (!rawDateStr) return "";
+  const s = String(rawDateStr).trim();
+  // Case 1: YYYY-MM-DD or YYYY-MM-DDT...
+  const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2].padStart(2, "0")}-${isoMatch[3].padStart(2, "0")}`;
+  }
+  // Case 2: DD/MM/YYYY or DD-MM-YYYY
+  const dmyMatch = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
+  if (dmyMatch) {
+    return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, "0")}-${dmyMatch[1].padStart(2, "0")}`;
+  }
+  // Case 3: Date parse fallback
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+  return "";
+}
+
 export async function getCalendarFare(searchParams = {}) {
   const rawFrom = searchParams.sourceCode || searchParams.fromCode || searchParams.originCode || searchParams.from || searchParams.origin || "";
   const rawTo = searchParams.destinationCode || searchParams.toCode || searchParams.to || searchParams.destination || "";
@@ -3039,9 +3109,6 @@ export async function getCalendarFare(searchParams = {}) {
     toCode = fromCode === "DEL" ? "BOM" : "DEL";
   }
 
-  const journeyDate = formatIsoDateTime(searchParams.date || searchParams.preferredDepartureTime);
-  const cabinClassCode = toCabinClassCode(searchParams.travelClass || searchParams.flightCabinClass);
-
   let month = searchParams.month;
   if (!month && (searchParams.date || searchParams.preferredDepartureTime)) {
     const dStr = String(searchParams.date || searchParams.preferredDepartureTime).trim();
@@ -3051,6 +3118,20 @@ export async function getCalendarFare(searchParams = {}) {
     const now = new Date();
     month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   }
+
+  let journeyDate = null;
+  if (searchParams.date || searchParams.preferredDepartureTime) {
+    try {
+      journeyDate = formatIsoDateTime(searchParams.date || searchParams.preferredDepartureTime);
+    } catch {
+      journeyDate = null;
+    }
+  }
+  if (!journeyDate) {
+    journeyDate = `${month}-01T00:00:00`;
+  }
+
+  const cabinClassCode = toCabinClassCode(searchParams.travelClass || searchParams.flightCabinClass);
 
   const payload = {
     Origin: fromCode,
@@ -3092,21 +3173,33 @@ export async function getCalendarFare(searchParams = {}) {
       return generateIndicativeCalendarFares(fromCode, toCode, month);
     }
 
+    // Determine the lowest fare across all items
+    let computedLowestFare = Infinity;
+    resultsList.forEach((item) => {
+      const fareVal = Number(item.TotalFare ?? item.totalFare ?? item.PublishedFare ?? item.publishedFare ?? item.OfferedFare ?? item.Fare ?? item.Price ?? 0);
+      if (fareVal > 0 && fareVal < computedLowestFare) {
+        computedLowestFare = fareVal;
+      }
+    });
+
     const fareMapByDate = {};
     const normalizedResults = resultsList.map((item) => {
       const depDateStr = String(item.Date || item.DepartureDate || item.departureDate || "").trim();
-      const dateOnly = depDateStr ? depDateStr.split("T")[0] : "";
+      const dateOnly = normalizeToDateKey(depDateStr);
       const fareVal = Number(item.TotalFare ?? item.totalFare ?? item.PublishedFare ?? item.publishedFare ?? item.OfferedFare ?? item.Fare ?? item.Price ?? 0);
+      const isLowest = Boolean(item.IsLowestFareOfMonth || item.isLowestFareOfMonth) || (computedLowestFare < Infinity && fareVal === computedLowestFare);
 
       if (dateOnly && fareVal > 0) {
-        if (!fareMapByDate[dateOnly] || fareVal < (typeof fareMapByDate[dateOnly] === "object" ? fareMapByDate[dateOnly].totalFare : fareMapByDate[dateOnly])) {
+        const existing = fareMapByDate[dateOnly];
+        const existingVal = typeof existing === "object" ? existing.totalFare : Number(existing || Infinity);
+        if (!existing || fareVal < existingVal) {
           fareMapByDate[dateOnly] = {
             totalFare: fareVal,
             baseFare: Number(item.BaseFare || item.baseFare || 0),
             tax: Number(item.Tax || item.tax || 0),
             airlineCode: item.AirlineCode || item.airlineCode || "",
             airlineName: item.AirlineName || item.airlineName || "",
-            isLowestFareOfMonth: Boolean(item.IsLowestFareOfMonth || item.isLowestFareOfMonth),
+            isLowestFareOfMonth: isLowest,
           };
         }
       }
@@ -3116,7 +3209,7 @@ export async function getCalendarFare(searchParams = {}) {
         airlineName: item.AirlineName || item.airlineName || "",
         departureDate: depDateStr,
         dateOnly,
-        isLowestFareOfMonth: Boolean(item.IsLowestFareOfMonth || item.isLowestFareOfMonth),
+        isLowestFareOfMonth: isLowest,
         totalFare: fareVal,
         baseFare: Number(item.BaseFare || item.baseFare || 0),
         tax: Number(item.Tax || item.tax || 0),
@@ -3129,7 +3222,7 @@ export async function getCalendarFare(searchParams = {}) {
       origin: fromCode,
       destination: toCode,
       month: resObj?.Month || month,
-      lowestFare: resObj?.LowestFare ?? null,
+      lowestFare: computedLowestFare < Infinity ? computedLowestFare : (resObj?.LowestFare ?? null),
       results: normalizedResults,
       fareMapByDate,
       raw: rawData,

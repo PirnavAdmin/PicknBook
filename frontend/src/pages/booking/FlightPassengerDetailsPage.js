@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { Info, Tag, Mail, Check, X, Shield, ArrowRight, ShieldCheck, User, Loader2, XCircle, Plane, Briefcase, ChevronDown } from "lucide-react";
+import { Info, Tag, Mail, Check, X, Shield, ArrowRight, ShieldCheck, User, Loader2, XCircle, Plane, Briefcase, ChevronDown, Clock, CalendarDays, Armchair } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/FlightBookingFlow.css";
 
@@ -15,7 +15,7 @@ import { getWalletSummary } from "../../services/walletService";
 import { listTravelers, normalizeTraveler } from "../../services/travelerService";
 import BookingTimer from "./BookingTimer";
 import { COUNTRIES, findCountry, isValidCountry, getCountryCode } from "../../utils/countries";
-import { formatFlightTime, formatFlightDate } from "../../utils/flightDateTimeUtils";
+import { formatFlightTime, formatFlightDate, formatFlightDateLong } from "../../utils/flightDateTimeUtils";
 import FlightStepperHeader from "../../components/booking/FlightStepperHeader";
 
 function formatTimeParts(timeVal) {
@@ -38,7 +38,7 @@ function formatTimeParts(timeVal) {
 function formatLayoverText(seg, nextSeg) {
   let layover = "";
   if (seg?.layoverTime && typeof seg.layoverTime === "string" && seg.layoverTime.trim()) {
-    layover = seg.layoverTime.trim().toUpperCase().replace(/H\s*/, "H ").replace(/M\s*/, "M").trim();
+    layover = seg.layoverTime.trim().toLowerCase().replace(/h\s*/i, "h ").replace(/m\s*/i, "m").trim();
   } else if (seg?.arrTime && nextSeg?.depTime) {
     try {
       const diffMs = new Date(nextSeg.depTime).getTime() - new Date(seg.arrTime).getTime();
@@ -46,15 +46,29 @@ function formatLayoverText(seg, nextSeg) {
         const totalM = Math.floor(diffMs / 60000);
         const lh = Math.floor(totalM / 60);
         const lm = totalM % 60;
-        layover = lh > 0 ? `${lh}H ${lm}M` : `${lm}M`;
+        layover = lh > 0 ? `${lh}h ${lm}m` : `${lm}m`;
       }
     } catch (e) { }
   }
-  const code = seg?.destAirportCode || seg?.destCity || "AIRPORT";
+  const city = seg?.destCity ? String(seg.destCity).trim().toUpperCase() : "";
+  const code = seg?.destAirportCode ? String(seg.destAirportCode).trim().toUpperCase() : (city || "AIRPORT");
+  const cityLabel = city && city !== code ? `${city} (${code})` : code;
   if (layover) {
-    return `CONNECTION AT ${code.toUpperCase()} (${layover} LAYOVER)`;
+    return `CONNECTION AT ${cityLabel} • LAYOVER: ${layover}`;
   }
-  return `CONNECTION AT ${code.toUpperCase()}`;
+  return `CONNECTION AT ${cityLabel}`;
+}
+
+function formatSegmentDate(timeVal, fallbackDate) {
+  if (timeVal) {
+    const formatted = formatFlightDate(timeVal);
+    if (formatted) return formatted;
+  }
+  if (fallbackDate) {
+    const formatted = formatFlightDate(fallbackDate);
+    if (formatted) return formatted;
+  }
+  return "";
 }
 
 function formatBaggageText(val, fallback) {
@@ -174,31 +188,23 @@ function extractFlightSegments(flt, fareQuoteObj) {
 function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, stopCount, price) {
   return (
     <div className="yf-journey">
-      <div className="yf-head">
-        <div className="yf-head__route">
-          {fromCode} → {toCode}
-        </div>
-        <div className="yf-head__badges">
-          <span className="yf-badge yf-badge--stop">
-            {stopCount} {stopCount === 1 ? "stop" : "stops"}
-          </span>
-          <span className="yf-badge yf-badge--price">
-            ₹{new Intl.NumberFormat("en-IN").format(price)}
-          </span>
-        </div>
-      </div>
-
       {segments.map((seg, sIdx) => {
         const depTime = formatTimeParts(seg.depTime);
         const arrTime = formatTimeParts(seg.arrTime);
         const nextSeg = segments[sIdx + 1];
+        const depDate = formatSegmentDate(seg.depTime, legFlight?.departDate || legFlight?.departureDate);
+        const arrDate = formatSegmentDate(seg.arrTime, legFlight?.arrivalDate || legFlight?.departureDate);
 
         return (
           <React.Fragment key={`yf-seg-${sIdx}`}>
             <div className="yf-seg">
+              {/* Top Row: Airline Name, Flight Number, Segment Label */}
               <div className="yf-seg__head">
                 <div className="yf-seg__airline">
-                  <span className="yf-seg__airline-name">{seg.airline || legFlight?.airlineName || legFlight?.airline || "Flight"}</span>
+                  <Plane size={14} className="yf-seg__airline-icon" />
+                  <span className="yf-seg__airline-name">
+                    {seg.airline || legFlight?.airlineName || legFlight?.airline || "Flight"}
+                  </span>
                   <span className="yf-seg__flight-no">
                     {seg.airlineCode ? `${seg.airlineCode} ` : ""}{seg.flightNumber || ""}
                   </span>
@@ -206,59 +212,101 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                 <span className="yf-seg__label">Segment {sIdx + 1}</span>
               </div>
 
+              {/* Middle Row: Schedule 3-Column Layout */}
               <div className="yf-seg__times">
-                {/* Departure */}
-                <div className="yf-seg__pt">
+                {/* Left: Departure */}
+                <div className="yf-seg__pt yf-seg__pt--dep">
                   <div className="yf-seg__time-box">
                     <span className="yf-seg__time">{depTime.time}</span>
                     {depTime.ampm && <span className="yf-seg__ampm">{depTime.ampm}</span>}
                   </div>
-                  <span className="yf-seg__place" title={seg.originCity || seg.originAirportCode}>
-                    {seg.originCity || seg.originAirportCode}
-                  </span>
-                  <span className="yf-seg__code">
-                    {seg.originAirportCode}
-                    {seg.originTerminal ? ` • T${String(seg.originTerminal).replace(/^T/i, "")}` : ""}
-                  </span>
-                </div>
-
-                {/* Middle indicator */}
-                <div className="yf-seg__mid">
-                  <span className="yf-seg__dur">{seg.durationText || "--"}</span>
-                  <div className="yf-seg__line">
-                    <span className="yf-seg__plane">
-                      <Plane size={11} style={{ transform: "rotate(90deg)" }} />
-                    </span>
+                  <div className="yf-seg__city-code-row">
+                    <span className="yf-seg__city">{seg.originCity || seg.originAirportCode}</span>
+                    <span className="yf-seg__code-pill">({seg.originAirportCode})</span>
                   </div>
+                  {depDate && (
+                    <span className="yf-seg__date">
+                      <CalendarDays size={11} className="yf-seg__cal-icon" /> {depDate}
+                    </span>
+                  )}
+                  {seg.originAirportName && (
+                    <span className="yf-seg__airport-name" title={seg.originAirportName}>
+                      {seg.originAirportName}
+                    </span>
+                  )}
+                  {seg.originTerminal && (
+                    <span className="yf-seg__terminal">
+                      Terminal {String(seg.originTerminal).replace(/^T/i, "")}
+                    </span>
+                  )}
                 </div>
 
-                {/* Arrival */}
+                {/* Center: Duration & Route Line */}
+                <div className="yf-seg__mid">
+                  <span className="yf-seg__dur">
+                    <Clock size={10} /> {seg.durationText || "--"}
+                  </span>
+                  <div className="yf-seg__line">
+                    <div className="yf-seg__line-dot start" />
+                    <div className="yf-seg__line-track" />
+                    <span className="yf-seg__plane">
+                      <Plane size={12} style={{ transform: "rotate(90deg)" }} />
+                    </span>
+                    <div className="yf-seg__line-dot end" />
+                  </div>
+                  <span className="yf-seg__nonstop-text">Non-stop</span>
+                </div>
+
+                {/* Right: Arrival */}
                 <div className="yf-seg__pt yf-seg__pt--arr">
                   <div className="yf-seg__time-box">
                     <span className="yf-seg__time">{arrTime.time}</span>
                     {arrTime.ampm && <span className="yf-seg__ampm">{arrTime.ampm}</span>}
                   </div>
-                  <span className="yf-seg__place" title={seg.destCity || seg.destAirportCode}>
-                    {seg.destCity || seg.destAirportCode}
-                  </span>
-                  <span className="yf-seg__code">
-                    {seg.destAirportCode}
-                    {seg.destTerminal ? ` • T${String(seg.destTerminal).replace(/^T/i, "")}` : ""}
-                  </span>
+                  <div className="yf-seg__city-code-row">
+                    <span className="yf-seg__city">{seg.destCity || seg.destAirportCode}</span>
+                    <span className="yf-seg__code-pill">({seg.destAirportCode})</span>
+                  </div>
+                  {arrDate && (
+                    <span className="yf-seg__date">
+                      <CalendarDays size={11} className="yf-seg__cal-icon" /> {arrDate}
+                    </span>
+                  )}
+                  {seg.destAirportName && (
+                    <span className="yf-seg__airport-name" title={seg.destAirportName}>
+                      {seg.destAirportName}
+                    </span>
+                  )}
+                  {seg.destTerminal && (
+                    <span className="yf-seg__terminal">
+                      Terminal {String(seg.destTerminal).replace(/^T/i, "")}
+                    </span>
+                  )}
                 </div>
               </div>
 
+              {/* Bottom Row: Baggage, Cabin & Class information */}
               <div className="yf-seg__bag">
-                <span className="yf-seg__bag-item">🧳 Cabin: {formatBaggageText(seg.cabinBaggage, "7 Kg")}</span>
-                <span className="yf-seg__bag-item">📦 Check-in: {formatBaggageText(seg.baggage, "15 Kg")}</span>
+                <span className="yf-seg__chip">
+                  <Briefcase size={11} /> Cabin: <strong>{formatBaggageText(seg.cabinBaggage, "7 Kg")}</strong>
+                </span>
+                <span className="yf-seg__chip">
+                  <Briefcase size={11} /> Check-in: <strong>{formatBaggageText(seg.baggage, "15 Kg")}</strong>
+                </span>
+                <span className="yf-seg__chip">
+                  <Armchair size={11} /> Class: <strong>{seg.cabinClass || legFlight?.selectedTravelClass || "Economy"}</strong>
+                </span>
               </div>
             </div>
 
             {sIdx < segments.length - 1 && (
               <div className="yf-conn">
-                <span className="yf-conn__pill">
-                  {formatLayoverText(seg, nextSeg)}
-                </span>
+                <div className="yf-conn__card">
+                  <Clock size={12} className="yf-conn__icon" />
+                  <span className="yf-conn__text">
+                    {formatLayoverText(seg, nextSeg)}
+                  </span>
+                </div>
               </div>
             )}
           </React.Fragment>

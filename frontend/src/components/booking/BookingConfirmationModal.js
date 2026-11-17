@@ -368,7 +368,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
         {bookingType === "Flight" && (
           <div style={{ marginTop: "8px", marginBottom: "20px" }}>
-            <FlightStepperHeader currentStage={4} onBack={onClose} compact={true} />
+            <FlightStepperHeader currentStage={4} compact={true} />
           </div>
         )}
 

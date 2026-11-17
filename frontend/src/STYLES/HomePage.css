@@ -12,7 +12,7 @@
   min-height: 60px;
   height: auto;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
 }
 
@@ -1135,9 +1135,9 @@ select.field-control option {
 /* ─── Swap button ─────────────────────────────────────────────────────────── */
 .swap-field {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 1px;
+  padding-bottom: 0;
 }
 
 .swap-btn {
@@ -10210,9 +10210,9 @@ button:focus-visible {
 
 .homepage-flights .search-panel .standard-grid .swap-field {
   display: flex !important;
-  align-items: flex-end !important;
+  align-items: center !important;
   justify-content: center !important;
-  padding-bottom: 6px !important;
+  padding-bottom: 0 !important;
 }
 
 /* Swap Button */
@@ -10252,6 +10252,7 @@ button:focus-visible {
   grid-row: 1 !important;
   width: 100% !important;
   display: flex !important;
+  align-items: center !important;
   justify-content: center !important;
 }
 
@@ -10398,6 +10399,7 @@ button:focus-visible {
   grid-row: 1 !important;
   width: 100% !important;
   display: flex !important;
+  align-items: center !important;
   justify-content: center !important;
 }
 

@@ -6835,14 +6835,15 @@ export default function HomePage() {
           .homepage-flights .search-panel .flight-search-bar-row:not(.round-trip):not(.two-way):not(:has(.return-field)) .source-field {
             flex: 1.3 1 0 !important;
             min-width: 0 !important;
-            padding: 0 20px 0 6px !important;
+            padding: 0 8px 0 12px !important;
+            border-right: none !important;
           }
 
           .homepage-flights .search-panel .flight-search-bar-row.one-way .destination-field,
           .homepage-flights .search-panel .flight-search-bar-row:not(.round-trip):not(.two-way):not(:has(.return-field)) .destination-field {
             flex: 1.3 1 0 !important;
             min-width: 0 !important;
-            padding: 0 6px 0 20px !important;
+            padding: 0 12px 0 8px !important;
           }
 
           .homepage-flights .search-panel .flight-search-bar-row.one-way .departure-field,
@@ -6890,7 +6891,8 @@ export default function HomePage() {
           .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .source-field {
             flex: 1.15 1 0 !important;
             min-width: 0 !important;
-            padding: 0 16px 0 4px !important;
+            padding: 0 8px 0 10px !important;
+            border-right: none !important;
           }
 
           .homepage-flights .search-panel .flight-search-bar-row.round-trip .destination-field,
@@ -6898,7 +6900,7 @@ export default function HomePage() {
           .homepage-flights .search-panel .flight-search-bar-row:has(.return-field) .destination-field {
             flex: 1.15 1 0 !important;
             min-width: 0 !important;
-            padding: 0 4px 0 16px !important;
+            padding: 0 10px 0 8px !important;
           }
 
           .homepage-flights .search-panel .flight-search-bar-row.round-trip .departure-field,
@@ -6955,12 +6957,13 @@ export default function HomePage() {
           .homepage-buses .search-panel .flight-search-bar-row .source-field {
             flex: 1.35 1 0 !important;
             min-width: 0 !important;
-            padding: 0 20px 0 6px !important;
+            padding: 0 8px 0 12px !important;
+            border-right: none !important;
           }
           .homepage-buses .search-panel .flight-search-bar-row .destination-field {
             flex: 1.35 1 0 !important;
             min-width: 0 !important;
-            padding: 0 6px 0 20px !important;
+            padding: 0 12px 0 8px !important;
           }
           .homepage-buses .search-panel .flight-search-bar-row .departure-field {
             flex: 1.2 1 0 !important;
@@ -6978,22 +6981,23 @@ export default function HomePage() {
             border-right: none !important;
           }
 
-          /* ── Floating Origin/Destination Swap Button (Takes 0px Width) ── */
+          /* ── Centered Origin/Destination Swap Button ── */
           .search-panel .flight-search-bar-row .swap-field,
           .homepage-flights .search-panel .flight-search-bar-row .swap-field,
           .homepage-buses .search-panel .flight-search-bar-row .swap-field {
-            flex: 0 0 0px !important;
-            width: 0 !important;
-            min-width: 0 !important;
-            max-width: 0 !important;
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: 32px !important;
+            max-width: none !important;
             height: 36px !important;
             margin: 0 !important;
-            padding: 0 !important;
+            padding: 0 4px !important;
             position: relative !important;
             z-index: 50 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+            align-self: center !important;
             border: none !important;
             background: transparent !important;
             box-shadow: none !important;
@@ -7002,10 +7006,10 @@ export default function HomePage() {
           .search-panel .flight-search-bar-row .swap-btn,
           .homepage-flights .search-panel .flight-search-bar-row .swap-btn,
           .homepage-buses .search-panel .flight-search-bar-row .swap-btn {
-            position: absolute !important;
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
+            position: relative !important;
+            left: auto !important;
+            top: auto !important;
+            transform: none !important;
             width: 28px !important;
             height: 28px !important;
             min-width: 28px !important;
@@ -7014,13 +7018,13 @@ export default function HomePage() {
             background: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
             color: #ff0000 !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             cursor: pointer !important;
             padding: 0 !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
             z-index: 60 !important;
             transition: all 0.22s ease !important;
           }
@@ -7028,9 +7032,9 @@ export default function HomePage() {
           .search-panel .flight-search-bar-row .swap-btn:hover,
           .homepage-flights .search-panel .flight-search-bar-row .swap-btn:hover,
           .homepage-buses .search-panel .flight-search-bar-row .swap-btn:hover {
-            transform: translate(-50%, -50%) rotate(180deg) scale(1.08) !important;
+            transform: scale(1.08) rotate(180deg) !important;
             border-color: #ff0000 !important;
-            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.28) !important;
+            box-shadow: 0 3px 8px rgba(255, 0, 0, 0.25) !important;
           }
 
           .search-panel .flight-search-bar-row .swap-btn svg,
@@ -8279,6 +8283,7 @@ export default function HomePage() {
                       {activeCalendarField === "bus-dep" && (
                         <CustomDatePicker isOpen={true}
                           value={busDepartureDate}
+                          isFlight={false}
                           onChange={(newDate) => {
                             setBusDepartureDate(newDate);
                             if (busReturnDate && newDate && busReturnDate < newDate) {
@@ -8311,6 +8316,7 @@ export default function HomePage() {
                         {activeCalendarField === "bus-ret" && (
                           <CustomDatePicker isOpen={true}
                             value={busReturnDate}
+                            isFlight={false}
                             minDate={busDepartureDate || ""}
                             onChange={(newDate) => setBusReturnDate(newDate)}
                             onClose={() => setActiveCalendarField(null)}

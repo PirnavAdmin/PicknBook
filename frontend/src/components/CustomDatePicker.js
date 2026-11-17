@@ -86,10 +86,24 @@ export default function CustomDatePicker({
   const [faresMap, setFaresMap] = useState({});
   const [isLoadingFares, setIsLoadingFares] = useState(false);
 
-  // Extract airport codes
-  const fromCode = useMemo(() => resolveAirportCode(from) || "", [from]);
-  const toCode = useMemo(() => resolveAirportCode(to) || "", [to]);
-  const hasFlightRoute = Boolean(isFlight !== false && fromCode && toCode);
+  // Extract airport codes with smart fallback for customer flight search
+  const isFlightMode = Boolean(isFlight !== false);
+  const fromCode = useMemo(() => {
+    if (!isFlightMode) return "";
+    const resolved = resolveAirportCode(from);
+    if (resolved) return resolved;
+    return "HYD";
+  }, [from, isFlightMode]);
+
+  const toCode = useMemo(() => {
+    if (!isFlightMode) return "";
+    const resolved = resolveAirportCode(to);
+    if (resolved && resolved !== fromCode) return resolved;
+    if (resolved && resolved === fromCode) return fromCode === "DEL" ? "BOM" : "DEL";
+    return fromCode === "DEL" ? "BOM" : "DEL";
+  }, [to, fromCode, isFlightMode]);
+
+  const hasFlightRoute = Boolean(isFlightMode && fromCode && toCode);
 
   // Sync view date when opening
   useEffect(() => {
@@ -120,6 +134,7 @@ export default function CustomDatePicker({
 
     let isCurrent = true;
     setIsLoadingFares(true);
+    setFaresMap({}); // Immediately discard previous route's fares
 
     getCalendarFare({
       from: fromCode,
@@ -155,7 +170,7 @@ export default function CustomDatePicker({
   useEffect(() => {
     if (!isOpen || !anchorRef.current) return;
 
-    const POPUP_WIDTH = hasFlightRoute ? 365 : 280;
+    const POPUP_WIDTH = hasFlightRoute ? 370 : 280;
 
     const computePos = () => {
       if (!anchorRef.current) return;
@@ -222,8 +237,14 @@ export default function CustomDatePicker({
   const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
   const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-  const prevMonth = () => setViewDate(new Date(currentYear, currentMonth - 1, 1));
-  const nextMonth = () => setViewDate(new Date(currentYear, currentMonth + 1, 1));
+  const prevMonth = () => {
+    setFaresMap({});
+    setViewDate(new Date(currentYear, currentMonth - 1, 1));
+  };
+  const nextMonth = () => {
+    setFaresMap({});
+    setViewDate(new Date(currentYear, currentMonth + 1, 1));
+  };
 
   // Determine min and max fares for the month
   const { lowestFare, highestFare } = useMemo(() => {
@@ -377,7 +398,7 @@ export default function CustomDatePicker({
         top: popupPos.top,
         left: popupPos.left,
         zIndex: 2147483647,
-        width: hasFlightRoute ? "min(365px, calc(100vw - 20px))" : "280px",
+        width: hasFlightRoute ? "min(370px, calc(100vw - 20px))" : "280px",
         boxSizing: "border-box",
         background: "#ffffff",
         borderRadius: "16px",
@@ -418,10 +439,12 @@ export default function CustomDatePicker({
           border: 1px solid #f1f5f9; background: #ffffff;
           display: flex; flex-direction: column; align-items: center; justify-content: center;
           cursor: pointer; transition: all 0.18s ease; margin: 0 auto;
-          padding: 3px 1px 2px; position: relative; box-sizing: border-box;
+          padding: 3px 1px 3px; position: relative; box-sizing: border-box;
+          overflow: hidden;
         }
         .pnb-dp-day-cell.with-fare {
-          min-height: 48px;
+          min-height: 52px;
+          height: 52px;
         }
         .pnb-dp-day-cell.compact {
           min-height: 28px; height: 28px; border-color: transparent; background: transparent;
@@ -447,13 +470,14 @@ export default function CustomDatePicker({
           border-color: transparent !important; cursor: not-allowed !important; opacity: 0.45;
         }
         .pnb-dp-day-num {
-          font-size: 0.78rem; font-weight: 700; line-height: 1; color: #0f172a;
+          font-size: 0.80rem; font-weight: 700; line-height: 1.1; color: #0f172a;
         }
         .pnb-dp-day-cell.selected .pnb-dp-day-num {
           color: #ffffff !important;
         }
         .pnb-dp-fare {
-          font-size: 0.62rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.01em; margin-top: 2px;
+          font-size: 0.60rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin-top: 2px;
+          white-space: nowrap; max-width: 100%; text-overflow: ellipsis; overflow: hidden;
         }
         .pnb-dp-day-cell.selected .pnb-dp-fare {
           color: #ffffff !important;
@@ -504,7 +528,7 @@ export default function CustomDatePicker({
           {isLoadingFares && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "0.6rem", color: "#64748b", fontWeight: 600 }}>
               <Loader2 size={11} className="pnb-dp-spin" style={{ color: "#ff0000" }} />
-              <span>Fares...</span>
+              <span>Fetching fares...</span>
             </div>
           )}
           <button type="button" onClick={onClose} style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", padding: "2px", display: "flex", alignItems: "center", borderRadius: "6px" }} aria-label="Close calendar">
@@ -553,7 +577,7 @@ export default function CustomDatePicker({
             return (
               <div
                 key={`empty-${idx}`}
-                style={{ width: "100%", height: hasFlightRoute ? "48px" : "28px" }}
+                style={{ width: "100%", height: hasFlightRoute ? "50px" : "28px" }}
               />
             );
           }
@@ -577,28 +601,20 @@ export default function CustomDatePicker({
               }
             >
               <span className="pnb-dp-day-num">{day}</span>
-              {hasFlightRoute && (
+              {hasFlightRoute && fareDetails && (
                 <>
-                  {fareDetails ? (
-                    <span
-                      className="pnb-dp-fare"
-                      style={{ color: selected ? "#ffffff" : fareDetails.color }}
-                    >
-                      ₹{new Intl.NumberFormat("en-IN").format(fareDetails.fareVal)}
-                    </span>
-                  ) : !disabled ? (
-                    <span className="pnb-dp-fare" style={{ color: "#94a3b8", opacity: 0.7 }}>
-                      {isLoadingFares ? "..." : "--"}
-                    </span>
-                  ) : null}
-                  {fareDetails && (
-                    <span
-                      className="pnb-dp-indicator-dot"
-                      style={{
-                        backgroundColor: selected ? "#ffffff" : fareDetails.color,
-                      }}
-                    />
-                  )}
+                  <span
+                    className="pnb-dp-fare"
+                    style={{ color: selected ? "#ffffff" : fareDetails.color }}
+                  >
+                    ₹{new Intl.NumberFormat("en-IN").format(fareDetails.fareVal)}
+                  </span>
+                  <span
+                    className="pnb-dp-indicator-dot"
+                    style={{
+                      backgroundColor: selected ? "#ffffff" : fareDetails.color,
+                    }}
+                  />
                 </>
               )}
             </button>
