@@ -155,7 +155,7 @@ export default function FlightDualRangeSlider({
           </div>
         </div>
 
-        {/* Right (Max) Handle: Only this handle has the Red Airplane Icon */}
+        {/* Right (Max) Handle: Circular thumb with subtle red outline & centered red airplane pointing right */}
         <div
           className={`flight-slider-handle flight-slider-handle--max ${
             activeThumb === "max" ? "active" : ""
@@ -182,8 +182,15 @@ export default function FlightDualRangeSlider({
             }
           }}
         >
-          <div className="flight-slider-handle-disc flight-slider-handle-disc--plane">
-            <Plane size={11} className="flight-slider-plane-icon" strokeWidth={2.4} />
+          <div className="flight-slider-handle-disc flight-slider-handle-disc--plane flight-slider-thumb-disc">
+            <Plane
+              size={18}
+              className="flight-slider-plane-icon flight-slider-airplane-icon"
+              color="var(--theme-primary, #ff0000)"
+              fill="var(--theme-primary, #ff0000)"
+              stroke="var(--theme-primary, #ff0000)"
+              strokeWidth={0.5}
+            />
           </div>
         </div>
       </div>

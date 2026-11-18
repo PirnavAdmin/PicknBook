@@ -35,6 +35,15 @@ function formatTimeParts(timeVal) {
   return { time: formatted, ampm: "" };
 }
 
+function toTitleCase(str) {
+  if (!str) return "";
+  return String(str)
+    .toLowerCase()
+    .split(" ")
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ""))
+    .join(" ");
+}
+
 function formatLayoverText(seg, nextSeg) {
   let layover = "";
   if (seg?.layoverTime && typeof seg.layoverTime === "string" && seg.layoverTime.trim()) {
@@ -50,13 +59,18 @@ function formatLayoverText(seg, nextSeg) {
       }
     } catch (e) { }
   }
-  const city = seg?.destCity ? String(seg.destCity).trim().toUpperCase() : "";
-  const code = seg?.destAirportCode ? String(seg.destAirportCode).trim().toUpperCase() : (city || "AIRPORT");
-  const cityLabel = city && city !== code ? `${city} (${code})` : code;
+  const rawCity = seg?.destCity ? String(seg.destCity).trim() : "";
+  const code = seg?.destAirportCode ? String(seg.destAirportCode).trim().toUpperCase() : (rawCity.toUpperCase() || "AIRPORT");
+  const city = rawCity ? toTitleCase(rawCity) : "";
+  const cityLabel = city && city.toUpperCase() !== code ? `${city} (${code})` : code;
   if (layover) {
-    return `CONNECTION AT ${cityLabel} • LAYOVER: ${layover}`;
+    return `Connection at ${cityLabel} • Layover: ${layover}`;
   }
-  return `CONNECTION AT ${cityLabel}`;
+  return `Connection at ${cityLabel}`;
+}
+
+function formatLayoverFullText(seg, nextSeg) {
+  return formatLayoverText(seg, nextSeg);
 }
 
 function formatSegmentDate(timeVal, fallbackDate) {
@@ -185,6 +199,81 @@ function extractFlightSegments(flt, fareQuoteObj) {
   });
 }
 
+function formatTerminalBadge(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  if (!s || s === "undefined" || s === "null" || s === "--" || s === "0") return null;
+  const cleaned = s.replace(/^Terminal\s*/i, "").replace(/^T-?/i, "").trim();
+  if (!cleaned) return null;
+  return `Terminal ${cleaned}`;
+}
+
+function AirportNameWithTooltip({ name, align = "left" }) {
+  const [open, setOpen] = useState(false);
+  if (!name || typeof name !== "string" || !name.trim()) return null;
+
+  return (
+    <div
+      className={`yf-seg__airport-wrap yf-seg__airport-wrap--${align}`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onClick={() => setOpen((prev) => !prev)}
+      title={name}
+      tabIndex={0}
+      role="button"
+      aria-label={`Airport: ${name}`}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setOpen((prev) => !prev);
+        }
+      }}
+    >
+      <span className="yf-seg__airport-name">{name}</span>
+      <Info size={10} className="yf-seg__airport-info-icon" />
+      {open && (
+        <div className={`yf-seg__airport-tooltip yf-seg__airport-tooltip--${align}`} role="tooltip">
+          {name}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LayoverBannerWithTooltip({ text, fullText }) {
+  const [open, setOpen] = useState(false);
+  if (!text) return null;
+
+  return (
+    <div className="yf-conn">
+      <div
+        className="yf-conn__card"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={() => setOpen((prev) => !prev)}
+        tabIndex={0}
+        role="button"
+        aria-label={fullText || text}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((prev) => !prev);
+          }
+        }}
+      >
+        <Clock size={11} className="yf-conn__icon" />
+        <span className="yf-conn__text">{text}</span>
+        <Info size={11} className="yf-conn__info-icon" />
+        {open && (
+          <div className="yf-conn__tooltip" role="tooltip">
+            {fullText || text}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, stopCount, price) {
   return (
     <div className="yf-journey">
@@ -194,6 +283,9 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
         const nextSeg = segments[sIdx + 1];
         const depDate = formatSegmentDate(seg.depTime, legFlight?.departDate || legFlight?.departureDate);
         const arrDate = formatSegmentDate(seg.arrTime, legFlight?.arrivalDate || legFlight?.departureDate);
+
+        const originTerminalBadge = formatTerminalBadge(seg.originTerminal);
+        const destTerminalBadge = formatTerminalBadge(seg.destTerminal);
 
         return (
           <React.Fragment key={`yf-seg-${sIdx}`}>
@@ -209,7 +301,7 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                     {seg.airlineCode ? `${seg.airlineCode} ` : ""}{seg.flightNumber || ""}
                   </span>
                 </div>
-                <span className="yf-seg__label">Segment {sIdx + 1}</span>
+                <span className="yf-seg__label">SEGMENT {sIdx + 1}</span>
               </div>
 
               {/* Middle Row: Schedule 3-Column Layout */}
@@ -226,17 +318,15 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                   </div>
                   {depDate && (
                     <span className="yf-seg__date">
-                      <CalendarDays size={11} className="yf-seg__cal-icon" /> {depDate}
+                      <CalendarDays size={10} className="yf-seg__cal-icon" /> {depDate}
                     </span>
                   )}
                   {seg.originAirportName && (
-                    <span className="yf-seg__airport-name" title={seg.originAirportName}>
-                      {seg.originAirportName}
-                    </span>
+                    <AirportNameWithTooltip name={seg.originAirportName} align="left" />
                   )}
-                  {seg.originTerminal && (
-                    <span className="yf-seg__terminal">
-                      Terminal {String(seg.originTerminal).replace(/^T/i, "")}
+                  {originTerminalBadge && (
+                    <span className="yf-seg__terminal yf-seg__terminal--dep" title={originTerminalBadge}>
+                      {originTerminalBadge}
                     </span>
                   )}
                 </div>
@@ -250,11 +340,18 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                     <div className="yf-seg__line-dot start" />
                     <div className="yf-seg__line-track" />
                     <span className="yf-seg__plane">
-                      <Plane size={12} style={{ transform: "rotate(90deg)" }} />
+                      <Plane
+                        size={12}
+                        className="yf-seg__plane-icon"
+                        color="#d32f2f"
+                        fill="#d32f2f"
+                        stroke="#d32f2f"
+                        strokeWidth={0.5}
+                      />
                     </span>
                     <div className="yf-seg__line-dot end" />
                   </div>
-                  <span className="yf-seg__nonstop-text">Non-stop</span>
+                  <span className="yf-seg__nonstop-text">NON-STOP</span>
                 </div>
 
                 {/* Right: Arrival */}
@@ -269,45 +366,26 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                   </div>
                   {arrDate && (
                     <span className="yf-seg__date">
-                      <CalendarDays size={11} className="yf-seg__cal-icon" /> {arrDate}
+                      <CalendarDays size={10} className="yf-seg__cal-icon" /> {arrDate}
                     </span>
                   )}
                   {seg.destAirportName && (
-                    <span className="yf-seg__airport-name" title={seg.destAirportName}>
-                      {seg.destAirportName}
-                    </span>
+                    <AirportNameWithTooltip name={seg.destAirportName} align="right" />
                   )}
-                  {seg.destTerminal && (
-                    <span className="yf-seg__terminal">
-                      Terminal {String(seg.destTerminal).replace(/^T/i, "")}
+                  {destTerminalBadge && (
+                    <span className="yf-seg__terminal yf-seg__terminal--arr" title={destTerminalBadge}>
+                      {destTerminalBadge}
                     </span>
                   )}
                 </div>
-              </div>
-
-              {/* Bottom Row: Baggage, Cabin & Class information */}
-              <div className="yf-seg__bag">
-                <span className="yf-seg__chip">
-                  <Briefcase size={11} /> Cabin: <strong>{formatBaggageText(seg.cabinBaggage, "7 Kg")}</strong>
-                </span>
-                <span className="yf-seg__chip">
-                  <Briefcase size={11} /> Check-in: <strong>{formatBaggageText(seg.baggage, "15 Kg")}</strong>
-                </span>
-                <span className="yf-seg__chip">
-                  <Armchair size={11} /> Class: <strong>{seg.cabinClass || legFlight?.selectedTravelClass || "Economy"}</strong>
-                </span>
               </div>
             </div>
 
             {sIdx < segments.length - 1 && (
-              <div className="yf-conn">
-                <div className="yf-conn__card">
-                  <Clock size={12} className="yf-conn__icon" />
-                  <span className="yf-conn__text">
-                    {formatLayoverText(seg, nextSeg)}
-                  </span>
-                </div>
-              </div>
+              <LayoverBannerWithTooltip
+                text={formatLayoverText(seg, nextSeg)}
+                fullText={formatLayoverFullText(seg, nextSeg)}
+              />
             )}
           </React.Fragment>
         );

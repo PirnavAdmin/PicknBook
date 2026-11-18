@@ -3501,72 +3501,105 @@ export default function HomePage() {
     }
   };
 
+  const executeFlightSearch = ({ focusOnMissing = true } = {}) => {
+    const isMultiCity = flightTripType === "multicity";
+    let hasError = false;
+
+    if (isMultiCity) {
+      multiCityLegs.forEach((leg) => {
+        if (!leg.from.trim() || !leg.to.trim()) {
+          hasError = true;
+        }
+      });
+      if (hasError) {
+        if (focusOnMissing) {
+          const searchEl =
+            document.getElementById("flight-search-form") ||
+            document.querySelector(".search-panel") ||
+            document.querySelector(".hero-section");
+          if (searchEl) {
+            searchEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+        alert("Please fill all source and destination cities for multi-city legs.");
+        return;
+      }
+    } else {
+      const fromVal = flightFrom.trim();
+      const toVal = flightTo.trim();
+
+      if (!fromVal) {
+        setFlightFromError("Source city is required.");
+        hasError = true;
+      } else {
+        setFlightFromError("");
+      }
+
+      if (!toVal) {
+        setFlightToError("Destination city is required.");
+        hasError = true;
+      } else {
+        setFlightToError("");
+      }
+
+      if (hasError) {
+        if (focusOnMissing) {
+          const searchEl =
+            document.getElementById("flight-search-form") ||
+            document.querySelector(".search-panel") ||
+            document.querySelector(".hero-section");
+          if (searchEl) {
+            searchEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+          setTimeout(() => {
+            if (!fromVal) {
+              const fromInput = document.querySelector(
+                ".flight-search-bar-row .source-field input, .flight-search-bar-row .place-autocomplete input, .place-autocomplete input"
+              );
+              if (fromInput) fromInput.focus();
+            } else if (!toVal) {
+              const toInput = document.querySelector(".flight-search-bar-row .destination-field input");
+              if (toInput) toInput.focus();
+            }
+          }, 150);
+        }
+        return;
+      }
+    }
+
+    const source = isMultiCity ? multiCityLegs[0]?.from || "" : flightFrom;
+    const destination = isMultiCity
+      ? multiCityLegs[multiCityLegs.length - 1]?.to || ""
+      : flightTo;
+    const departureDate = isMultiCity
+      ? multiCityLegs[0]?.departureDate || ""
+      : flightDepartureDate;
+
+    if (!cabinClass) {
+      alert("Please select a cabin class.");
+      return;
+    }
+
+    const flightPayload = {
+      source: source.trim(),
+      destination: destination.trim(),
+      tripType: flightTripType,
+      departureDate: departureDate ? departureDate.trim() : "",
+      returnDate: flightTripType === "twoway" && flightReturnDate ? flightReturnDate.trim() : "",
+      travellers: travellerSummary || "1 Traveller",
+      cabinClass: cabinClass || "Economy",
+      legs: flightTripType === "multicity" ? JSON.stringify(multiCityLegs) : "",
+    };
+    navigateToFlightSearch(flightPayload);
+  };
+
   const handleSearch = () => {
     if (activeTab === "hotels") {
       return;
     }
 
     if (activeTab === "flights") {
-      const isMultiCity = flightTripType === "multicity";
-      let hasError = false;
-
-      if (isMultiCity) {
-        multiCityLegs.forEach(leg => {
-          if (!leg.from.trim() || !leg.to.trim()) {
-            hasError = true;
-          }
-        });
-        if (hasError) {
-          alert("Please fill all source and destination cities for multi-city legs.");
-          return;
-        }
-      } else {
-        const fromVal = flightFrom.trim();
-        const toVal = flightTo.trim();
-
-        if (!fromVal) {
-          setFlightFromError("Source city is required.");
-          hasError = true;
-        } else {
-          setFlightFromError("");
-        }
-
-        if (!toVal) {
-          setFlightToError("Destination city is required.");
-          hasError = true;
-        } else {
-          setFlightToError("");
-        }
-
-        if (hasError) {
-          return;
-        }
-      }
-
-      const source = isMultiCity ? multiCityLegs[0]?.from || "" : flightFrom;
-      const destination = isMultiCity
-        ? multiCityLegs[multiCityLegs.length - 1]?.to || ""
-        : flightTo;
-      const departureDate = isMultiCity
-        ? multiCityLegs[0]?.departureDate || ""
-        : flightDepartureDate;
-
-      if (!cabinClass) {
-        alert("Please select a cabin class.");
-        return;
-      }
-
-      const flightPayload = {
-        source: source.trim(),
-        destination: destination.trim(),
-        tripType: flightTripType,
-        departureDate: departureDate.trim(),
-        returnDate: flightTripType === "twoway" ? flightReturnDate.trim() : "",
-        travellers: travellerSummary,
-        cabinClass,
-        legs: flightTripType === "multicity" ? JSON.stringify(multiCityLegs) : "",
-      };
-      navigateToFlightSearch(flightPayload);
+      executeFlightSearch({ focusOnMissing: true });
       return;
     }
 
@@ -7915,7 +7948,10 @@ export default function HomePage() {
           )}
 
           <div className={`hero-grid ${activeTab === "flights" && flightTripType === "multicity" ? "multicity-active" : ""}`}>
-            <div className={`search-panel ${activeTab === "flights" && flightTripType === "multicity" ? "is-multicity" : ""}`}>
+            <div
+              id="flight-search-form"
+              className={`search-panel ${activeTab === "flights" && flightTripType === "multicity" ? "is-multicity" : ""}`}
+            >
               <div className="tabs-wrap">
                 <div className="tabs" role="tablist" aria-label="Booking type">
                   <button
@@ -8457,7 +8493,12 @@ export default function HomePage() {
             ],
             btnIcon: <Plane size={16} />,
             btnLabel: "Search Flights Now",
-            btnAction: () => setActiveTab("flights"),
+            btnAction: () => {
+              if (activeTab !== "flights") {
+                setActiveTab("flights");
+              }
+              executeFlightSearch({ focusOnMissing: true });
+            },
             bgImage: sunsetHighwayBg,
             vehicleImg: flightSectionNewBanner,
             vehicleAlt: "Airplane window with passport and journal",

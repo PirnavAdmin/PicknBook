@@ -1137,12 +1137,14 @@
   margin: 0;
 }
 
-/* ── FLIGHT SINGLE RANGE SLIDER (MOVABLE AIRPLANE SILHOUETTE) ── */
-.flight-single-slider-wrap {
+/* ── FLIGHT FILTER SLIDERS (SUBTLE CIRCULAR WHITE THUMB, RED OUTLINE & RED AIRPLANE) ── */
+.flight-single-slider-wrap,
+.flight-dual-slider-wrap {
   position: relative;
   width: 100%;
   height: 32px;
-  padding: 0 10px; /* 10px matches half icon width to prevent boundary clipping */
+  padding: 0 11px;
+  /* 11px matches half of 22px thumb disc width to prevent boundary clipping at min & max */
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -1152,13 +1154,15 @@
   margin-top: 10px;
 }
 
-.flight-single-slider-wrap.disabled {
+.flight-single-slider-wrap.disabled,
+.flight-dual-slider-wrap.disabled {
   opacity: 0.55;
   cursor: not-allowed;
   pointer-events: none;
 }
 
-.flight-single-slider-track-area {
+.flight-single-slider-track-area,
+.flight-dual-slider-track-area {
   position: relative;
   width: 100%;
   height: 100%;
@@ -1166,28 +1170,40 @@
   align-items: center;
 }
 
-.flight-single-slider-rail {
+.flight-single-slider-rail,
+.flight-dual-slider-rail {
   position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   left: 0;
   right: 0;
-  height: 4px;
+  height: 3px;
   background: #e2e8f0;
-  border-radius: 4px;
+  border-radius: 3px;
   pointer-events: none;
 }
 
-.flight-single-slider-active-track {
+.flight-single-slider-active-track,
+.flight-dual-slider-active-track {
   position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
   left: 0;
-  height: 4px;
+  height: 3px;
   background: var(--theme-primary, #ff0000);
-  border-radius: 4px;
+  border-radius: 3px;
   pointer-events: none;
   transition: width 0.05s ease;
 }
 
-/* Single movable red airplane silhouette handle - NO circular button or white border */
-.flight-single-slider-airplane-handle {
+.flight-single-slider-wrap.dragging .flight-single-slider-active-track {
+  transition: none;
+}
+
+/* Movable slider thumb handle hit-area */
+.flight-single-slider-airplane-handle,
+.flight-single-slider-thumb,
+.flight-slider-handle {
   position: absolute;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -1201,29 +1217,91 @@
   user-select: none;
   touch-action: none;
   z-index: 3;
-  transition: transform 0.12s ease;
-}
-
-.flight-single-slider-airplane-handle:hover {
-  transform: translate(-50%, -50%) scale(1.18);
-  filter: drop-shadow(0 2px 5px rgba(225, 6, 0, 0.45));
+  box-sizing: border-box;
 }
 
 .flight-single-slider-airplane-handle:active,
-.flight-single-slider-airplane-handle.active {
+.flight-single-slider-airplane-handle.active,
+.flight-single-slider-thumb:active,
+.flight-single-slider-thumb.active,
+.flight-slider-handle:active,
+.flight-slider-handle.active {
   cursor: grabbing;
-  transform: translate(-50%, -50%) scale(1.25);
-  filter: drop-shadow(0 3px 8px rgba(225, 6, 0, 0.6));
 }
 
-.flight-single-slider-airplane-handle:focus-visible {
-  filter: drop-shadow(0 0 4px rgba(225, 6, 0, 0.8));
+/* Airplane slider handle - clean red silhouette, no circular border or background */
+.flight-slider-thumb-disc,
+.flight-slider-handle-disc--plane {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: transform 0.15s ease;
 }
 
-.flight-slider-airplane-icon {
-  transform: rotate(45deg); /* Angled and oriented towards the right, matching reference */
+.flight-single-slider-airplane-handle:hover .flight-slider-thumb-disc,
+.flight-single-slider-thumb:hover .flight-slider-thumb-disc,
+.flight-slider-handle:hover .flight-slider-handle-disc--plane {
+  transform: scale(1.15);
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+.flight-single-slider-airplane-handle:active .flight-slider-thumb-disc,
+.flight-single-slider-airplane-handle.active .flight-slider-thumb-disc,
+.flight-single-slider-thumb:active .flight-slider-thumb-disc,
+.flight-single-slider-thumb.active .flight-slider-thumb-disc,
+.flight-slider-handle:active .flight-slider-handle-disc--plane,
+.flight-slider-handle.active .flight-slider-handle-disc--plane {
+  transform: scale(1.22);
+  box-shadow: none !important;
+}
+
+.flight-single-slider-airplane-handle:focus-visible .flight-slider-thumb-disc,
+.flight-single-slider-thumb:focus-visible .flight-slider-thumb-disc,
+.flight-slider-handle:focus-visible .flight-slider-handle-disc--plane {
+  outline: none;
+  filter: drop-shadow(0 0 3px rgba(255, 0, 0, 0.5));
+}
+
+/* Clean red airplane icon pointing diagonally upwards to the right */
+.flight-slider-airplane-icon,
+.flight-slider-plane-icon {
+  transform: rotate(0deg) !important;
   display: block;
   pointer-events: none;
+  flex-shrink: 0;
+  color: var(--theme-primary, #ff0000) !important;
+  fill: var(--theme-primary, #ff0000) !important;
+  stroke: var(--theme-primary, #ff0000) !important;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+/* Dual range min circular handle */
+.flight-slider-handle-disc--circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--theme-primary, #ff0000);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.flight-slider-handle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--theme-primary, #ff0000);
 }
 
 .departure-grid {
@@ -3274,20 +3352,7 @@
 }
 
 .clear-flight-filters {
-  margin-top: 7px;
-  padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 5px;
-  background: transparent;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.clear-flight-filters:hover,
-.clear-flight-filters:focus-visible {
-  background: rgba(255, 255, 255, 0.16);
+  display: none !important;
 }
 
 
@@ -3654,6 +3719,7 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -4359,22 +4425,27 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
+
   .fcd-seg-col--arr {
     align-items: flex-start;
     text-align: left;
   }
+
   .fcd-seg-col--arr .fcd-seg-place-row {
     justify-content: flex-start;
   }
+
   .fcd-seg-col--center {
     min-width: unset;
     padding: 6px 0;
   }
+
   .fcd-seg-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
+
   .fcd-seg-indicator-badge {
     align-self: flex-start;
   }

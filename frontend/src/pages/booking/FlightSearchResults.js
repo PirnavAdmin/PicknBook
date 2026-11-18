@@ -1416,6 +1416,8 @@ export default function FlightSearchResults() {
   };
 
   const [priceRange, setPriceRange] = useState({ min: 0, max: 0 });
+  const [departureRange, setDepartureRange] = useState({ min: 0, max: 1439 });
+  const [arrivalRange, setArrivalRange] = useState({ min: 0, max: 1439 });
   const [durationRange, setDurationRange] = useState({ min: 0, max: 0 });
   const [departureWindows, setDepartureWindows] = useState(() => ({
     earlyMorning: false,
@@ -1977,6 +1979,8 @@ export default function FlightSearchResults() {
     setCurrentPage(1);
   }, [
     priceRange,
+    departureRange,
+    arrivalRange,
     durationRange,
     departureWindows,
     fareTypeFilters,
@@ -2044,6 +2048,18 @@ export default function FlightSearchResults() {
           }
         }
 
+        // 2. Departure Time Range Slider (00:00 to 23:59)
+        if (departureRange.max < 1439) {
+          if (
+            departureMinutes === null ||
+            !Number.isFinite(departureMinutes) ||
+            departureMinutes > departureRange.max
+          ) {
+            return false;
+          }
+        }
+
+        // 2B. Departure Time Window Chips (Early Morning, Morning, Afternoon, Evening)
         // 2. Departure Time Window Chips (Early Morning, Morning, Afternoon, Evening)
         const activeWindows = Object.entries(departureWindows).filter(([_, v]) => Boolean(v)).map(([k]) => k);
         if (activeWindows.length > 0) {
@@ -2057,6 +2073,18 @@ export default function FlightSearchResults() {
           if (!matchesWindow) return false;
         }
 
+        // 3. Arrival Time Range Slider (00:00 to 23:59)
+        if (arrivalRange.max < 1439) {
+          if (
+            arrivalMinutes === null ||
+            !Number.isFinite(arrivalMinutes) ||
+            arrivalMinutes > arrivalRange.max
+          ) {
+            return false;
+          }
+        }
+
+        // 4. Flight Duration Filter (complete journey duration including layovers)
         // 3. Flight Duration Filter (complete journey duration including layovers)
         const effectiveMaxDuration = durationRange.max > 0 ? durationRange.max : durationBounds.max;
         if (durationBounds.max > durationBounds.min && effectiveMaxDuration < durationBounds.max) {
@@ -2123,6 +2151,8 @@ export default function FlightSearchResults() {
       fareBounds,
       durationBounds,
       priceRange,
+      departureRange,
+      arrivalRange,
       durationRange,
       departureWindows,
       fareTypeFilters,
@@ -2286,6 +2316,8 @@ export default function FlightSearchResults() {
 
   const handleResetAllFilters = useCallback(() => {
     setPriceRange(fareBounds);
+    setDepartureRange({ min: 0, max: 1439 });
+    setArrivalRange({ min: 0, max: 1439 });
     setDurationRange(durationBounds);
     setDepartureWindows({ earlyMorning: false, morning: false, afternoon: false, evening: false });
     setFareTypeFilters({ refundable: false, nonRefundable: false });
@@ -3126,6 +3158,7 @@ export default function FlightSearchResults() {
               </button>
             </header>
 
+            {/* 1. Price */}
             <section className="filter-group">
               <h3>
                 <IndianRupee size={17} />
@@ -3145,6 +3178,7 @@ export default function FlightSearchResults() {
               />
             </section>
 
+            {/* 2. Duration */}
             <section className="filter-group">
               <h3><Clock3 size={17} /><span>Duration</span></h3>
               <div className="range-head">
@@ -3161,27 +3195,25 @@ export default function FlightSearchResults() {
               />
             </section>
 
+            {/* 3. Stops */}
             <section className="filter-group">
               <h3>
-                <Clock3 size={17} />
-                <span>Departure</span>
+                <MapPin size={17} />
+                <span>Stops</span>
               </h3>
-              <div className="departure-grid">
-                {DEPARTURE_WINDOWS.map(({ key, label, subLabel, Icon }) => (
-                  <button
-                    type="button"
-                    key={key}
-                    className={`departure-chip ${departureWindows[key] ? "active" : ""}`}
-                    onClick={() => toggleDepartureWindow(key)}
-                  >
-                    <Icon size={24} strokeWidth={2.2} />
-                    <span>{label}</span>
-                    {subLabel && <small style={{ fontSize: "11px", opacity: 0.85, marginTop: "2px" }}>{subLabel}</small>}
-                  </button>
-                ))}
-              </div>
+              {STOP_FILTERS.map((stop) => (
+                <label className="check-row" key={stop.key}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(stopFilters[stop.key])}
+                    onChange={() => toggleStopFilter(stop.key)}
+                  />
+                  <span>{stop.label}</span>
+                </label>
+              ))}
             </section>
 
+            {/* 4. Fare Type */}
             <section className="filter-group">
               <h3>
                 <MapPin size={17} />
@@ -3199,23 +3231,7 @@ export default function FlightSearchResults() {
               ))}
             </section>
 
-            <section className="filter-group">
-              <h3>
-                <MapPin size={17} />
-                <span>Stop</span>
-              </h3>
-              {STOP_FILTERS.map((stop) => (
-                <label className="check-row" key={stop.key}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(stopFilters[stop.key])}
-                    onChange={() => toggleStopFilter(stop.key)}
-                  />
-                  <span>{stop.label}</span>
-                </label>
-              ))}
-            </section>
-
+            {/* 5. Airlines */}
             <section className="filter-group">
               <h3>
                 <Plane size={17} />
@@ -3237,6 +3253,7 @@ export default function FlightSearchResults() {
               )}
             </section>
 
+            {/* 6. Cabin Class */}
             <section className="filter-group">
               <h3>
                 <Armchair size={17} />
@@ -3510,6 +3527,11 @@ export default function FlightSearchResults() {
                               <span className="premium-bag-chip"><Briefcase size={9} /> Check-in: {summaryMeta.checkinBaggage}</span>
                               <span className="premium-bag-chip"><Briefcase size={9} /> Cabin: {summaryMeta.cabinBaggage}</span>
                               <span className="premium-bag-chip"><Armchair size={9} /> Class: {summaryMeta.cabinClass}</span>
+                              {summaryMeta.hasValidSeats ? (
+                                <span className="premium-bag-chip"><Users size={9} /> Seats: {summaryMeta.availableSeats}</span>
+                              ) : (
+                                <span className="premium-bag-chip"><Users size={9} /> Seats availability not provided</span>
+                              )}
                             </div>
 
                             <div className="premium-compact-actions">

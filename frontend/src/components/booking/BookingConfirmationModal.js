@@ -353,101 +353,223 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
   const handlePayNow = handleCashfreePay;
 
   return (
-    <div className="modal-backdrop" onClick={onClose} style={{
-      position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-      backgroundColor: "rgba(0,0,0,0.5)", zIndex: 9999, display: "flex",
-      alignItems: "center", justifyContent: "center"
-    }}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{
-        backgroundColor: "#fff", width: "100%", maxWidth: bookingType === "Flight" ? "680px" : "500px",
-        borderRadius: "12px", padding: "24px", maxHeight: "90vh", overflowY: "auto", position: "relative"
-      }}>
-        <button onClick={onClose} aria-label="Close modal" style={{ position: "absolute", top: "16px", right: "16px", background: "none", border: "none", cursor: "pointer", zIndex: 10 }}>
-          <X size={24} />
-        </button>
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        backgroundColor: "rgba(15, 23, 42, 0.6)",
+        backdropFilter: "blur(2px)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "16px",
+        boxSizing: "border-box",
+      }}
+    >
+      <div
+        className="modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: "#ffffff",
+          width: "100%",
+          maxWidth: bookingType === "Flight" ? "620px" : "500px",
+          borderRadius: "14px",
+          padding: "16px 22px 20px 22px",
+          maxHeight: "92vh",
+          overflowY: "auto",
+          position: "relative",
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* Dedicated Top-Right Close Button Header: Places close button above the pipeline */}
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "4px" }}>
+          <button
+            onClick={onClose}
+            aria-label="Close modal"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "4px",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#0f172a",
+              borderRadius: "6px",
+              lineHeight: 1,
+            }}
+          >
+            <X size={20} />
+          </button>
+        </div>
 
         {bookingType === "Flight" && (
-          <div style={{ marginTop: "8px", marginBottom: "20px" }}>
+          <div style={{ marginBottom: "12px" }}>
             <FlightStepperHeader currentStage={4} compact={true} />
           </div>
         )}
 
-        <h2 style={{ marginTop: 0, marginBottom: "20px", fontSize: "1.5rem" }}>Review Booking ({bookingType})</h2>
+        <h2 style={{ marginTop: 0, marginBottom: "12px", fontSize: "1.25rem", fontWeight: "800", color: "#0f172a" }}>
+          Review Booking ({bookingType})
+        </h2>
 
         {isBlocked && blockTimeRemaining > 0 && (
-          <div style={{ backgroundColor: "#fff3cd", color: "#856404", padding: "12px", borderRadius: "8px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", border: "1px solid #ffeeba" }}>
+          <div
+            style={{
+              backgroundColor: "#fff3cd",
+              color: "#856404",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              marginBottom: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              border: "1px solid #ffeeba",
+              fontSize: "0.85rem",
+            }}
+          >
             <strong>{bookingType === "Hotel" ? "Room Blocked!" : "Seats Blocked!"}</strong>
             <span>Time remaining: {Math.floor(blockTimeRemaining / 60)}:{String(blockTimeRemaining % 60).padStart(2, '0')}</span>
           </div>
         )}
 
         {/* Passenger Summary */}
-        <div style={{ marginBottom: "20px", padding: "16px", background: "#f8f9fa", borderRadius: "8px" }}>
-          <h3 style={{ fontSize: "1.1rem", margin: "0 0 12px 0" }}>Passenger Details</h3>
+        <div style={{ marginBottom: "10px", padding: "10px 14px", background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: "8px" }}>
+          <h3 style={{ fontSize: "0.95rem", fontWeight: "700", margin: "0 0 6px 0", color: "#0f172a" }}>Passenger Details</h3>
           {passengers.length > 0 ? (
             passengers.map((p, idx) => (
-              <div key={idx} style={{ marginBottom: "8px" }}>
-                <strong>{p.firstName || p.FirstName} {p.lastName || p.LastName}</strong>
-                <div style={{ fontSize: "0.9rem", color: "#666" }}>
-                  {p.gender || p.Gender} | Age: {bookingType === "Flight" ? (p.isChild ? "Child" : p.isInfant ? "Infant" : "Adult") : p.age || p.Age}
+              <div key={idx} style={{ marginBottom: idx < passengers.length - 1 ? "4px" : "0" }}>
+                <strong style={{ fontSize: "0.92rem", color: "#0f172a" }}>{p.firstName || p.FirstName} {p.lastName || p.LastName}</strong>
+                <div style={{ fontSize: "0.82rem", color: "#64748b" }}>
+                  Age: {bookingType === "Flight" ? (p.isChild ? "Child" : p.isInfant ? "Infant" : "Adult") : p.age || p.Age || "Adult"}
+                  {p.gender || p.Gender ? ` | ${p.gender || p.Gender}` : ""}
                 </div>
               </div>
             ))
           ) : (
-            <div style={{ marginBottom: "8px" }}>
-              <strong>{flowState.guestName || "Guest"}</strong>
+            <div>
+              <strong style={{ fontSize: "0.92rem", color: "#0f172a" }}>{flowState.guestName || "Guest"}</strong>
             </div>
           )}
 
-          <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #ddd", fontSize: "0.9rem" }}>
-            Contact: {contact?.mobile || flowState.guestPhone} | {contact?.email || flowState.guestEmail}
+          <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid #e2e8f0", fontSize: "0.82rem", color: "#475569" }}>
+            Contact: {contact?.mobile || flowState.guestPhone || "--"} | {contact?.email || flowState.guestEmail || "--"}
           </div>
         </div>
 
         {/* Fare Summary */}
-        <div style={{ marginBottom: "24px", padding: "16px", border: "1px solid #eee", borderRadius: "8px" }}>
-          <h3 style={{ fontSize: "1.1rem", margin: "0 0 12px 0" }}>Fare Summary</h3>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+        <div style={{ marginBottom: "10px", padding: "10px 14px", border: "1px solid #e2e8f0", borderRadius: "8px", background: "#ffffff" }}>
+          <h3 style={{ fontSize: "0.95rem", fontWeight: "700", margin: "0 0 8px 0", color: "#0f172a" }}>Fare Summary</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.88rem", color: "#334155" }}>
             <span>Base Fare</span>
-            <span>₹ {formatCurrency(fareSummary?.baseFare || 0)}</span>
+            <span style={{ fontWeight: "600" }}>₹{formatCurrency(fareSummary?.baseFare || 0)}</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.88rem", color: "#334155" }}>
             <span>{bookingType === "Bus" ? "Operator GST" : "Taxes & Fees"}</span>
-            <span>₹ {formatCurrency(taxesAndFees)}</span>
+            <span style={{ fontWeight: "600" }}>₹{formatCurrency(taxesAndFees)}</span>
           </div>
           {(flowState?.couponDiscount > 0 || fareSummary?.discount > 0) && (
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", color: "green" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.88rem", color: "#16a34a" }}>
               <span>Discount</span>
-              <span>- ₹ {formatCurrency(flowState?.couponDiscount || fareSummary?.discount || 0)}</span>
+              <span style={{ fontWeight: "600" }}>- ₹{formatCurrency(flowState?.couponDiscount || fareSummary?.discount || 0)}</span>
             </div>
           )}
-          <hr style={{ margin: "12px 0", borderColor: "#eee" }} />
-          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "1.2rem" }}>
+          <hr style={{ margin: "8px 0", borderColor: "#f1f5f9" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "800", fontSize: "1.15rem", color: "#0f172a" }}>
             <span>Total Payable</span>
-            <span>₹ {formatCurrency(totalPayable)}</span>
+            <span>₹{formatCurrency(totalPayable)}</span>
           </div>
-          {walletBalance > 0 && walletStatus === "Active" && (
-            <div style={{ marginTop: "12px", padding: "10px 12px", background: "#fffafa", border: "1px solid #f1c4c4", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontWeight: "600", fontSize: "0.92rem", color: "#111827" }}>
-                <input
-                  type="checkbox"
-                  checked={walletAppliedAmount > 0 || useWallet}
-                  onChange={(e) => setUseWallet(e.target.checked)}
-                />
-                <span>Use Wallet Balance (Available: ₹ {formatCurrency(walletBalance)})</span>
-              </label>
-            </div>
-          )}
-          {walletAppliedAmount > 0 && (
-            <div style={{ display: "grid", gap: "4px", marginTop: "12px", color: "#555" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}><span>Wallet applied</span><span>- ₹ {formatCurrency(walletAppliedAmount)}</span></div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}><span>Pay via gateway</span><span>₹ {formatCurrency(gatewayPayableAmount)}</span></div>
-            </div>
-          )}
         </div>
 
+        {/* Wallet Balance Section: Single-Line Alignment */}
+        {walletBalance > 0 && (walletStatus === "Active" || !b2cWallet) && (
+          <div
+            style={{
+              marginBottom: "12px",
+              padding: "8px 14px",
+              background: "#fff5f5",
+              border: "1px solid #fecaca",
+              borderRadius: "8px",
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "0.9rem",
+                color: "#0f172a",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <input
+                type="checkbox"
+                id="modal-use-wallet-cb"
+                checked={walletAppliedAmount > 0 || useWallet}
+                onChange={(e) => setUseWallet(e.target.checked)}
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  cursor: "pointer",
+                  accentColor: "#d32f2f",
+                  flexShrink: 0,
+                  margin: 0,
+                }}
+              />
+              <label
+                htmlFor="modal-use-wallet-cb"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                  margin: 0,
+                  userSelect: "none",
+                  fontSize: "0.9rem",
+                }}
+              >
+                <span style={{ fontWeight: "700", color: "#0f172a" }}>Use Wallet Balance</span>
+                <span style={{ color: "#9ca3af", fontWeight: "400" }}>|</span>
+                <span style={{ fontWeight: "600", color: "#374151" }}>
+                  Available: ₹{formatCurrency(walletBalance)}
+                </span>
+              </label>
+            </div>
+            {walletAppliedAmount > 0 && (
+              <div
+                style={{
+                  display: "grid",
+                  gap: "3px",
+                  marginTop: "6px",
+                  paddingTop: "6px",
+                  borderTop: "1px dashed #fecaca",
+                  fontSize: "0.82rem",
+                  color: "#475569",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Wallet applied</span>
+                  <span style={{ color: "#d32f2f", fontWeight: "700" }}>- ₹{formatCurrency(walletAppliedAmount)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "800", color: "#0f172a" }}>
+                  <span>Pay via gateway</span>
+                  <span>₹{formatCurrency(gatewayPayableAmount)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {(localError || paymentError) && (
-          <div style={{ padding: "12px", background: "#fee", color: "#c00", borderRadius: "6px", marginBottom: "20px" }}>
+          <div style={{ padding: "8px 12px", background: "#fee2e2", color: "#b91c1c", borderRadius: "6px", marginBottom: "10px", fontSize: "0.85rem" }}>
             {localError || paymentError}
           </div>
         )}
@@ -456,12 +578,24 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           onClick={handlePayNow}
           disabled={isProcessing || cfIsSubmitting || (!isBusBooking && useWallet && (walletStatus !== "Active" || walletBalance <= 0))}
           style={{
-            width: "100%", padding: "14px", backgroundColor: "var(--pnb-red, #e60000)", color: "white",
-            border: "none", borderRadius: "8px", fontSize: "1.1rem", fontWeight: "bold", cursor: "pointer",
-            display: "flex", justifyContent: "center", alignItems: "center", gap: "8px"
+            width: "100%",
+            padding: "11px 16px",
+            backgroundColor: "var(--pnb-red, #d32f2f)",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "1.05rem",
+            fontWeight: "700",
+            cursor: isProcessing || cfIsSubmitting ? "not-allowed" : "pointer",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "8px",
+            boxShadow: "0 2px 4px rgba(211, 47, 47, 0.2)",
+            transition: "background-color 0.15s ease",
           }}
         >
-          {isProcessing || cfIsSubmitting ? <Loader2 className="spinner" size={20} /> : "Pay Now"}
+          {isProcessing || cfIsSubmitting ? <Loader2 className="spinner" size={18} /> : "Pay Now"}
         </button>
       </div>
     </div>
