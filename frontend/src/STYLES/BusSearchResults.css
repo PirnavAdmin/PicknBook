@@ -583,6 +583,454 @@
   gap: 16px;
 }
 
+/* ── Bus Photo Gallery & Lightbox ────────────────────────────────────────── */
+.bus-photos-tab-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bus-photos-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.bus-photos-count-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  display: block;
+  margin-top: 2px;
+}
+
+.bus-photos-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bus-photos-verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+
+.bus-photos-model-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+
+.bus-photos-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bus-photos-cat-tab {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.18s ease-in-out;
+}
+
+.bus-photos-cat-tab:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #94a3b8;
+}
+
+.bus-photos-cat-tab.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+}
+
+.bus-photos-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 36px 16px;
+  text-align: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+}
+
+.bus-photos-state-box h5 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.bus-photos-state-box p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+  max-width: 440px;
+  line-height: 1.45;
+}
+
+.bus-photo-thumb-card {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+
+.bus-photo-thumb-card:hover,
+.bus-photo-thumb-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: #38bdf8;
+}
+
+.bus-photo-thumb-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.bus-photo-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.bus-photo-thumb-card:hover .bus-photo-thumb-img {
+  transform: scale(1.04);
+}
+
+.bus-photo-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.2) 0%, transparent 40%, rgba(15, 23, 42, 0.7) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 10px;
+  pointer-events: none;
+}
+
+.bus-photo-type-badge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.02em;
+}
+
+.bus-photo-view-badge {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(2, 132, 199, 0.85);
+  backdrop-filter: blur(4px);
+  padding: 3px 8px;
+  border-radius: 4px;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.bus-photo-thumb-card:hover .bus-photo-view-badge {
+  opacity: 1;
+}
+
+/* Lightbox styles */
+.bus-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: busFadeIn 0.18s ease-out;
+}
+
+@keyframes busFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bus-lightbox-dialog {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bus-lightbox-close-btn {
+  position: absolute;
+  top: -44px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  z-index: 10;
+}
+
+.bus-lightbox-close-btn:hover {
+  background: rgba(239, 68, 68, 0.85);
+  border-color: #ef4444;
+}
+
+.bus-lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.bus-lightbox-nav-btn:hover {
+  background: rgba(2, 132, 199, 0.9);
+  border-color: #38bdf8;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.bus-lightbox-nav-btn.prev {
+  left: -54px;
+}
+
+.bus-lightbox-nav-btn.next {
+  right: -54px;
+}
+
+@media (max-width: 768px) {
+  .bus-lightbox-nav-btn.prev {
+    left: 8px;
+  }
+  .bus-lightbox-nav-btn.next {
+    right: 8px;
+  }
+}
+
+.bus-lightbox-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  max-width: 85vw;
+  max-height: 82vh;
+}
+
+.bus-lightbox-full-img {
+  max-width: 85vw;
+  max-height: 72vh;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+}
+
+.bus-lightbox-footer {
+  width: 100%;
+  background: #0f172a;
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #f1f5f9;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bus-lightbox-tag {
+  font-size: 13px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.bus-lightbox-counter {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.bus-lightbox-verified-note {
+  font-size: 12px;
+  font-weight: 600;
+  color: #34d399;
+}
+
+/* Card Photos quick-button */
+.bus-card-photos-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  color: #0284c7 !important;
+  border-color: #bae6fd !important;
+  background: #f0f9ff !important;
+  font-weight: 600 !important;
+  font-size: 12.5px !important;
+}
+
+.bus-card-photos-btn:hover {
+  background: #e0f2fe !important;
+  border-color: #38bdf8 !important;
+  color: #0369a1 !important;
+}
+
+/* Seat Selection Page photo trigger button */
+.bus-seat-photos-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1px solid #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.bus-seat-photos-btn:hover {
+  background: #dbeafe;
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+}
+
+.bus-seat-photos-btn .photo-pill-count {
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: 11px;
+  padding: 1px 6px;
+  font-weight: 700;
+}
+
+/* Seat selection standalone photo modal */
+.bus-photos-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.bus-photos-modal-content {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 95vw;
+  max-width: 900px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.bus-photos-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.bus-photos-modal-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.bus-photos-modal-close:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.bus-photos-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(85vh - 70px);
+}
+
 @media (max-width: 768px) {
   .bus-details-expanded-card {
     padding: 12px;

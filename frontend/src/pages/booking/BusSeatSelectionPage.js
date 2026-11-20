@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { FaFemale, FaMale } from "react-icons/fa";
-import { Clock3, Info } from "lucide-react";
+import { Clock3, Info, Camera, X, ChevronLeft, ChevronRight, Maximize2, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../../STYLES/BusBookingFlow.css";
 import SeatSelection from "../../components/forms/SeatSelection";
@@ -12,7 +12,7 @@ import {
   clearBlockKey,
   getBlockMsRemaining,
 } from "./busBookingFlowStore";
-import { getBusSeatMap } from "../../services/busBookingService";
+import { getBusSeatMap, getBusImagesProxy } from "../../services/busBookingService";
 import { isTokenExpired } from "../../services/authSession";
 
 function isRealSeat(rawSeat) {
@@ -686,6 +686,31 @@ export default function BusSeatSelectionPage({
   const [selectionError, setSelectionError] = useState("");
   const [activeCardPanel, setActiveCardPanel] = useState(null);
   const [showMoreFares, setShowMoreFares] = useState(false);
+
+  const [busImagesData, setBusImagesData] = useState(null);
+  const [isImagesLoading, setIsImagesLoading] = useState(false);
+  const [showPhotosModal, setShowPhotosModal] = useState(false);
+  const [photoLightboxIndex, setPhotoLightboxIndex] = useState(null);
+  const [activePhotoCategory, setActivePhotoCategory] = useState("ALL");
+
+  const fetchBusPhotos = useCallback(async () => {
+    if (busImagesData || isImagesLoading) return;
+    setIsImagesLoading(true);
+    try {
+      const res = await getBusImagesProxy({
+        traceId: bus?.traceId || bus?.TraceId || searchContext?.traceId || "",
+        srdvIndex: bus?.srdvIndex || bus?.SrdvIndex || bus?.id || "",
+        resultIndex: bus?.resultIndex || bus?.ResultIndex || bus?.id || "",
+        deviceType: "DESKTOP",
+      });
+      setBusImagesData(res);
+    } catch (e) {
+      console.warn("Could not load bus photos in seat selection:", e);
+      setBusImagesData({ busImages: [], isImageSupported: false, imageCount: 0 });
+    } finally {
+      setIsImagesLoading(false);
+    }
+  }, [bus, searchContext, busImagesData, isImagesLoading]);
 
 
   const busIdentity = bus?.tripId || bus?.traceId || bus?.id || "";
@@ -1729,6 +1754,17 @@ export default function BusSeatSelectionPage({
             <div className="bus-flow-summary-actions">
               <button
                 type="button"
+                className={activeCardPanel === "photos" ? "active" : ""}
+                onClick={() => {
+                  setShowPhotosModal(true);
+                  fetchBusPhotos();
+                }}
+              >
+                <Camera size={13} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "4px" }} />
+                Bus Photos
+              </button>
+              <button
+                type="button"
                 className={activeCardPanel === "boarding" ? "active" : ""}
                 onClick={() => setActiveCardPanel(activeCardPanel === "boarding" ? null : "boarding")}
               >
@@ -1889,6 +1925,24 @@ export default function BusSeatSelectionPage({
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="bus-flow-photos-action-wrapper" style={{ display: "flex", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    className="bus-seat-photos-btn"
+                    onClick={() => {
+                      setShowPhotosModal(true);
+                      fetchBusPhotos();
+                    }}
+                    title="View photos of bus, seats & interior"
+                  >
+                    <Camera size={14} />
+                    <span>Bus Photos</span>
+                    {busImagesData?.imageCount > 0 && (
+                      <span className="photo-pill-count">{busImagesData.imageCount}</span>
+                    )}
+                  </button>
                 </div>
 
                 <div className="bus-flow-seat-legend">
@@ -2058,6 +2112,187 @@ export default function BusSeatSelectionPage({
               )}
             </aside>
           </section>
+        )}
+
+        {/* ── Bus Photos Modal ────────────────────────────────────── */}
+        {showPhotosModal && (
+          <div className="bus-photos-modal-backdrop" onClick={() => setShowPhotosModal(false)}>
+            <div className="bus-photos-modal-content" onClick={(e) => e.stopPropagation()}>
+              <header className="bus-photos-modal-header">
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: "700" }}>
+                    {bus?.operatorName || "Bus"} Photos
+                  </h3>
+                  <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#64748b" }}>
+                    {bus?.busType}
+                  </p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  {busImagesData?.busImages?.length > 0 && (
+                    busImagesData?.isVehicleImage ? (
+                      <span className="bus-photos-verified-pill" title="These photos show the exact vehicle operating this journey">
+                        <CheckCircle2 size={13} /> Exact Trip Vehicle
+                      </span>
+                    ) : (
+                      <span className="bus-photos-model-pill" title="These photos show this operator's bus of the same model">
+                        <Sparkles size={13} /> Operator Fleet Model
+                      </span>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    className="bus-photos-modal-close"
+                    onClick={() => setShowPhotosModal(false)}
+                    aria-label="Close"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </header>
+
+              <div className="bus-photos-modal-body">
+                {(() => {
+                  const allPhotos = Array.isArray(busImagesData?.busImages) ? busImagesData.busImages : [];
+                  const rawCategories = Array.from(new Set(allPhotos.map((p) => p.imageType).filter(Boolean)));
+                  const categories = ["ALL", ...rawCategories];
+                  const displayPhotos = activePhotoCategory === "ALL"
+                    ? allPhotos
+                    : allPhotos.filter((p) => p.imageType === activePhotoCategory);
+
+                  const categoryLabels = {
+                    ALL: "All Photos",
+                    FRONT: "Front View",
+                    SIDE: "Side View",
+                    INSIDE: "Interior / Aisle",
+                    SEAT: "Seats & Berths",
+                    AMENITY: "Amenities",
+                  };
+
+                  return (
+                    <>
+                      {categories.length > 2 && (
+                        <div className="bus-photos-category-tabs" style={{ marginBottom: "14px" }}>
+                          {categories.map((cat) => (
+                            <button
+                              key={cat}
+                              type="button"
+                              className={`bus-photos-cat-tab ${activePhotoCategory === cat ? "active" : ""}`}
+                              onClick={() => setActivePhotoCategory(cat)}
+                            >
+                              {categoryLabels[cat] || cat} {cat !== "ALL" ? `(${allPhotos.filter(p => p.imageType === cat).length})` : `(${allPhotos.length})`}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {isImagesLoading ? (
+                        <div className="bus-photos-state-box">
+                          <Loader2 size={24} className="spin" style={{ color: "#3b82f6" }} />
+                          <p>Loading bus photos from provider...</p>
+                        </div>
+                      ) : allPhotos.length === 0 ? (
+                        <div className="bus-photos-state-box">
+                          <Camera size={32} color="#94a3b8" />
+                          <h5>No Photos Available for this Bus</h5>
+                          <p>The operator has not uploaded vehicle photos for this route. Your seat selection and booking are completely unaffected.</p>
+                        </div>
+                      ) : (
+                        <div className="bus-details-photos-grid">
+                          {displayPhotos.map((photo, idx) => (
+                            <div
+                              key={idx}
+                              className="bus-photo-thumb-card"
+                              onClick={() => setPhotoLightboxIndex(idx)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPhotoLightboxIndex(idx); }}
+                            >
+                              <div className="bus-photo-thumb-wrapper">
+                                <img
+                                  src={photo.imageUrl}
+                                  alt={`${bus?.operatorName || "Bus"} - ${categoryLabels[photo.imageType] || photo.imageType}`}
+                                  className="bus-photo-thumb-img"
+                                  loading="lazy"
+                                />
+                                <div className="bus-photo-thumb-overlay">
+                                  <span className="bus-photo-type-badge">
+                                    {categoryLabels[photo.imageType] || photo.imageType}
+                                  </span>
+                                  <span className="bus-photo-view-badge">
+                                    <Maximize2 size={13} /> Full View
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Photo Lightbox */}
+                      {photoLightboxIndex !== null && displayPhotos[photoLightboxIndex] && (
+                        <div className="bus-lightbox-backdrop" onClick={() => setPhotoLightboxIndex(null)}>
+                          <div className="bus-lightbox-dialog" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              className="bus-lightbox-close-btn"
+                              onClick={() => setPhotoLightboxIndex(null)}
+                              aria-label="Close photo"
+                            >
+                              <X size={20} />
+                            </button>
+
+                            {displayPhotos.length > 1 && (
+                              <button
+                                type="button"
+                                className="bus-lightbox-nav-btn prev"
+                                onClick={() => setPhotoLightboxIndex((prev) => (prev > 0 ? prev - 1 : displayPhotos.length - 1))}
+                                aria-label="Previous photo"
+                              >
+                                <ChevronLeft size={24} />
+                              </button>
+                            )}
+
+                            <div className="bus-lightbox-body">
+                              <img
+                                src={displayPhotos[photoLightboxIndex].imageUrl}
+                                alt={`${bus?.operatorName || "Bus"} full view`}
+                                className="bus-lightbox-full-img"
+                              />
+                              <div className="bus-lightbox-footer">
+                                <span className="bus-lightbox-tag">
+                                  {categoryLabels[displayPhotos[photoLightboxIndex].imageType] || displayPhotos[photoLightboxIndex].imageType}
+                                </span>
+                                <span className="bus-lightbox-counter">
+                                  {photoLightboxIndex + 1} / {displayPhotos.length}
+                                </span>
+                                {busImagesData?.isVehicleImage && (
+                                  <span className="bus-lightbox-verified-note">
+                                    <CheckCircle2 size={12} style={{ display: "inline-block", verticalAlign: "middle", marginRight: "3px" }} />
+                                    Verified Exact Vehicle
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {displayPhotos.length > 1 && (
+                              <button
+                                type="button"
+                                className="bus-lightbox-nav-btn next"
+                                onClick={() => setPhotoLightboxIndex((prev) => (prev < displayPhotos.length - 1 ? prev + 1 : 0))}
+                                aria-label="Next photo"
+                              >
+                                <ChevronRight size={24} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </main>

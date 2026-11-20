@@ -1640,6 +1640,8 @@ const BLOCKED_BUS_TRACE_TTL_MS = 60 * 60 * 1000;
 const blockedBusTraces = new Set();
 const seatLayoutInFlightRequests = new Map();
 const seatLayoutResponseCache = new Map();
+const busImagesInFlightRequests = new Map();
+const busImagesResponseCache = new Map();
 
 function readBlockedBusTraces() {
   if (typeof window === "undefined") return [];
@@ -1854,6 +1856,95 @@ export async function getBoardingPointsProxy({ traceId, srdvIndex, resultIndex }
     console.error("[busBookingService] getBoardingPointsProxy Error:", error);
     throw error;
   }
+}
+
+export async function getBusImagesProxy({ traceId, srdvIndex, resultIndex, deviceType = "DESKTOP" }) {
+  const cleanTraceId = String(traceId ?? "").trim();
+  const cleanSrdvIndex = String(srdvIndex ?? "").trim();
+  const cleanResultIndex = String(resultIndex ?? "").trim();
+  const cleanDeviceType = String(deviceType ?? "DESKTOP").trim().toUpperCase();
+
+  if (!cleanTraceId || !cleanResultIndex) {
+    return {
+      errorCode: 0,
+      errorMessage: "",
+      traceId: cleanTraceId,
+      srdvIndex: cleanSrdvIndex,
+      resultIndex: cleanResultIndex,
+      isImageSupported: false,
+      isVehicleImage: false,
+      imageCount: 0,
+      busImages: [],
+    };
+  }
+
+  const cacheKey = `${cleanTraceId}_${cleanSrdvIndex}_${cleanResultIndex}_${cleanDeviceType}`;
+  if (busImagesResponseCache.has(cacheKey)) {
+    return busImagesResponseCache.get(cacheKey);
+  }
+
+  let request = busImagesInFlightRequests.get(cacheKey);
+  if (!request) {
+    request = requestJson(`${BUS_BOOKINGS_ROOT}/bus-images`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        traceId: cleanTraceId,
+        srdvIndex: cleanSrdvIndex,
+        resultIndex: cleanResultIndex,
+        deviceType: cleanDeviceType,
+      }),
+    })
+      .then((data) => {
+        const errorObj = data?.Error || data?.error || {};
+        const errorCode = Number(errorObj.ErrorCode ?? errorObj.errorCode ?? 0);
+        const rawImages = Array.isArray(data?.BusImages)
+          ? data.BusImages
+          : Array.isArray(data?.busImages)
+          ? data.busImages
+          : [];
+
+        const normalized = {
+          errorCode,
+          errorMessage: errorObj.ErrorMessage || errorObj.errorMessage || "",
+          traceId: data?.TraceId ?? data?.traceId ?? cleanTraceId,
+          srdvIndex: data?.SrdvIndex ?? data?.srdvIndex ?? cleanSrdvIndex,
+          resultIndex: data?.ResultIndex ?? data?.resultIndex ?? cleanResultIndex,
+          isImageSupported: Boolean(data?.IsImageSupported ?? data?.isImageSupported ?? (errorCode === 0 && rawImages.length > 0)),
+          isVehicleImage: Boolean(data?.IsVehicleImage ?? data?.isVehicleImage),
+          imageCount: Number(data?.ImageCount ?? data?.imageCount ?? rawImages.length),
+          busImages: rawImages.map((img) => ({
+            imageType: String(img.ImageType || img.imageType || "FRONT").toUpperCase(),
+            imageUrl: img.ImageUrl || img.imageUrl || "",
+          })).filter((img) => Boolean(img.imageUrl)),
+        };
+
+        busImagesResponseCache.set(cacheKey, normalized);
+        return normalized;
+      })
+      .catch((error) => {
+        console.warn("[busBookingService] getBusImagesProxy non-blocking warning:", error);
+        const fallback = {
+          errorCode: 7004,
+          errorMessage: "Supplier service is temporarily unavailable.",
+          traceId: cleanTraceId,
+          srdvIndex: cleanSrdvIndex,
+          resultIndex: cleanResultIndex,
+          isImageSupported: false,
+          isVehicleImage: false,
+          imageCount: 0,
+          busImages: [],
+        };
+        return fallback;
+      })
+      .finally(() => {
+        busImagesInFlightRequests.delete(cacheKey);
+      });
+
+    busImagesInFlightRequests.set(cacheKey, request);
+  }
+
+  return request;
 }
 
 export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingPointId, droppingPointId, passengers, couponCode, promotionId, selectedFeaturedOfferId }) {
