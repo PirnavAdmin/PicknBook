@@ -3,11 +3,12 @@ import { Plane } from "lucide-react";
 
 /**
  * Single movable airplane slider for flight filters.
- * - Left side (min): fixed, no handle or dot displayed.
- * - Right side (max): movable red airplane silhouette (no surrounding circle/border).
- * - Active track: Pick&Book red from left (0%) to the airplane.
- * - Inactive track: neutral light grey from airplane to right (100%).
- * - Airplane sits directly on the track and moves smoothly without clipping.
+ * - Left side (min): fixed at minimum, active red track starts here.
+ * - Movable handle: circular white thumb with a subtle red outline and centered red airplane icon pointing right.
+ * - Active track: Pick&Book red from left (0%) to the airplane thumb.
+ * - Inactive track: neutral light grey from airplane thumb to right (100%).
+ * - Airplane thumb sits directly and precisely on the slider track, smoothly tracking user drag.
+ * - Boundary padding prevents clipping at 0% and 100%.
  */
 export default function FlightSingleRangeSlider({
   min = 0,
@@ -66,14 +67,14 @@ export default function FlightSingleRangeSlider({
     if (isDragging) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch (err) {}
+      } catch (err) { }
       setIsDragging(false);
     }
   };
 
   return (
     <div
-      className={`flight-single-slider-wrap ${disabled ? "disabled" : ""} ${className}`.trim()}
+      className={`flight-single-slider-wrap ${disabled ? "disabled" : ""} ${isDragging ? "dragging" : ""} ${className}`.trim()}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -89,9 +90,9 @@ export default function FlightSingleRangeSlider({
           style={{ width: `${percent}%` }}
         />
 
-        {/* Single Movable Red Airplane Silhouette Handle */}
+        {/* Movable airplane handle pointing diagonally upwards to the right */}
         <div
-          className={`flight-single-slider-airplane-handle ${isDragging ? "active" : ""}`}
+          className={`flight-single-slider-airplane-handle flight-single-slider-thumb ${isDragging ? "active" : ""}`}
           style={{ left: `${percent}%` }}
           role="slider"
           aria-label={ariaLabel}
@@ -108,16 +109,25 @@ export default function FlightSingleRangeSlider({
             } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
               e.preventDefault();
               onChange(Math.min(safeMax, currentVal + delta));
+            } else if (e.key === "Home") {
+              e.preventDefault();
+              onChange(safeMin);
+            } else if (e.key === "End") {
+              e.preventDefault();
+              onChange(safeMax);
             }
           }}
         >
-          <Plane
-            size={18}
-            className="flight-slider-airplane-icon"
-            color="var(--theme-primary, #ff0000)"
-            fill="var(--theme-primary, #ff0000)"
-            strokeWidth={0.5}
-          />
+          <div className="flight-slider-thumb-disc">
+            <Plane
+              size={18}
+              className="flight-slider-airplane-icon"
+              color="var(--theme-primary, #ff0000)"
+              fill="var(--theme-primary, #ff0000)"
+              stroke="var(--theme-primary, #ff0000)"
+              strokeWidth={0.5}
+            />
+          </div>
         </div>
       </div>
     </div>

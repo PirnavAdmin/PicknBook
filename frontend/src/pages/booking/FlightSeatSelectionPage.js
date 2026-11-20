@@ -570,8 +570,8 @@ export default function FlightSeatSelectionPage() {
       flowState.searchContext?.TraceId ||
       (typeof window !== "undefined"
         ? (window.sessionStorage.getItem("flight_trace_id") ||
-           window.sessionStorage.getItem("TraceId") ||
-           window.sessionStorage.getItem("flight_search_trace_id"))
+          window.sessionStorage.getItem("TraceId") ||
+          window.sessionStorage.getItem("flight_search_trace_id"))
         : null);
 
     const resolvedSrdvType = (
@@ -691,7 +691,7 @@ export default function FlightSeatSelectionPage() {
             const dest = item.Destination || item.destination || "";
             if (!origin && !dest) return true;
             return (origin === leg.sourceCode && dest === leg.destinationCode) ||
-                   (origin === journeyOrigin && dest === journeyDest);
+              (origin === journeyOrigin && dest === journeyDest);
           };
           let legBaggage = baggageList.filter(legMatchesSsr);
           if (legBaggage.length === 0) legBaggage = baggageList;
@@ -1050,8 +1050,8 @@ export default function FlightSeatSelectionPage() {
             <h3 className="sidebar-card-title">
               {segments.length > 1
                 ? (effectiveLegs[activeSegmentIndex]?.isReturnLeg
-                    ? `Return Flight: Flight ${activeSegmentIndex + 1} of ${segments.length}`
-                    : `Flight ${activeSegmentIndex + 1} of ${segments.length}`)
+                  ? `Return Flight: Flight ${activeSegmentIndex + 1} of ${segments.length}`
+                  : `Flight ${activeSegmentIndex + 1} of ${segments.length}`)
                 : "Your Flight"}
             </h3>
             <div className="flight-segment">
