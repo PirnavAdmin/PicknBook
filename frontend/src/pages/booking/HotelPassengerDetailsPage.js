@@ -1140,6 +1140,17 @@ export default function HotelPassengerDetailsPage() {
       }
   }
 
+  // Eliminate 1 rupee rounding discrepancy: ensure Room base charges + Taxes & GST ALWAYS equals Total Price
+  if (finalPayable > 0) {
+      const roundedPayable = Math.round(finalPayable);
+      const roundedTax = Math.round(tax);
+      const roundedBasePrice = Math.max(0, roundedPayable - roundedTax);
+
+      basePrice = roundedBasePrice;
+      tax = roundedTax;
+      finalPayable = roundedPayable;
+  }
+
   const tierDiscount = 0;
   const volumeDiscount = 0;
   const isPrimaryAdultValid = useMemo(() => {
