@@ -65,6 +65,7 @@ import CancellationModal from "./CancellationModal";
 import CancellationPolicySection from "../../components/booking/CancellationPolicySection";
 import BookingPagination, { paginateBookings } from "../../components/booking/BookingPagination";
 import BookingLifecycle from "../../components/booking/BookingLifecycle";
+import { formatPaymentMethod } from "../../utils/bookingLifecycle";
 import "../../STYLES/BusOpsDashboard.css";
 import "../../STYLES/BookingDetailsScrollbar.css";
 import "../../STYLES/BookingTableRows.css";
@@ -665,6 +666,20 @@ export default function BusBookings() {
                 <div className="booking-payment-field">
                   <span>Payment Transaction ID</span>
                   <strong>{selectedBooking.paymentId ?? "--"}</strong>
+                </div>
+                <div className="booking-payment-field">
+                  <span>Payment Method</span>
+                  <strong>
+                    {formatPaymentMethod(
+                      selectedBooking.paymentMethod ||
+                      selectedBooking.method ||
+                      selectedBooking.paymentBreakdown?.paymentMethod ||
+                      selectedBooking.paymentBreakdown?.method ||
+                      selectedBooking.gatewayPaymentMethod ||
+                      selectedBooking.lifecycleHierarchy?.stages?.find(s => s.key === "GATEWAY_PAYMENT")?.meta?.method ||
+                      "--"
+                    )}
+                  </strong>
                 </div>
 
             </div>

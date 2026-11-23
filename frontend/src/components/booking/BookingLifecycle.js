@@ -48,8 +48,8 @@ export default function BookingLifecycle({ booking }) {
                     <dl className="booking-lifecycle-meta">
                       {metadata.map(([key, value]) => (
                         <div key={key}>
-                          <dt>{key}</dt>
-                          <dd>{formatStageValue(value)}</dd>
+                          <dt>{key === "method" ? "Method" : key}</dt>
+                          <dd>{formatStageValue(value, key)}</dd>
                         </div>
                       ))}
                     </dl>
