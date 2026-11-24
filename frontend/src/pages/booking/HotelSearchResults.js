@@ -221,7 +221,9 @@ function buildPassengerDetailsQuery(hotel, offerId, searchContext) {
     ["checkOutDate", searchContext?.checkOutDate],
     ["adults", searchContext?.adults],
     ["rooms", searchContext?.rooms],
+    ["children", searchContext?.children],
     ["guests", searchContext?.guests],
+    ["roomsConfig", searchContext?.roomsConfig ? (typeof searchContext.roomsConfig === "string" ? searchContext.roomsConfig : JSON.stringify(searchContext.roomsConfig)) : ""],
   ];
  
   entries.forEach(([key, value]) => {
@@ -295,8 +297,20 @@ export default function HotelSearchResults() {
 
   const guests = `${roomsCount} Room${roomsCount > 1 ? "s" : ""}, ${totalAdults} Adult${totalAdults > 1 ? "s" : ""}${totalChildren > 0 ? `, ${totalChildren} Child${totalChildren > 1 ? "ren" : ""}` : ""}`;
 
-  const [sortKey, setSortKey] = useState("recommended");
-  const [collectionKey, setCollectionKey] = useState("all");
+  const [sortKey, setSortKey] = useState(() => {
+    try {
+      return sessionStorage.getItem("hotel_search_sortKey") || "recommended";
+    } catch {
+      return "recommended";
+    }
+  });
+  const [collectionKey, setCollectionKey] = useState(() => {
+    try {
+      return sessionStorage.getItem("hotel_search_collectionKey") || "all";
+    } catch {
+      return "all";
+    }
+  });
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -362,12 +376,62 @@ export default function HotelSearchResults() {
     localStorage.setItem("savedStayIds", JSON.stringify(savedStayIds));
   }, [savedStayIds]);
   const [showMap, setShowMap] = useState(false);
-  const [selectedPaymentPrefs, setSelectedPaymentPrefs] = useState([]);
-  const [selectedLocalities, setSelectedLocalities] = useState([]);
-  const [selectedRatings, setSelectedRatings] = useState([]);
-  const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
-  const [selectedAmenities, setSelectedAmenities] = useState([]);
-  const [selectedPropertyType, setSelectedPropertyType] = useState("");
+  const [selectedPaymentPrefs, setSelectedPaymentPrefs] = useState(() => {
+    try {
+      const v = sessionStorage.getItem("hotel_search_selectedPaymentPrefs");
+      return v ? JSON.parse(v) : [];
+    } catch { return []; }
+  });
+  const [selectedLocalities, setSelectedLocalities] = useState(() => {
+    try {
+      const v = sessionStorage.getItem("hotel_search_selectedLocalities");
+      return v ? JSON.parse(v) : [];
+    } catch { return []; }
+  });
+  const [selectedRatings, setSelectedRatings] = useState(() => {
+    try {
+      const v = sessionStorage.getItem("hotel_search_selectedRatings");
+      return v ? JSON.parse(v) : [];
+    } catch { return []; }
+  });
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState(() => {
+    try {
+      const v = sessionStorage.getItem("hotel_search_selectedPriceRanges");
+      return v ? JSON.parse(v) : [];
+    } catch { return []; }
+  });
+  const [selectedAmenities, setSelectedAmenities] = useState(() => {
+    try {
+      const v = sessionStorage.getItem("hotel_search_selectedAmenities");
+      return v ? JSON.parse(v) : [];
+    } catch { return []; }
+  });
+  const [selectedPropertyType, setSelectedPropertyType] = useState(() => {
+    try {
+      return sessionStorage.getItem("hotel_search_selectedPropertyType") || "";
+    } catch { return ""; }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("hotel_search_sortKey", sortKey);
+      sessionStorage.setItem("hotel_search_collectionKey", collectionKey);
+      sessionStorage.setItem("hotel_search_selectedPaymentPrefs", JSON.stringify(selectedPaymentPrefs));
+      sessionStorage.setItem("hotel_search_selectedLocalities", JSON.stringify(selectedLocalities));
+      sessionStorage.setItem("hotel_search_selectedRatings", JSON.stringify(selectedRatings));
+      sessionStorage.setItem("hotel_search_selectedPriceRanges", JSON.stringify(selectedPriceRanges));
+      sessionStorage.setItem("hotel_search_selectedAmenities", JSON.stringify(selectedAmenities));
+      sessionStorage.setItem("hotel_search_selectedPropertyType", selectedPropertyType);
+    } catch {}
+  }, [sortKey, collectionKey, selectedPaymentPrefs, selectedLocalities, selectedRatings, selectedPriceRanges, selectedAmenities, selectedPropertyType]);
+
+  useEffect(() => {
+    if (destination) {
+      try {
+        sessionStorage.setItem("last_hotel_search_url", `${location.pathname}${location.search}`);
+      } catch {}
+    }
+  }, [destination, location.pathname, location.search]);
   const [activeQueryPill, setActiveQueryPill] = useState(null);
   const [selectedHotelId, setSelectedHotelId] = useState(null);
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -767,9 +831,14 @@ export default function HotelSearchResults() {
   const handleSelectHotel = (hotel) => {
     setActionError("");
     clearHotelBookingFlowState();
+    try {
+      sessionStorage.setItem("last_hotel_search_url", `${location.pathname}${location.search}`);
+    } catch {}
     const bookingFlowId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const nextState = {
       bookingFlowId,
+      fromSearchResults: true,
+      searchUrl: `${location.pathname}${location.search}`,
       hotel: {
         hotelId: hotel.hotelId,
         name: hotel.name,
@@ -798,6 +867,8 @@ export default function HotelSearchResults() {
         adults: String(totalAdults),
         children: String(totalChildren),
         guests,
+        fromSearchResults: true,
+        searchUrl: `${location.pathname}${location.search}`,
       },
       currentStep: 1,
     };

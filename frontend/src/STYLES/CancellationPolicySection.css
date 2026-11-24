@@ -3,10 +3,33 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   margin: 10px 0 16px 0;
   font-family: inherit;
   box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, padding 0.2s ease;
+}
+
+.policy-compact-container.is-expanded {
+  padding: 12px 14px 14px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+.policy-compact-container.theme-refundable {
+  border-color: #e2e8f0;
+}
+
+.policy-compact-container.theme-refundable.is-expanded {
+  border-color: #cbd5e1;
+}
+
+.policy-compact-container.theme-nonref {
+  border-color: #fee2e2;
+  background: #fffafa;
+}
+
+.policy-compact-container.theme-cancelled {
+  border-color: #e2e8f0;
 }
 
 /* Header */
@@ -15,20 +38,39 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 0;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: background 0.18s ease, color 0.18s ease;
+  user-select: none;
+}
+
+.policy-compact-header.is-clickable {
+  cursor: pointer;
+}
+
+.policy-compact-header.is-clickable:hover {
+  background: #f8fafc;
+}
+
+.policy-compact-container.theme-nonref .policy-compact-header.is-clickable:hover {
+  background: #fef2f2;
+}
+
+.policy-compact-header.is-clickable:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 
 .policy-header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
   flex: 1;
 }
 
-.policy-header-left > div:last-child {
+.policy-header-title-group {
   min-width: 0;
 }
 
@@ -65,7 +107,7 @@
   font-weight: 750;
   color: #0f172a;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .policy-compact-sub {
@@ -81,6 +123,7 @@
 .policy-header-right {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -112,6 +155,59 @@
   background: #f1f5f9;
   color: #475569;
   border: 1px solid #cbd5e1;
+}
+
+/* Accordion Arrow */
+.policy-toggle-arrow {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  background: transparent;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s ease, color 0.18s ease;
+  flex-shrink: 0;
+}
+
+.policy-compact-header:hover .policy-toggle-arrow {
+  color: #0f172a;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.policy-toggle-arrow.is-open {
+  transform: rotate(180deg);
+  color: #ff0000;
+}
+
+/* ── Collapsible Accordion Body ── */
+.policy-accordion-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.policy-accordion-body.is-expanded {
+  grid-template-rows: 1fr;
+}
+
+.policy-accordion-inner {
+  min-height: 0;
+  overflow: hidden;
+  transition: opacity 0.22s ease, padding 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
+  padding-top: 0;
+}
+
+.policy-accordion-body.is-expanded .policy-accordion-inner {
+  opacity: 1;
+  visibility: visible;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid #f1f5f9;
 }
 
 /* ── 1-Row Calculation Card ── */
@@ -382,6 +478,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -390,18 +487,100 @@
 /* ── Mobile Responsive Adjustments ── */
 @media (max-width: 640px) {
   .policy-compact-container {
-    padding: 10px 12px;
+    padding: 8px 10px;
+  }
+
+  .policy-compact-container.is-expanded {
+    padding: 10px 10px 12px;
+  }
+
+  .policy-compact-header {
+    gap: 8px;
+    padding: 2px 2px;
+  }
+
+  .policy-header-left {
+    gap: 8px;
+  }
+
+  .policy-badge-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+  }
+
+  .policy-badge-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .policy-compact-title {
+    font-size: 12.5px;
+  }
+
+  .policy-compact-sub {
+    font-size: 10px;
+    max-width: 170px;
+  }
+
+  .policy-header-right {
+    gap: 6px;
+  }
+
+  .policy-pill {
+    font-size: 9.5px;
+    padding: 2px 6px;
+  }
+
+  .policy-toggle-arrow {
+    width: 22px;
+    height: 22px;
+  }
+
+  .policy-toggle-arrow svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .policy-calc-card {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+
+  .policy-calc-grid {
+    gap: 4px;
+  }
+
+  .calc-lbl {
+    font-size: 9px;
+  }
+
+  .calc-val {
+    font-size: 12px;
+  }
+
+  .calc-operator {
+    font-size: 12px;
+    padding: 0 1px;
+  }
+
+  .policy-compact-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .compact-table-head,
   .compact-table-row {
-    grid-template-columns: 1.8fr 1.2fr 1fr;
+    grid-template-columns: minmax(130px, 1.8fr) minmax(90px, 1.2fr) minmax(80px, 1fr);
+    min-width: 320px;
     gap: 6px;
-    padding: 6px 8px;
+    padding: 8px 10px;
     font-size: 10.5px;
   }
+}
 
-  .calc-val {
-    font-size: 12.5px;
+@media (max-width: 420px) {
+  .policy-compact-sub {
+    max-width: 130px;
   }
 }

@@ -2321,7 +2321,9 @@ export default function HomePage() {
 
   const [busTripType, setBusTripType] = useState("oneway");
   const [busFrom, setBusFrom] = useState("");
+  const [busFromId, setBusFromId] = useState("");
   const [busTo, setBusTo] = useState("");
+  const [busToId, setBusToId] = useState("");
   const [busFromError, setBusFromError] = useState("");
   const [busToError, setBusToError] = useState("");
   const [busDepartureDate, setBusDepartureDate] = useState(() => getDefaultDateString(0));
@@ -3193,7 +3195,9 @@ export default function HomePage() {
 
   const handleSwapBuses = () => {
     setBusFrom(busTo);
+    setBusFromId(busToId);
     setBusTo(busFrom);
+    setBusToId(busFromId);
   };
 
   const openPopularBusRoutes = (operatorId) => {
@@ -3435,7 +3439,9 @@ export default function HomePage() {
   const handlePopularRouteBooking = (route) => {
     navigateToBusSearch({
       source: route.fromCity,
+      sourceId: route.fromCityCode || route.fromCityId || "",
       destination: route.toCity,
+      destinationId: route.toCityCode || route.toCityId || "",
       tripType: "oneway",
       departureDate: getDateInputValue(0),
     });
@@ -3473,15 +3479,17 @@ export default function HomePage() {
     });
   };
 
-  const handleBusFromChange = (value) => {
+  const handleBusFromChange = (value, cityId = "") => {
     setBusFrom(value);
+    setBusFromId(cityId || "");
     if (value.trim()) {
       setBusFromError("");
     }
   };
 
-  const handleBusToChange = (value) => {
+  const handleBusToChange = (value, cityId = "") => {
     setBusTo(value);
+    setBusToId(cityId || "");
     if (value.trim()) {
       setBusToError("");
     }
@@ -3627,7 +3635,9 @@ export default function HomePage() {
 
     const busPayload = {
       source: fromVal,
+      sourceId: busFromId,
       destination: toVal,
+      destinationId: busToId,
       tripType: busTripType,
       departureDate: busDepartureDate.trim(),
       returnDate: busTripType === "twoway" ? busReturnDate.trim() : "",
@@ -8318,6 +8328,7 @@ export default function HomePage() {
                       </div>
                       {activeCalendarField === "bus-dep" && (
                         <CustomDatePicker isOpen={true}
+                          mode="bus"
                           value={busDepartureDate}
                           isFlight={false}
                           onChange={(newDate) => {
@@ -8351,6 +8362,7 @@ export default function HomePage() {
                         </div>
                         {activeCalendarField === "bus-ret" && (
                           <CustomDatePicker isOpen={true}
+                            mode="bus"
                             value={busReturnDate}
                             isFlight={false}
                             minDate={busDepartureDate || ""}

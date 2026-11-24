@@ -17,6 +17,8 @@ import BookingTimer from "./BookingTimer";
 import { COUNTRIES, findCountry, isValidCountry, getCountryCode } from "../../utils/countries";
 import { formatFlightTime, formatFlightDate, formatFlightDateLong } from "../../utils/flightDateTimeUtils";
 import FlightStepperHeader from "../../components/booking/FlightStepperHeader";
+import StructuredFareRules from "../../components/StructuredFareRules";
+import { CityAirportDisplay } from "../../components/flights";
 
 function formatTimeParts(timeVal) {
   if (!timeVal) return { time: "--:--", ampm: "" };
@@ -112,6 +114,49 @@ function extractFlightSegments(flt, fareQuoteObj) {
     segs = flt.FareDataMultiple[0].FareSegments;
   } else if (Array.isArray(flt?.fareSegments) && flt.fareSegments.length > 0) {
     segs = flt.fareSegments;
+  }
+
+  if (segs.length === 0 && flt) {
+    const originAirportCode = flt.sourceCode || flt.fromAirportCode || flt.from || "";
+    const originAirportName = flt.sourceAirportName || flt.fromAirportName || "";
+    const originCity = flt.sourceName || flt.fromCity || flt.from || "";
+    const originTerminal = flt.sourceTerminal || flt.fromTerminal || "";
+    const depTime = flt.departureTime || flt.depTime || "";
+
+    const destAirportCode = flt.destinationCode || flt.toAirportCode || flt.to || "";
+    const destAirportName = flt.destinationAirportName || flt.toAirportName || "";
+    const destCity = flt.destinationName || flt.toCity || flt.to || "";
+    const destTerminal = flt.destinationTerminal || flt.toTerminal || "";
+    const arrTime = flt.arrivalTime || flt.arrTime || "";
+
+    const airline = flt.airlineName || flt.airline || "";
+    const airlineCode = flt.airlineCode || "";
+    const flightNumber = flt.flightNumber || "";
+    const durationText = flt.duration || flt.flightDuration || "";
+
+    if (depTime || arrTime || originAirportCode || destAirportCode) {
+      return [{
+        originAirportCode,
+        originAirportName,
+        originCity,
+        originTerminal,
+        depTime,
+        destAirportCode,
+        destAirportName,
+        destCity,
+        destTerminal,
+        arrTime,
+        airline,
+        airlineCode,
+        flightNumber,
+        durationText,
+        baggage: flt.checkedBagsWeight ? `${flt.checkedBagsWeight} ${flt.checkedBagsUnit || "KG"}` : "15 KG",
+        cabinBaggage: flt.cabinBagsWeight ? `${flt.cabinBagsWeight} ${flt.cabinBagsUnit || "KG"}` : "7 KG",
+        cabinClass: flt.selectedTravelClass || "Economy",
+        isRefundable: flt.isRefundable ?? true,
+        layoverTime: "",
+      }];
+    }
   }
 
   const fareSegs = flt?.FareDataMultiple?.[0]?.FareSegments || flt?.fareSegments || [];
@@ -301,7 +346,7 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                     {seg.airlineCode ? `${seg.airlineCode} ` : ""}{seg.flightNumber || ""}
                   </span>
                 </div>
-                <span className="yf-seg__label">SEGMENT {sIdx + 1}</span>
+                <span className="yf-seg__label">{segments.length > 1 ? `SEGMENT ${sIdx + 1}` : "FLIGHT"}</span>
               </div>
 
               {/* Middle Row: Schedule 3-Column Layout */}
@@ -312,10 +357,14 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                     <span className="yf-seg__time">{depTime.time}</span>
                     {depTime.ampm && <span className="yf-seg__ampm">{depTime.ampm}</span>}
                   </div>
-                  <div className="yf-seg__city-code-row">
-                    <span className="yf-seg__city">{seg.originCity || seg.originAirportCode}</span>
-                    <span className="yf-seg__code-pill">({seg.originAirportCode})</span>
-                  </div>
+                  <CityAirportDisplay
+                    cityName={seg.originCity}
+                    airportCode={seg.originAirportCode}
+                    airportName={seg.originAirportName}
+                    align="left"
+                    className="yf-seg__city-code-row"
+                    cityClassName="yf-seg__city"
+                  />
                   {depDate && (
                     <span className="yf-seg__date">
                       <CalendarDays size={10} className="yf-seg__cal-icon" /> {depDate}
@@ -360,10 +409,14 @@ function renderConnectingFlightJourney(segments, legFlight, fromCode, toCode, st
                     <span className="yf-seg__time">{arrTime.time}</span>
                     {arrTime.ampm && <span className="yf-seg__ampm">{arrTime.ampm}</span>}
                   </div>
-                  <div className="yf-seg__city-code-row">
-                    <span className="yf-seg__city">{seg.destCity || seg.destAirportCode}</span>
-                    <span className="yf-seg__code-pill">({seg.destAirportCode})</span>
-                  </div>
+                  <CityAirportDisplay
+                    cityName={seg.destCity}
+                    airportCode={seg.destAirportCode}
+                    airportName={seg.destAirportName}
+                    align="right"
+                    className="yf-seg__city-code-row"
+                    cityClassName="yf-seg__city"
+                  />
                   {arrDate && (
                     <span className="yf-seg__date">
                       <CalendarDays size={10} className="yf-seg__cal-icon" /> {arrDate}
@@ -862,41 +915,68 @@ export default function FlightPassengerDetailsPage() {
     error: "",
     data: null,
     flight: null,
+    activeLegIndex: 0,
   });
 
-  const handleOpenFareRule = async (flightObj) => {
-    const targetFlight = flightObj || flight;
+  const handleOpenFareRule = async (flightObj, legIndex = 0) => {
+    const targetFlight = flightObj || (selectedLegs && selectedLegs[legIndex]) || flight;
     if (!targetFlight) return;
+
     setActiveFareRuleModal({
       isOpen: true,
       isLoading: true,
       error: "",
       data: null,
       flight: targetFlight,
+      activeLegIndex: legIndex,
     });
+
+    const traceId = targetFlight.traceId || targetFlight.TraceId || fareQuoteData?.identity?.TraceId || flowState.traceId || flowState.TraceId;
+    const resultIndex = targetFlight.resultIndex || targetFlight.ResultIndex || fareQuoteData?.identity?.ResultIndex || flowState.resultIndex || flowState.ResultIndex;
+    const srdvType = targetFlight.srdvType || targetFlight.SrdvType || "MixAPI";
+    const srdvIndex = targetFlight.srdvIndex || targetFlight.SrdvIndex || (String(resultIndex || "").includes("_") ? String(resultIndex).split("_")[0] : "1");
 
     try {
       const response = await getFareRule({
-        traceId: targetFlight.traceId,
-        resultIndex: targetFlight.resultIndex,
-        srdvType: targetFlight.srdvType,
-        srdvIndex: targetFlight.srdvIndex,
+        traceId,
+        resultIndex,
+        srdvType,
+        srdvIndex,
         flight: targetFlight,
       });
+
+      const hasLiveResults = response && response.success && Array.isArray(response.results) && response.results.length > 0;
+      const fallbackRules = targetFlight.fareRules || targetFlight.FareRules || fareQuoteData?.results?.FareRules || fareQuoteData?.rawResponse?.Results?.FareRules;
+      const fallbackMiniRules = targetFlight.miniFareRules || targetFlight.MiniFareRules || fareQuoteData?.results?.MiniFareRules;
+
+      const mergedData = hasLiveResults ? response : {
+        ...response,
+        results: Array.isArray(fallbackRules) ? fallbackRules : (fallbackRules ? [fallbackRules] : []),
+        miniFareRules: Array.isArray(fallbackMiniRules) ? fallbackMiniRules : [],
+      };
+
       setActiveFareRuleModal({
         isOpen: true,
         isLoading: false,
-        error: response.error || "",
-        data: response,
+        error: "",
+        data: mergedData,
         flight: targetFlight,
+        activeLegIndex: legIndex,
       });
     } catch (err) {
+      const fallbackRules = targetFlight.fareRules || targetFlight.FareRules || fareQuoteData?.results?.FareRules || fareQuoteData?.rawResponse?.Results?.FareRules;
+      const fallbackMiniRules = targetFlight.miniFareRules || targetFlight.MiniFareRules || fareQuoteData?.results?.MiniFareRules;
+
       setActiveFareRuleModal({
         isOpen: true,
         isLoading: false,
-        error: err.message || "Failed to fetch live fare rules.",
-        data: null,
+        error: "",
+        data: {
+          results: Array.isArray(fallbackRules) ? fallbackRules : (fallbackRules ? [fallbackRules] : []),
+          miniFareRules: Array.isArray(fallbackMiniRules) ? fallbackMiniRules : [],
+        },
         flight: targetFlight,
+        activeLegIndex: legIndex,
       });
     }
   };
@@ -908,6 +988,7 @@ export default function FlightPassengerDetailsPage() {
       error: "",
       data: null,
       flight: null,
+      activeLegIndex: 0,
     });
   };
 
@@ -2310,22 +2391,30 @@ export default function FlightPassengerDetailsPage() {
                     <div className="yf-leg-title">
                       {index + 1}. Leg {index + 1}
                     </div>
-                    {legSegments && legSegments.length > 1 ? (
+                    {legSegments && legSegments.length > 0 ? (
                       renderConnectingFlightJourney(legSegments, leg, fromCode, toCode, stopCount, price)
                     ) : (
                       <>
                         <div className="flight-segment">
                           <div className="flight-city-info">
-                            <span className="flight-city-code">{fromCode}</span>
-                            <span className="flight-city-name">{leg?.sourceName || leg?.fromCity || "--"}</span>
+                            <CityAirportDisplay
+                              cityName={leg?.sourceName || leg?.fromCity}
+                              airportCode={fromCode}
+                              airportName={leg?.sourceAirportName}
+                              align="left"
+                            />
                           </div>
                           <div className="flight-stops-indicator">
                             <span className="stops-text">{stopCount > 0 ? `${stopCount} stop` : "Non stop"}</span>
                             <div className="stops-line"></div>
                           </div>
                           <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                            <span className="flight-city-code">{toCode}</span>
-                            <span className="flight-city-name">{leg?.destinationName || leg?.toCity || "--"}</span>
+                            <CityAirportDisplay
+                              cityName={leg?.destinationName || leg?.toCity}
+                              airportCode={toCode}
+                              airportName={leg?.destinationAirportName}
+                              align="right"
+                            />
                           </div>
                         </div>
                         <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2349,29 +2438,37 @@ export default function FlightPassengerDetailsPage() {
                   <div className="yf-leg-title">
                     1. Onward Flight
                   </div>
-                  {onwardSegments && onwardSegments.length > 1 ? (
+                  {onwardSegments && onwardSegments.length > 0 ? (
                     renderConnectingFlightJourney(
                       onwardSegments,
                       flight,
                       resolveLegCityCode(flight?.sourceCode, searchContext?.source || flight?.fromCity),
                       resolveLegCityCode(flight?.destinationCode, searchContext?.destination || flight?.toCity),
-                      onwardSegments.length - 1,
+                      onwardSegments.length > 1 ? onwardSegments.length - 1 : 0,
                       Number(flight?.fare || flight?.price || flight?.priceInr || flight?.selectedTravelClassPriceInr || 0)
                     )
                   ) : (
                     <>
                       <div className="flight-segment">
                         <div className="flight-city-info">
-                          <span className="flight-city-code">{resolveLegCityCode(flight?.sourceCode, searchContext?.source || flight?.fromCity)}</span>
-                          <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                          <CityAirportDisplay
+                            cityName={searchContext?.source || flight?.fromCity || flight?.sourceName}
+                            airportCode={resolveLegCityCode(flight?.sourceCode, searchContext?.source || flight?.fromCity)}
+                            airportName={flight?.sourceAirportName}
+                            align="left"
+                          />
                         </div>
                         <div className="flight-stops-indicator">
                           <span className="stops-text">{Number(flight?.stops || 0) > 0 ? `${flight.stops} stop` : "Non stop"}</span>
                           <div className="stops-line"></div>
                         </div>
                         <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                          <span className="flight-city-code">{resolveLegCityCode(flight?.destinationCode, searchContext?.destination || flight?.toCity)}</span>
-                          <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+                          <CityAirportDisplay
+                            cityName={searchContext?.destination || flight?.toCity || flight?.destinationName}
+                            airportCode={resolveLegCityCode(flight?.destinationCode, searchContext?.destination || flight?.toCity)}
+                            airportName={flight?.destinationAirportName}
+                            align="right"
+                          />
                         </div>
                       </div>
                       <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -2394,29 +2491,37 @@ export default function FlightPassengerDetailsPage() {
                     <div className="yf-leg-title">
                       2. Return Flight
                     </div>
-                    {returnSegments && returnSegments.length > 1 ? (
+                    {returnSegments && returnSegments.length > 0 ? (
                       renderConnectingFlightJourney(
                         returnSegments,
                         returnFlightNormalized,
                         resolveLegCityCode(returnFlightNormalized?.sourceCode, searchContext?.destination || returnFlightNormalized?.fromCity),
                         resolveLegCityCode(returnFlightNormalized?.destinationCode, searchContext?.source || returnFlightNormalized?.toCity),
-                        returnSegments.length - 1,
+                        returnSegments.length > 1 ? returnSegments.length - 1 : 0,
                         Number(returnFlightNormalized?.fare || returnFlightNormalized?.price || returnFlightNormalized?.priceInr || returnFlightNormalized?.selectedTravelClassPriceInr || 0)
                       )
                     ) : (
                       <>
                         <div className="flight-segment">
                           <div className="flight-city-info">
-                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized?.sourceCode, searchContext?.destination || returnFlightNormalized?.fromCity)}</span>
-                            <span className="flight-city-name">{searchContext?.destination || "--"}</span>
+                            <CityAirportDisplay
+                              cityName={searchContext?.destination || returnFlightNormalized?.fromCity || returnFlightNormalized?.sourceName}
+                              airportCode={resolveLegCityCode(returnFlightNormalized?.sourceCode, searchContext?.destination || returnFlightNormalized?.fromCity)}
+                              airportName={returnFlightNormalized?.sourceAirportName}
+                              align="left"
+                            />
                           </div>
                           <div className="flight-stops-indicator">
                             <span className="stops-text">{Number(returnFlightNormalized?.stops || 0) > 0 ? `${returnFlightNormalized.stops} stop` : "Non stop"}</span>
                             <div className="stops-line"></div>
                           </div>
                           <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                            <span className="flight-city-code">{resolveLegCityCode(returnFlightNormalized?.destinationCode, searchContext?.source || returnFlightNormalized?.toCity)}</span>
-                            <span className="flight-city-name">{searchContext?.source || "--"}</span>
+                            <CityAirportDisplay
+                              cityName={searchContext?.source || returnFlightNormalized?.toCity || returnFlightNormalized?.destinationName}
+                              airportCode={resolveLegCityCode(returnFlightNormalized?.destinationCode, searchContext?.source || returnFlightNormalized?.toCity)}
+                              airportName={returnFlightNormalized?.destinationAirportName}
+                              align="right"
+                            />
                           </div>
                         </div>
                         <div className="flight-meta-info" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -3184,6 +3289,42 @@ export default function FlightPassengerDetailsPage() {
                 <X size={18} />
               </button>
             </div>
+
+            {selectedLegs.length > 1 && (
+              <div style={{ display: "flex", gap: "8px", padding: "10px 20px 0", background: "#f8fafc", borderBottom: "1px solid #e2e8f0", overflowX: "auto" }}>
+                {selectedLegs.map((leg, idx) => {
+                  const isActive = (activeFareRuleModal.activeLegIndex ?? 0) === idx;
+                  const label = idx === 0 ? "Onward Flight" : (idx === 1 ? "Return Flight" : `Sector ${idx + 1}`);
+                  const src = leg.sourceCode || leg.fromAirportCode || leg.from || "Origin";
+                  const dst = leg.destinationCode || leg.toAirportCode || leg.to || "Destination";
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleOpenFareRule(leg, idx)}
+                      style={{
+                        padding: "8px 14px",
+                        border: "none",
+                        borderBottom: isActive ? "3px solid #d32f2f" : "3px solid transparent",
+                        background: isActive ? "#ffffff" : "transparent",
+                        fontWeight: isActive ? 700 : 500,
+                        color: isActive ? "#d32f2f" : "#64748b",
+                        cursor: "pointer",
+                        borderRadius: "6px 6px 0 0",
+                        fontSize: "0.84rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      <Plane size={13} style={{ transform: idx === 1 ? "rotate(180deg)" : "none" }} />
+                      <span>{label} ({src} ➔ {dst})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="booking-modal-body" style={{ padding: "20px", maxHeight: "65vh", overflowY: "auto" }}>
               {activeFareRuleModal.isLoading ? (

@@ -63,6 +63,81 @@
 .hotel-back-link {
   margin-bottom: 16px;
 }
+
+.hotel-back-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.hotel-back-action-bar--details {
+  margin-top: 4px;
+  margin-bottom: 14px;
+}
+
+.hotel-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 18px;
+  background-color: #ffffff;
+  border: 1px solid rgba(225, 29, 72, 0.28);
+  border-radius: 9999px;
+  color: #1e293b;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  font-family: inherit;
+}
+
+.hotel-back-btn:hover {
+  background-color: #fff1f2;
+  border-color: rgba(225, 29, 72, 0.6);
+  color: #e11d48;
+  transform: translateX(-2px);
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.12);
+}
+
+.hotel-back-btn:active {
+  transform: translateX(0);
+}
+
+.hotel-back-btn:focus-visible {
+  outline: 2px solid #e11d48;
+  outline-offset: 2px;
+  background-color: #fff1f2;
+}
+
+.hotel-back-btn-icon {
+  color: #e11d48;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.hotel-back-btn:hover .hotel-back-btn-icon {
+  transform: translateX(-2px);
+}
+
+@media (max-width: 768px) {
+  .hotel-back-action-bar {
+    margin-bottom: 12px;
+  }
+  .hotel-back-action-bar--details {
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+  .hotel-back-btn {
+    height: 36px;
+    padding: 0 14px;
+    font-size: 0.825rem;
+  }
+}
  
 .hotel-anchor-tabs {
   display: flex;

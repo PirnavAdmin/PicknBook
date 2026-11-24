@@ -8,3 +8,4 @@ export { default as FlightRatingsReviews } from "./FlightRatingsReviews";
 export { default as FlightReviews } from "./FlightRatingsReviews";
 export { default as AboutFlightBooking } from "./AboutFlightBooking";
 export { default as FlightsPage } from "./FlightsPage";
+export { default as CityAirportDisplay } from "./CityAirportDisplay";

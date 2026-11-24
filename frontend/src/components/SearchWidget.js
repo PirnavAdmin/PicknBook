@@ -1,4 +1,4 @@
-/* eslint-disable */
+    /* eslint-disable */
 /**
  * SearchWidget.js — Standalone search widget extracted from HomePage.
  * Uses identical CSS classes (search-panel, tabs, tab, trip-chip, etc.)
@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toDisplayDate, getDefaultDateString } from "../utils/apiDateFormat";
 import CustomDatePicker from "./CustomDatePicker";
+import HotelDatePicker from "./HotelDatePicker";
 import "../STYLES/HomePage.css";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -747,7 +748,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(busDepartureDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <CustomDatePicker isOpen={activeDatePicker === "bus-dep"} onClose={() => setActiveDatePicker(null)} value={busDepartureDate} minDate={getDefaultDateString(0)} isFlight={false} onChange={(v) => { setBusDepartureDate(v); setActiveDatePicker(null); }} />
+                  <CustomDatePicker mode="bus" isOpen={activeDatePicker === "bus-dep"} onClose={() => setActiveDatePicker(null)} value={busDepartureDate} minDate={getDefaultDateString(0)} isFlight={false} onChange={(v) => { setBusDepartureDate(v); setActiveDatePicker(null); }} />
                 </div>
                 {isBusTwoWay && (
                   <div className="field field-with-icon return-field" style={{ position: "relative" }}>
@@ -756,7 +757,7 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                       <CalendarDays size={18} />
                       <input type="text" readOnly value={toDisplayDate(busReturnDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                     </div>
-                    <CustomDatePicker isOpen={activeDatePicker === "bus-ret"} onClose={() => setActiveDatePicker(null)} value={busReturnDate} minDate={busDepartureDate || getDefaultDateString(0)} isFlight={false} onChange={(v) => { setBusReturnDate(v); setActiveDatePicker(null); }} align="right" />
+                    <CustomDatePicker mode="bus" isOpen={activeDatePicker === "bus-ret"} onClose={() => setActiveDatePicker(null)} value={busReturnDate} minDate={busDepartureDate || getDefaultDateString(0)} isFlight={false} onChange={(v) => { setBusReturnDate(v); setActiveDatePicker(null); }} align="right" />
                   </div>
                 )}
               </div>
@@ -774,15 +775,48 @@ export default function SearchWidget({ defaultTab = "flights", showTabBar = true
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(hotelCheckInDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <CustomDatePicker isOpen={activeDatePicker === "hotel-ci"} onClose={() => setActiveDatePicker(null)} value={hotelCheckInDate} minDate={getDefaultDateString(0)} isFlight={false} onChange={(v) => { setHotelCheckInDate(v); setActiveDatePicker(null); if (!hotelCheckOutDate || hotelCheckOutDate <= v) { const d = new Date(v); d.setDate(d.getDate() + 1); const yyyy = d.getFullYear(); const mm = String(d.getMonth() + 1).padStart(2, "0"); const dd = String(d.getDate()).padStart(2, "0"); setHotelCheckOutDate(`${yyyy}-${mm}-${dd}`); } }} />
+                  <HotelDatePicker
+                    isOpen={activeDatePicker === "hotel-ci"}
+                    onClose={() => setActiveDatePicker(null)}
+                    value={hotelCheckInDate}
+                    minDate={getDefaultDateString(0)}
+                    mode="checkin"
+                    onChange={(v) => {
+                      setHotelCheckInDate(v);
+                      setActiveDatePicker(null);
+                      if (!hotelCheckOutDate || hotelCheckOutDate <= v) {
+                        const d = new Date(v);
+                        d.setDate(d.getDate() + 1);
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, "0");
+                        const dd = String(d.getDate()).padStart(2, "0");
+                        setHotelCheckOutDate(`${yyyy}-${mm}-${dd}`);
+                      }
+                    }}
+                    title="Select Check-in Date"
+                  />
                 </div>
                 <div className="field field-with-icon checkout-field" style={{ position: "relative" }}>
-                  <label>Check-out</label>
+                  <label>
+                    Check-out {hotelCheckInDate && hotelCheckOutDate ? `(${Math.max(1, Math.ceil((new Date(hotelCheckOutDate) - new Date(hotelCheckInDate)) / (1000 * 60 * 60 * 24)))} Night${Math.max(1, Math.ceil((new Date(hotelCheckOutDate) - new Date(hotelCheckInDate)) / (1000 * 60 * 60 * 24))) === 1 ? "" : "s"})` : ""}
+                  </label>
                   <div className="control-wrap" style={{ cursor: "pointer" }} onClick={() => setActiveDatePicker(activeDatePicker === "hotel-co" ? null : "hotel-co")}>
                     <CalendarDays size={18} />
                     <input type="text" readOnly value={toDisplayDate(hotelCheckOutDate)} placeholder="DD-MM-YYYY" className="field-control with-leading-icon" style={{ cursor: "pointer", pointerEvents: "none" }} />
                   </div>
-                  <CustomDatePicker isOpen={activeDatePicker === "hotel-co"} onClose={() => setActiveDatePicker(null)} value={hotelCheckOutDate} minDate={hotelCheckInDate || getDefaultDateString(0)} isFlight={false} onChange={(v) => { setHotelCheckOutDate(v); setActiveDatePicker(null); }} align="right" />
+                  <HotelDatePicker
+                    isOpen={activeDatePicker === "hotel-co"}
+                    onClose={() => setActiveDatePicker(null)}
+                    value={hotelCheckOutDate}
+                    checkInDate={hotelCheckInDate}
+                    mode="checkout"
+                    onChange={(v) => {
+                      setHotelCheckOutDate(v);
+                      setActiveDatePicker(null);
+                    }}
+                    title="Select Check-out Date"
+                    align="right"
+                  />
                 </div>
                 {hotelGuestField}
               </div>

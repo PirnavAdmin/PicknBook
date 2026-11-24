@@ -540,11 +540,15 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+  overflow: visible;
 }
 
 .your-flight-card .flight-city-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 44%;
+  overflow: visible;
 }
 
 .your-flight-card .flight-city-code {
@@ -5362,18 +5366,22 @@
 /* Middle Row: Schedule 3-Column Layout */
 .yf-seg__times {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 8px;
   min-width: 0;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .yf-seg__pt {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  width: 100%;
   position: relative;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 .yf-seg__pt--dep {
@@ -5387,12 +5395,15 @@
 }
 
 .yf-seg__time-box {
-  display: flex;
+  display: inline-flex;
   align-items: baseline;
   gap: 3px;
-  line-height: 1.1;
+  line-height: 1.15;
+  height: 22px;
+  min-height: 22px;
   margin-bottom: 2px;
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .yf-seg__time {
@@ -5400,6 +5411,7 @@
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
 .yf-seg__ampm {
@@ -5407,14 +5419,24 @@
   font-weight: 700;
   color: #475569;
   text-transform: uppercase;
+  line-height: 1.15;
 }
 
 .yf-seg__city-code-row {
   display: flex;
   align-items: center;
   gap: 4px;
-  flex-wrap: wrap;
+  min-height: 18px;
   margin-bottom: 2px;
+  white-space: nowrap;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  position: relative;
+}
+
+.yf-seg__pt--dep .yf-seg__city-code-row {
+  justify-content: flex-start;
 }
 
 .yf-seg__pt--arr .yf-seg__city-code-row {
@@ -5422,24 +5444,18 @@
 }
 
 .yf-seg__city {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 105px;
+  max-width: 100%;
+  display: block;
 }
 
 .yf-seg__code-pill {
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: #d32f2f;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  padding: 0 4px;
-  border-radius: 4px;
-  letter-spacing: 0.02em;
+  display: none !important;
 }
 
 .yf-seg__date {
@@ -5572,34 +5588,43 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-width: 78px;
   padding: 0 4px;
+  align-self: flex-start;
+  box-sizing: border-box;
 }
 
 .yf-seg__dur {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 3px;
   font-size: 0.64rem;
   font-weight: 800;
   color: #059669;
   background: #ecfdf5;
   border: 1px solid #a7f3d0;
-  padding: 2px 7px;
+  padding: 0 7px;
+  height: 22px;
+  min-height: 22px;
   border-radius: 9999px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   white-space: nowrap;
+  box-sizing: border-box;
+  line-height: 1;
 }
 
 .yf-seg__line {
   position: relative;
   width: 100%;
   max-width: 80px;
-  height: 16px;
+  height: 18px;
+  min-height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 2px;
 }
 
 .yf-seg__line-track {
@@ -5759,20 +5784,23 @@
 }
 
 @media (max-width: 480px) {
+  .yf-seg__times {
+    gap: 6px;
+  }
   .yf-seg__airport-name {
-    max-width: 80px;
+    max-width: 100%;
   }
   .yf-seg__city {
-    max-width: 75px;
+    max-width: 100%;
   }
   .yf-seg__terminal {
-    max-width: 80px;
+    max-width: 100%;
   }
   .yf-seg__mid {
-    min-width: 64px;
+    min-width: 60px;
   }
   .yf-seg__line {
-    max-width: 64px;
+    max-width: 60px;
   }
   .yf-conn__card {
     max-width: 98%;

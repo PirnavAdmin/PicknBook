@@ -288,8 +288,15 @@ function parseSearchContext(params) {
   const rooms = readQueryValue(params, "rooms");
   const children = readQueryValue(params, "children");
   const guests = readQueryValue(params, "guests");
-  return destination || checkInDate || checkOutDate || adults || rooms || guests
-    ? { destination, checkInDate, checkOutDate, adults, rooms, children, guests }
+  const rawRoomsConfig = readQueryValue(params, "roomsConfig");
+  let roomsConfig = null;
+  if (rawRoomsConfig) {
+    try {
+      roomsConfig = JSON.parse(rawRoomsConfig);
+    } catch (e) {}
+  }
+  return destination || checkInDate || checkOutDate || adults || rooms || children || guests || roomsConfig
+    ? { destination, checkInDate, checkOutDate, adults, rooms, children, guests, roomsConfig }
     : null;
 }
 
@@ -317,13 +324,25 @@ export default function HotelPassengerDetailsPage() {
   
 
   const initialOfferId = readQueryValue(searchParams, "offerId");
-  const searchContext = useMemo(() => incomingState.searchContext || parseSearchContext(searchParams), [incomingState.searchContext, searchParams]);
+  const searchContext = useMemo(() => {
+    const base = incomingState.searchContext || parseSearchContext(searchParams) || {};
+    return {
+      ...base,
+      fromSearchResults: base.fromSearchResults ?? incomingState.fromSearchResults ?? location.state?.fromSearchResults ?? false,
+      searchUrl: base.searchUrl || incomingState.searchUrl || location.state?.searchUrl || null,
+    };
+  }, [incomingState, location.state, searchParams]);
   const [offerLoadError, setOfferLoadError] = useState("");
   const [isLoadingOffer, setIsLoadingOffer] = useState(Boolean(!incomingState.offer && initialOfferId));
   const [selectingOfferId, setSelectingOfferId] = useState("");
   const [selectedMultiRooms, setSelectedMultiRooms] = useState(() => incomingState.selectedMultiRooms || []);
   const roomsCount = searchContext?.roomsConfig ? searchContext.roomsConfig.length : 1;
-  const [currentStep, setCurrentStep] = useState(() => incomingState.currentStep || 1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const stepParam = searchParams.get("step");
+    if (stepParam === "2") return 2;
+    if (stepParam === "1") return 1;
+    return incomingState.currentStep || 1;
+  });
   const [specialRequests, setSpecialRequests] = useState([]);
   const [additionalNotes, setAdditionalNotes] = useState("");
   const [gstNumber, setGstNumber] = useState("");
@@ -365,10 +384,22 @@ export default function HotelPassengerDetailsPage() {
       setCurrentStep(2);
       const nextParams = new URLSearchParams(location.search);
       nextParams.delete("autoStep2");
+      nextParams.set("step", "2");
       const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
       navigate(`/hotel/passenger-details${nextSearch}`, { replace: true, state: {} });
     }
   }, [searchParams, location.search, navigate]);
+
+  useEffect(() => {
+    const stepParam = searchParams.get("step");
+    if (stepParam === "2") {
+      if (currentStep !== 2) setCurrentStep(2);
+    } else if (stepParam === "1") {
+      if (currentStep !== 1) setCurrentStep(1);
+    } else if (!stepParam && currentStep === 2 && !location.state?.currentStep) {
+      setCurrentStep(1);
+    }
+  }, [searchParams, location.state]);
 
   // Parse roomsConfig and guest counts
   const roomsConfig = useMemo(() => {
@@ -1140,17 +1171,6 @@ export default function HotelPassengerDetailsPage() {
       }
   }
 
-  // Eliminate 1 rupee rounding discrepancy: ensure Room base charges + Taxes & GST ALWAYS equals Total Price
-  if (finalPayable > 0) {
-      const roundedPayable = Math.round(finalPayable);
-      const roundedTax = Math.round(tax);
-      const roundedBasePrice = Math.max(0, roundedPayable - roundedTax);
-
-      basePrice = roundedBasePrice;
-      tax = roundedTax;
-      finalPayable = roundedPayable;
-  }
-
   const tierDiscount = 0;
   const volumeDiscount = 0;
   const isPrimaryAdultValid = useMemo(() => {
@@ -1625,10 +1645,90 @@ export default function HotelPassengerDetailsPage() {
     );
   }
 
+  const handleBackToHotelDetails = () => {
+    // 1. Ensure all booking selections are preserved in persistent flow store
+    const updatedFlow = {
+      ...(readHotelBookingFlowState() || {}),
+      hotel,
+      offer,
+      searchContext,
+      selectedMultiRooms,
+      guests,
+      currentStep: 1,
+    };
+    writeHotelBookingFlowState(updatedFlow);
+
+    // 2. Prepare clean URL parameters without step=2 / autoStep2, preserving all hotel & search data
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete("step");
+    nextParams.delete("autoStep2");
+
+    if (hotel) {
+      const hId = hotel.hotelId || hotel.hotelCode || hotel.id;
+      if (hId) nextParams.set("hotelId", String(hId));
+      if (hotel.name) nextParams.set("hotelName", hotel.name);
+      if (hotel.city) nextParams.set("hotelCity", hotel.city);
+      if (hotel.area) nextParams.set("hotelArea", hotel.area);
+      if (hotel.address) nextParams.set("hotelAddress", hotel.address);
+      if (hotel.rating) nextParams.set("hotelRating", String(hotel.rating));
+      if (hotel.tag) nextParams.set("hotelTag", hotel.tag);
+    }
+
+    if (searchContext) {
+      if (searchContext.destination) nextParams.set("destination", searchContext.destination);
+      if (searchContext.checkInDate) nextParams.set("checkInDate", searchContext.checkInDate);
+      if (searchContext.checkOutDate) nextParams.set("checkOutDate", searchContext.checkOutDate);
+      if (searchContext.adults) nextParams.set("adults", String(searchContext.adults));
+      if (searchContext.rooms) nextParams.set("rooms", String(searchContext.rooms));
+      if (searchContext.children) nextParams.set("children", String(searchContext.children));
+      if (searchContext.guests) nextParams.set("guests", String(searchContext.guests));
+      if (searchContext.roomsConfig) {
+        nextParams.set(
+          "roomsConfig",
+          typeof searchContext.roomsConfig === "string"
+            ? searchContext.roomsConfig
+            : JSON.stringify(searchContext.roomsConfig)
+        );
+      }
+    }
+
+    if (offer) {
+      const offId = offer.id || offer.roomId || offer.roomTypeCode || offer.selectionKey;
+      if (offId) nextParams.set("offerId", String(offId));
+    }
+
+    const nextSearch = nextParams.toString() ? `?${nextParams.toString()}` : "";
+    const targetUrl = `/hotel/passenger-details${nextSearch}`;
+
+    const targetState = {
+      ...(location.state || {}),
+      hotel,
+      offer,
+      searchContext,
+      selectedMultiRooms,
+      currentStep: 1,
+    };
+
+    // 3. Set currentStep to 1 immediately in state
+    setCurrentStep(1);
+
+    // 4. Prefer browser history navigation if we advanced within this active session
+    const historyIdx = window.history.state?.idx;
+    if (typeof historyIdx === "number" && historyIdx > 0 && location.key !== "default" && searchParams.get("step") === "2") {
+      navigate(-1);
+    } else {
+      navigate(targetUrl, {
+        replace: true,
+        state: targetState,
+      });
+    }
+  };
+
   const handleSetCurrentStep = (step) => {
     if (step === 2) {
       const nextParams = new URLSearchParams(location.search);
-      nextParams.set("autoStep2", "true");
+      nextParams.set("step", "2");
+      nextParams.delete("autoStep2");
       const nextRoute = `/hotel/passenger-details?${nextParams.toString()}`;
       
       const canProceed = navigateWithAuth({
@@ -1640,6 +1740,23 @@ export default function HotelPassengerDetailsPage() {
       });
       
       if (!canProceed) return;
+
+      navigate(nextRoute, {
+        state: {
+          ...(location.state || {}),
+          hotel,
+          offer,
+          searchContext,
+          selectedMultiRooms,
+          currentStep: 2,
+        }
+      });
+      setCurrentStep(2);
+      return;
+    }
+    if (step === 1) {
+      handleBackToHotelDetails();
+      return;
     }
     setCurrentStep(step);
   };
@@ -1656,7 +1773,10 @@ export default function HotelPassengerDetailsPage() {
         {currentStep === 1 ? (
           <HotelDetail
             hotel={hotel}
+            setHotel={setHotel}
             offer={offer}
+            setOffer={setOffer}
+            searchContext={searchContext}
             roomsCount={roomsCount}
             selectedMultiRooms={selectedMultiRooms}
             selectingOfferId={selectingOfferId}
@@ -1683,7 +1803,28 @@ export default function HotelPassengerDetailsPage() {
             nights={nights}
           />
         ) : (
-          <div className="hotel-checkout-layout">
+          <>
+            {/* Top-left Back Button positioned below navbar, above hotel summary */}
+            <div className="hotel-back-action-bar">
+              <button
+                type="button"
+                onClick={handleBackToHotelDetails}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleBackToHotelDetails();
+                  }
+                }}
+                className="hotel-back-btn"
+                aria-label="Back to Hotel Details"
+                tabIndex={0}
+              >
+                <ArrowLeft size={16} strokeWidth={2.2} className="hotel-back-btn-icon" />
+                <span>Back to Hotel Details</span>
+              </button>
+            </div>
+
+            <div className="hotel-checkout-layout">
             
             {/* Left Column Content */}
             <div className="hotel-checkout-main">
@@ -2133,6 +2274,8 @@ export default function HotelPassengerDetailsPage() {
                       }}
                       bookingType="hotel"
                       policyData={offer?.cancellationPolicies || offer?.cancellationPoliciesData}
+                      isCollapsible={true}
+                      defaultExpanded={false}
                     />
                   </div>
                 )}
@@ -2644,7 +2787,8 @@ export default function HotelPassengerDetailsPage() {
             </aside>
 
           </div>
-        )}
+        </>
+      )}
 
       </div>
 

@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { CalendarDays, Search, Users, ChevronDown, Plus, Minus, BedDouble, Baby, MapPin } from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
-import CustomDatePicker from "./CustomDatePicker";
+import HotelDatePicker from "./HotelDatePicker";
 import { getDefaultDateString } from "../utils/apiDateFormat";
 import "../STYLES/HotelSearchWidget.css";
 
@@ -259,11 +259,12 @@ export default function HotelSearchWidget({
               {toDisplayDate(checkInDate) || "DD-MM-YYYY"}
             </span>
           </div>
-          <CustomDatePicker
+          <HotelDatePicker
             isOpen={activeDatePicker === "checkin"}
             onClose={() => setActiveDatePicker(null)}
             value={checkInDate}
             minDate={getDefaultDateString(0)}
+            mode="checkin"
             onChange={(val) => {
               setCheckInDate(val);
               setActiveDatePicker(null);
@@ -276,7 +277,7 @@ export default function HotelSearchWidget({
                 setCheckOutDate(`${yyyy}-${mm}-${dd}`);
               }
             }}
-            title="Check-in Date"
+            title="Select Check-in Date"
           />
         </div>
 
@@ -290,21 +291,24 @@ export default function HotelSearchWidget({
         >
           <CalendarDays size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
           <div className="hotel-capsule-field">
-            <span className="hotel-capsule-label">Check-Out</span>
+            <span className="hotel-capsule-label">
+              Check-Out ({calculateNights(checkInDate, checkOutDate)} {calculateNights(checkInDate, checkOutDate) === 1 ? "Night" : "Nights"})
+            </span>
             <span className="hotel-capsule-val">
               {toDisplayDate(checkOutDate) || "DD-MM-YYYY"}
             </span>
           </div>
-          <CustomDatePicker
+          <HotelDatePicker
             isOpen={activeDatePicker === "checkout"}
             onClose={() => setActiveDatePicker(null)}
             value={checkOutDate}
-            minDate={checkInDate || getDefaultDateString(0)}
+            checkInDate={checkInDate}
+            mode="checkout"
             onChange={(val) => {
               setCheckOutDate(val);
               setActiveDatePicker(null);
             }}
-            title="Check-out Date"
+            title="Select Check-out Date"
             align="right"
           />
         </div>

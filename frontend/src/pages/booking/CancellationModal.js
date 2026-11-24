@@ -110,6 +110,7 @@ export default function CancellationModal({
             isLoading={isLoadingPolicy}
             error={policyError}
             selectedPassengerIds={selectedItems}
+            defaultExpanded={true}
           />
 
           <p className="cancel-modal-message">{message}</p>

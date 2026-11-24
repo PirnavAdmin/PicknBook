@@ -1134,6 +1134,45 @@ function normalizeErrorMessage(payload) {
   }
 
   if (payload && typeof payload === "object") {
+    if (payload.Error && typeof payload.Error === "object") {
+      const errObj = payload.Error;
+      if (typeof errObj.ErrorMessage === "string" && errObj.ErrorMessage.trim()) {
+        if (isDatabaseCapacityError(errObj.ErrorMessage)) {
+          return "Search is temporarily unavailable because the booking server is busy. Please try again in a few minutes.";
+        }
+        return errObj.ErrorMessage.trim();
+      }
+      if (typeof errObj.message === "string" && errObj.message.trim()) {
+        return errObj.message.trim();
+      }
+    }
+    if (payload.error && typeof payload.error === "object") {
+      const errObj = payload.error;
+      if (typeof errObj.errorMessage === "string" && errObj.errorMessage.trim()) {
+        if (isDatabaseCapacityError(errObj.errorMessage)) {
+          return "Search is temporarily unavailable because the booking server is busy. Please try again in a few minutes.";
+        }
+        return errObj.errorMessage.trim();
+      }
+      if (typeof errObj.ErrorMessage === "string" && errObj.ErrorMessage.trim()) {
+        return errObj.ErrorMessage.trim();
+      }
+      if (typeof errObj.message === "string" && errObj.message.trim()) {
+        return errObj.message.trim();
+      }
+    }
+    if (typeof payload.ErrorMessage === "string" && payload.ErrorMessage.trim()) {
+      if (isDatabaseCapacityError(payload.ErrorMessage)) {
+        return "Search is temporarily unavailable because the booking server is busy. Please try again in a few minutes.";
+      }
+      return payload.ErrorMessage.trim();
+    }
+    if (typeof payload.errorMessage === "string" && payload.errorMessage.trim()) {
+      if (isDatabaseCapacityError(payload.errorMessage)) {
+        return "Search is temporarily unavailable because the booking server is busy. Please try again in a few minutes.";
+      }
+      return payload.errorMessage.trim();
+    }
     if (typeof payload.message === "string" && payload.message.trim()) {
       if (isDatabaseCapacityError(payload.message)) {
         return "Search is temporarily unavailable because the booking server is busy. Please try again in a few minutes.";
@@ -1393,6 +1432,45 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode, so
       } catch (e) { }
     }
 
+    const errorCode = Number(
+      data?.Error?.ErrorCode ||
+      data?.error?.errorCode ||
+      data?.ErrorCode ||
+      data?.errorCode ||
+      0
+    );
+    const errorMessage =
+      data?.Error?.ErrorMessage ||
+      data?.error?.errorMessage ||
+      data?.ErrorMessage ||
+      data?.errorMessage ||
+      "";
+
+    // Error code 7006 is specifically: "No bus found for this route."
+    const isNoBusFound =
+      errorCode === 7006 ||
+      errorMessage.toLowerCase().includes("no bus found");
+
+    if (isNoBusFound) {
+      console.log(`[busBookingService] No buses found for route (${finalFromCode} -> ${finalToCode}) on ${formattedDate}`);
+      const emptyResult = [];
+      emptyResult.noBusesFound = true;
+      emptyResult.errorCode = 7006;
+      emptyResult.errorMessage = errorMessage || "No bus found for this route.";
+      emptyResult.fromCityCode = String(finalFromCode);
+      emptyResult.toCityCode = String(finalToCode);
+      emptyResult.traceId = topTraceId;
+      return emptyResult;
+    }
+
+    // Other non-zero error codes are genuine provider failures
+    if (errorCode > 0) {
+      const err = new Error(errorMessage || `Provider returned error code ${errorCode}.`);
+      err.code = errorCode;
+      err.payload = data;
+      throw err;
+    }
+
     const extractArray = (obj) => {
       if (!obj || typeof obj !== "object") return null;
       if (Array.isArray(obj)) return obj;
@@ -1588,9 +1666,13 @@ export async function searchBuses({ from, to, date, fromCityCode, toCityCode, so
     const records = extractArray(data) || [];
 
     if (Array.isArray(records)) {
-      return records
+      const busesList = records
         .map((record, index) => normalizeBusSearchRecord(record, index))
         .filter(Boolean);
+      busesList.fromCityCode = String(finalFromCode);
+      busesList.toCityCode = String(finalToCode);
+      busesList.traceId = topTraceId;
+      return busesList;
     }
 
     const responseText = String(data || "").toLowerCase();
@@ -1621,11 +1703,32 @@ export async function searchBusCities(query) {
       skipAuth: true,
     });
     let list = Array.isArray(data) ? data : (data?.Cities || data?.Result || data?.data || data?.value || []);
-    return Array.isArray(list) ? list : [];
+    if (Array.isArray(list) && list.length > 0) {
+      return list;
+    }
   } catch (error) {
-    console.error("[busBookingService] searchBusCities Error:", error);
-    return [];
+    console.warn("[busBookingService] searchBusCities primary endpoint failed, trying places API:", error);
   }
+
+  // Robust fallback to /api/Places
+  try {
+    const placesData = await requestJson(`/api/Places?query=${encodeURIComponent(q)}&tripType=bus&field=all&limit=20`, {
+      method: "GET",
+      skipAuth: true,
+    });
+    const rawList = Array.isArray(placesData) ? placesData : (placesData?.value || []);
+    return rawList
+      .map((item) => ({
+        cityName: typeof item === "string" ? item : item?.cityName || "",
+        cityId: typeof item === "object" ? String(item.cityId || item.cityCode || item.CityId || item.id || "") : "",
+        stateName: typeof item === "object" ? (item.stateName || item.StateName || "") : "",
+      }))
+      .filter((item) => item.cityName);
+  } catch (err) {
+    console.error("[busBookingService] searchBusCities places fallback error:", err);
+  }
+
+  return [];
 }
 
 // SRDV's GetSeatLayOut endpoint changes supplier workflow state.  It must be
@@ -1640,8 +1743,6 @@ const BLOCKED_BUS_TRACE_TTL_MS = 60 * 60 * 1000;
 const blockedBusTraces = new Set();
 const seatLayoutInFlightRequests = new Map();
 const seatLayoutResponseCache = new Map();
-const busImagesInFlightRequests = new Map();
-const busImagesResponseCache = new Map();
 
 function readBlockedBusTraces() {
   if (typeof window === "undefined") return [];
@@ -1858,94 +1959,184 @@ export async function getBoardingPointsProxy({ traceId, srdvIndex, resultIndex }
   }
 }
 
-export async function getBusImagesProxy({ traceId, srdvIndex, resultIndex, deviceType = "DESKTOP" }) {
-  const cleanTraceId = String(traceId ?? "").trim();
-  const cleanSrdvIndex = String(srdvIndex ?? "").trim();
-  const cleanResultIndex = String(resultIndex ?? "").trim();
-  const cleanDeviceType = String(deviceType ?? "DESKTOP").trim().toUpperCase();
+const busImagesCache = new Map();
+const busImagesInFlightRequests = new Map();
 
-  if (!cleanTraceId || !cleanResultIndex) {
+function getBusImagesWorkflowKey(payload) {
+  const traceId = String(payload?.traceId ?? payload?.TraceId ?? "").trim();
+  const srdvIndex = String(payload?.srdvIndex ?? payload?.SrdvIndex ?? "").trim();
+  const resultIndex = String(payload?.resultIndex ?? payload?.ResultIndex ?? "").trim();
+  return `${traceId}_${srdvIndex}_${resultIndex}`;
+}
+
+export function normalizeBusImagesResponse(data) {
+  if (!data || typeof data !== "object") {
     return {
-      errorCode: 0,
-      errorMessage: "",
-      traceId: cleanTraceId,
-      srdvIndex: cleanSrdvIndex,
-      resultIndex: cleanResultIndex,
       isImageSupported: false,
       isVehicleImage: false,
       imageCount: 0,
-      busImages: [],
+      images: [],
+      exteriorImages: [],
+      interiorImages: [],
+      seatImages: [],
+      otherImages: [],
+      thumbnailUrl: null,
+      errorCode: 0,
+      errorMessage: "",
     };
   }
 
-  const cacheKey = `${cleanTraceId}_${cleanSrdvIndex}_${cleanResultIndex}_${cleanDeviceType}`;
-  if (busImagesResponseCache.has(cacheKey)) {
-    return busImagesResponseCache.get(cacheKey);
-  }
-
-  let request = busImagesInFlightRequests.get(cacheKey);
-  if (!request) {
-    request = requestJson(`${BUS_BOOKINGS_ROOT}/bus-images`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        traceId: cleanTraceId,
-        srdvIndex: cleanSrdvIndex,
-        resultIndex: cleanResultIndex,
-        deviceType: cleanDeviceType,
-      }),
-    })
-      .then((data) => {
-        const errorObj = data?.Error || data?.error || {};
-        const errorCode = Number(errorObj.ErrorCode ?? errorObj.errorCode ?? 0);
-        const rawImages = Array.isArray(data?.BusImages)
-          ? data.BusImages
-          : Array.isArray(data?.busImages)
-          ? data.busImages
+  const rawImages = Array.isArray(data.BusImages)
+    ? data.BusImages
+    : Array.isArray(data.busImages)
+      ? data.busImages
+      : Array.isArray(data.Images)
+        ? data.Images
+        : Array.isArray(data.images)
+          ? data.images
           : [];
 
-        const normalized = {
-          errorCode,
-          errorMessage: errorObj.ErrorMessage || errorObj.errorMessage || "",
-          traceId: data?.TraceId ?? data?.traceId ?? cleanTraceId,
-          srdvIndex: data?.SrdvIndex ?? data?.srdvIndex ?? cleanSrdvIndex,
-          resultIndex: data?.ResultIndex ?? data?.resultIndex ?? cleanResultIndex,
-          isImageSupported: Boolean(data?.IsImageSupported ?? data?.isImageSupported ?? (errorCode === 0 && rawImages.length > 0)),
-          isVehicleImage: Boolean(data?.IsVehicleImage ?? data?.isVehicleImage),
-          imageCount: Number(data?.ImageCount ?? data?.imageCount ?? rawImages.length),
-          busImages: rawImages.map((img) => ({
-            imageType: String(img.ImageType || img.imageType || "FRONT").toUpperCase(),
-            imageUrl: img.ImageUrl || img.imageUrl || "",
-          })).filter((img) => Boolean(img.imageUrl)),
-        };
+  const images = rawImages
+    .map((img) => {
+      if (!img) return null;
+      if (typeof img === "string") {
+        const trimmed = img.trim();
+        return trimmed ? { type: "OTHER", url: trimmed } : null;
+      }
+      const rawType = String(
+        img.ImageType ||
+        img.imageType ||
+        img.Type ||
+        img.type ||
+        (img.INSIDE ? "INSIDE" : img.SIDE ? "SIDE" : img.SEAT ? "SEAT" : "OTHER")
+      ).trim().toUpperCase();
 
-        busImagesResponseCache.set(cacheKey, normalized);
+      const url = String(
+        img.ImageUrl ||
+        img.imageUrl ||
+        img.Url ||
+        img.url ||
+        img.INSIDE ||
+        img.SIDE ||
+        img.SEAT ||
+        ""
+      ).trim();
+
+      if (!url) return null;
+      return {
+        type: rawType || "OTHER",
+        url,
+      };
+    })
+    .filter(Boolean);
+
+  const exteriorImages = images.filter((img) => img.type === "SIDE" || img.type === "EXTERIOR");
+  const interiorImages = images.filter((img) => img.type === "INSIDE" || img.type === "INTERIOR");
+  const seatImages = images.filter((img) => img.type === "SEAT" || img.type === "SEATS");
+  const otherImages = images.filter(
+    (img) => !["SIDE", "EXTERIOR", "INSIDE", "INTERIOR", "SEAT", "SEATS"].includes(img.type)
+  );
+
+  const isImageSupported = Boolean(
+    data.IsImageSupported ??
+    data.isImageSupported ??
+    (images.length > 0)
+  );
+
+  const isVehicleImage = Boolean(
+    data.IsVehicleImage ??
+    data.isVehicleImage ??
+    (images.length > 0)
+  );
+
+  const imageCount = Number(
+    data.ImageCount ??
+    data.imageCount ??
+    images.length
+  );
+
+  // Thumbnail: prefer first SIDE / EXTERIOR image, fallback to first available
+  const primarySide = exteriorImages[0]?.url;
+  const thumbnailUrl = primarySide || images[0]?.url || null;
+
+  return {
+    isImageSupported,
+    isVehicleImage,
+    imageCount: images.length > 0 ? images.length : imageCount,
+    images,
+    exteriorImages: exteriorImages.map((img) => img.url),
+    interiorImages: interiorImages.map((img) => img.url),
+    seatImages: seatImages.map((img) => img.url),
+    otherImages: otherImages.map((img) => img.url),
+    thumbnailUrl,
+    errorCode: data?.Error?.ErrorCode ?? data?.error?.errorCode ?? 0,
+    errorMessage: data?.Error?.ErrorMessage ?? data?.error?.errorMessage ?? "",
+  };
+}
+
+export async function getBusImages({ traceId, srdvIndex, resultIndex }) {
+  const payload = {
+    TraceId: String(traceId ?? "").trim(),
+    ResultIndex: String(resultIndex ?? "").trim(),
+    SrdvIndex: String(srdvIndex ?? "").trim(),
+    traceId: String(traceId ?? "").trim(),
+    resultIndex: String(resultIndex ?? "").trim(),
+    srdvIndex: String(srdvIndex ?? "").trim(),
+  };
+
+  const workflowKey = getBusImagesWorkflowKey(payload);
+  if (!workflowKey || workflowKey === "__") {
+    return normalizeBusImagesResponse(null);
+  }
+
+  if (busImagesCache.has(workflowKey)) {
+    return busImagesCache.get(workflowKey);
+  }
+
+  let request = busImagesInFlightRequests.get(workflowKey);
+  if (!request) {
+    request = (async () => {
+      try {
+        const data = await requestJson(`${BUS_BOOKINGS_ROOT}/v9/GetBusImages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            TraceId: payload.TraceId,
+            ResultIndex: payload.ResultIndex,
+            SrdvIndex: payload.SrdvIndex,
+          }),
+        });
+
+        const normalized = normalizeBusImagesResponse(data);
+        busImagesCache.set(workflowKey, normalized);
         return normalized;
-      })
-      .catch((error) => {
-        console.warn("[busBookingService] getBusImagesProxy non-blocking warning:", error);
+      } catch (error) {
+        console.warn("[busBookingService] getBusImages failed or not supported:", error?.message || error);
         const fallback = {
-          errorCode: 7004,
-          errorMessage: "Supplier service is temporarily unavailable.",
-          traceId: cleanTraceId,
-          srdvIndex: cleanSrdvIndex,
-          resultIndex: cleanResultIndex,
           isImageSupported: false,
           isVehicleImage: false,
           imageCount: 0,
-          busImages: [],
+          images: [],
+          exteriorImages: [],
+          interiorImages: [],
+          seatImages: [],
+          otherImages: [],
+          thumbnailUrl: null,
+          error: error?.message || "Failed to load bus images",
         };
+        busImagesCache.set(workflowKey, fallback);
         return fallback;
-      })
-      .finally(() => {
-        busImagesInFlightRequests.delete(cacheKey);
-      });
+      } finally {
+        busImagesInFlightRequests.delete(workflowKey);
+      }
+    })();
 
-    busImagesInFlightRequests.set(cacheKey, request);
+    busImagesInFlightRequests.set(workflowKey, request);
   }
 
-  return request;
+  return await request;
 }
+
 
 export async function blockBusProxy({ traceId, resultIndex, srdvIndex, boardingPointId, droppingPointId, passengers, couponCode, promotionId, selectedFeaturedOfferId }) {
   let resolvedCouponCode = couponCode ? String(couponCode).trim().toUpperCase() : null;

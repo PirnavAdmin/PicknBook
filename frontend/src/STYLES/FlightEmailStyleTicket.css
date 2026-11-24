@@ -243,10 +243,12 @@
   color: #64748b;
 }
 
-.pb-flight-route-city {
+.pb-flight-route-city,
+.pb-flight-route-city-box {
   font-size: 13.5px;
   font-weight: 800;
   color: #0f172a;
+  overflow: visible;
 }
 
 .pb-flight-route-airport {
@@ -335,11 +337,11 @@
   background: #f8fafc;
 }
 
-.pb-flight-email-ticket-details > div {
+.pb-flight-email-ticket-details>div {
   padding: 16px 20px;
 }
 
-.pb-flight-email-ticket-details > div:first-child {
+.pb-flight-email-ticket-details>div:first-child {
   border-right: 1px solid #e2e8f0;
 }
 
@@ -448,11 +450,11 @@
   background: #f8fafc;
 }
 
-.pb-flight-email-ticket-policies > div {
+.pb-flight-email-ticket-policies>div {
   padding: 16px 20px;
 }
 
-.pb-flight-email-ticket-policies > div:first-child {
+.pb-flight-email-ticket-policies>div:first-child {
   border-right: 1px solid #e2e8f0;
 }
 
@@ -473,6 +475,7 @@
 
 /* RESPONSIVE */
 @media (max-width: 640px) {
+
   .pb-flight-email-ticket-header,
   .pb-flight-email-ticket-details,
   .pb-flight-email-ticket-policies {
@@ -485,8 +488,8 @@
     margin-top: 10px;
   }
 
-  .pb-flight-email-ticket-details > div:first-child,
-  .pb-flight-email-ticket-policies > div:first-child {
+  .pb-flight-email-ticket-details>div:first-child,
+  .pb-flight-email-ticket-policies>div:first-child {
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
   }
@@ -505,4 +508,3 @@
     margin-top: 6px;
   }
 }
-

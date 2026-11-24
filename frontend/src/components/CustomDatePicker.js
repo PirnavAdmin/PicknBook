@@ -70,6 +70,7 @@ export default function CustomDatePicker({
   children = 0,
   infants = 0,
   isFlight = true,
+  mode = "flight",
 }) {
   const anchorRef = useRef(null);
   const popupRef = useRef(null);
@@ -87,7 +88,13 @@ export default function CustomDatePicker({
   const [isLoadingFares, setIsLoadingFares] = useState(false);
 
   // Extract airport codes with smart fallback for customer flight search
-  const isFlightMode = Boolean(isFlight !== false);
+  // When mode is "bus" or "hotel", or isFlight is false, flight fares and routes are disabled.
+  const isFlightMode = Boolean(
+    (mode === "flight" || (!mode && isFlight !== false)) &&
+    mode !== "bus" &&
+    mode !== "hotel" &&
+    isFlight !== false
+  );
   const fromCode = useMemo(() => {
     if (!isFlightMode) return "";
     const resolved = resolveAirportCode(from);

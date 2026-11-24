@@ -35,29 +35,7 @@ export function getStageState(status) {
     : "unknown";
 }
 
-export function formatPaymentMethod(value) {
-  if (!value || typeof value !== "string") return value || "--";
-  const trimmed = value.trim();
-  const lower = trimmed.toLowerCase();
-  if (lower === "upi") return "UPI";
-  if (lower.includes("debit")) return "Debit Card";
-  if (lower.includes("credit")) return "Credit Card";
-  if (lower === "card" || lower.includes("card")) return "Card Payment";
-  if (lower === "netbanking" || lower.includes("net_banking") || lower.includes("net banking") || lower === "nb") return "Net Banking";
-  if (lower === "wallet" || lower === "app") return "Wallet";
-  if (lower === "agent wallet") return "Agent Wallet";
-  if (lower === "paylater") return "Pay Later";
-  if (lower === "emi" || lower === "cardlessemi") return "EMI";
-  if (lower === "cashfree") return "Online Payment";
-  return trimmed;
-}
-
-export function formatStageValue(value, key = "") {
+export function formatStageValue(value) {
   if (value == null || value === "") return "--";
-  if (typeof value === "object") return JSON.stringify(value, null, 2);
-  const keyLower = String(key || "").toLowerCase();
-  if (keyLower === "method" || keyLower === "paymentmethod" || keyLower === "gatewaypaymentmethod") {
-    return formatPaymentMethod(String(value));
-  }
-  return String(value);
+  return typeof value === "object" ? JSON.stringify(value, null, 2) : String(value);
 }

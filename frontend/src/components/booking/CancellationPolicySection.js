@@ -1,8 +1,9 @@
 /* eslint-disable */
-import React from "react";
+import React, { useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   FileText,
   Loader2,
   ShieldAlert,
@@ -19,7 +20,23 @@ export default function CancellationPolicySection({
   error = "",
   selectedLegIndexes = [],
   selectedPassengerIds = [],
+  isCollapsible = true,
+  defaultExpanded = false,
 }) {
+  const [isExpanded, setIsExpanded] = useState(() => Boolean(defaultExpanded));
+
+  const toggleExpanded = () => {
+    if (isCollapsible) {
+      setIsExpanded((prev) => !prev);
+    }
+  };
+
+  const handleHeaderKeyDown = (e) => {
+    if (isCollapsible && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      toggleExpanded();
+    }
+  };
   if (isLoading) {
     return (
       <div className="policy-compact-container">
@@ -189,11 +206,29 @@ export default function CancellationPolicySection({
       : passengerEstimates;
 
   return (
-    <div className="policy-compact-container">
-      {/* ── Compact Header (Single Line) ── */}
-      <div className="policy-compact-header">
+    <div
+      className={`policy-compact-container ${isCollapsible ? "is-collapsible" : ""} ${
+        isExpanded ? "is-expanded" : "is-collapsed"
+      } ${isAlreadyCancelled ? "theme-cancelled" : isZeroRefund ? "theme-nonref" : "theme-refundable"}`}
+    >
+      {/* ── Compact Header (Clickable Accordion Dropdown Row) ── */}
+      <div
+        className={`policy-compact-header ${isCollapsible ? "is-clickable" : ""} ${
+          isExpanded ? "is-open" : "is-closed"
+        }`}
+        onClick={toggleExpanded}
+        onKeyDown={handleHeaderKeyDown}
+        role={isCollapsible ? "button" : undefined}
+        tabIndex={isCollapsible ? 0 : undefined}
+        aria-expanded={isCollapsible ? isExpanded : undefined}
+        aria-label={`Cancellation & Refund Policy, currently ${isExpanded ? "expanded" : "collapsed"}. Click to toggle.`}
+      >
         <div className="policy-header-left">
-          <div className={`policy-badge-icon ${isAlreadyCancelled ? "neutral" : isZeroRefund ? "danger" : "success"}`}>
+          <div
+            className={`policy-badge-icon ${
+              isAlreadyCancelled ? "neutral" : isZeroRefund ? "danger" : "success"
+            }`}
+          >
             {isAlreadyCancelled ? (
               <CheckCircle2 size={16} />
             ) : isZeroRefund ? (
@@ -202,11 +237,15 @@ export default function CancellationPolicySection({
               <ShieldCheck size={16} />
             )}
           </div>
-          <div>
+          <div className="policy-header-title-group">
             <h5 className="policy-compact-title">Cancellation & Refund Policy</h5>
             <span
               className="policy-compact-sub"
-              title={`${displayType !== "Hotel" && operatorName ? `${operatorName} • ` : ""}${termsSubtitle}${displayType !== "Hotel" && formattedDeparture ? ` • Dep: ${formattedDeparture}` : ""}`}
+              title={`${
+                displayType !== "Hotel" && operatorName ? `${operatorName} • ` : ""
+              }${termsSubtitle}${
+                displayType !== "Hotel" && formattedDeparture ? ` • Dep: ${formattedDeparture}` : ""
+              }`}
             >
               {displayType !== "Hotel" && operatorName ? `${operatorName} • ` : ""}{termsSubtitle}
               {displayType !== "Hotel" && formattedDeparture ? ` • Dep: ${formattedDeparture}` : ""}
@@ -222,117 +261,163 @@ export default function CancellationPolicySection({
           ) : (
             <span className="policy-pill success">Refundable</span>
           )}
+          {isCollapsible && (
+            <div className={`policy-toggle-arrow ${isExpanded ? "is-open" : ""}`} aria-hidden="true">
+              <ChevronDown size={18} />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Compact 1-Row Calculation Card (shown when price/fare is known) ── */}
-      {totalPaid > 0 && (
-        <div className={`policy-calc-card ${isAlreadyCancelled ? "is-cancelled" : isZeroRefund ? "is-zero" : "is-refundable"}`}>
-          <div className="policy-calc-grid">
-            <div className="calc-col">
-              <span className="calc-lbl">{displayType === "Hotel" ? "ROOM FARE" : "ROOM FARE"}</span>
-              <span className="calc-val">₹{totalPaid.toFixed(2)}</span>
-            </div>
-            <span className="calc-operator">–</span>
-            <div className="calc-col">
-              <span className="calc-lbl">CANCELLATION FEE</span>
-              <span className="calc-val text-danger">
-                ₹{(settledFee !== null ? settledFee : estFee).toFixed(2)}
-              </span>
-            </div>
-            <span className="calc-operator">=</span>
-            <div className={`calc-col result ${isAlreadyCancelled ? "success" : isZeroRefund ? "zero" : "success"}`}>
-              <span className="calc-lbl">{isAlreadyCancelled ? "REFUND SETTLED" : "EST. REFUND"}</span>
-              <span className={`calc-val ${isAlreadyCancelled || estRefund > 0 ? "text-success" : "text-muted"}`}>
-                ₹{(settledRefund !== null ? settledRefund : estRefund).toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          {/* 1-Line Explanation */}
-          <div className="policy-calc-note">
-            {isAlreadyCancelled ? (
-              <span>
-                ✓ Refund of ₹{(settledRefund || 0).toFixed(2)} settled to payment source
-                {parsedPolicy.cancellationAudit?.refundId ? ` (Ref: ${parsedPolicy.cancellationAudit.refundId})` : ""}.
-              </span>
-            ) : isZeroRefund ? (
-              <span className="text-danger">
-                ⚠️ 100% cancellation fee applies before departure
-                {parsedPolicy.hoursUntilDeparture !== null ? ` (${parsedPolicy.hoursUntilDeparture} hrs left)` : ""}. Zero refund will be credited.
-              </span>
-            ) : (
-              <span className="text-success">
-                ✓ Eligible refund of ₹{(settledRefund !== null ? settledRefund : estRefund).toFixed(2)} will be credited to payment source within 3–5 working days.
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* If totalPaid is 0 but summaryText exists */}
-      {totalPaid <= 0 && parsedPolicy.summaryText && (
-        <div className="policy-calc-note" style={{ marginBottom: "10px" }}>
-          <span className={isZeroRefund ? "text-danger" : "text-success"}>
-            {parsedPolicy.summaryText}
-          </span>
-        </div>
-      )}
-
-      {/* ── Per-Seat Breakdown: ONLY shown if MULTIPLE passengers exist (>1) ── */}
-      {filteredPassengerEstimates.length > 1 && !isAlreadyCancelled && (
-        <div className="policy-compact-seats">
-          <span className="seats-title">Per-Seat Breakdown ({filteredPassengerEstimates.length} seats):</span>
-          <div className="seats-grid">
-            {filteredPassengerEstimates.map((pe, idx) => (
-              <div key={idx} className="seat-chip">
-                <span className="seat-num">Seat {pe.seatNumber}</span>
-                <span className="seat-name">{pe.fullName || `Passenger ${idx + 1}`}</span>
-                <span className="seat-amt">
-                  Fee: ₹{Number(pe.estimatedDeduction || 0).toFixed(0)} |{" "}
-                  <strong className={Number(pe.estimatedRefund || 0) > 0 ? "text-success" : "text-muted"}>
-                    Refund: ₹{Number(pe.estimatedRefund || 0).toFixed(0)}
-                  </strong>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Compact Slabs Table ── */}
-      <div className="policy-compact-table-wrap">
-        <div className="compact-table-head">
-          <div className="col-time">CANCELLATION WINDOW</div>
-          <div className="col-fee">CANCELLATION FEE</div>
-          <div className="col-refund">REFUND RETURN</div>
-        </div>
-        <div className="compact-table-body">
-          {slabsToRender.map((slab, index) => {
-            const isActive = Boolean(slab.isActive);
-
-            return (
-              <div key={index} className={`compact-table-row ${isActive ? "is-active" : ""}`}>
-                <div className="col-time">
-                  <span className="cond-text">
-                    {slab.condition}
-                    {isActive && <span className="active-tag">ACTIVE</span>}
-                  </span>
-                  {slab.cutoffDate && <span className="cutoff-text">{slab.cutoffDate}</span>}
+      {/* ── Collapsible Accordion Content ── */}
+      <div
+        className={`policy-accordion-body ${isExpanded ? "is-expanded" : "is-collapsed"}`}
+        aria-hidden={!isExpanded}
+      >
+        <div className="policy-accordion-inner">
+          {/* ── Compact 1-Row Calculation Card (shown when price/fare is known) ── */}
+          {totalPaid > 0 && (
+            <div
+              className={`policy-calc-card ${
+                isAlreadyCancelled
+                  ? "is-cancelled"
+                  : isZeroRefund
+                  ? "is-zero"
+                  : "is-refundable"
+              }`}
+            >
+              <div className="policy-calc-grid">
+                <div className="calc-col">
+                  <span className="calc-lbl">{displayType === "Hotel" ? "ROOM FARE" : "ROOM FARE"}</span>
+                  <span className="calc-val">₹{totalPaid.toFixed(2)}</span>
                 </div>
-                <div className="col-fee">
-                  <span className="fee-tag">
-                    {slab.charge}
+                <span className="calc-operator">–</span>
+                <div className="calc-col">
+                  <span className="calc-lbl">CANCELLATION FEE</span>
+                  <span className="calc-val text-danger">
+                    ₹{(settledFee !== null ? settledFee : estFee).toFixed(2)}
                   </span>
                 </div>
-                <div className="col-refund">
-                  <span className="refund-tag">
-                    {slab.refund || "100% Refund"}
+                <span className="calc-operator">=</span>
+                <div
+                  className={`calc-col result ${
+                    isAlreadyCancelled ? "success" : isZeroRefund ? "zero" : "success"
+                  }`}
+                >
+                  <span className="calc-lbl">
+                    {isAlreadyCancelled ? "REFUND SETTLED" : "EST. REFUND"}
+                  </span>
+                  <span
+                    className={`calc-val ${
+                      isAlreadyCancelled || estRefund > 0 ? "text-success" : "text-muted"
+                    }`}
+                  >
+                    ₹{(settledRefund !== null ? settledRefund : estRefund).toFixed(2)}
                   </span>
                 </div>
               </div>
-            );
-          })}
+
+              {/* 1-Line Explanation */}
+              <div className="policy-calc-note">
+                {isAlreadyCancelled ? (
+                  <span>
+                    ✓ Refund of ₹{(settledRefund || 0).toFixed(2)} settled to payment source
+                    {parsedPolicy.cancellationAudit?.refundId
+                      ? ` (Ref: ${parsedPolicy.cancellationAudit.refundId})`
+                      : ""}
+                    .
+                  </span>
+                ) : isZeroRefund ? (
+                  <span className="text-danger">
+                    ⚠️ 100% cancellation fee applies before departure
+                    {parsedPolicy.hoursUntilDeparture !== null
+                      ? ` (${parsedPolicy.hoursUntilDeparture} hrs left)`
+                      : ""}
+                    . Zero refund will be credited.
+                  </span>
+                ) : (
+                  <span className="text-success">
+                    ✓ Eligible refund of ₹
+                    {(settledRefund !== null ? settledRefund : estRefund).toFixed(2)} will be
+                    credited to payment source within 3–5 working days.
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* If totalPaid is 0 but summaryText exists */}
+          {totalPaid <= 0 && parsedPolicy.summaryText && (
+            <div className="policy-calc-note" style={{ marginBottom: "10px" }}>
+              <span className={isZeroRefund ? "text-danger" : "text-success"}>
+                {parsedPolicy.summaryText}
+              </span>
+            </div>
+          )}
+
+          {/* ── Per-Seat Breakdown: ONLY shown if MULTIPLE passengers exist (>1) ── */}
+          {filteredPassengerEstimates.length > 1 && !isAlreadyCancelled && (
+            <div className="policy-compact-seats">
+              <span className="seats-title">
+                Per-Seat Breakdown ({filteredPassengerEstimates.length} seats):
+              </span>
+              <div className="seats-grid">
+                {filteredPassengerEstimates.map((pe, idx) => (
+                  <div key={idx} className="seat-chip">
+                    <span className="seat-num">Seat {pe.seatNumber}</span>
+                    <span className="seat-name">{pe.fullName || `Passenger ${idx + 1}`}</span>
+                    <span className="seat-amt">
+                      Fee: ₹{Number(pe.estimatedDeduction || 0).toFixed(0)} |{" "}
+                      <strong
+                        className={
+                          Number(pe.estimatedRefund || 0) > 0 ? "text-success" : "text-muted"
+                        }
+                      >
+                        Refund: ₹{Number(pe.estimatedRefund || 0).toFixed(0)}
+                      </strong>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Compact Slabs Table ── */}
+          <div className="policy-compact-table-wrap">
+            <div className="compact-table-head">
+              <div className="col-time">CANCELLATION WINDOW</div>
+              <div className="col-fee">CANCELLATION FEE</div>
+              <div className="col-refund">REFUND RETURN</div>
+            </div>
+            <div className="compact-table-body">
+              {slabsToRender.map((slab, index) => {
+                const isActive = Boolean(slab.isActive);
+
+                return (
+                  <div
+                    key={index}
+                    className={`compact-table-row ${isActive ? "is-active" : ""}`}
+                  >
+                    <div className="col-time">
+                      <span className="cond-text">
+                        {slab.condition}
+                        {isActive && <span className="active-tag">ACTIVE</span>}
+                      </span>
+                      {slab.cutoffDate && (
+                        <span className="cutoff-text">{slab.cutoffDate}</span>
+                      )}
+                    </div>
+                    <div className="col-fee">
+                      <span className="fee-tag">{slab.charge}</span>
+                    </div>
+                    <div className="col-refund">
+                      <span className="refund-tag">{slab.refund || "100% Refund"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

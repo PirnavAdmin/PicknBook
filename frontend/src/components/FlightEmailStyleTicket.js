@@ -1,3 +1,4 @@
+import CityAirportDisplay from "./flights/CityAirportDisplay";
 import React from "react";
 import "../STYLES/FlightEmailStyleTicket.css";
 
@@ -271,9 +272,13 @@ export default function FlightEmailStyleTicket({ ticket, data = {}, id }) {
                   <div className="pb-flight-route-time">
                     {formatTimeDisplay(segDep)} <span>hrs</span>
                   </div>
-                  <div className="pb-flight-route-city">
-                    {segFrom} ({segFromCode})
-                  </div>
+                  <CityAirportDisplay
+                    cityName={segFrom}
+                    airportCode={segFromCode}
+                    airportName={segFromAirport}
+                    align="left"
+                    className="pb-flight-route-city-box"
+                  />
                   <div className="pb-flight-route-airport">{segFromAirport}</div>
                   <div className="pb-flight-route-date">{formatDateDisplay(segDep)}</div>
                 </div>
@@ -289,9 +294,13 @@ export default function FlightEmailStyleTicket({ ticket, data = {}, id }) {
                   <div className="pb-flight-route-time">
                     {formatTimeDisplay(segArr)} <span>hrs</span>
                   </div>
-                  <div className="pb-flight-route-city">
-                    {segTo} ({segToCode})
-                  </div>
+                  <CityAirportDisplay
+                    cityName={segTo}
+                    airportCode={segToCode}
+                    airportName={segToAirport}
+                    align="right"
+                    className="pb-flight-route-city-box"
+                  />
                   <div className="pb-flight-route-airport">{segToAirport}</div>
                   <div className="pb-flight-route-date">{formatDateDisplay(segArr)}</div>
                 </div>

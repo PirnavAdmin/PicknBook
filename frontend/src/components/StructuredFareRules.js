@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import "../STYLES/FlightSearchResults.css";
 import {
   Plane,
   Briefcase,
@@ -11,10 +12,12 @@ import {
   Tag,
   ShieldAlert,
   Info,
+  ShieldCheck,
+  Check,
 } from "lucide-react";
 
 /**
- * Normalizes and strips HTML tags, decoding HTML entities
+ * Normalizes and strips HTML tags, decoding common HTML entities
  */
 function stripHtml(input) {
   if (!input) return "";
@@ -22,12 +25,20 @@ function stripHtml(input) {
     .replace(/<br\s*[\/]?>/gi, "\n")
     .replace(/<\/p>/gi, "\n")
     .replace(/<\/li>/gi, "\n")
+    .replace(/<\/tr>/gi, "\n")
+    .replace(/<\/td>/gi, " ")
+    .replace(/<\/div>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&rsquo;|&lsquo;/gi, "'")
+    .replace(/&ldquo;|&rdquo;/gi, '"')
+    .replace(/&ndash;|&mdash;/gi, "-")
+    .replace(/&bull;/gi, "•")
+    .replace(/&#8377;/gi, "₹")
     .replace(/[ \t]+/g, " ")
     .trim();
 }
@@ -35,19 +46,20 @@ function stripHtml(input) {
 /**
  * Extracts fee and time period from a rule line if present
  */
-function parseRulePoint(line) {
-  const trimmed = line.trim();
+function parseRulePoint(line, sectorLabel = "") {
+  if (!line) return null;
+  const trimmed = String(line).trim();
   if (!trimmed) return null;
 
-  // Pattern matching for fee amounts like "INR 3,000", "Rs. 3500", "₹2500", "Free", "Non-refundable"
+  // Pattern matching for fee amounts like "INR 3,000", "Rs. 3500", "₹2500", "USD 50", "Free", "Non-refundable", "No-show"
   const feeMatch = trimmed.match(
-    /\b(INR\s*[\d,]+|Rs\.?\s*[\d,]+|₹\s*[\d,]+|Non-refundable|No[\s-]show|Free|Nil)\b/i
+    /\b((?:INR|Rs\.?|₹|USD|EUR|AED|GBP)\s*[\d,]+(?:\.\d{1,2})?|Non-refundable|No[\s-]show|Free|Nil|100%|50%)\b/i
   );
   const fee = feeMatch ? feeMatch[0] : null;
 
-  // Pattern matching for time windows like "Within 2 hours", "Before 24 hrs", "2 to 72 hours"
+  // Pattern matching for time windows like "Within 2 hours", "Before 24 hrs", "2 to 72 hours", "0 - 2 hours"
   const timeMatch = trimmed.match(
-    /\b((?:Within|Before|After|More than|Between|Up to)\s+[\d\w\s-]+(?:hours?|hrs?|days?)|0\s*-\s*\d+\s*(?:hours?|hrs?)|[\d\s]+to[\d\s]+(?:hours?|hrs?|days?))\b/i
+    /\b((?:Within|Before|After|More than|Between|Up to)\s+[\d\w\s-]+(?:hours?|hrs?|days?)|0\s*-\s*\d+\s*(?:hours?|hrs?)|[\d\s]+to[\d\s]+(?:hours?|hrs?|days?)|prior\s+to\s+departure)\b/i
   );
   const timeWindow = timeMatch ? timeMatch[0] : null;
 
@@ -55,33 +67,97 @@ function parseRulePoint(line) {
     raw: trimmed,
     fee,
     timeWindow,
+    sectorLabel: sectorLabel || "",
   };
 }
 
 /**
- * Parses raw fare rule strings and structured miniFareRules into 5 clean categories
+ * Parses raw fare rule strings and structured miniFareRules into clean categories
  */
 export function parseFareRuleDetails({ data, flight = {} }) {
-  const results = data?.results || data?.Results || [];
-  const miniFareRules = data?.miniFareRules || data?.MiniFareRules || [];
+  // 1. Resolve rawRuleList from all plausible structures and casings
+  let rawRuleList = [];
+  if (Array.isArray(data)) {
+    rawRuleList = data;
+  } else if (data && typeof data === "object") {
+    if (Array.isArray(data.results)) rawRuleList = data.results;
+    else if (Array.isArray(data.Results)) rawRuleList = data.Results;
+    else if (Array.isArray(data.FareRules)) rawRuleList = data.FareRules;
+    else if (Array.isArray(data.fareRules)) rawRuleList = data.fareRules;
+    else if (Array.isArray(data.data?.results)) rawRuleList = data.data.results;
+    else if (Array.isArray(data.data?.Results)) rawRuleList = data.data.Results;
+    else if (Array.isArray(data.data?.FareRules)) rawRuleList = data.data.FareRules;
+    else if (Array.isArray(data.raw?.Response?.Results)) rawRuleList = data.raw.Response.Results;
+    else if (Array.isArray(data.rawResponse?.Results)) rawRuleList = data.rawResponse.Results;
+    else if (Array.isArray(data.data) && data.data.length > 0) rawRuleList = data.data;
+    else if (data.FareRuleDetail || data.fareRuleDetail || data.FareRules || data.fareRules) {
+      rawRuleList = [data];
+    }
+  } else if (typeof data === "string" && data.trim()) {
+    rawRuleList = [{ FareRuleDetail: data }];
+  }
+
+  // Fallback to flight-level fare rules if API response didn't supply rule text
+  if (rawRuleList.length === 0 && flight) {
+    if (Array.isArray(flight.fareRules) && flight.fareRules.length > 0) {
+      rawRuleList = flight.fareRules;
+    } else if (Array.isArray(flight.FareRules) && flight.FareRules.length > 0) {
+      rawRuleList = flight.FareRules;
+    } else if (typeof flight.fareRules === "string" && flight.fareRules.trim()) {
+      rawRuleList = [{ FareRuleDetail: flight.fareRules }];
+    }
+  }
+
+  // 2. Resolve miniFareRules
+  let miniFareRules = [];
+  if (Array.isArray(data?.miniFareRules)) miniFareRules = data.miniFareRules;
+  else if (Array.isArray(data?.MiniFareRules)) miniFareRules = data.MiniFareRules;
+  else if (Array.isArray(data?.data?.MiniFareRules)) miniFareRules = data.data.MiniFareRules;
+  else if (Array.isArray(data?.data?.miniFareRules)) miniFareRules = data.data.miniFareRules;
+  else if (Array.isArray(flight?.miniFareRules)) miniFareRules = flight.miniFareRules;
+  else if (Array.isArray(flight?.MiniFareRules)) miniFareRules = flight.MiniFareRules;
+
   const airlineRules = data?.airlineRules || data?.AirlineRules || null;
   const specialRule = data?.specialRule || data?.SpecialRule || "";
 
+  // 3. Resolve flight connecting segments & labels
+  const segments = Array.isArray(flight?.segments) && flight.segments.length > 0
+    ? flight.segments
+    : (Array.isArray(flight?.Segments) && flight.Segments.length > 0
+      ? flight.Segments
+      : (Array.isArray(flight?.fareSegments) ? flight.fareSegments : []));
+
+  const originCode = flight.sourceCode || flight.fromAirportCode || flight.from ||
+    (segments[0]?.originAirportCode || segments[0]?.origin || "Origin");
+  const destCode = flight.destinationCode || flight.toAirportCode || flight.to ||
+    (segments[segments.length - 1]?.destAirportCode || segments[segments.length - 1]?.destination || "Destination");
+
+  const flightNumberFormatted = flight.flightNumber ||
+    (segments.length > 0
+      ? segments.map((s) => (s.airlineCode ? `${s.airlineCode} ` : "") + (s.flightNumber || "")).filter(Boolean).join(" / ")
+      : "");
+
   const info = {
-    airlineName: flight.airlineName || flight.airline || "Airline",
-    flightNumber: flight.flightNumber || "",
-    source: flight.sourceCode || flight.source || "Origin",
-    destination: flight.destinationCode || flight.destination || "Destination",
-    sourceCity: flight.sourceCity || "",
-    destinationCity: flight.destinationCity || "",
-    fareBasis: flight.fareBasis || "",
-    cabinClass: flight.cabinClass || flight.fareClass || "Economy",
+    airlineName: flight.airlineName || flight.airline || segments[0]?.airline || "Airline",
+    flightNumber: flightNumberFormatted,
+    source: originCode,
+    destination: destCode,
+    sourceCity: flight.sourceCity || flight.fromCity || segments[0]?.originCity || "",
+    destinationCity: flight.destinationCity || flight.toCity || segments[segments.length - 1]?.destCity || "",
+    fareBasis: flight.fareBasis || flight.fareBasisCode || "",
+    cabinClass: flight.cabinClass || flight.fareClass || flight.selectedTravelClass || "Economy",
     isRefundable:
       typeof flight.isRefundable === "boolean"
         ? flight.isRefundable
           ? "Refundable"
           : "Non-Refundable"
-        : null,
+        : flight.isRefundable === "true" || flight.isRefundable === "Refundable"
+          ? "Refundable"
+          : flight.isRefundable === "false" || flight.isRefundable === "Non-Refundable"
+            ? "Non-Refundable"
+            : null,
+    isConnecting: segments.length > 1,
+    segmentCount: segments.length,
   };
 
   const baggagePoints = [];
@@ -90,23 +166,41 @@ export function parseFareRuleDetails({ data, flight = {} }) {
   const additionalChargesPoints = [];
   const generalRules = [];
 
-  // 1. Check flight properties for baggage
+  // 4. Check flight properties for baggage
   if (flight.baggage) {
     const val = String(flight.baggage);
     baggagePoints.push(
-      parseRulePoint(`Check-in Baggage: ${val}${val.toLowerCase().includes("kg") ? "" : " per adult"}`)
+      parseRulePoint(`Check-in Baggage: ${val}${/kg|piece/i.test(val) ? "" : " per adult"}`)
     );
   }
   if (flight.cabinBaggage) {
     const val = String(flight.cabinBaggage);
     baggagePoints.push(
-      parseRulePoint(`Cabin Baggage: ${val}${val.toLowerCase().includes("kg") ? "" : " per adult"}`)
+      parseRulePoint(`Cabin Baggage: ${val}${/kg|piece/i.test(val) ? "" : " per adult"}`)
     );
   }
 
-  // 2. Parse results array from API
-  const ruleList = Array.isArray(results) ? results : [results].filter(Boolean);
-  ruleList.forEach((r) => {
+  // Baggage per segment for connecting flights
+  if (segments.length > 1) {
+    segments.forEach((seg, sIdx) => {
+      const segOrigin = seg.originAirportCode || seg.origin || `Sector ${sIdx + 1}`;
+      const segDest = seg.destAirportCode || seg.dest || `Sector ${sIdx + 1}`;
+      const segLabel = `${segOrigin} ➔ ${segDest}`;
+      if (seg.baggage && (!flight.baggage || seg.baggage !== flight.baggage)) {
+        baggagePoints.push(parseRulePoint(`Check-in Baggage (${segLabel}): ${seg.baggage}`));
+      }
+      if (seg.cabinBaggage && (!flight.cabinBaggage || seg.cabinBaggage !== flight.cabinBaggage)) {
+        baggagePoints.push(parseRulePoint(`Cabin Baggage (${segLabel}): ${seg.cabinBaggage}`));
+      }
+    });
+  }
+
+  // 5. Parse results array from API
+  const multipleSectorsInRules = rawRuleList.length > 1 && rawRuleList.some(r => r?.Origin && r?.Destination);
+
+  rawRuleList.forEach((r) => {
+    if (!r) return;
+
     if (r.FareBasisCode && !info.fareBasis) {
       info.fareBasis = r.FareBasisCode;
     }
@@ -120,7 +214,11 @@ export function parseFareRuleDetails({ data, flight = {} }) {
       info.destination = r.Destination;
     }
 
-    const raw = r.FareRuleDetail || r.FareRules || "";
+    const sectorLabel = multipleSectorsInRules && r.Origin && r.Destination
+      ? `${r.Origin} ➔ ${r.Destination}`
+      : "";
+
+    const raw = r.FareRuleDetail || r.fareRuleDetail || r.FareRules || r.fareRules || (typeof r === "string" ? r : "");
     if (!raw) return;
 
     let text = stripHtml(raw);
@@ -173,7 +271,7 @@ export function parseFareRuleDetails({ data, flight = {} }) {
           .trim();
 
         if (!cleanedPt) return;
-        const parsed = parseRulePoint(cleanedPt);
+        const parsed = parseRulePoint(cleanedPt, sectorLabel);
         if (!parsed) return;
 
         if (cat === "baggage") baggagePoints.push(parsed);
@@ -185,9 +283,10 @@ export function parseFareRuleDetails({ data, flight = {} }) {
     });
   });
 
-  // 3. Process MiniFareRules from API if available
+  // 6. Process MiniFareRules from API if available
   if (Array.isArray(miniFareRules) && miniFareRules.length > 0) {
     miniFareRules.forEach((m) => {
+      if (!m) return;
       const cat = String(m.Type || m.Category || "").toLowerCase();
       const text = m.Details || m.Rule || m.Desc || "";
       if (!text) return;
@@ -206,7 +305,8 @@ export function parseFareRuleDetails({ data, flight = {} }) {
   const dedupe = (list) => {
     const seen = new Set();
     return list.filter((item) => {
-      const key = item.raw.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!item || !item.raw) return false;
+      const key = `${item.sectorLabel || ""}_${item.raw.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
       if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -241,8 +341,7 @@ export default function StructuredFareRules({ data, flight }) {
     airlineRules,
   } = sections;
 
-  const hasAnyRules =
-    baggage.length > 0 ||
+  const hasSpecificRules =
     dateChange.length > 0 ||
     cancellation.length > 0 ||
     additional.length > 0 ||
@@ -299,11 +398,19 @@ export default function StructuredFareRules({ data, flight }) {
             <div className="flight-info-item">
               <span className="info-label">Refundability</span>
               <span
-                className={`info-value refundable-badge ${
-                  flightInfo.isRefundable === "Refundable" ? "refundable" : "non-refundable"
-                }`}
+                className={`info-value refundable-badge ${flightInfo.isRefundable === "Refundable" ? "refundable" : "non-refundable"
+                  }`}
               >
                 {flightInfo.isRefundable}
+              </span>
+            </div>
+          )}
+
+          {flightInfo.isConnecting && (
+            <div className="flight-info-item">
+              <span className="info-label">Flight Type</span>
+              <span className="info-value" style={{ color: "#d97706", fontWeight: 600 }}>
+                Connecting ({flightInfo.segmentCount} segments)
               </span>
             </div>
           )}
@@ -345,7 +452,7 @@ export default function StructuredFareRules({ data, flight }) {
           </ul>
         ) : (
           <p className="fare-rule-empty-note">
-            Standard airline baggage policy applies. Check-in and cabin baggage details will be confirmed on the e-ticket.
+            Standard airline baggage policy applies. Check-in and cabin baggage details will be confirmed on your e-ticket.
           </p>
         )}
       </div>
@@ -366,7 +473,14 @@ export default function StructuredFareRules({ data, flight }) {
               <li key={idx} className="fare-rule-point-row">
                 <Clock size={15} className="point-bullet-icon change" />
                 <div className="point-text-wrap">
-                  <span className="point-text">{item.raw}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    {item.sectorLabel && (
+                      <span className="route-badge" style={{ fontSize: "0.72rem", padding: "1px 6px" }}>
+                        {item.sectorLabel}
+                      </span>
+                    )}
+                    <span className="point-text">{item.raw}</span>
+                  </div>
                   <div className="point-tags-row">
                     {item.timeWindow && (
                       <span className="point-time-pill">
@@ -385,7 +499,7 @@ export default function StructuredFareRules({ data, flight }) {
           </ul>
         ) : (
           <p className="fare-rule-empty-note">
-            Date changes permitted subject to airline fare difference and standard rescheduling fee prior to flight departure.
+            Date changes permitted subject to airline fare difference and standard rescheduling fee prior to scheduled flight departure.
           </p>
         )}
       </div>
@@ -406,7 +520,14 @@ export default function StructuredFareRules({ data, flight }) {
               <li key={idx} className="fare-rule-point-row">
                 <XCircle size={15} className="point-bullet-icon cancel" />
                 <div className="point-text-wrap">
-                  <span className="point-text">{item.raw}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    {item.sectorLabel && (
+                      <span className="route-badge" style={{ fontSize: "0.72rem", padding: "1px 6px" }}>
+                        {item.sectorLabel}
+                      </span>
+                    )}
+                    <span className="point-text">{item.raw}</span>
+                  </div>
                   <div className="point-tags-row">
                     {item.timeWindow && (
                       <span className="point-time-pill cancel-time">
@@ -425,7 +546,9 @@ export default function StructuredFareRules({ data, flight }) {
           </ul>
         ) : (
           <p className="fare-rule-empty-note">
-            Cancellation is subject to airline cancellation penalty. Taxes are refundable. Convenience fees are non-refundable.
+            {flightInfo.isRefundable === "Refundable"
+              ? "Cancellation is permitted subject to airline cancellation penalty. Applicable taxes are refundable. Convenience fees are non-refundable."
+              : "Standard airline fare rules apply. Non-refundable fares are subject to airline terms; government taxes may be refunded upon cancellation."}
           </p>
         )}
       </div>
@@ -508,13 +631,17 @@ export default function StructuredFareRules({ data, flight }) {
         </div>
       )}
 
-      {!hasAnyRules && (
-        <div className="fare-rule-empty-state">
-          <Info size={24} color="#64748b" />
-          <p>No detailed fare rules returned by the airline provider for this flight.</p>
+      {!hasSpecificRules && (
+        <div className="fare-rule-empty-state" style={{ background: "#f8fafc", border: "1px dashed #cbd5e1", borderRadius: "10px", padding: "16px", marginTop: "12px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
+          <Info size={20} color="#0284c7" style={{ flexShrink: 0, marginTop: "2px" }} />
+          <div style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.5 }}>
+            <strong style={{ color: "#0f172a", display: "block", marginBottom: "4px" }}>
+              Standard Airline Policy Applies
+            </strong>
+            Standard airline fare rules and cancellation policies apply for this flight. Specific cancellation fees and date-change charges depend on airline fare class rules at the time of request. Baggage allowance is as indicated on your booking confirmation and e-ticket.
+          </div>
         </div>
       )}
     </div>
   );
 }
-

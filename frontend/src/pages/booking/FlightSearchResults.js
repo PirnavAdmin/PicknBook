@@ -1,3 +1,4 @@
+import { CityAirportDisplay } from "../../components/flights";
 function safeFindFlight(leg, id) {
   if (Array.isArray(leg)) {
     return (id ? leg.find((f) => f && f.id === id) : null) || leg[0] || null;
@@ -3480,14 +3481,17 @@ export default function FlightSearchResults() {
                             <div className="premium-dept-block">
                               <div className="premium-time-code">
                                 <span className="premium-large-time">{flight.departureTime}</span>
-                                <span className="premium-city-code">{flight.sourceCode}</span>
                                 <span className="premium-time-tag">
                                   {isDayTime(flight.departureTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
                                 </span>
                               </div>
-                              <div className="premium-airport-desc">
-                                {getAirportName(flight.sourceCode, sourceName)}
-                              </div>
+                              <CityAirportDisplay
+                                cityName={sourceName || flight.sourceName}
+                                airportCode={flight.sourceCode}
+                                airportName={flight.sourceAirportName}
+                                align="left"
+                                className="premium-airport-desc"
+                              />
                             </div>
 
                             <div className="premium-duration-block">
@@ -3507,7 +3511,6 @@ export default function FlightSearchResults() {
                                 <span className="premium-time-tag">
                                   {isDayTime(flight.arrivalTime) ? <><Sun size={9} /> DAY</> : <><Moon size={9} /> NIGHT</>}
                                 </span>
-                                <span className="premium-city-code">{flight.destinationCode}</span>
                                 <span className="premium-large-time">{flight.arrivalTime}</span>
                                 {flight.isNextDay && (
                                   <span style={{ fontSize: "0.62rem", fontWeight: 700, color: "#b45309", background: "#fef3c7", padding: "1px 4px", borderRadius: "4px", marginLeft: "4px" }}>
@@ -3515,9 +3518,13 @@ export default function FlightSearchResults() {
                                   </span>
                                 )}
                               </div>
-                              <div className="premium-airport-desc">
-                                {getAirportName(flight.destinationCode, destinationName)}
-                              </div>
+                              <CityAirportDisplay
+                                cityName={destinationName || flight.destinationName}
+                                airportCode={flight.destinationCode}
+                                airportName={flight.destinationAirportName || flight.destAirportName}
+                                align="right"
+                                className="premium-airport-desc"
+                              />
                             </div>
                           </div>
 
@@ -3747,10 +3754,14 @@ export default function FlightSearchResults() {
                                                 <span className="fcd-seg-time-val">{depTimeParts.time}</span>
                                                 {depTimeParts.ampm && <span className="fcd-seg-ampm">{depTimeParts.ampm}</span>}
                                               </div>
-                                              <div className="fcd-seg-place-row">
-                                                <span className="fcd-seg-city-name">{seg.originCity}</span>
-                                                <span className="fcd-seg-airport-code">({seg.originCode})</span>
-                                              </div>
+                                              <CityAirportDisplay
+                                                cityName={seg.originCity}
+                                                airportCode={seg.originAirportCode || seg.originCode}
+                                                airportName={seg.originAirportName}
+                                                align="left"
+                                                className="fcd-seg-place-row"
+                                                cityClassName="fcd-seg-city-name"
+                                              />
                                               <div className="fcd-seg-date-val">
                                                 <CalendarDays size={11} className="fcd-seg-cal-icon" />
                                                 <span>{depDateFormatted}</span>
@@ -3785,10 +3796,14 @@ export default function FlightSearchResults() {
                                                 <span className="fcd-seg-time-val">{arrTimeParts.time}</span>
                                                 {arrTimeParts.ampm && <span className="fcd-seg-ampm">{arrTimeParts.ampm}</span>}
                                               </div>
-                                              <div className="fcd-seg-place-row">
-                                                <span className="fcd-seg-city-name">{seg.destCity}</span>
-                                                <span className="fcd-seg-airport-code">({seg.destCode})</span>
-                                              </div>
+                                              <CityAirportDisplay
+                                                cityName={seg.destCity}
+                                                airportCode={seg.destAirportCode || seg.destCode}
+                                                airportName={seg.destAirportName}
+                                                align="right"
+                                                className="fcd-seg-place-row"
+                                                cityClassName="fcd-seg-city-name"
+                                              />
                                               <div className="fcd-seg-date-val">
                                                 <CalendarDays size={11} className="fcd-seg-cal-icon" />
                                                 <span>{arrDateFormatted}</span>

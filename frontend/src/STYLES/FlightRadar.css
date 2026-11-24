@@ -1,0 +1,275 @@
+/* ==========================================================================
+   FlightRadar - Live Airline Fare Radar & Loading Screen
+   Pixel-perfect implementation adhering to flight-radar-v2 specification
+   ========================================================================== */
+
+.flight-radar-screen {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--navbar-height, 70px));
+  min-height: 520px;
+  overflow: hidden;
+  background-color: #fff1f0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  transition: opacity 0.6s ease-in-out;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.flight-radar-screen.is-loaded {
+  opacity: 1;
+}
+
+/* Base Full Map SVG filling entire remaining area edge to edge */
+.flight-radar-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Country Polygons (7-color greedy graph palette) */
+.fr-country {
+  transition: stroke 0.3s ease, stroke-width 0.3s ease;
+  vector-effect: non-scaling-stroke;
+}
+
+.fr-country--target {
+  stroke: #e5322d !important;
+  stroke-width: 1.8px !important;
+  vector-effect: non-scaling-stroke;
+}
+
+/* State Borders (Domestic) */
+.fr-state-border {
+  fill: none;
+  stroke: #d9a9a6;
+  stroke-width: 0.8px;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Country and State Name Labels */
+.fr-labels-layer {
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.fr-labels-layer.is-fading {
+  opacity: 0 !important;
+}
+
+.fr-map-label {
+  font-family: inherit;
+  font-weight: 600;
+  fill: #3d2f33;
+  paint-order: stroke fill;
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* Route Path (Red #e5322d 2px dashed 6 5 curve) */
+.fr-route-path {
+  fill: none;
+  stroke: #e5322d;
+  stroke-width: 2px;
+  stroke-dasharray: 6 5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Airport Pin Codes under pins in 10.5px bold red with white halo */
+.fr-pin-code {
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: #e5322d;
+  paint-order: stroke fill;
+  stroke: #ffffff;
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+  dominant-baseline: hanging;
+}
+
+/* Radar Pulse Animations for Destination Dual Concentric Rings */
+@keyframes frRadarPulse {
+  0% {
+    r: 0px;
+    opacity: 0.95;
+    stroke-width: 1.2px;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    r: 40px;
+    opacity: 0;
+    stroke-width: 0.38px;
+  }
+}
+
+.fr-dest-radar-ring-1 {
+  animation: frRadarPulse 4.8s linear infinite;
+  transform-origin: center;
+}
+
+.fr-dest-radar-ring-2 {
+  animation: frRadarPulse 4.8s linear infinite;
+  animation-delay: 2.4s;
+  transform-origin: center;
+}
+
+/* Top Block (Transparent, Centred, 14px from Top, no background, blur or shadow) */
+.fr-top-block {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  z-index: 20;
+  pointer-events: none;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  width: max-content;
+  max-width: 90vw;
+}
+
+/* Pill: ● LIVE AIRLINE FARE RADAR (12px bold, red text, 1px red border, white background) */
+.fr-radar-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e5322d;
+  border: 1px solid #e5322d;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  padding: 4px 14px;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(229, 50, 45, 0.08);
+}
+
+/* Title: Finding your perfect flight (30px bold, navy #1b2a4e, white glow) */
+.fr-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #1b2a4e;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff;
+  letter-spacing: -0.01em;
+}
+
+/* Subtitle: Searching available routes and fares… (opacity .7, white glow) */
+.fr-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1b2a4e;
+  opacity: 0.7;
+  margin: 0 0 12px 0;
+  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff;
+}
+
+/* 4px Progress Bar (max 480px, track rgba(229,50,45,.18), red fill) */
+.fr-progress-track {
+  width: min(90vw, 480px);
+  height: 4px;
+  background-color: rgba(229, 50, 45, 0.18);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.fr-progress-fill {
+  height: 100%;
+  width: 100%;
+  background-color: #e5322d;
+  transform: scaleX(0);
+  transform-origin: left;
+  will-change: transform;
+}
+
+/* Bottom Route Chip: HYD Hyderabad ✈ LHR London (white pill, 1px red border, 16px / 600, padding 10px 26px, codes bold, soft red shadow) */
+.fr-route-chip {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #ffffff;
+  border: 1px solid #e5322d;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 10px 26px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 18px rgba(229, 50, 45, 0.16);
+  white-space: nowrap;
+}
+
+.fr-route-code {
+  font-weight: 800;
+  color: #e5322d;
+}
+
+.fr-route-plane-icon {
+  color: #e5322d;
+  font-size: 16px;
+  display: inline-block;
+}
+
+/* Bottom Right Logo Watermark (/pickandbook-logo.png, height 44px, white glow, pointer-events none) */
+.fr-logo-watermark {
+  position: absolute;
+  bottom: 18px;
+  right: 24px;
+  height: 44px;
+  width: auto;
+  pointer-events: none;
+  z-index: 20;
+  filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 12px #fff);
+  opacity: 0.92;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fr-title {
+    font-size: 22px;
+  }
+  .fr-subtitle {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .fr-radar-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+  .fr-route-chip {
+    font-size: 13px;
+    padding: 8px 18px;
+    gap: 8px;
+  }
+  .fr-logo-watermark {
+    height: 34px;
+    right: 14px;
+    bottom: 14px;
+  }
+}

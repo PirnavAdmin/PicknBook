@@ -28,6 +28,7 @@ import {
 import { normalizeCabinClass } from "../../utils/seatMapUtils";
 import BookingTimer from "./BookingTimer";
 import FlightStepperHeader from "../../components/booking/FlightStepperHeader";
+import { CityAirportDisplay } from "../../components/flights";
 
 function formatCurrency(amount) {
   return `INR ${new Intl.NumberFormat("en-IN", {
@@ -725,6 +726,64 @@ export default function FlightSeatSelectionPage() {
 
   const cabinData = seatMapCabin || { seats: [], rows: [], seatLetters: [], extraLegroomRows: new Set(), wingStartRow: null, wingEndRow: null, zoneName: "" };
 
+  const [activeDeck, setActiveDeck] = useState("Main Deck");
+
+  const availableDecks = useMemo(() => {
+    const dSet = new Set();
+    (cabinData?.seats || []).forEach((s) => {
+      const raw = s.rawApiSeat || s.rawSeat || s;
+      const d = s.deck || s.Deck || raw?.Deck || raw?.deck || raw?.Floor || raw?.floor;
+      if (d) {
+        const norm = String(d).toLowerCase();
+        if (norm.includes("upper") || norm === "2") dSet.add("Upper Deck");
+        else dSet.add("Main Deck");
+      }
+    });
+    return Array.from(dSet);
+  }, [cabinData]);
+
+  const cabinSections = useMemo(() => {
+    if (!cabinData || !cabinData.rows || cabinData.rows.length === 0) return [];
+    const rowClassMap = new Map();
+    cabinData.seats.forEach((s) => {
+      if (!rowClassMap.has(s.rowNumber)) {
+        const raw = s.rawApiSeat || s.rawSeat || {};
+        const cName = raw.CabinClassName || raw.cabinClassName || raw.CabinClass || raw.cabinClass || raw.Compartment || "";
+        let cls = "Economy Class";
+        const norm = String(cName).toLowerCase();
+        if (norm.includes("first") || norm === "1") cls = "First Class";
+        else if (norm.includes("business") || norm === "2" || norm === "c" || norm === "j") cls = "Business Class";
+        else if (norm.includes("premium") || norm.includes("plus") || norm === "w") cls = "Premium Economy";
+        else {
+          if (s.rowNumber <= 2 && s.amount >= 1200) cls = "Business Class";
+          else if (s.rowNumber <= 5 && s.amount >= 600) cls = "Premium Economy";
+          else cls = "Economy Class";
+        }
+        rowClassMap.set(s.rowNumber, cls);
+      }
+    });
+
+    const sections = [];
+    let currentSection = null;
+    cabinData.rows.forEach((r) => {
+      const cls = rowClassMap.get(r) || "Economy Class";
+      if (!currentSection || currentSection.className !== cls) {
+        if (currentSection) sections.push(currentSection);
+        currentSection = {
+          className: cls,
+          startRow: r,
+          endRow: r,
+          rows: [r],
+        };
+      } else {
+        currentSection.endRow = r;
+        currentSection.rows.push(r);
+      }
+    });
+    if (currentSection) sections.push(currentSection);
+    return sections;
+  }, [cabinData]);
+
   const seatsByLabel = useMemo(() => {
     const map = new Map();
 
@@ -1056,16 +1115,24 @@ export default function FlightSeatSelectionPage() {
             </h3>
             <div className="flight-segment">
               <div className="flight-city-info">
-                <span className="flight-city-code">{displayedLeg.sourceCode || displayedLeg.fromCity || flight.sourceCode || "--"}</span>
-                <span className="flight-city-name">{displayedLeg.fromCity || searchContext?.source || "--"}</span>
+                <CityAirportDisplay
+                  cityName={displayedLeg.fromCity || searchContext?.source || displayedLeg.sourceName}
+                  airportCode={displayedLeg.sourceCode || flight.sourceCode}
+                  airportName={displayedLeg.sourceAirportName}
+                  align="left"
+                />
               </div>
               <div className="flight-stops-indicator">
                 <span className="stops-text">{Number(displayedLeg.stops || flight.stops || 0) > 0 ? `${displayedLeg.stops || flight.stops} stop` : "Non stop"}</span>
                 <div className="stops-line"></div>
               </div>
               <div className="flight-city-info" style={{ alignItems: "flex-end" }}>
-                <span className="flight-city-code">{displayedLeg.destinationCode || displayedLeg.toCity || flight.destinationCode || "--"}</span>
-                <span className="flight-city-name">{displayedLeg.toCity || searchContext?.destination || "--"}</span>
+                <CityAirportDisplay
+                  cityName={displayedLeg.toCity || searchContext?.destination || displayedLeg.destinationName}
+                  airportCode={displayedLeg.destinationCode || flight.destinationCode}
+                  airportName={displayedLeg.destinationAirportName}
+                  align="right"
+                />
               </div>
             </div>
             <div className="flight-meta-info">
@@ -1077,7 +1144,12 @@ export default function FlightSeatSelectionPage() {
           {/* Travellers Details */}
           {flowState.passengers && flowState.passengers.length > 0 && (
             <div className="sidebar-card travellers-card">
-              <h3 className="sidebar-card-title">Travellers</h3>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", borderBottom: "1px solid #f2e3e5", paddingBottom: "6px" }}>
+                <h3 className="sidebar-card-title" style={{ margin: 0, border: "none", padding: 0 }}>Travellers</h3>
+                <span className="traveller-count-pill" style={{ fontSize: "0.75rem", background: "#fef2f2", color: "#dc2626", fontWeight: 700, padding: "2px 8px", borderRadius: "10px" }}>
+                  {flowState.passengers.length} {flowState.passengers.length === 1 ? "Traveller" : "Travellers"}
+                </span>
+              </div>
               {flowState.passengers.map((p, idx) => (
                 <div key={p.id} className="traveller-item">
                   {idx + 1}. {p.title} {p.firstName} {p.lastName}
@@ -1190,19 +1262,31 @@ export default function FlightSeatSelectionPage() {
                   </div>
                   <div className="legend-badge">
                     <span className="legend-color mid"></span>
-                    <span>Supplier price</span>
-                  </div>
-                  <div className="legend-badge">
-                    <span className="legend-color high"></span>
-                    <span>Supplier price</span>
+                    <span>Supplier Price</span>
                   </div>
                   <div className="legend-badge">
                     <span className="legend-color" style={{ backgroundColor: "#d6dee9" }}></span>
                     <span>Booked</span>
                   </div>
                   <div className="legend-badge">
-                    <span className="legend-color" style={{ backgroundColor: "#f4f8fd", borderColor: "#2f5e9c" }}></span>
+                    <span className="legend-color" style={{ backgroundColor: "#fef2f2", borderColor: "#dc2626" }}></span>
                     <span>Selected</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-emoji">🚨</span>
+                    <span>Emergency Exit</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-emoji">🚪</span>
+                    <span>Exit Row</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-emoji">👶</span>
+                    <span>Bassinet</span>
+                  </div>
+                  <div className="legend-badge">
+                    <span className="legend-emoji">📶</span>
+                    <span>Stairs</span>
                   </div>
                 </div>
 
@@ -1330,262 +1414,303 @@ export default function FlightSeatSelectionPage() {
 
                   {!isSeatMapLoading && !seatMapError && cabinData.rows.length > 0 && (
                     <div className="seatmap-grid-wrapper">
-                      <div className="airplane-fuselage-wrapper">
-                        <div className="airplane-fuselage">
+                      {/* Optional Deck Switcher */}
+                      {availableDecks.length > 1 && (
+                        <div className="h-deck-tabs-container">
+                          {availableDecks.map((deckName) => (
+                            <button
+                              key={deckName}
+                              type="button"
+                              className={`h-deck-tab ${activeDeck === deckName ? "active" : ""}`}
+                              onClick={() => setActiveDeck(deckName)}
+                            >
+                              {deckName}
+                            </button>
+                          ))}
+                        </div>
+                      )}
 
-                          {/* 1. Airplane Nose & Cockpit */}
-                          <div className="airplane-cockpit-nose">
-                            <div className="cockpit-windshield">
-                              <span className="cockpit-window-pane left" />
-                              <span className="cockpit-window-pane center-left" />
-                              <span className="cockpit-window-pane center-right" />
-                              <span className="cockpit-window-pane right" />
+                      {/* Cabin Class Section Headers Bar */}
+                      {cabinSections.length > 0 && (
+                        <div className="h-cabin-headers-bar">
+                          {cabinSections.map((sec, idx) => (
+                            <div
+                              key={`sec-${idx}-${sec.className}`}
+                              className={`h-cabin-header-item ${sec.className.toLowerCase().replace(/\s+/g, "-")}`}
+                              style={{ flex: `${sec.rows.length} ${sec.rows.length} 0%` }}
+                            >
+                              <span className="h-cabin-name">{sec.className}</span>
+                              <span className="h-cabin-range">Rows {sec.startRow} - {sec.endRow}</span>
                             </div>
-                            <div className="cockpit-caption">
-                              <span className="cockpit-badge">✈ FRONT OF AIRCRAFT</span>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="horizontal-aircraft-wrapper">
+                        {/* Upper Wing (Port side) spanning wing rows */}
+                        {cabinData.wingStartRow !== null && (
+                          <div className="h-wing-structure top-wing">
+                            <div className="h-engine-cowl top-engine" title="Turbofan Jet Engine 1">
+                              <span className="h-engine-fan">⚙</span>
+                              <span className="h-engine-lbl">ENG 1</span>
+                            </div>
+                            <span className="h-wing-label">PORT WING</span>
+                          </div>
+                        )}
+
+                        {/* Complete Aircraft Fuselage Body (Left = Nose, Right = Tail) */}
+                        <div className="horizontal-fuselage-assembly">
+                          {/* 1. Cockpit & Radome Nose (Left) */}
+                          <div className="h-aircraft-nose">
+                            <div className="h-cockpit-windows">
+                              <span className="h-window-pane p1" />
+                              <span className="h-window-pane p2" />
+                              <span className="h-window-pane p3" />
+                            </div>
+                            <div className="h-nose-badge">
+                              <span>✈ NOSE</span>
                             </div>
                           </div>
 
-                          {/* 2. Forward Doors & Galley */}
-                          <div className="airplane-forward-service-bar">
-                            <div className="service-door left" title="Front Boarding Door L1">
-                              <span className="door-icon">🚪</span>
-                              <span className="door-text">L1 EXIT</span>
+                          {/* 2. Forward Doors & Service (L1 / R1) */}
+                          <div className="h-forward-service-block">
+                            <div className="h-service-door top-door" title="L1 Front Boarding Door">
+                              <span className="h-door-icon">🚪</span>
+                              <span className="h-door-tag">L1</span>
                             </div>
-                            <div className="forward-galley-pill">
-                              <span>☕ GALLEY & LAVATORIES 🚻</span>
+                            <div className="h-galley-lav-center" title="Forward Galley & Lavatories">
+                              <span className="h-facility-icon">☕</span>
+                              <span className="h-facility-text">GALLEY</span>
+                              <span className="h-facility-icon">🚻</span>
                             </div>
-                            <div className="service-door right" title="Service Door R1">
-                              <span className="door-text">R1 EXIT</span>
-                              <span className="door-icon">🚪</span>
+                            <div className="h-service-door btm-door" title="R1 Front Service Door">
+                              <span className="h-door-tag">R1</span>
+                              <span className="h-door-icon">🚪</span>
                             </div>
                           </div>
 
-                          {/* 3. Cabin Body */}
-                          <div className="airplane-cabin-body">
-                            {/* Column Letter Header - Perfectly aligned with seat columns */}
-                            <div className="fuselage-row-container fuselage-header-row">
-                              <div className="fuselage-side-slot left header-slot" />
-                              <div className="fuselage-wall-cap left" />
-                              <div className="seatmap-row seatmap-col-header-row">
-                                <span className="seatmap-row-num left" />
-                                {cabinData.seatLetters.map((letter, idx) => {
-                                  const items = [];
-                                  if (idx === Math.ceil(cabinData.seatLetters.length / 2)) {
-                                    items.push(
-                                      <div key="aisle-hdr" className="seatmap-aisle-col seatmap-aisle-hdr">
-                                        <span className="seatmap-aisle-gap">AISLE</span>
+                          {/* 3. Cabin Fuselage Tube */}
+                          <div className="h-cabin-tube">
+                            {/* Top Fuselage Wall: Passenger Windows & Overwing Exits */}
+                            <div className="h-wall-strip top-strip">
+                              {cabinData.rows.map((rowNumber) => {
+                                const isExitRow = cabinData.extraLegroomRows.has(rowNumber);
+                                return (
+                                  <div
+                                    key={`h-top-wall-${rowNumber}`}
+                                    className={`h-wall-slot ${isExitRow ? "is-exit-slot" : ""}`}
+                                  >
+                                    {isExitRow ? (
+                                      <div className="h-emergency-exit-hatch top" title={`Row ${rowNumber} Overwing Emergency Exit`}>
+                                        <span className="h-exit-hatch-badge">🚨 EXIT</span>
                                       </div>
-                                    );
-                                  }
-                                  items.push(
-                                    <div key={`hdr-${letter}`} className="seatmap-seat-cell seatmap-col-hdr-cell">
-                                      <span className="seatmap-col-lbl">{letter}</span>
+                                    ) : (
+                                      <div className="h-passenger-window" title={`Row ${rowNumber} Window`}>
+                                        <div className="h-window-glare" />
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Cabin Rows (Columns arranged left-to-right from row 1 to N) */}
+                            <div className="h-seat-columns-wrapper">
+                              {cabinData.rows.map((rowNumber) => {
+                                const isExitRow = cabinData.extraLegroomRows.has(rowNumber);
+                                const isWingRow = cabinData.wingStartRow !== null && rowNumber >= cabinData.wingStartRow && rowNumber <= cabinData.wingEndRow;
+                                const isPreferred = rowNumber <= 6;
+
+                                return (
+                                  <div
+                                    key={`h-col-${rowNumber}`}
+                                    className={`h-seat-column ${isExitRow ? "is-exit-col" : ""} ${isWingRow ? "is-wing-col" : ""} ${isPreferred ? "is-preferred-col" : ""}`}
+                                  >
+                                    {/* Top Row Number Badge */}
+                                    <div className="h-row-header-num">
+                                      {rowNumber}
                                     </div>
-                                  );
-                                  return items;
-                                })}
-                                <span className="seatmap-row-num right" />
-                              </div>
-                              <div className="fuselage-wall-cap right" />
-                              <div className="fuselage-side-slot right header-slot" />
-                            </div>
 
-                            {/* Cabin Rows */}
-                            <div className="seatmap-rows">
-                              {(() => {
-                                const elements = [];
-                                let prevRow = null;
-                                cabinData.rows.forEach((rowNumber) => {
-                                  const isExitRow = cabinData.extraLegroomRows.has(rowNumber);
-                                  const isWingRow = cabinData.wingStartRow !== null && rowNumber >= cabinData.wingStartRow && rowNumber <= cabinData.wingEndRow;
-                                  const isWingStart = rowNumber === cabinData.wingStartRow;
-                                  const isWingEnd = rowNumber === cabinData.wingEndRow;
+                                    {/* Seat Column: seats stacked vertically from top to bottom (A, B, C, aisle, D, E, F) */}
+                                    <div className="h-column-seats">
+                                      {cabinData.seatLetters.map((seatLetter, lIdx) => {
+                                        const isAisleSplit = lIdx === Math.ceil(cabinData.seatLetters.length / 2);
+                                        const seat = seatsByLabel.get(`${rowNumber}${seatLetter}`);
+                                        const isSelected = selectedSeatLabels.includes(seat?.label);
+                                        const isBooked = !seat || seat.status === "booked" || seat.status === "blocked";
 
-                                  if (prevRow !== null && (rowNumber - prevRow) > 1) {
-                                    elements.push(
-                                      <div key={`gap-${rowNumber}`} className="seatmap-section-gap">
-                                        <span className="seatmap-gap-line" />
-                                        <span className="seatmap-gap-label">Cabin Transition</span>
-                                        <span className="seatmap-gap-line" />
-                                      </div>
-                                    );
-                                  }
-                                  prevRow = rowNumber;
+                                        let cls = "seatmap-seat h-seat";
+                                        if (isBooked) cls += " sm-booked";
+                                        else if (isSelected) cls += " sm-selected";
+                                        else if (isExitRow || seat?.isExtraLegroom) cls += " sm-exit";
+                                        else if (rowNumber <= 6) cls += " sm-preferred";
+                                        else if (seat?.isWindow) cls += " sm-window";
+                                        else if (seat?.isAisle) cls += " sm-aisle";
+                                        else cls += " sm-middle";
 
-                                  const isFirstExitRow = isExitRow && (!prevRow || !cabinData.extraLegroomRows.has(prevRow));
-                                  if (isFirstExitRow) {
-                                    elements.push(
-                                      <div key={`exit-banner-${rowNumber}`} className="fuselage-row-container is-exit-banner-row">
-                                        <div className="seatmap-exit-section-banner">
-                                          <div className="exit-banner-glow-stripes" />
-                                          <div className="exit-banner-content">
-                                            <span className="exit-banner-sign left">🚨 EMERGENCY EXIT</span>
-                                            <span className="exit-banner-text">EXTRA LEGROOM SEATING — OVERWING ESCAPE ACCESS</span>
-                                            <span className="exit-banner-sign right">EMERGENCY EXIT 🚨</span>
-                                          </div>
-                                          <div className="exit-banner-glow-stripes" />
-                                        </div>
-                                      </div>
-                                    );
-                                  }
+                                        const doesMatch = !activeSeatFilter || doesSeatMatchFilter(seat, activeSeatFilter);
+                                        const isDimmed = activeSeatFilter && !doesMatch;
 
-                                  const rowSeats = [];
-                                  rowSeats.push(
-                                    <span key={`rn-left-${rowNumber}`} className="seatmap-row-num left">{rowNumber}</span>
-                                  );
+                                        return (
+                                          <React.Fragment key={`h-seat-${rowNumber}-${seatLetter}`}>
+                                            {isAisleSplit && (
+                                              <div className="h-aisle-channel" title={`Aisle Row ${rowNumber}`}>
+                                                <span className="h-aisle-num">{rowNumber}</span>
+                                              </div>
+                                            )}
 
-                                  cabinData.seatLetters.forEach((seatLetter, idx) => {
-                                    if (idx === Math.ceil(cabinData.seatLetters.length / 2)) {
-                                      rowSeats.push(<div key={`aisle-${rowNumber}`} className="seatmap-aisle-col" />);
-                                    }
-
-                                    const seat = seatsByLabel.get(`${rowNumber}${seatLetter}`);
-                                    const isSelected = selectedSeatLabels.includes(seat?.label);
-                                    const isBooked = !seat || seat.status === "booked" || seat.status === "blocked";
-
-                                    let cls = "seatmap-seat";
-                                    if (isBooked) cls += " sm-booked";
-                                    else if (isSelected) cls += " sm-selected";
-                                    else if (isExitRow || seat?.isExtraLegroom) cls += " sm-exit";
-                                    else if (rowNumber <= 6) cls += " sm-preferred";
-                                    else if (seat?.isWindow) cls += " sm-window";
-                                    else if (seat?.isAisle) cls += " sm-aisle";
-                                    else cls += " sm-middle";
-
-                                    const doesMatch = !activeSeatFilter || doesSeatMatchFilter(seat, activeSeatFilter);
-                                    const isDimmed = activeSeatFilter && !doesMatch;
-
-                                    rowSeats.push(
-                                      <div
-                                        key={seat?.id || `${rowNumber}-${seatLetter}`}
-                                        className={`seatmap-seat-cell ${isDimmed ? "sm-dimmed" : ""}`}
-                                        onMouseEnter={(e) => !isDimmed && seat && handleSeatMouseEnter(e, seat)}
-                                        onMouseLeave={handleSeatMouseLeave}
-                                      >
-                                        <button
-                                          type="button"
-                                          className={cls}
-                                          disabled={isBooked}
-                                          onClick={() => toggleSeat(seat)}
-                                          title={seat ? `Seat ${seat.label}${seat.amount > 0 ? ` (+₹${seat.amount})` : " (Free)"}` : "Unavailable"}
-                                        >
-                                          <svg viewBox="0 0 100 115" className="seatmap-svg">
-                                            {/* Headrest */}
-                                            <rect x="20" y="4" width="60" height="26" rx="10" className="sm-svg-headrest" />
-                                            {/* Seat back */}
-                                            <rect x="14" y="28" width="72" height="54" rx="8" className="sm-svg-back" />
-                                            {/* Seat cushion */}
-                                            <rect x="14" y="82" width="72" height="22" rx="8" className="sm-svg-cushion" />
-                                            {/* Left armrest */}
-                                            <rect x="4" y="36" width="10" height="34" rx="5" className="sm-svg-arm" />
-                                            {/* Right armrest */}
-                                            <rect x="86" y="36" width="10" height="34" rx="5" className="sm-svg-arm" />
-                                          </svg>
-                                          <span className="seatmap-seat-lbl">{seatLetter}</span>
-                                          {(isExitRow || seat?.isExtraLegroom) && (
-                                            <span className="seatmap-extra-legroom-tag" title="Extra Legroom Emergency Exit Seat">XL</span>
-                                          )}
-                                        </button>
-                                        {seat && seat.amount > 0 && !isBooked && (
-                                          <span className={`seatmap-price-dot ${isExitRow || seat?.isExtraLegroom ? "sm-exit-price" : ""}`}>
-                                            ₹{Math.round(seat.amount)}
-                                          </span>
-                                        )}
-                                        {seat && (!seat.amount || seat.amount === 0) && !isBooked && (isExitRow || seat?.isExtraLegroom) && (
-                                          <span className="seatmap-price-dot sm-exit-price free">
-                                            Free
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  });
-
-                                  rowSeats.push(
-                                    <span key={`rn-right-${rowNumber}`} className="seatmap-row-num right">{rowNumber}</span>
-                                  );
-
-                                  elements.push(
-                                    <div
-                                      key={`fuselage-row-${rowNumber}`}
-                                      className={`fuselage-row-container ${isExitRow ? "is-exit-row" : ""} ${isWingRow ? "is-wing-row" : ""}`}
-                                    >
-                                      {/* Left Side Layout (Real Flight Aircraft Wing / Engine / Escape Route / Skin) */}
-                                      {renderAircraftSideLayout(rowNumber, "left", cabinData)}
-
-                                      {/* Left Fuselage Wall: Passenger Window or Emergency Exit Window */}
-                                      <div className="fuselage-wall left">
-                                        {isExitRow ? (
-                                          <div className="emergency-exit-window-hatch left" title={`Row ${rowNumber} Emergency Exit Window`}>
-                                            <span className="emergency-window-badge">🚨 EXIT</span>
-                                            <div className="emergency-hatch-frame">
-                                              <div className="emergency-glass" />
-                                              <div className="emergency-handle" />
+                                            <div
+                                              className={`seatmap-seat-cell h-seat-cell ${isDimmed ? "sm-dimmed" : ""}`}
+                                              onMouseEnter={(e) => !isDimmed && seat && handleSeatMouseEnter(e, seat)}
+                                              onMouseLeave={handleSeatMouseLeave}
+                                            >
+                                              <button
+                                                type="button"
+                                                className={cls}
+                                                disabled={isBooked}
+                                                onClick={() => toggleSeat(seat)}
+                                                title={seat ? `Seat ${seat.label}${seat.amount > 0 ? ` (+₹${seat.amount})` : " (Free)"}` : "Unavailable"}
+                                              >
+                                                <svg viewBox="0 0 100 115" className="seatmap-svg">
+                                                  <rect x="20" y="4" width="60" height="26" rx="10" className="sm-svg-headrest" />
+                                                  <rect x="14" y="28" width="72" height="54" rx="8" className="sm-svg-back" />
+                                                  <rect x="14" y="82" width="72" height="22" rx="8" className="sm-svg-cushion" />
+                                                  <rect x="4" y="36" width="10" height="34" rx="5" className="sm-svg-arm" />
+                                                  <rect x="86" y="36" width="10" height="34" rx="5" className="sm-svg-arm" />
+                                                </svg>
+                                                <span className="seatmap-seat-lbl">{seatLetter}</span>
+                                                {(isExitRow || seat?.isExtraLegroom) && (
+                                                  <span className="seatmap-extra-legroom-tag" title="Extra Legroom Emergency Exit Seat">XL</span>
+                                                )}
+                                              </button>
+                                              {seat && seat.amount > 0 && !isBooked && (
+                                                <span className={`seatmap-price-dot ${isExitRow || seat?.isExtraLegroom ? "sm-exit-price" : ""}`}>
+                                                  ₹{Math.round(seat.amount)}
+                                                </span>
+                                              )}
+                                              {seat && (!seat.amount || seat.amount === 0) && !isBooked && (isExitRow || seat?.isExtraLegroom) && (
+                                                <span className="seatmap-price-dot sm-exit-price free">
+                                                  Free
+                                                </span>
+                                              )}
                                             </div>
-                                          </div>
-                                        ) : (
-                                          <div className="cabin-passenger-window left" title={`Row ${rowNumber} Window`}>
-                                            <div className="window-oval" />
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Row Seats in Center */}
-                                      <div
-                                        className={`seatmap-row ${isExitRow ? "sm-row-exit" : rowNumber <= 6 ? "sm-row-preferred" : ""}`}
-                                      >
-                                        {rowSeats}
-                                      </div>
-
-                                      {/* Right Fuselage Wall: Passenger Window or Emergency Exit Window */}
-                                      <div className="fuselage-wall right">
-                                        {isExitRow ? (
-                                          <div className="emergency-exit-window-hatch right" title={`Row ${rowNumber} Emergency Exit Window`}>
-                                            <span className="emergency-window-badge">EXIT 🚨</span>
-                                            <div className="emergency-hatch-frame">
-                                              <div className="emergency-glass" />
-                                              <div className="emergency-handle" />
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <div className="cabin-passenger-window right" title={`Row ${rowNumber} Window`}>
-                                            <div className="window-oval" />
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Right Side Layout (Real Flight Aircraft Wing / Engine / Escape Route / Skin) */}
-                                      {renderAircraftSideLayout(rowNumber, "right", cabinData)}
+                                          </React.Fragment>
+                                        );
+                                      })}
                                     </div>
-                                  );
-                                });
-                                return elements;
-                              })()}
+
+                                    {/* Bottom Row Number Badge */}
+                                    <div className="h-row-footer-num">
+                                      {rowNumber}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            {/* Bottom Fuselage Wall: Passenger Windows & Overwing Exits */}
+                            <div className="h-wall-strip btm-strip">
+                              {cabinData.rows.map((rowNumber) => {
+                                const isExitRow = cabinData.extraLegroomRows.has(rowNumber);
+                                return (
+                                  <div
+                                    key={`h-btm-wall-${rowNumber}`}
+                                    className={`h-wall-slot ${isExitRow ? "is-exit-slot" : ""}`}
+                                  >
+                                    {isExitRow ? (
+                                      <div className="h-emergency-exit-hatch bottom" title={`Row ${rowNumber} Overwing Emergency Exit`}>
+                                        <span className="h-exit-hatch-badge">EXIT 🚨</span>
+                                      </div>
+                                    ) : (
+                                      <div className="h-passenger-window" title={`Row ${rowNumber} Window`}>
+                                        <div className="h-window-glare" />
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
 
-                          {/* 4. Aft Doors & Galley */}
-                          <div className="airplane-aft-service-bar">
-                            <div className="service-door left" title="Aft Exit Door L2">
-                              <span className="door-icon">🚪</span>
-                              <span className="door-text">L2 EXIT</span>
+                          {/* 4. Aft Doors & Service (L2 / R2) */}
+                          <div className="h-aft-service-block">
+                            <div className="h-service-door top-door" title="L2 Aft Exit Door">
+                              <span className="h-door-icon">🚪</span>
+                              <span className="h-door-tag">L2</span>
                             </div>
-                            <div className="aft-galley-pill">
-                              <span>🚻 AFT LAVATORIES & GALLEY ☕</span>
+                            <div className="h-galley-lav-center" title="Aft Lavatories & Galley">
+                              <span className="h-facility-icon">🚻</span>
+                              <span className="h-facility-text">AFT WC</span>
+                              <span className="h-facility-icon">☕</span>
                             </div>
-                            <div className="service-door right" title="Aft Exit Door R2">
-                              <span className="door-text">R2 EXIT</span>
-                              <span className="door-icon">🚪</span>
-                            </div>
-                          </div>
-
-                          {/* 5. Airplane Tail Cone */}
-                          <div className="airplane-tail-cone">
-                            <div className="tail-cone-inner">
-                              <span className="tail-text">▲ REAR OF AIRCRAFT</span>
+                            <div className="h-service-door btm-door" title="R2 Aft Exit Door">
+                              <span className="h-door-tag">R2</span>
+                              <span className="h-door-icon">🚪</span>
                             </div>
                           </div>
 
+                          {/* 5. Streamlined Aircraft Tail (Right) */}
+                          <div className="h-aircraft-tail">
+                            <div className="h-tail-cone-structure">
+                              <span className="h-apu-exhaust" title="APU Exhaust Port" />
+                              <span className="h-tail-badge">TAIL ▲</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Lower Wing (Starboard side) spanning wing rows */}
+                        {cabinData.wingStartRow !== null && (
+                          <div className="h-wing-structure btm-wing">
+                            <div className="h-engine-cowl btm-engine" title="Turbofan Jet Engine 2">
+                              <span className="h-engine-fan">⚙</span>
+                              <span className="h-engine-lbl">ENG 2</span>
+                            </div>
+                            <span className="h-wing-label">STARBOARD WING</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Aircraft Facilities Legend */}
+                      <div className="h-facilities-legend-bar">
+                        <span className="facilities-legend-title">AIRCRAFT FACILITIES:</span>
+                        <div className="facility-pill">
+                          <span className="facility-icon">🚻</span>
+                          <span>Lavatory</span>
+                        </div>
+                        <div className="facility-pill">
+                          <span className="facility-icon">☕</span>
+                          <span>Galley</span>
+                        </div>
+                        <div className="facility-pill">
+                          <span className="facility-icon">🍽️</span>
+                          <span>Pantry</span>
+                        </div>
+                        <div className="facility-pill">
+                          <span className="facility-icon">🚪</span>
+                          <span>Boarding Door</span>
+                        </div>
+                        <div className="facility-pill">
+                          <span className="facility-icon">🚨</span>
+                          <span>Emergency Exit</span>
+                        </div>
+                        {availableDecks.length > 1 && (
+                          <div className="facility-pill">
+                            <span className="facility-icon">📶</span>
+                            <span>Stairs</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Emergency Exit Row Notice Box directly below the aircraft */}
+                      <div className="emergency-exit-callout-banner">
+                        <div className="callout-icon-col">
+                          <span className="callout-alert-symbol">⚠️</span>
+                        </div>
+                        <div className="callout-text-col">
+                          <strong>Emergency Exit Row Seating Policy</strong>
+                          <p>
+                            Passengers seated in exit rows must be 15 years or older, willing and able to open the emergency exit hatch and assist crew in the event of an emergency evacuation.
+                          </p>
                         </div>
                       </div>
                     </div>

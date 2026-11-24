@@ -4,7 +4,6 @@ import "./BookingList.css";
 import { Filter, Download, CreditCard, RefreshCw, CheckCircle, Loader2 } from "lucide-react";
 import { useAdminList, getAdminItemsPerPage } from "../../../utils/adminPortalStorage";
 import { listAdminBusBookings, downloadAdminBusVoucher } from "../../../services/adminBusService";
-import { formatPaymentMethod } from "../../../utils/bookingLifecycle";
 import AdminPagination from "../../../components/AdminPagination";
 
 const adminCurrencyFormatter = new Intl.NumberFormat("en-IN", {
@@ -1977,22 +1976,10 @@ export default function AdminB2CBookingListPage() {
                   </tr>
                   <tr>
                     <th>Fulfillment Status</th>
-                    <td>
+                    <td colSpan="3">
                       <span className={`admin-ps-badge ${getPaymentStatusClass(selectedBooking.fulfillmentStatus)}`}>
                         {getPaymentStatusDisplay(selectedBooking.fulfillmentStatus)}
                       </span>
-                    </td>
-                    <th>Payment Method</th>
-                    <td>
-                      <strong>
-                        {formatPaymentMethod(
-                          selectedBooking.paymentMethod ||
-                          selectedBooking.method ||
-                          selectedBooking.payment?.paymentMethod ||
-                          selectedBooking.gatewayPaymentMethod ||
-                          "--"
-                        )}
-                      </strong>
                     </td>
                   </tr>
                 </tbody>
