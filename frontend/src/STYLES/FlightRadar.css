@@ -1,275 +1,415 @@
 /* ==========================================================================
-   FlightRadar - Live Airline Fare Radar & Loading Screen
-   Pixel-perfect implementation adhering to flight-radar-v2 specification
+   FlightRadar - Reference Image 2 Design
+   Pick&Book logo top centre, enlarged India map in centre, smooth airplane
+   route animation, and large rounded white route pill at bottom centre.
+   FlightRadar - Pick&Book Domestic & International Flight Search Loaders
+   Exact visual style matching reference images:
+   - Soft blush-pink radial gradient background with elegant flowing waves
+   - Top-center official Pick&Book logo (no white container)
+   - Large centered India map (Domestic) or World map (International)
+   - Red dashed flight route with animated marching dashes
+   - Realistic white passenger airliner with red detailing smoothly animated
+   - Source (navy pin) and Destination (red pin) with white rounded labels
+     (thin red border, bold red airport code, dark navy city name)
+   - Large rounded white route pill at bottom center with red airplane icons
+   - Fullscreen viewport, scrollbars locked, header & footer suppressed
    ========================================================================== */
 
-.flight-radar-screen {
-  position: relative;
-  width: 100%;
-  height: calc(100vh - var(--navbar-height, 70px));
-  min-height: 520px;
-  overflow: hidden;
-  background-color: #fff1f0;
-  margin: 0;
-  padding: 0;
-  border: none;
-  opacity: 0;
-  transition: opacity 0.6s ease-in-out;
-  box-sizing: border-box;
-  user-select: none;
+/* ── Lock HTML and Body Scroll while Loading ── */
+html.flight-loader-fullscreen-active,
+body.flight-loader-fullscreen-active,
+html:has(.flight-loader-fullscreen-wrapper),
+body:has(.flight-loader-fullscreen-wrapper),
+html:has(.flight-radar-fullscreen),
+body:has(.flight-radar-fullscreen) {
+  overflow: hidden !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 
-.flight-radar-screen.is-loaded {
-  opacity: 1;
+html.flight-loader-fullscreen-active::-webkit-scrollbar,
+body.flight-loader-fullscreen-active::-webkit-scrollbar,
+html:has(.flight-loader-fullscreen-wrapper)::-webkit-scrollbar,
+body:has(.flight-loader-fullscreen-wrapper)::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
-/* Base Full Map SVG filling entire remaining area edge to edge */
-.flight-radar-svg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-/* Country Polygons (7-color greedy graph palette) */
-.fr-country {
-  transition: stroke 0.3s ease, stroke-width 0.3s ease;
-  vector-effect: non-scaling-stroke;
-}
-
-.fr-country--target {
-  stroke: #e5322d !important;
-  stroke-width: 1.8px !important;
-  vector-effect: non-scaling-stroke;
-}
-
-/* State Borders (Domestic) */
-.fr-state-border {
-  fill: none;
-  stroke: #d9a9a6;
-  stroke-width: 0.8px;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Country and State Name Labels */
-.fr-labels-layer {
-  transition: opacity 0.35s ease;
-  pointer-events: none;
-}
-
-.fr-labels-layer.is-fading {
-  opacity: 0 !important;
-}
-
-.fr-map-label {
-  font-family: inherit;
-  font-weight: 600;
-  fill: #3d2f33;
-  paint-order: stroke fill;
-  stroke: rgba(255, 255, 255, 0.9);
-  stroke-width: 2.5px;
-  stroke-linejoin: round;
-  text-anchor: middle;
-  dominant-baseline: central;
-  pointer-events: none;
-}
-
-/* Route Path (Red #e5322d 2px dashed 6 5 curve) */
-.fr-route-path {
-  fill: none;
-  stroke: #e5322d;
-  stroke-width: 2px;
-  stroke-dasharray: 6 5;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Airport Pin Codes under pins in 10.5px bold red with white halo */
-.fr-pin-code {
-  font-family: inherit;
-  font-size: 10.5px;
-  font-weight: 700;
-  fill: #e5322d;
-  paint-order: stroke fill;
-  stroke: #ffffff;
-  stroke-width: 2.5px;
-  stroke-linejoin: round;
-  text-anchor: middle;
-  dominant-baseline: hanging;
-}
-
-/* Radar Pulse Animations for Destination Dual Concentric Rings */
-@keyframes frRadarPulse {
-  0% {
-    r: 0px;
-    opacity: 0.95;
-    stroke-width: 1.2px;
+  /* ── Hide Header (Topbar), Footer (SiteFooter), and Navigation while Loading ── */
+  body.flight-loader-fullscreen-active .topbar,
+  body.flight-loader-fullscreen-active .site-footer,
+  body.flight-loader-fullscreen-active .pnb-site-footer,
+  body.flight-loader-fullscreen-active header,
+  body.flight-loader-fullscreen-active footer,
+  body:has(.flight-loader-fullscreen-wrapper) .topbar,
+  body:has(.flight-loader-fullscreen-wrapper) .site-footer,
+  body:has(.flight-loader-fullscreen-wrapper) .pnb-site-footer,
+  body:has(.flight-loader-fullscreen-wrapper) header,
+  body:has(.flight-loader-fullscreen-wrapper) footer,
+  body:has(.flight-radar-fullscreen) .topbar,
+  body:has(.flight-radar-fullscreen) .site-footer,
+  body:has(.flight-radar-fullscreen) .pnb-site-footer,
+  body:has(.flight-radar-fullscreen) header,
+  body:has(.flight-radar-fullscreen) footer {
+    display: none !important;
   }
-  50% {
-    opacity: 0.5;
+
+  /* ── Full-Screen Loading Screen Root ── */
+  .flight-loader-fullscreen-wrapper {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    z-index: 999999 !important;
+    overflow: hidden !important;
+    background-color: #fff1f0 !important;
+    background: radial-gradient(circle at 50% 38%, #ffffff 0%, #fff1f0 55%, #ffe4e6 100%) !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
-  100% {
-    r: 40px;
+
+  .flight-radar-screen {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #fff1f0;
+    background: radial-gradient(circle at 50% 38%, #ffffff 0%, #fff1f0 55%, #ffe4e6 100%);
+    margin: 0;
+    padding: 0;
+    border: none;
     opacity: 0;
-    stroke-width: 0.38px;
+    transition: opacity 0.5s ease-in-out;
+    box-sizing: border-box;
+    user-select: none;
   }
-}
 
-.fr-dest-radar-ring-1 {
-  animation: frRadarPulse 4.8s linear infinite;
-  transform-origin: center;
-}
-
-.fr-dest-radar-ring-2 {
-  animation: frRadarPulse 4.8s linear infinite;
-  animation-delay: 2.4s;
-  transform-origin: center;
-}
-
-/* Top Block (Transparent, Centred, 14px from Top, no background, blur or shadow) */
-.fr-top-block {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  z-index: 20;
-  pointer-events: none;
-  background: transparent !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  width: max-content;
-  max-width: 90vw;
-}
-
-/* Pill: ● LIVE AIRLINE FARE RADAR (12px bold, red text, 1px red border, white background) */
-.fr-radar-pill {
-  display: inline-flex;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #e5322d;
-  border: 1px solid #e5322d;
-  background-color: #ffffff;
-  border-radius: 9999px;
-  padding: 4px 14px;
-  letter-spacing: 0.04em;
-  margin-bottom: 8px;
-  box-shadow: 0 2px 8px rgba(229, 50, 45, 0.08);
-}
-
-/* Title: Finding your perfect flight (30px bold, navy #1b2a4e, white glow) */
-.fr-title {
-  font-size: 30px;
-  font-weight: 800;
-  color: #1b2a4e;
-  margin: 0 0 4px 0;
-  line-height: 1.2;
-  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff;
-  letter-spacing: -0.01em;
-}
-
-/* Subtitle: Searching available routes and fares… (opacity .7, white glow) */
-.fr-subtitle {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1b2a4e;
-  opacity: 0.7;
-  margin: 0 0 12px 0;
-  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff;
-}
-
-/* 4px Progress Bar (max 480px, track rgba(229,50,45,.18), red fill) */
-.fr-progress-track {
-  width: min(90vw, 480px);
-  height: 4px;
-  background-color: rgba(229, 50, 45, 0.18);
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
-}
-
-.fr-progress-fill {
-  height: 100%;
-  width: 100%;
-  background-color: #e5322d;
-  transform: scaleX(0);
-  transform-origin: left;
-  will-change: transform;
-}
-
-/* Bottom Route Chip: HYD Hyderabad ✈ LHR London (white pill, 1px red border, 16px / 600, padding 10px 26px, codes bold, soft red shadow) */
-.fr-route-chip {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  pointer-events: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #ffffff;
-  border: 1px solid #e5322d;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-  padding: 10px 26px;
-  border-radius: 9999px;
-  box-shadow: 0 4px 18px rgba(229, 50, 45, 0.16);
-  white-space: nowrap;
-}
-
-.fr-route-code {
-  font-weight: 800;
-  color: #e5322d;
-}
-
-.fr-route-plane-icon {
-  color: #e5322d;
-  font-size: 16px;
-  display: inline-block;
-}
-
-/* Bottom Right Logo Watermark (/pickandbook-logo.png, height 44px, white glow, pointer-events none) */
-.fr-logo-watermark {
-  position: absolute;
-  bottom: 18px;
-  right: 24px;
-  height: 44px;
-  width: auto;
-  pointer-events: none;
-  z-index: 20;
-  filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 12px #fff);
-  opacity: 0.92;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .fr-title {
-    font-size: 22px;
+  .flight-radar-screen.is-loaded {
+    opacity: 1;
   }
-  .fr-subtitle {
-    font-size: 12px;
-    margin-bottom: 8px;
+
+  .flight-radar-screen.is-domestic {
+    background-color: #FDF1F1 !important;
+    background: radial-gradient(circle at 50% 38%, #ffffff 0%, #fff1f0 55%, #ffe4e6 100%) !important;
   }
-  .fr-radar-pill {
-    font-size: 11px;
-    padding: 3px 10px;
+
+  /* ── Top Centre Pick&Book Logo Container ── */
+  .flight-radar-screen.is-international {
+    background: radial-gradient(circle at 50% 38%, #ffffff 0%, #fff1f0 55%, #ffe4e6 100%) !important;
   }
+
+  /* ── Top Centre Pick&Book Official Logo Container ── */
+  .fr-top-logo-container {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .fr-top-logo {
+    height: 42px;
+    height: 44px;
+    width: auto;
+    max-width: 220px;
+    max-width: 240px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.04));
+  }
+
+  /* ── Full Map SVG filling entire viewport ── */
+  .flight-radar-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* ── Domestic India Map Styling ── */
+  .fr-domestic-state {
+    vector-effect: non-scaling-stroke;
+    transition: opacity 0.3s ease;
+  }
+
+  .fr-domestic-arc {
+    fill: none;
+    stroke: #E53935;
+    stroke-width: 2.2px;
+    stroke-dasharray: 6 6;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* ── International World Map Styling ── */
+  .fr-country {
+    transition: stroke 0.3s ease;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fr-route-path {
+    fill: none;
+    stroke: #E53935;
+    stroke-width: 2px;
+    stroke-dasharray: 6 5;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* ── Airport Map Marker (Pin + Label Pill) ── */
+  .fr-airport-marker-group {
+    cursor: default;
+    user-select: none;
+  }
+
+  .fr-marker-pill {
+    pointer-events: none;
+  }
+
+  .fr-marker-pill-text {
+    font-family: inherit;
+    pointer-events: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  .fr-pill-code {
+    letter-spacing: 0.03em;
+  }
+
+  .fr-pill-city {
+    letter-spacing: 0.01em;
+  }
+
+  /* ── Large Rounded Route Information Pill at Bottom Centre ── */
   .fr-route-chip {
-    font-size: 13px;
-    padding: 8px 18px;
-    gap: 8px;
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 25;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    gap: 12px;
+    background-color: #ffffff;
+    border: 1.5px solid #e5322d;
+    font-size: 16px;
+    color: #1e293b;
+    padding: 11px 32px;
+    padding: 10px 28px;
+    border-radius: 9999px;
+    box-shadow: 0 8px 24px rgba(229, 50, 45, 0.14);
+    box-shadow: 0 8px 24px rgba(229, 50, 45, 0.16);
+    white-space: nowrap;
   }
-  .fr-logo-watermark {
-    height: 34px;
-    right: 14px;
-    bottom: 14px;
+
+  .fr-route-plane-icon {
+    color: #e5322d;
+    font-size: 16px;
+    line-height: 1;
+    display: inline-block;
   }
-}
+
+  .fr-route-segment {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+
+  .fr-route-code {
+    font-weight: 800;
+    font-size: 18px;
+    font-size: 17px;
+    color: #e5322d;
+    letter-spacing: 0.02em;
+  }
+
+  .fr-route-city {
+    font-weight: 600;
+    font-size: 15px;
+    color: #334155;
+    color: #0f172a;
+  }
+
+  .fr-route-arrow {
+    color: #e5322d;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 4px;
+    line-height: 1;
+    display: inline-block;
+  }
+
+    /* ── Domestic India Map Styling ── */
+    .fr-domestic-state {
+      vector-effect: non-scaling-stroke;
+      transition: opacity 0.3s ease;
+    }
+
+    .fr-domestic-city-label {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      fill: #807272;
+      paint-order: stroke fill;
+      stroke: rgba(255, 255, 255, 0.9);
+      stroke-width: 2.2px;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+
+    .fr-domestic-arc {
+      fill: none;
+      stroke: #E53935;
+      stroke-width: 2.2px;
+      stroke-dasharray: 6 6;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+    }
+
+    /* ── Departure & Arrival Marker Labels (Airport Code + City Name) ── */
+    .fr-marker-code {
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 800;
+      paint-order: stroke fill;
+      stroke: #ffffff;
+      stroke-width: 3.2px;
+      stroke-linejoin: round;
+      letter-spacing: 0.03em;
+      pointer-events: none;
+    }
+
+    .fr-marker-code--navy {
+      fill: #1B2A5C;
+    }
+
+    .fr-marker-code--red {
+      fill: #E53935;
+    }
+
+    .fr-marker-city {
+      font-family: inherit;
+      font-size: 10.5px;
+      font-weight: 700;
+      fill: #334155;
+      paint-order: stroke fill;
+      stroke: #ffffff;
+      stroke-width: 2.6px;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
+
+    /* ── International World Map Styling ── */
+    .fr-country {
+      transition: stroke 0.3s ease;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .fr-route-path {
+      fill: none;
+      stroke: #e5322d;
+      stroke-width: 2px;
+      stroke-dasharray: 6 5;
+      stroke-linecap: round;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .fr-pin-code {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      fill: #e5322d;
+      paint-order: stroke fill;
+      stroke: #ffffff;
+      stroke-width: 2.6px;
+      stroke-linejoin: round;
+      text-anchor: middle;
+      dominant-baseline: hanging;
+    }
+
+    /* ── Mobile and Tablet Responsiveness ── */
+    @media (max-width: 768px) {
+      .fr-top-logo-container {
+        top: 18px;
+      }
+
+      .fr-top-logo {
+        height: 32px;
+        height: 36px;
+      }
+
+      .fr-route-chip {
+        font-size: 13px;
+        padding: 9px 20px;
+        gap: 8px;
+        bottom: 20px;
+        gap: 9px;
+        bottom: 22px;
+        max-width: 92vw;
+      }
+
+      .fr-route-code {
+        font-size: 15px;
+      }
+
+      .fr-route-city {
+        font-size: 13px;
+        font-size: 13.5px;
+      }
+
+      .fr-route-plane-icon {
+        font-size: 14px;
+      }
+
+      .fr-route-arrow {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .fr-top-logo {
+        height: 30px;
+      }
+
+      .fr-route-chip {
+        padding: 8px 16px;
+        padding: 7px 16px;
+        gap: 6px;
+        bottom: 18px;
+        max-width: 94vw;
+      }
+
+
+      .fr-route-code {
+        font-size: 14px;
+      }
+
+      .fr-route-city {
+        font-size: 12px;
+      }
+
+      .fr-route-plane-icon {
+        font-size: 13px;
+      }
+
+      .fr-route-arrow {
+        font-size: 14px;
+      }
+    }

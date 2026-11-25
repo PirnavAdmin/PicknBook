@@ -1,0 +1,414 @@
+/* ============================================================
+   FLIGHT SEARCH LOADING SCREEN (fl-)
+   Dual-Layer Smooth Motion & Zero-Flicker Architecture
+   ============================================================ */
+
+/* ── Lock Page Scroll and Hide Footer while Loading ── */
+html.fl-loading-active,
+body.fl-loading-active,
+html:has(.fl-loading-screen),
+body:has(.fl-loading-screen) {
+  overflow: hidden !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html.fl-loading-active::-webkit-scrollbar,
+body.fl-loading-active::-webkit-scrollbar,
+html:has(.fl-loading-screen)::-webkit-scrollbar,
+body:has(.fl-loading-screen)::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+body.fl-loading-active #root,
+body:has(.fl-loading-screen) #root {
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide footer completely on the loading screen */
+body.fl-loading-active footer,
+body.fl-loading-active .site-footer,
+body.fl-loading-active .pnb-site-footer,
+html.fl-loading-active footer,
+html.fl-loading-active .site-footer,
+html.fl-loading-active .pnb-site-footer,
+body:has(.fl-loading-screen) footer,
+body:has(.fl-loading-screen) .site-footer,
+body:has(.fl-loading-screen) .pnb-site-footer {
+  display: none !important;
+}
+
+/* ── Navbar brand logo sizing on loading screen ── */
+body.fl-loading-active .topbar .brand-logo,
+body:has(.fl-loading-screen) .topbar .brand-logo {
+  height: 30px !important;
+  max-height: 30px !important;
+  width: auto !important;
+}
+
+/* ── Full Screen Loading Screen Wrapper ── */
+.fl-loading-screen {
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  height: calc(100vh - 68px) !important;
+  height: calc(100dvh - 68px) !important;
+  max-height: calc(100vh - 68px) !important;
+  max-height: calc(100dvh - 68px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  background-color: #fff1f0 !important;
+  font-family: var(--app-font-family, 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif) !important;
+  user-select: none;
+  transition: opacity 0.6s ease;
+}
+
+/* ── Section 1: Static MAP layer (transform: translateZ(0)) ── */
+#map,
+.fl-map-svg--static {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  transform: translateZ(0) !important;
+  will-change: transform;
+}
+
+/* ── Section 1: MOVING layer on top ── */
+#fx,
+.fl-map-svg--fx {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  pointer-events: none !important;
+  z-index: 5;
+}
+
+/* ── Prevent CSS transitions on imperative animated SVG elements ── */
+#cam-map,
+#cam-fx,
+.fl-plane-marker,
+.fl-map-pin,
+.fl-pin-label-group,
+.fl-radar-group,
+.fl-progress-bar {
+  transition: none !important;
+}
+
+/* ── Top Block: Transparent container over map ── */
+.fl-top-block {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 15;
+  width: auto;
+  max-width: 92%;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* 2. Radar Pill: "● LIVE AIRLINE FARE RADAR" */
+.fl-radar-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  border: 1px solid #e5322d;
+  color: #e5322d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: #ffffff !important;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  pointer-events: auto;
+}
+
+.fl-radar-dot {
+  color: #e5322d;
+  font-size: 8px;
+  line-height: 1;
+  animation: flRadarPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes flRadarPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.3);
+  }
+}
+
+/* 3. Title, Subtitle with Soft Halos & Progress Bar */
+.fl-title {
+  font-size: 21px;
+  font-weight: 800;
+  color: #1b2a4e;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.015em;
+  text-align: center;
+  line-height: 1.25;
+  flex-shrink: 0;
+  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff;
+  user-select: none;
+}
+
+.fl-subtitle {
+  font-size: 13.5px;
+  color: #475569;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  text-align: center;
+  line-height: 1.3;
+  flex-shrink: 0;
+  text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 18px #fff;
+  user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fl-title,
+  .fl-subtitle {
+    text-shadow: 0 0 4px var(--card-bg, #1e293b), 0 0 10px var(--card-bg, #1e293b), 0 0 18px var(--card-bg, #1e293b);
+  }
+}
+
+[data-theme="dark"] .fl-title,
+[data-theme="dark"] .fl-subtitle,
+.dark .fl-title,
+.dark .fl-subtitle {
+  text-shadow: 0 0 4px var(--card-bg, #1e293b), 0 0 10px var(--card-bg, #1e293b), 0 0 18px var(--card-bg, #1e293b);
+}
+
+/* Progress bar scaleX (never animate width) */
+.fl-progress-track {
+  width: 380px;
+  max-width: 90vw;
+  height: 3px;
+  background: rgba(220, 220, 225, 0.75);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin: 0 auto;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+.fl-progress-bar {
+  height: 100%;
+  width: 100% !important;
+  background: #e5322d;
+  border-radius: 9999px;
+  transform-origin: left center !important;
+  transform: scaleX(0);
+  will-change: transform !important;
+  transition: none !important;
+}
+
+/* Watermark: Pick&Book logo in bottom-right corner */
+.fl-watermark-logo {
+  position: absolute;
+  bottom: 16px;
+  right: 20px;
+  height: 40px;
+  width: auto;
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.95;
+}
+
+/* Dynamic Collision-Free Labels Layer */
+.fl-labels-layer {
+  pointer-events: none;
+}
+
+.fl-country-name--map {
+  fill: #1f2a44;
+  stroke: #ffffff;
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+}
+
+.fl-state-name--map {
+  fill: #853733;
+  stroke: #ffffff;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Map Location Pins (no filter / drop-shadow) */
+.fl-map-pin {
+  pointer-events: none;
+  filter: none !important;
+}
+
+.fl-pin-code-label {
+  fill: #e5322d;
+  font-weight: 800;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── RADAR AT THE LOCATION PINS (small and simple) ──
+   Two circles, base radius 40 units, drawn at 0.38 / (zoom * scale) (~16px on screen)
+   Style: fill rgba(229,50,45,.10); stroke rgba(229,50,45,.6), 1.2px, vector-effect: non-scaling-stroke
+   No glow, no filter, no drop-shadow
+   Animation: scale .12 -> 1 while opacity goes .95 -> 0, 4.8s ease-out, infinite, second ring delayed 2.4s
+*/
+@keyframes flRadarRipple {
+  0% {
+    transform: scale(0.12);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.fl-radar-group {
+  pointer-events: none;
+}
+
+.fl-radar-circle {
+  fill: rgba(229, 50, 45, 0.10);
+  stroke: rgba(229, 50, 45, 0.6);
+  stroke-width: 1.2px;
+  vector-effect: non-scaling-stroke;
+  filter: none !important;
+  transform-origin: 0 0;
+  animation: flRadarRipple 4.8s ease-out infinite;
+  pointer-events: none;
+}
+
+.fl-radar-c1 {
+  animation-delay: 0s;
+}
+
+.fl-radar-c2 {
+  animation-delay: 2.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fl-radar-circle {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* Route track without filter/drop-shadow */
+.fl-route-track {
+  filter: none !important;
+}
+
+/* Airliner without filter/drop-shadow */
+.fl-plane-marker {
+  transform-origin: 0 0;
+  pointer-events: none;
+  filter: none !important;
+}
+
+.fl-airliner {
+  filter: none !important;
+  pointer-events: none;
+}
+
+/* 5. Bottom Chip: "HYD Hyderabad ✈ LHR London" */
+.fl-bottom-chip {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  background: #ffffff;
+  border: 1.5px solid #e5322d;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1b2a4e;
+  box-shadow: 0 2px 8px rgba(229, 50, 45, 0.12);
+  z-index: 15;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.fl-chip-text {
+  font-weight: 700;
+}
+
+.fl-chip-plane {
+  color: #e5322d;
+  font-size: 14px;
+}
+
+/* ── Mobile adjustments ── */
+@media (max-width: 640px) {
+  .fl-top-block {
+    top: 10px;
+  }
+  .fl-title {
+    font-size: 17px;
+  }
+  .fl-subtitle {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .fl-progress-track {
+    width: 280px;
+  }
+  .fl-watermark-logo {
+    height: 32px;
+    bottom: 12px;
+    right: 14px;
+  }
+  .fl-bottom-chip {
+    font-size: 11.5px;
+    padding: 5px 14px;
+    gap: 6px;
+    bottom: 14px;
+  }
+}

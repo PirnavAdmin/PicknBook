@@ -2815,9 +2815,10 @@ export default function FlightSearchResults() {
     <main className={`flight-results-page${isLoadingFlights ? " is-loading" : ""}`}>
       {isLoadingFlights && (
         <FlightLoadingScreen
+          source={cityCode(sourceName, sourceName)}
+          dest={cityCode(destinationName, destinationName)}
           sourceCity={sourceName}
           destinationCity={destinationName}
-          customMessage={LOADING_STATUSES[loadingStatusIndex]}
         />
       )}
       <div className="flight-results-shell">

@@ -15795,3 +15795,43 @@ button:focus-visible {
     font-size: 0.8rem !important;
   }
 }
+
+/* ─── PROMOTIONAL SCROLL-TO-SEARCH HIGHLIGHT & POSITIONING ─── */
+#main-search-panel,
+#flight-search-form,
+#bus-search-form,
+#hotel-search-form,
+.search-panel {
+  scroll-margin-top: 85px;
+}
+
+@keyframes pnbHighlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7);
+    border-color: #e11d48 !important;
+    background-color: rgba(225, 29, 72, 0.08);
+  }
+  30% {
+    box-shadow: 0 0 0 8px rgba(225, 29, 72, 0.35);
+    border-color: #e11d48 !important;
+    background-color: rgba(225, 29, 72, 0.05);
+  }
+  65% {
+    box-shadow: 0 0 0 12px rgba(225, 29, 72, 0.12);
+    border-color: #e11d48 !important;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(225, 29, 72, 0);
+    border-color: inherit;
+    background-color: transparent;
+  }
+}
+
+.pnb-field-focus-highlight {
+  animation: pnbHighlightPulse 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  border-radius: 12px !important;
+  outline: none !important;
+  position: relative !important;
+  z-index: 10 !important;
+  transition: all 0.3s ease !important;
+}

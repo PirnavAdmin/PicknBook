@@ -170,7 +170,13 @@ export function resolveLocation(loc, defaultFallback = 'HYD') {
     return AIRPORTS_DATABASE[upper];
   }
 
-  // 2. Check if string starts with code e.g. "HYD - Hyderabad" or "HYD (Hyderabad)"
+  // 2. Bracket code lookup e.g. "Hyderabad (HYD)" or "London (LHR)"
+  const bracketMatch = str.match(/\(([A-Za-z]{3})\)/);
+  if (bracketMatch && AIRPORTS_DATABASE[bracketMatch[1].toUpperCase()]) {
+    return AIRPORTS_DATABASE[bracketMatch[1].toUpperCase()];
+  }
+
+  // 3. Check if string starts with code e.g. "HYD - Hyderabad" or "HYD (Hyderabad)"
   const codeMatch = upper.match(/^([A-Z]{3})\b/);
   if (codeMatch && AIRPORTS_DATABASE[codeMatch[1]]) {
     return AIRPORTS_DATABASE[codeMatch[1]];

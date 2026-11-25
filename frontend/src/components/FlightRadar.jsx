@@ -1,671 +1,597 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import precomputedMapData from '../data/precomputedWorldMap.json';
+import indiaStatesMapData from '../data/indiaStatesMap.json';
 import { resolveLocation } from '../utils/flightAirports';
+import pickNBookLogo from '../assets/images/brand/pick-n-book-logo.png';
 import '../STYLES/FlightRadar.css';
 
 /**
- * Project [lon, lat] coordinates into 1000x500 Equirectangular space
- * Formula: d3.geoEquirectangular().scale(1000 / (2 * Math.PI)).translate([500, 250])
+ * Project [lon, lat] coordinates into 1000x500 Equirectangular space (for International World Map)
  */
 function projectPoint([lon, lat]) {
-  const x = (lon + 180) * (1000 / 360);
+  const x = ((lon + 180) % 360) * (1000 / 360);
   const y = (90 - lat) * (500 / 180);
   return [x, y];
 }
 
 /**
- * Check if two axis-aligned 2D bounding boxes overlap
+ * Mercator projection fitted to India:
+ * bounds lon 68 to 97.6, lat 6.6 to 37.2 (coordinate space)
  */
-function boxesOverlap(b1, b2, pad = 2) {
-  return !(
-    b1.x + b1.w + pad < b2.x ||
-    b2.x + b2.w + pad < b1.x ||
-    b1.y + b1.h + pad < b2.y ||
-    b2.y + b2.h + pad < b1.y
+const {
+  lonMin: IND_LON_MIN,
+  latMax: IND_LAT_MAX,
+  mapScale: IND_MAP_SCALE,
+  offsetX: IND_OFFSET_X,
+  offsetY: IND_OFFSET_Y
+} = indiaStatesMapData.projection;
+
+const toRad = (deg) => (deg * Math.PI) / 180;
+const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + toRad(lat) / 2));
+const IND_Y_MAX_MERC = mercY(IND_LAT_MAX);
+
+function projectIndiaPoint([lon, lat]) {
+  const x = IND_OFFSET_X + (toRad(lon) - toRad(IND_LON_MIN)) * IND_MAP_SCALE;
+  const y = IND_OFFSET_Y + (IND_Y_MAX_MERC - mercY(lat)) * IND_MAP_SCALE;
+  return [x, y];
+}
+
+/**
+ * Reusable Airliner Symbol (top-view passenger aircraft with red detailing)
+ */
+export function AirlinerSymbol({ scale = 1 }) {
+  return (
+    <g transform={`scale(${scale})`}>
+      {/* Dark Offset Shadow Shape */}
+      <g transform="translate(2.5, 3.5)" opacity="0.22">
+        <path d="M 4, -4.5 L -8, -21 L -12, -20.5 L -4, -4.5 Z" fill="#0f172a" />
+        <path d="M 4, 4.5 L -8, 21 L -12, 20.5 L -4, 4.5 Z" fill="#0f172a" />
+        <path d="M -16, -2.5 L -22.5, -9 L -24, -8.5 L -20, -2 Z" fill="#0f172a" />
+        <path d="M -16, 2.5 L -22.5, 9 L -24, 8.5 L -20, 2 Z" fill="#0f172a" />
+        <path
+          d="M 23, 0 C 23, 3.2 20, 4.6 13, 4.6 L -18, 4.2 C -21, 4.0 -23.5, 2.2 -24, 0 C -23.5, -2.2 -21, -4.0 -18, -4.2 L 13, -4.6 C 20, -4.6 23, -3.2 23, 0 Z"
+          fill="#0f172a"
+        />
+      </g>
+
+      {/* Main Swept Wings */}
+      <path
+        d="M 4, -4.5 L -8, -21 L -12, -20.5 L -4, -4.5 Z"
+        fill="#f8fafc"
+        stroke="#94a3b8"
+        strokeWidth="0.75"
+      />
+      <path
+        d="M 4, 4.5 L -8, 21 L -12, 20.5 L -4, 4.5 Z"
+        fill="#f8fafc"
+        stroke="#94a3b8"
+        strokeWidth="0.75"
+      />
+
+      {/* 2 Jet Engines Under Wings */}
+      <rect x="-3" y="-12.5" width="9" height="3.2" rx="1.6" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.6" />
+      <rect x="-4.2" y="-11.8" width="1.6" height="1.8" rx="0.5" fill="#334155" />
+      <rect x="-3" y="9.3" width="9" height="3.2" rx="1.6" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.6" />
+      <rect x="-4.2" y="10" width="1.6" height="1.8" rx="0.5" fill="#334155" />
+
+      {/* Horizontal Stabilizers at Tail */}
+      <path
+        d="M -16, -2.5 L -22.5, -9 L -24, -8.5 L -20, -2 Z"
+        fill="#f1f5f9"
+        stroke="#94a3b8"
+        strokeWidth="0.65"
+      />
+      <path
+        d="M -16, 2.5 L -22.5, 9 L -24, 8.5 L -20, 2 Z"
+        fill="#f1f5f9"
+        stroke="#94a3b8"
+        strokeWidth="0.65"
+      />
+
+      {/* Aerodynamic White Fuselage */}
+      <path
+        d="M 23, 0 C 23, 3.2 20, 4.6 13, 4.6 L -18, 4.2 C -21, 4.0 -23.5, 2.2 -24, 0 C -23.5, -2.2 -21, -4.0 -18, -4.2 L 13, -4.6 C 20, -4.6 23, -3.2 23, 0 Z"
+        fill="#ffffff"
+        stroke="#64748b"
+        strokeWidth="0.8"
+      />
+
+      {/* Red Cheat-Lines */}
+      <path d="M 17, -4.5 L -18, -4.1 L -18, -3.4 L 17, -3.8 Z" fill="#e5322d" />
+      <path d="M 17, 4.5 L -18, 4.1 L -18, 3.4 L 17, 3.8 Z" fill="#e5322d" />
+
+      {/* Dark Cockpit Windows */}
+      <path
+        d="M 19, -2.4 C 20.3, -1.2 20.3, 1.2 19, 2.4 L 17.2, 2.7 C 17.9, 1.2 17.9, -1.2 17.2, -2.7 Z"
+        fill="#0f172a"
+      />
+
+      {/* Red Tail Fin (Vertical Stabilizer) */}
+      <path d="M -15.5, 0 L -23.8, -1.2 L -23.8, 1.2 Z" fill="#e5322d" />
+    </g>
   );
 }
 
 /**
- * Cubic ease-in-out function for smooth camera transition
+ * Reusable Airport Map Marker (Pin + Pulse + White rounded label with thin red border)
  */
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+export function AirportMapMarker({
+  x,
+  y,
+  code,
+  city,
+  isDest = false,
+  otherX,
+  otherY,
+  isDomestic = false
+}) {
+  const pinFill = isDest ? '#E53935' : '#1B2A5C';
+
+  // Badge positioning: place cleanly away from route and map bounds
+  const { offsetX, offsetY } = useMemo(() => {
+    const topLimit = isDomestic ? 165 : 60;
+    let oy = -36;
+    let ox = 0;
+
+    if (y < topLimit) {
+      oy = 18; // Place below pin if near top boundary
+    } else if (otherY !== undefined && otherY < y - 40 && Math.abs(otherX - x) < 35) {
+      // Route heads almost vertically upwards, place label below pin
+      oy = 18;
+    } else {
+      oy = -36; // Default sits above pin
+    }
+
+    // Keep label within horizontal map boundaries
+    const minX = isDomestic ? 120 : 60;
+    const maxX = isDomestic ? 530 : 940;
+    if (x < minX) {
+      ox = 20;
+    } else if (x > maxX) {
+      ox = -20;
+    }
+
+    return { offsetX: ox, offsetY: oy };
+  }, [x, y, otherX, otherY, isDomestic]);
+
+  const pillWidth = useMemo(() => {
+    const codeLen = (code || '').length;
+    const cityLen = (city || '').length;
+    const baseW = isDomestic ? 78 : 84;
+    return Math.max(baseW, Math.min(150, codeLen * 9 + cityLen * 6.5 + 22));
+  }, [code, city, isDomestic]);
+
+  const pillHeight = isDomestic ? 22 : 24;
+
+  return (
+    <g transform={`translate(${x.toFixed(1)}, ${y.toFixed(1)})`} className="fr-airport-marker-group">
+      {/* 1. Concentric Pulse Ring */}
+      <circle cx="0" cy="0" r="4" fill="none" stroke={pinFill} strokeWidth="1.4">
+        <animate
+          attributeName="r"
+          from="4"
+          to={isDest ? 24 : 20}
+          begin={isDest ? '0.6s' : '0s'}
+          dur="1.8s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          values="0.85; 0.3; 0"
+          begin={isDest ? '0.6s' : '0s'}
+          dur="1.8s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="stroke-width"
+          values="1.6; 1.0; 0.4"
+          begin={isDest ? '0.6s' : '0s'}
+          dur="1.8s"
+          repeatCount="indefinite"
+        />
+      </circle>
+
+      {/* 2. Map Pin with white center */}
+      <path
+        d="M 0 0 C -3.5 -6, -8 -13, -8 -19 C -8 -24, -4.5 -27.5, 0 -27.5 C 4.5 -27.5, 8 -24, 8 -19 C 8 -13, 3.5 -6, 0 0 Z"
+        fill={pinFill}
+        stroke="#ffffff"
+        strokeWidth="1.3"
+        filter="drop-shadow(0 2px 4px rgba(0,0,0,0.22))"
+      />
+      <circle cx="0" cy="-19" r="3.2" fill="#ffffff" />
+
+      {/* 3. White rounded label pill with thin red border and soft pink drop-shadow */}
+      <g transform={`translate(${offsetX}, ${offsetY})`} className="fr-marker-pill">
+        <rect
+          x={-pillWidth / 2}
+          y={-pillHeight / 2}
+          width={pillWidth}
+          height={pillHeight}
+          rx={pillHeight / 2}
+          fill="#ffffff"
+          stroke="#E53935"
+          strokeWidth="1.2"
+          filter="url(#fr-pill-drop-shadow)"
+        />
+        <text
+          x="0"
+          y="0"
+          dominantBaseline="central"
+          textAnchor="middle"
+          className="fr-marker-pill-text"
+        >
+          <tspan className="fr-pill-code" fill="#E53935" fontWeight="800" fontSize={isDomestic ? "11.5px" : "12.5px"}>
+            {code}
+          </tspan>
+          <tspan dx="4" className="fr-pill-city" fill="#0F172A" fontWeight="600" fontSize={isDomestic ? "9.5px" : "10px"}>
+            {city}
+          </tspan>
+        </text>
+      </g>
+    </g>
+  );
 }
 
+/**
+ * Domestic India Map Loader
+ */
+export function DomesticFlightLoader({
+  srcLoc,
+  destLoc,
+  sourceCity,
+  destinationCity
+}) {
+  const [domX0, domY0] = useMemo(() => projectIndiaPoint(srcLoc.coords || [78.4294, 17.2403]), [srcLoc]);
+  const [domX2, domY2] = useMemo(() => projectIndiaPoint(destLoc.coords || [75.8122, 26.8242]), [destLoc]);
+
+  // Curved red dashed flight route: quadratic Bezier lifted towards North
+  const domesticArcD = useMemo(() => {
+    const dx = domX2 - domX0;
+    const dy = domY2 - domY0;
+    const dist = Math.hypot(dx, dy);
+    if (!dist) return `M ${domX0} ${domY0} L ${domX2} ${domY2}`;
+
+    const mx = (domX0 + domX2) / 2;
+    const my = (domY0 + domY2) / 2;
+    const lift = Math.min(55, Math.max(15, 0.35 * dist));
+    const nx = -dy / dist;
+    const ny = dx / dist;
+
+    let cx = mx + nx * lift;
+    let cy = my + ny * lift;
+    if (cy > my) {
+      cx = mx - nx * lift;
+      cy = my - ny * lift;
+    }
+    if (cy < 145) cy = 145;
+
+    return `M ${domX0.toFixed(2)} ${domY0.toFixed(2)} Q ${cx.toFixed(2)} ${cy.toFixed(2)} ${domX2.toFixed(2)} ${domY2.toFixed(2)}`;
+  }, [domX0, domY0, domX2, domY2]);
+
+  return (
+    <svg
+      className="flight-radar-svg flight-radar-svg--domestic"
+      viewBox="85 130 500 540"
+      preserveAspectRatio="xMidYMid meet"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <filter id="fr-pill-drop-shadow" x="-30%" y="-30%" width="160%" height="180%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#e5322d" floodOpacity="0.18" />
+        </filter>
+      </defs>
+
+      {/* Ocean background */}
+      <rect x="0" y="0" width="680" height="800" fill="#FDF1F1" opacity="0.9" />
+
+      {/* Elegant flowing wave curves along ocean sides & bottom */}
+      <g className="fr-decor-waves">
+        <path d="M 40 210 Q 180 180 340 230 T 640 190" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.4" />
+        <path d="M 40 330 Q 160 370 320 310 T 640 350" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.35" />
+        <path d="M 40 450 Q 190 410 360 470 T 640 430" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.4" />
+        <path d="M 40 570 Q 170 620 340 550 T 640 600" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.35" />
+        <path d="M 40 680 Q 200 640 380 710 T 640 660" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.4" />
+      </g>
+
+      {/* Indian States Layer: pastel colors with thin boundaries */}
+      <g id="domestic-states-layer">
+        {indiaStatesMapData.states.map((s) => (
+          <path
+            key={s.id}
+            d={s.d}
+            fill={s.color}
+            stroke={indiaStatesMapData.borderColor || '#D9A78F'}
+            strokeWidth={indiaStatesMapData.borderWidth || 0.85}
+            className="fr-domestic-state"
+          />
+        ))}
+      </g>
+
+      {/* Curved red dashed route with animated marching dashes */}
+      <path
+        id="domestic-route-arc"
+        d={domesticArcD}
+        className="fr-domestic-arc"
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          from="0"
+          to="-24"
+          dur="1.2s"
+          repeatCount="indefinite"
+        />
+      </path>
+
+      {/* Realistic passenger airplane smoothly oriented along the route */}
+      <g className="fr-domestic-plane-mover">
+        <AirlinerSymbol scale={0.7} />
+        <animateMotion
+          dur="3.4s"
+          repeatCount="indefinite"
+          rotate="auto"
+          calcMode="linear"
+        >
+          <mpath href="#domestic-route-arc" />
+        </animateMotion>
+      </g>
+
+      {/* Origin Marker (Navy Pin + White Pill Label) */}
+      <AirportMapMarker
+        x={domX0}
+        y={domY0}
+        code={srcLoc.code}
+        city={srcLoc.city || sourceCity}
+        isDest={false}
+        otherX={domX2}
+        otherY={domY2}
+        isDomestic={true}
+      />
+
+      {/* Destination Marker (Red Pin + White Pill Label) */}
+      <AirportMapMarker
+        x={domX2}
+        y={domY2}
+        code={destLoc.code}
+        city={destLoc.city || destinationCity}
+        isDest={true}
+        otherX={domX0}
+        otherY={domY0}
+        isDomestic={true}
+      />
+    </svg>
+  );
+}
+
+/**
+ * International World Map Loader
+ */
+export function InternationalFlightLoader({
+  srcLoc,
+  destLoc,
+  sourceCity,
+  destinationCity
+}) {
+  const [intlX0, intlY0] = useMemo(() => projectPoint(srcLoc.coords || [78.4294, 17.2403]), [srcLoc]);
+  const [intlX2, intlY2] = useMemo(() => projectPoint(destLoc.coords || [-0.4543, 51.4700]), [destLoc]);
+
+  // Curved red dashed flight route: great-circle quadratic Bezier lifted towards North
+  const intlArcD = useMemo(() => {
+    const dx = intlX2 - intlX0;
+    const dy = intlY2 - intlY0;
+    const dist = Math.hypot(dx, dy);
+    if (!dist) return `M ${intlX0} ${intlY0} L ${intlX2} ${intlY2}`;
+
+    const mx = (intlX0 + intlX2) / 2;
+    const my = (intlY0 + intlY2) / 2;
+    const lift = Math.min(65, Math.max(16, 0.22 * dist));
+    const nx = -dy / dist;
+    const ny = dx / dist;
+
+    let cx = mx + nx * lift;
+    let cy = my + ny * lift;
+    if (cy > my) {
+      cx = mx - nx * lift;
+      cy = my - ny * lift;
+    }
+    if (cy < 35) cy = 35;
+
+    return `M ${intlX0.toFixed(2)} ${intlY0.toFixed(2)} Q ${cx.toFixed(2)} ${cy.toFixed(2)} ${intlX2.toFixed(2)} ${intlY2.toFixed(2)}`;
+  }, [intlX0, intlY0, intlX2, intlY2]);
+
+  return (
+    <svg
+      className="flight-radar-svg flight-radar-svg--international"
+      viewBox="0 20 1000 440"
+      preserveAspectRatio="xMidYMid meet"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <filter id="fr-pill-drop-shadow" x="-30%" y="-30%" width="160%" height="180%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodColor="#e5322d" floodOpacity="0.18" />
+        </filter>
+      </defs>
+
+      {/* Ocean Background */}
+      <rect x="0" y="0" width="1000" height="500" fill={precomputedMapData.seaColor || '#fff1f0'} opacity="0.9" />
+
+      {/* Elegant flowing wave curves across ocean background */}
+      <g className="fr-decor-waves">
+        <path d="M 0 100 Q 250 60 500 110 T 1000 80" fill="none" stroke="#fecdd3" strokeWidth="1.4" opacity="0.35" />
+        <path d="M 0 200 Q 220 250 500 190 T 1000 230" fill="none" stroke="#fecdd3" strokeWidth="1.4" opacity="0.3" />
+        <path d="M 0 310 Q 270 270 520 330 T 1000 290" fill="none" stroke="#fecdd3" strokeWidth="1.4" opacity="0.35" />
+        <path d="M 0 420 Q 260 460 510 400 T 1000 440" fill="none" stroke="#fecdd3" strokeWidth="1.4" opacity="0.4" />
+      </g>
+
+      {/* World Countries Layer: pastel colors with thin boundaries */}
+      <g id="intl-countries-layer">
+        {precomputedMapData.countries.map((c) => (
+          <path
+            key={c.id}
+            d={c.d}
+            fill={c.color}
+            stroke={precomputedMapData.borderColor || '#d9a9a6'}
+            strokeWidth={0.75}
+            className="fr-country"
+          />
+        ))}
+      </g>
+
+      {/* Curved red dashed route with animated marching dashes */}
+      <path
+        id="intl-route-arc"
+        d={intlArcD}
+        className="fr-route-path"
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          from="0"
+          to="-22"
+          dur="1.2s"
+          repeatCount="indefinite"
+        />
+      </path>
+
+      {/* Realistic passenger airplane smoothly oriented along the route */}
+      <g className="fr-intl-plane-mover">
+        <AirlinerSymbol scale={0.75} />
+        <animateMotion
+          dur="4.2s"
+          repeatCount="indefinite"
+          rotate="auto"
+          calcMode="linear"
+        >
+          <mpath href="#intl-route-arc" />
+        </animateMotion>
+      </g>
+
+      {/* Origin Marker (Navy Pin + White Pill Label) */}
+      <AirportMapMarker
+        x={intlX0}
+        y={intlY0}
+        code={srcLoc.code}
+        city={srcLoc.city || sourceCity}
+        isDest={false}
+        otherX={intlX2}
+        otherY={intlY2}
+        isDomestic={false}
+      />
+
+      {/* Destination Marker (Red Pin + White Pill Label) */}
+      <AirportMapMarker
+        x={intlX2}
+        y={intlY2}
+        code={destLoc.code}
+        city={destLoc.city || destinationCity}
+        isDest={true}
+        otherX={intlX0}
+        otherY={intlY0}
+        isDomestic={false}
+      />
+    </svg>
+  );
+}
+
+/**
+ * Bottom Route Information Pill
+ * Displays: ✈ [SRC] [Src City]  →  ✈ [DEST] [Dest City]
+ */
+export function FlightRouteInfo({
+  srcLoc,
+  destLoc,
+  sourceCity,
+  destinationCity
+}) {
+  return (
+    <div className="fr-route-chip">
+      <span className="fr-route-plane-icon" aria-hidden="true">✈</span>
+      <span className="fr-route-segment">
+        <strong className="fr-route-code">{srcLoc.code}</strong>
+        <span className="fr-route-city">{srcLoc.city || sourceCity}</span>
+      </span>
+      <span className="fr-route-arrow" aria-hidden="true">→</span>
+      <span className="fr-route-plane-icon" aria-hidden="true">✈</span>
+      <span className="fr-route-segment">
+        <strong className="fr-route-code">{destLoc.code}</strong>
+        <span className="fr-route-city">{destLoc.city || destinationCity}</span>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Main FlightRadar Component (Also exported as FlightSearchLoader)
+ */
 export default function FlightRadar({
   source = 'HYD',
-  dest = 'LHR',
-  progress = 0,
-  done = false,
-  onDone
+  dest = 'BOM',
+  sourceCity = '',
+  destinationCity = ''
 }) {
-  const containerRef = useRef(null);
-  const mapSvgRef = useRef(null);
-  const planeRef = useRef(null);
-  const progressBarRef = useRef(null);
-
-  // Normalise airport / city locations
-  const srcLoc = useMemo(() => resolveLocation(source, 'HYD'), [source]);
-  const destLoc = useMemo(() => resolveLocation(dest, 'LHR'), [dest]);
-
-  // Projected 2D coordinates on 1000x500 equirectangular map
-  const [x0, y0] = useMemo(() => projectPoint(srcLoc.coords), [srcLoc]);
-  const [x2, y2] = useMemo(() => projectPoint(destLoc.coords), [destLoc]);
-
-  const isDomestic = useMemo(() => {
-    return Boolean(srcLoc.country && destLoc.country && srcLoc.country === destLoc.country);
-  }, [srcLoc, destLoc]);
-
-  // State state features if domestic flight
-  const [stateFeatures, setStateFeatures] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isZooming, setIsZooming] = useState(false);
-  const [highlightDestCountry, setHighlightDestCountry] = useState(false);
 
-  // Destination country from precomputed map
-  const destCountry = useMemo(() => {
-    if (!destLoc) return null;
-    return (
-      precomputedMapData.countries.find(
-        (c) => c.iso2 && c.iso2.toUpperCase() === destLoc.country.toUpperCase()
-      ) ||
-      precomputedMapData.countries.find(
-        (c) => c.name.toLowerCase() === (destLoc.countryName || '').toLowerCase()
-      ) ||
-      null
+  useEffect(() => {
+    const timer = requestAnimationFrame(() => setIsLoaded(true));
+    return () => cancelAnimationFrame(timer);
+  }, []);
+
+  // Dynamically resolve locations
+  const srcLoc = useMemo(() => resolveLocation(source || sourceCity, 'HYD'), [source, sourceCity]);
+  const destLoc = useMemo(() => resolveLocation(dest || destinationCity, 'BOM'), [dest, destinationCity]);
+
+  // Automatic Domestic vs. International Selection:
+  // Domestic = Both airports are within India ('IN')
+  // International = Either source or destination is outside India
+  const isIndiaDomestic = useMemo(() => {
+    return Boolean(
+      srcLoc &&
+      destLoc &&
+      srcLoc.country === 'IN' &&
+      destLoc.country === 'IN'
     );
-  }, [destLoc]);
-
-  // Domestic initial country bounds
-  const initialCountry = useMemo(() => {
-    if (!isDomestic) return null;
-    return destCountry;
-  }, [isDomestic, destCountry]);
-
-  // Calculate Bezier Curve and sample 400 steps
-  const { routePathD, samples } = useMemo(() => {
-    const D = Math.hypot(x2 - x0, y2 - y0);
-    const Mx = (x0 + x2) / 2;
-    const My = (y0 + y2) / 2;
-
-    const lift = 0.28 * D;
-    const dx = x2 - x0;
-    const dy = y2 - y0;
-    const nx = -dy / (D || 1);
-    const ny = dx / (D || 1);
-
-    // Ensure control point lifts upwards (towards North / smaller Y)
-    let cx = Mx + nx * lift;
-    let cy = My + ny * lift;
-    if (cy > My) {
-      cx = Mx - nx * lift;
-      cy = My - ny * lift;
-    }
-
-    const pathD = `M ${x0.toFixed(1)} ${y0.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`;
-
-    // Sample 400 steps along curve
-    const STEPS = 400;
-    const pts = [];
-    for (let i = 0; i <= STEPS; i++) {
-      const t = i / STEPS;
-      const invT = 1 - t;
-
-      const px = invT * invT * x0 + 2 * invT * t * cx + t * t * x2;
-      const py = invT * invT * y0 + 2 * invT * t * cy + t * t * y2;
-
-      // Derivative for heading
-      const tx = 2 * invT * (cx - x0) + 2 * t * (x2 - cx);
-      const ty = 2 * invT * (cy - y0) + 2 * t * (y2 - cy);
-      let heading = Math.atan2(ty, tx) * (180 / Math.PI);
-
-      pts.push({ x: px, y: py, heading });
-    }
-
-    // Unwrap heading angle to avoid 360-degree spin
-    for (let i = 1; i < pts.length; i++) {
-      let diff = pts[i].heading - pts[i - 1].heading;
-      while (diff > 180) diff -= 360;
-      while (diff < -180) diff += 360;
-      pts[i].heading = pts[i - 1].heading + diff;
-    }
-
-    return { routePathD: pathD, samples: pts };
-  }, [x0, y0, x2, y2]);
-
-  // Initial and Final Camera ViewBoxes
-  const { initialViewBox, targetViewBox } = useMemo(() => {
-    // Default world view
-    const defaultVb = { x: 0, y: 20, w: 1000, h: 440 };
-
-    if (!isDomestic) {
-      // International flight:
-      // Initial: full world view
-      // Final: zoom into destination country clamp(min(.6*vw/bboxW, .6*vh/bboxH), 2.2, 7)
-      let tgtVb = defaultVb;
-      if (destCountry) {
-        const bboxW = Math.max(30, destCountry.width);
-        const bboxH = Math.max(30, destCountry.height);
-        const z = Math.max(2.2, Math.min(7, Math.min((0.6 * 1000) / bboxW, (0.6 * 440) / bboxH)));
-
-        const targetW = 1000 / z;
-        const targetH = 440 / z;
-        const targetX = Math.max(0, Math.min(1000 - targetW, destCountry.centroid[0] - targetW / 2));
-        const targetY = Math.max(20, Math.min(460 - targetH, destCountry.centroid[1] - targetH / 2));
-
-        tgtVb = { x: targetX, y: targetY, w: targetW, h: targetH };
-      }
-      return { initialViewBox: defaultVb, targetViewBox: tgtVb };
-    } else {
-      // Domestic flight:
-      // Initial: country fitted to 80% of free area
-      let initVb = defaultVb;
-      if (initialCountry) {
-        const padRatio = 0.8;
-        const cW = Math.max(30, initialCountry.width);
-        const cH = Math.max(30, initialCountry.height);
-        const z = Math.min((padRatio * 1000) / cW, (padRatio * 440) / cH);
-
-        const initW = 1000 / z;
-        const initH = 440 / z;
-        const initX = Math.max(0, Math.min(1000 - initW, initialCountry.centroid[0] - initW / 2));
-        const initY = Math.max(20, Math.min(460 - initH, initialCountry.centroid[1] - initH / 2));
-
-        initVb = { x: initX, y: initY, w: initW, h: initH };
-      }
-
-      // Final: 2.4x on destination city (max 14)
-      const currentZ = 1000 / initVb.w;
-      const finalZ = Math.min(14, currentZ * 2.4);
-      const finalW = 1000 / finalZ;
-      const finalH = 440 / finalZ;
-      const finalX = Math.max(0, Math.min(1000 - finalW, x2 - finalW / 2));
-      const finalY = Math.max(20, Math.min(460 - finalH, y2 - finalH / 2));
-
-      return {
-        initialViewBox: initVb,
-        targetViewBox: { x: finalX, y: finalY, w: finalW, h: finalH }
-      };
-    }
-  }, [isDomestic, destCountry, initialCountry, x2, y2]);
-
-  // Load domestic states GeoJSON before animation starts
-  useEffect(() => {
-    if (!isDomestic || !destLoc.country) return;
-    const countryIso = destLoc.country.toUpperCase();
-    const statesUrl = `/geo/states/${countryIso}.json`;
-
-    let active = true;
-    fetch(statesUrl)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!active || !data) return;
-        if (data.features && Array.isArray(data.features)) {
-          // Project state boundaries using same equirectangular formula
-          const projectedStates = data.features.map((feat, idx) => {
-            const name = feat.properties?.name || `State ${idx + 1}`;
-            const coords = feat.geometry?.coordinates;
-            let pathStr = '';
-
-            const convertRing = (ring) => {
-              return ring
-                .map(([lon, lat], i) => {
-                  const [px, py] = projectPoint([lon, lat]);
-                  return `${i === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`;
-                })
-                .join(' ') + ' Z';
-            };
-
-            if (feat.geometry?.type === 'Polygon' && coords) {
-              pathStr = coords.map(convertRing).join(' ');
-            } else if (feat.geometry?.type === 'MultiPolygon' && coords) {
-              pathStr = coords.map((poly) => poly.map(convertRing).join(' ')).join(' ');
-            }
-
-            return {
-              id: `state-${idx}`,
-              name,
-              d: pathStr
-            };
-          });
-          setStateFeatures(projectedStates);
-        }
-      })
-      .catch(() => {
-        // Fallback silently if state geo file not present
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [isDomestic, destLoc]);
-
-  // Labels collision detection calculation
-  // Country names: #3d2f33, 600, white halo, clamp(6.5px, 0.95*sqrt(area), 13px).
-  // Filter by bounding box collision against: top block, bottom chip, source/dest pins (68x66px each), and other labels.
-  // Larger countries win. Omit countries too small for their label.
-  const placedLabels = useMemo(() => {
-    const labels = [];
-    const occupiedBoxes = [];
-
-    // 1. Reserved boxes
-    // Top block (centered, 14px from top)
-    occupiedBoxes.push({ x: 260, y: 14, w: 480, h: 90 });
-    // Bottom chip (centered, 18px from bottom)
-    occupiedBoxes.push({ x: 330, y: 375, w: 340, h: 50 });
-    // Source pin (68x66px each)
-    occupiedBoxes.push({ x: x0 - 34, y: y0 - 36, w: 68, h: 66 });
-    // Dest pin (68x66px each)
-    occupiedBoxes.push({ x: x2 - 34, y: y2 - 36, w: 68, h: 66 });
-
-    // Larger countries win -> Sort by area descending
-    const sortedCountries = [...precomputedMapData.countries].sort(
-      (a, b) => (b.area || 0) - (a.area || 0)
-    );
-
-    for (const c of sortedCountries) {
-      const name = c.name;
-      const chars = name.length;
-      if (!chars || !c.centroid || c.width <= 0 || c.height <= 0) continue;
-
-      // Formula: clamp(6.5px, 0.95*sqrt(area), 13px)
-      const rawFont = 0.95 * Math.sqrt(c.area || 0);
-      const fontPx = Math.max(6.5, Math.min(13, rawFont));
-
-      const labelW = chars * fontPx * 0.58;
-      const labelH = fontPx * 1.2;
-
-      // Omit countries too small for their label
-      if (labelW > c.width * 0.88 || labelH > c.height * 0.88) {
-        continue;
-      }
-
-      const lx = c.centroid[0] - labelW / 2;
-      const ly = c.centroid[1] - labelH / 2;
-
-      // Check bounds inside map viewBox (0..1000, 20..460)
-      if (lx < 8 || lx + labelW > 992 || ly < 24 || ly + labelH > 456) {
-        continue;
-      }
-
-      const candidateBox = { x: lx, y: ly, w: labelW, h: labelH };
-      const hasCollision = occupiedBoxes.some((b) => boxesOverlap(candidateBox, b, 3));
-
-      if (!hasCollision) {
-        occupiedBoxes.push(candidateBox);
-        labels.push({
-          id: c.id,
-          name: c.name,
-          x: c.centroid[0],
-          y: c.centroid[1],
-          fontSize: Math.round(fontPx * 10) / 10
-        });
-      }
-    }
-
-    return labels;
-  }, [x0, y0, x2, y2]);
-
-  // Flight Physics & Animation Loop (driven via refs, zero React setState in RAF)
-  const animRefs = useRef({
-    p: 0,
-    v: 0,
-    lastTime: null,
-    lastChange: performance.now(),
-    lastProgress: progress,
-    isDone: done,
-    zoomStarted: false,
-    zoomDone: false,
-    zoomStartTime: null
-  });
-
-  // Keep progress and done updated in ref without re-triggering the RAF loop
-  useEffect(() => {
-    if (progress !== animRefs.current.lastProgress) {
-      animRefs.current.lastProgress = progress;
-      animRefs.current.lastChange = performance.now();
-    }
-    animRefs.current.isDone = done;
-  }, [progress, done]);
-
-  useEffect(() => {
-    // Fade in on first frame
-    const fadeTimer = requestAnimationFrame(() => {
-      setIsLoaded(true);
-    });
-
-    let rafId;
-    const runId = Math.random();
-    animRefs.current.runId = runId;
-
-    // Set initial viewBox on SVG
-    if (mapSvgRef.current) {
-      mapSvgRef.current.setAttribute(
-        'viewBox',
-        `${initialViewBox.x} ${initialViewBox.y} ${initialViewBox.w} ${initialViewBox.h}`
-      );
-    }
-
-    const STEPS = 400;
-
-    const tick = (now) => {
-      if (animRefs.current.runId !== runId) return;
-
-      const refs = animRefs.current;
-      if (!refs.lastTime) refs.lastTime = now;
-      const elapsed = (now - refs.lastTime) / 1000;
-      refs.lastTime = now;
-
-      // dt = clamp(elapsed, 0, .05)
-      const dt = Math.max(0, Math.min(elapsed, 0.05));
-
-      // ── FLIGHT PHYSICS FORMULA SPECIFIED IN PROMPT ──
-      // target = done ? 1 : min(.97, progress + .05*(1 - exp(-(now - lastChange)/1500)))
-      // vt = done ? max(.05, (1-p)*1.6) : max(.012, (target-p)*1.2); if (!done && p >= .97) vt = 0
-      // vt = min(vt, .5); v += (vt - v)*(1 - exp(-dt/.4)); p = min(1, p + v*dt)
-
-      const normalisedProgress = typeof refs.lastProgress === 'number'
-        ? (refs.lastProgress > 1 ? refs.lastProgress / 100 : refs.lastProgress)
-        : 0;
-
-      const target = refs.isDone
-        ? 1.0
-        : Math.min(0.97, normalisedProgress + 0.05 * (1 - Math.exp(-(now - refs.lastChange) / 1500)));
-
-      let vt = refs.isDone
-        ? Math.max(0.05, (1.0 - refs.p) * 1.6)
-        : Math.max(0.012, (target - refs.p) * 1.2);
-
-      if (!refs.isDone && refs.p >= 0.97) {
-        vt = 0;
-      }
-
-      vt = Math.min(vt, 0.5);
-      refs.v += (vt - refs.v) * (1 - Math.exp(-dt / 0.4));
-      refs.p = Math.min(1.0, refs.p + refs.v * dt);
-
-      // Update Plane DOM through ref
-      if (planeRef.current && samples.length > 0) {
-        const idx = Math.min(STEPS, Math.floor(refs.p * STEPS));
-        const sample = samples[idx] || samples[samples.length - 1];
-        planeRef.current.setAttribute(
-          'transform',
-          `translate(${sample.x.toFixed(2)}, ${sample.y.toFixed(2)}) rotate(${sample.heading.toFixed(2)})`
-        );
-      }
-
-      // Update Progress Bar through ref
-      if (progressBarRef.current) {
-        progressBarRef.current.style.transform = `scaleX(${refs.p.toFixed(4)})`;
-      }
-
-      // ── CAMERA ZOOM TRANSITION ON ARRIVAL ──
-      if (refs.p >= 1.0 && !refs.zoomDone) {
-        if (!refs.zoomStarted) {
-          refs.zoomStarted = true;
-          refs.zoomStartTime = now;
-          setIsZooming(true);
-          setHighlightDestCountry(true);
-        }
-
-        const zoomElapsed = (now - refs.zoomStartTime) / 1000;
-        const zoomDuration = 1.5; // Exactly 1.5s ease-in-out
-        const t = Math.min(1.0, zoomElapsed / zoomDuration);
-        const ease = easeInOutCubic(t);
-
-        // Interpolate camera viewBox
-        const curX = initialViewBox.x + (targetViewBox.x - initialViewBox.x) * ease;
-        const curY = initialViewBox.y + (targetViewBox.y - initialViewBox.y) * ease;
-        const curW = initialViewBox.w + (targetViewBox.w - initialViewBox.w) * ease;
-        const curH = initialViewBox.h + (targetViewBox.h - initialViewBox.h) * ease;
-
-        if (mapSvgRef.current) {
-          mapSvgRef.current.setAttribute(
-            'viewBox',
-            `${curX.toFixed(2)} ${curY.toFixed(2)} ${curW.toFixed(2)} ${curH.toFixed(2)}`
-          );
-        }
-
-        if (t >= 1.0) {
-          refs.zoomDone = true;
-          setIsZooming(false);
-          if (typeof onDone === 'function') {
-            onDone();
-          }
-          return; // Animation sequence complete
-        }
-      }
-
-      rafId = requestAnimationFrame(tick);
-    };
-
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(fadeTimer);
-      cancelAnimationFrame(rafId);
-      animRefs.current.runId = null;
-    };
-  }, [initialViewBox, targetViewBox, samples, onDone]);
+  }, [srcLoc, destLoc]);
 
   return (
     <div
-      ref={containerRef}
-      className={`flight-radar-screen ${isLoaded ? 'is-loaded' : ''}`}
+      className={`flight-radar-screen flight-radar-fullscreen ${isLoaded ? 'is-loaded' : ''} ${isIndiaDomestic ? 'is-domestic' : 'is-international'}`}
       role="region"
-      aria-label="Flight radar search loading screen"
+      aria-label="Flight search loading screen"
     >
-      {/* ── TOP BLOCK (Transparent, Centred, 14px from Top) ── */}
-      <div className="fr-top-block">
-        <div className="fr-radar-pill">
-          ● LIVE AIRLINE FARE RADAR
-        </div>
-        <h1 className="fr-title">Finding your perfect flight</h1>
-        <p className="fr-subtitle">Searching available routes and fares…</p>
-        <div className="fr-progress-track">
-          <div ref={progressBarRef} className="fr-progress-fill" />
-        </div>
+      {/* ── TOP CENTRE: Pick&Book Official Logo ── */}
+      <div className="fr-top-logo-container">
+        <img
+          src={pickNBookLogo}
+          alt="Pick&Book"
+          className="fr-top-logo"
+        />
       </div>
 
-      {/* ── MAP SVG (Equirectangular Projection 1000x500) ── */}
-      <svg
-        ref={mapSvgRef}
-        className="flight-radar-svg"
-        viewBox="0 20 1000 440"
-        preserveAspectRatio="xMidYMid slice"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* Ocean Background */}
-        <rect x="0" y="0" width="1000" height="500" fill={precomputedMapData.seaColor || '#fff1f0'} />
+      {/* ── CENTRAL MAP: Domestic India Map vs International World Map ── */}
+      {isIndiaDomestic ? (
+        <DomesticFlightLoader
+          srcLoc={srcLoc}
+          destLoc={destLoc}
+          sourceCity={sourceCity}
+          destinationCity={destinationCity}
+        />
+      ) : (
+        <InternationalFlightLoader
+          srcLoc={srcLoc}
+          destLoc={destLoc}
+          sourceCity={sourceCity}
+          destinationCity={destinationCity}
+        />
+      )}
 
-        {/* Countries Layer */}
-        <g id="countries-layer">
-          {precomputedMapData.countries.map((c) => {
-            const isTarget = highlightDestCountry && destCountry && c.id === destCountry.id;
-            return (
-              <path
-                key={c.id}
-                d={c.d}
-                fill={c.color}
-                stroke={isTarget ? '#e5322d' : precomputedMapData.borderColor || '#d9a9a6'}
-                strokeWidth={isTarget ? 1.8 : 0.7}
-                className={`fr-country ${isTarget ? 'fr-country--target' : ''}`}
-              />
-            );
-          })}
-        </g>
-
-        {/* State Borders Layer (for Domestic Flights) */}
-        {isDomestic && stateFeatures.length > 0 && (
-          <g id="states-layer">
-            {stateFeatures.map((s) => (
-              <path key={s.id} d={s.d} className="fr-state-border" />
-            ))}
-          </g>
-        )}
-
-        {/* Country Name Labels Layer (fades during zoom) */}
-        <g id="labels-layer" className={`fr-labels-layer ${isZooming ? 'is-fading' : ''}`}>
-          {placedLabels.map((lbl) => (
-            <text
-              key={lbl.id}
-              x={lbl.x}
-              y={lbl.y}
-              fontSize={lbl.fontSize}
-              className="fr-map-label"
-            >
-              {lbl.name}
-            </text>
-          ))}
-        </g>
-
-        {/* ── FX LAYER: Route Curve, Pins, Radar, and Airplane ── */}
-        <g id="fx">
-          {/* Curved Flight Route */}
-          <path d={routePathD} className="fr-route-path" />
-
-          {/* ── Origin Pin (Navy #1b2a4e, 26px high, tip at (0, 0)) ── */}
-          <g id="source-pin-group" transform={`translate(${x0.toFixed(1)}, ${y0.toFixed(1)})`}>
-            {/* Location Pin Icon (Tip at (0, 0)) */}
-            <g transform="translate(0, 0)">
-              <path
-                d="M 0 0 C -4 -6, -9 -13, -9 -18 C -9 -23, -5 -26, 0 -26 C 5 -26, 9 -23, 9 -18 C 9 -13, 4 -6, 0 0 Z"
-                fill="#1b2a4e"
-                stroke="#ffffff"
-                strokeWidth="1.2"
-              />
-              <circle cx="0" cy="-18" r="3.2" fill="#ffffff" />
-            </g>
-
-            {/* Airport Code Below Pin */}
-            <text x="0" y="11" className="fr-pin-code">
-              {srcLoc.code}
-            </text>
-          </g>
-
-          {/* ── Destination Radar & Pin (Red #e5322d, 26px high, tip at (0, 0)) ── */}
-          <g id="dest-pin-group" transform={`translate(${x2.toFixed(1)}, ${y2.toFixed(1)})`}>
-            {/* Dual Concentric Radar Pulse Rings (r 40, 4.8s cycle, 2nd ring delayed 2.4s) */}
-            <circle cx="0" cy="0" r="0" fill="none" stroke="#e5322d" strokeWidth="0.8" className="fr-dest-radar-ring-1">
-              <animate attributeName="r" from="0" to="40" dur="4.8s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.95; 0.5; 0" dur="4.8s" repeatCount="indefinite" />
-              <animate attributeName="stroke-width" values="1.2; 0.7; 0.38" dur="4.8s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="0" cy="0" r="0" fill="none" stroke="#e5322d" strokeWidth="0.8" className="fr-dest-radar-ring-2">
-              <animate attributeName="r" from="0" to="40" begin="2.4s" dur="4.8s" repeatCount="indefinite" />
-              <animate attributeName="opacity" values="0.95; 0.5; 0" begin="2.4s" dur="4.8s" repeatCount="indefinite" />
-              <animate attributeName="stroke-width" values="1.2; 0.7; 0.38" begin="2.4s" dur="4.8s" repeatCount="indefinite" />
-            </circle>
-
-            {/* Location Pin Icon (Tip at (0, 0)) */}
-            <g transform="translate(0, 0)">
-              <path
-                d="M 0 0 C -4 -6, -9 -13, -9 -18 C -9 -23, -5 -26, 0 -26 C 5 -26, 9 -23, 9 -18 C 9 -13, 4 -6, 0 0 Z"
-                fill="#e5322d"
-                stroke="#ffffff"
-                strokeWidth="1.2"
-              />
-              <circle cx="0" cy="-18" r="3.2" fill="#ffffff" />
-            </g>
-
-            {/* Airport Code Below Pin */}
-            <text x="0" y="11" className="fr-pin-code">
-              {destLoc.code}
-            </text>
-          </g>
-
-          {/* ── REALISTIC TOP-VIEW AIRLINER (46px long) ── */}
-          <g ref={planeRef} className="fr-plane-group" transform={`translate(${x0}, ${y0})`}>
-            {/* Dark Offset Shadow Shape */}
-            <g transform="translate(2.5, 3.5)" opacity="0.22">
-              {/* Silhouette Wings */}
-              <path d="M 4, -4.5 L -8, -21 L -12, -20.5 L -4, -4.5 Z" fill="#0f172a" />
-              <path d="M 4, 4.5 L -8, 21 L -12, 20.5 L -4, 4.5 Z" fill="#0f172a" />
-              {/* Silhouette Stabilizers */}
-              <path d="M -16, -2.5 L -22.5, -9 L -24, -8.5 L -20, -2 Z" fill="#0f172a" />
-              <path d="M -16, 2.5 L -22.5, 9 L -24, 8.5 L -20, 2 Z" fill="#0f172a" />
-              {/* Silhouette Fuselage */}
-              <path
-                d="M 23, 0 C 23, 3.2 20, 4.6 13, 4.6 L -18, 4.2 C -21, 4.0 -23.5, 2.2 -24, 0 C -23.5, -2.2 -21, -4.0 -18, -4.2 L 13, -4.6 C 20, -4.6 23, -3.2 23, 0 Z"
-                fill="#0f172a"
-              />
-            </g>
-
-            {/* Main Swept Wings */}
-            <path
-              d="M 4, -4.5 L -8, -21 L -12, -20.5 L -4, -4.5 Z"
-              fill="#f8fafc"
-              stroke="#94a3b8"
-              strokeWidth="0.75"
-            />
-            <path
-              d="M 4, 4.5 L -8, 21 L -12, 20.5 L -4, 4.5 Z"
-              fill="#f8fafc"
-              stroke="#94a3b8"
-              strokeWidth="0.75"
-            />
-
-            {/* 2 Jet Engines Under Wings */}
-            <rect x="-3" y="-12.5" width="9" height="3.2" rx="1.6" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.6" />
-            <rect x="-4.2" y="-11.8" width="1.6" height="1.8" rx="0.5" fill="#334155" />
-            <rect x="-3" y="9.3" width="9" height="3.2" rx="1.6" fill="#e2e8f0" stroke="#64748b" strokeWidth="0.6" />
-            <rect x="-4.2" y="10" width="1.6" height="1.8" rx="0.5" fill="#334155" />
-
-            {/* Horizontal Stabilizers at Tail */}
-            <path
-              d="M -16, -2.5 L -22.5, -9 L -24, -8.5 L -20, -2 Z"
-              fill="#f1f5f9"
-              stroke="#94a3b8"
-              strokeWidth="0.65"
-            />
-            <path
-              d="M -16, 2.5 L -22.5, 9 L -24, 8.5 L -20, 2 Z"
-              fill="#f1f5f9"
-              stroke="#94a3b8"
-              strokeWidth="0.65"
-            />
-
-            {/* Aerodynamic White Fuselage */}
-            <path
-              d="M 23, 0 C 23, 3.2 20, 4.6 13, 4.6 L -18, 4.2 C -21, 4.0 -23.5, 2.2 -24, 0 C -23.5, -2.2 -21, -4.0 -18, -4.2 L 13, -4.6 C 20, -4.6 23, -3.2 23, 0 Z"
-              fill="#ffffff"
-              stroke="#64748b"
-              strokeWidth="0.8"
-            />
-
-            {/* Red Cheat-Lines */}
-            <path d="M 17, -4.5 L -18, -4.1 L -18, -3.4 L 17, -3.8 Z" fill="#e5322d" />
-            <path d="M 17, 4.5 L -18, 4.1 L -18, 3.4 L 17, 3.8 Z" fill="#e5322d" />
-
-            {/* Dark Cockpit Windows */}
-            <path
-              d="M 19, -2.4 C 20.3, -1.2 20.3, 1.2 19, 2.4 L 17.2, 2.7 C 17.9, 1.2 17.9, -1.2 17.2, -2.7 Z"
-              fill="#0f172a"
-            />
-
-            {/* Red Tail Fin (Vertical Stabilizer) */}
-            <path d="M -15.5, 0 L -23.8, -1.2 L -23.8, 1.2 Z" fill="#e5322d" />
-          </g>
-        </g>
-      </svg>
-
-      {/* ── BOTTOM CENTRE: Route Chip (HYD Hyderabad ✈ LHR London) ── */}
-      <div className="fr-route-chip">
-        <span>
-          <strong className="fr-route-code">{srcLoc.code}</strong> {srcLoc.city}
-        </span>
-        <span className="fr-route-plane-icon">✈</span>
-        <span>
-          <strong className="fr-route-code">{destLoc.code}</strong> {destLoc.city}
-        </span>
-      </div>
-
-      {/* ── BOTTOM RIGHT: Logo Watermark (Height 44px, White Glow) ── */}
-      <img
-        src="/pickandbook-logo.png"
-        alt="Pick&Book Logo Watermark"
-        className="fr-logo-watermark"
+      {/* ── BOTTOM CENTRE: Large Rounded Route Information Pill ── */}
+      <FlightRouteInfo
+        srcLoc={srcLoc}
+        destLoc={destLoc}
+        sourceCity={sourceCity}
+        destinationCity={destinationCity}
       />
     </div>
   );
 }
+
+export { FlightRadar, FlightRadar as FlightSearchLoader };
