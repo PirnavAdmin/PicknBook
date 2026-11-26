@@ -4,22 +4,26 @@ import FlightRadar from './FlightRadar';
 /**
  * FlightLoadingScreen - Pick&Book Full-Screen Flight Search Loading Screen
  * Locks document scrolling, suppresses header/footer via CSS classes,
- * and renders the full-screen world map flight radar animation.
+ * and renders the flight radar animation with top status, central map, and bottom route pill.
  */
 export default function FlightLoadingScreen({
-  sourceCity = '',
-  destinationCity = '',
+  fromCode = '',
+  toCode = '',
+  fromCity = '',
+  toCity = '',
   source = '',
   dest = '',
-  progress = null,
+  sourceCity = '',
+  destinationCity = '',
   done = false,
   onDone = null,
   customMessage = ''
 }) {
-  const [internalProgress, setInternalProgress] = useState(10);
-
-  const resolvedSource = source || sourceCity || 'HYD';
-  const resolvedDest = dest || destinationCity || 'BOM';
+  // Extract IATA codes and cities without hardcoded fallbacks
+  const resolvedFromCode = fromCode || (typeof source === 'string' && source.match(/\(([A-Z]{3})\)/i)?.[1]) || (/^[A-Z]{3}$/i.test(source) ? source.toUpperCase() : '');
+  const resolvedToCode = toCode || (typeof dest === 'string' && dest.match(/\(([A-Z]{3})\)/i)?.[1]) || (/^[A-Z]{3}$/i.test(dest) ? dest.toUpperCase() : '');
+  const resolvedFromCity = fromCity || sourceCity || (source && typeof source === 'string' && source.includes('(') ? source.replace(/\s*\([A-Za-z]{3}\).*/, '').trim() : '');
+  const resolvedToCity = toCity || destinationCity || (dest && typeof dest === 'string' && dest.includes('(') ? dest.replace(/\s*\([A-Za-z]{3}\).*/, '').trim() : '');
 
   // Lock scrolling & suppress navigation header/footer while loading
   useEffect(() => {
@@ -34,23 +38,6 @@ export default function FlightLoadingScreen({
       bodyEl.classList.remove('flight-loader-fullscreen-active');
     };
   }, []);
-
-  // Smooth simulated progress when progress is not externally provided
-  useEffect(() => {
-    if (progress !== null && progress !== undefined) return;
-
-    const timer = setInterval(() => {
-      setInternalProgress((prev) => {
-        if (prev >= 96) return 96;
-        const inc = Math.random() * 6 + 2;
-        return Math.min(96, prev + inc);
-      });
-    }, 250);
-
-    return () => clearInterval(timer);
-  }, [progress]);
-
-  const activeProgress = progress !== null && progress !== undefined ? progress : internalProgress;
 
   return (
     <div
@@ -68,11 +55,14 @@ export default function FlightLoadingScreen({
       }}
     >
       <FlightRadar
-        source={resolvedSource}
-        dest={resolvedDest}
-        sourceCity={sourceCity}
-        destinationCity={destinationCity}
-        progress={activeProgress}
+        fromCode={resolvedFromCode}
+        toCode={resolvedToCode}
+        fromCity={resolvedFromCity}
+        toCity={resolvedToCity}
+        source={resolvedFromCode}
+        dest={resolvedToCode}
+        sourceCity={resolvedFromCity}
+        destinationCity={resolvedToCity}
         done={done}
         onDone={onDone}
         customMessage={customMessage}

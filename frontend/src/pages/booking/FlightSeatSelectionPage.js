@@ -14,7 +14,8 @@ import {
   ShieldCheck,
   User,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Maximize2
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
@@ -660,7 +661,7 @@ export default function FlightSeatSelectionPage() {
       });
       setIsSeatMapLoading(false);
       setSsrOptionsByLeg(prev => ({ ...prev, [activeSegmentIndex]: { baggage: [], meal: [] } }));
-      setSeatMapError("Seat map is not available for this flight. You can continue without selecting seats.");
+      setSeatMapError("Seat map not available for this leg");
       return () => { isCurrent = false; };
     }
 
@@ -769,9 +770,7 @@ export default function FlightSeatSelectionPage() {
       } catch (error) {
         if (!isCurrent) return;
         console.error("[SeatMap/SSR] Fetch error:", error);
-        setSeatMapError(
-          error?.message || "The supplier has not provided a seat map. You can continue without selecting seats."
-        );
+        setSeatMapError("Seat map not available for this leg");
       } finally {
         if (isCurrent) {
           setIsSeatMapLoading(false);
@@ -808,7 +807,7 @@ export default function FlightSeatSelectionPage() {
 
     const scale = Math.min(1, viewportWidth / seatMapWidth);
     seatMap.style.transform = `scale(${scale})`;
-    seatMap.style.transformOrigin = "top left";
+    seatMap.style.transformOrigin = "top center";
     viewport.style.height = `${Math.round(seatMapHeight * scale)}px`;
     viewport.style.overflowX = "hidden";
     viewport.scrollLeft = 0;
@@ -819,6 +818,7 @@ export default function FlightSeatSelectionPage() {
     const seatMap = seatMapRef.current;
     if (seatMap) {
       seatMap.style.transform = "none";
+      seatMap.style.transformOrigin = "top center";
     }
     if (viewport) {
       viewport.style.height = "auto";
@@ -1347,9 +1347,12 @@ export default function FlightSeatSelectionPage() {
 
   return (
     <main className="flight-flow-page flight-seat-selection-page">
-      <BookingTimer onRestartSearch={handleRestartSearch} mode="banner" />
-      {/* ── STEPPER PROGRESS HEADER ── */}
-      <FlightStepperHeader currentStage={3} onBack={handleBackToReviewAndTraveller} />
+      {/* ── STEPPER PROGRESS HEADER WITH TOP COUNTDOWN TIMER ── */}
+      <FlightStepperHeader
+        currentStage={3}
+        onBack={handleBackToReviewAndTraveller}
+        timer={<BookingTimer onRestartSearch={handleRestartSearch} mode="stepper" />}
+      />
 
       <div className="flight-booking-container">
         {/* ── LEFT COLUMN SIDEBAR: 190px, two stacked cards, gap 12px ── */}
@@ -1395,101 +1398,58 @@ export default function FlightSeatSelectionPage() {
         {/* ── RIGHT COLUMN MAIN CONTENT ── */}
         <section className="flight-checkout-main">
           <div className="flight-main-card">
-            {/* Title & Subtitle */}
+            {/* Title & Subtitle with Airline Seat Icon */}
             <div className="seat-page-title-row">
-              <h2 className="seat-page-title">Choose your seats</h2>
-              <p className="seat-page-subtitle">Select seats for your trip. Seat selection is optional.</p>
+              <div className="seat-page-title-icon-wrap">
+                <Armchair size={24} className="seat-page-header-icon" />
+              </div>
+              <div>
+                <h2 className="seat-page-title">Choose your seats</h2>
+                <p className="seat-page-subtitle">Select seats for your trip. Seat selection is optional.</p>
+              </div>
             </div>
 
-            {/* Flight tabs row (flex, gap 8px, wrap, margin-bottom 10px) */}
+            {/* Flight tabs row with Fit to screen at upper right */}
             <div className="flight-tabs-row">
-              {segments.map((seg, idx) => {
-                const isActive = activeSegmentIndex === idx;
-                const segFormatted = seg.replace("-", " to ");
-                return (
-                  <button
-                    key={`seg-tab-${idx}`}
-                    type="button"
-                    className={`flight-segment-tab-btn ${isActive ? "active" : ""}`}
-                    onClick={() => setActiveSegmentIndex(idx)}
-                  >
-                    Flight {idx + 1}: {segFormatted}
-                  </button>
-                );
-              })}
+              <div className="flight-tabs-left">
+                {effectiveLegs.map((leg, idx) => {
+                  const isActive = activeSegmentIndex === idx;
+                  const src = leg.sourceCode || leg.fromAirportCode || "Origin";
+                  const dst = leg.destinationCode || leg.toAirportCode || "Destination";
+                  return (
+                    <button
+                      key={`seg-tab-${idx}`}
+                      type="button"
+                      className={`flight-segment-tab-btn ${isActive ? "active" : ""}`}
+                      onClick={() => setActiveSegmentIndex(idx)}
+                    >
+                      Flight {idx + 1}: {src} → {dst}
+                    </button>
+                  );
+                })}
+              </div>
               <button
                 type="button"
                 className={`fit-to-screen-btn ${isFitToScreen ? "fitted" : ""}`}
                 onClick={handleToggleFitToScreen}
               >
-                {isFitToScreen ? "Reset zoom" : "Fit to screen"}
+                <Maximize2 size={14} className="fit-icon" />
+                <span>{isFitToScreen ? "Reset zoom" : "Fit to screen"}</span>
               </button>
             </div>
 
-            {/* FILTER BAR card (0.5px border, radius 10px, padding 8px 12px, flex, gap 8px, wrap, align center, margin-bottom 10px) */}
-            <div className="price-filter-bar-card">
-              <span className="price-filter-caption">FILTER BY PRICE</span>
-              <div className="price-filter-chips-wrapper">
-                <button
-                  type="button"
-                  className={`price-chip-btn ${activeFilters.size === 0 ? "active" : ""}`}
-                  onClick={() => handleTogglePriceFilter("ALL")}
-                >
-                  <span>All seats</span>
-                </button>
-
-                <button
-                  type="button"
-                  className={`price-chip-btn ${activeFilters.has("FREE") ? "active" : ""}`}
-                  onClick={() => handleTogglePriceFilter("FREE")}
-                >
-                  <span
-                    className="chip-swatch free-swatch"
-                    style={{
-                      backgroundColor: NON_PRICE_COLORS.free.fill,
-                      borderColor: NON_PRICE_COLORS.free.stroke,
-                    }}
-                  />
-                  <span>Free ({seatStats.freeCount})</span>
-                </button>
-
-                {seatStats.distinctPrices.map((price) => {
-                  const isChipActive = activeFilters.has(price);
-                  const count = seatStats.priceCounts.get(price) || 0;
-                  const rankIndex = seatStats.distinctPrices.indexOf(price);
-                  const tierColors = getTierSeatColors(rankIndex, palette, seatFill);
-                  return (
-                    <button
-                      key={`price-chip-${price}`}
-                      type="button"
-                      className={`price-chip-btn ${isChipActive ? "active" : ""}`}
-                      onClick={() => handleTogglePriceFilter(price)}
-                    >
-                      <span
-                        className="chip-swatch paid-swatch"
-                        style={{
-                          backgroundColor: tierColors.fill,
-                          borderColor: tierColors.stroke,
-                        }}
-                      />
-                      <span>INR {price.toLocaleString("en-IN")} ({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Row: "Aircraft seat map" (14px, weight 500) left; right side text */}
+            {/* Row: "Aircraft seat map" left with red plane icon; right side text */}
             <div className="aircraft-seatmap-header-row">
-              <h3 className="aircraft-seatmap-title">Aircraft seat map</h3>
+              <div className="aircraft-seatmap-title-wrap">
+                <Plane size={18} className="aircraft-seatmap-plane-icon" />
+                <h3 className="aircraft-seatmap-title">Aircraft seat map</h3>
+              </div>
               <span className="aircraft-seatmap-count-info">
-                {activeFilters.size > 0
-                  ? `${activeLayout?.aircraft || "Aircraft"} | Showing ${showingSeatsCount} of ${seatStats.totalSeats} seats`
-                  : `${activeLayout?.aircraft || "Aircraft"} | ${seatStats.totalSeats} seats`}
+                {activeLayout?.aircraft || "Commercial Airline"} | {seatStats.totalSeats || 186} seats
               </span>
             </div>
 
-            {/* MAP CONTAINER (position relative, 0.5px border, radius 12px, background #F5F8FF, responsive overflow) */}
+            {/* MAP CONTAINER (position relative, 0.5px border, radius 12px, background #FFFFFF, responsive overflow) */}
             <div
               className={`aircraft-seatmap-container ${isVertical ? "vertical" : "horizontal"} ${isFitToScreen ? "fitted" : ""}`}
               ref={mapContainerRef}
@@ -1498,6 +1458,9 @@ export default function FlightSeatSelectionPage() {
                 overflowY: isVertical ? "visible" : "hidden",
                 width: "100%",
                 position: "relative",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
               {isSeatMapLoading && (
@@ -1510,7 +1473,7 @@ export default function FlightSeatSelectionPage() {
               {seatMapError && !isSeatMapLoading && (
                 <div className="seatmap-error-box">
                   <Info size={16} />
-                  <span>{seatMapError}</span>
+                  <span>Seat map not available for this leg</span>
                 </div>
               )}
 
@@ -1519,9 +1482,11 @@ export default function FlightSeatSelectionPage() {
                   ref={seatMapRef}
                   className="seatmap-scalable-wrapper"
                   style={{
-                    transformOrigin: "top left",
-                    width: "max-content",
-                    display: "block",
+                    transformOrigin: "top center",
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
                   <AircraftSeatMap
@@ -1541,8 +1506,9 @@ export default function FlightSeatSelectionPage() {
 
               {!isSeatMapLoading && !seatMapError && (!activeLayout || activeLayout.totalRows === 0) && (
                 <div className="seatmap-empty-box" style={{ padding: "40px 20px", textAlign: "center", color: "#64748b" }}>
+                  <Info size={24} style={{ marginBottom: "8px", display: "inline-block" }} />
                   <p style={{ margin: 0, fontSize: "14px", fontWeight: 500 }}>
-                    Seat map not available for this flight. You can continue without selecting seats.
+                    Seat map not available for this leg
                   </p>
                 </div>
               )}
@@ -1599,186 +1565,85 @@ export default function FlightSeatSelectionPage() {
               })()}
             </div>
 
-            {/* SUMMARY BAR below map */}
-            {(() => {
-              const activeLegSeat = (selectedSeatsBySegment[activeSegmentIndex] || [])[0] || tappedSeat;
-              if (activeLegSeat) {
-                const sId = activeLegSeat.label || activeLegSeat.id || `${activeLegSeat.row}${activeLegSeat.col}`;
-                const sCabin = activeLegSeat.cabin || "Economy";
-                const sType = activeLegSeat.isWindow ? "Window" : activeLegSeat.isAisle ? "Aisle" : activeLegSeat.isMiddle ? "Middle" : (activeLegSeat.type || "Standard");
-                const sCharge = getSeatSurcharge(activeLegSeat);
-                return (
-                  <div className="seatmap-summary-bar">
-                    <span className="summary-bar-left">
-                      Selected seat {sId} | {sCabin} | {sType}
-                    </span>
-                    <span className="summary-bar-right" style={{ fontWeight: 500 }}>
-                      Seat charge: INR {sCharge.toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                );
-              }
-              return (
-                <div className="seatmap-summary-bar">
-                  <span className="summary-bar-left text-secondary">
-                    No seat selected for this flight.
-                  </span>
-                  <span className="summary-bar-right text-secondary">
-                    Seat charge: INR 0
-                  </span>
+            {/* ── SEAT MAP REFERENCE LEGEND BAR (Exact match to screenshot) ── */}
+            <div className="seatmap-reference-legend-bar">
+              <div className="legend-section">
+                <span className="legend-section-title">Seat Status</span>
+                <div className="legend-badge-item">
+                  <span className="legend-swatch available" />
+                  <span>Available</span>
                 </div>
-              );
-            })()}
-
-            {/* LEGEND row */}
-            <div className="seatmap-spec-legend-row">
-              <div className="spec-legend-item">
-                <span
-                  className="spec-swatch free"
-                  style={{
-                    backgroundColor: NON_PRICE_COLORS.free.fill,
-                    borderColor: NON_PRICE_COLORS.free.stroke,
-                  }}
-                />
-                <span>Free</span>
-              </div>
-              <div className="spec-legend-item">
-                <span
-                  className="spec-swatch booked"
-                  style={{
-                    backgroundColor: NON_PRICE_COLORS.booked.fill,
-                    borderColor: NON_PRICE_COLORS.booked.stroke,
-                  }}
-                />
-                <span>Booked</span>
-              </div>
-              <div className="spec-legend-item">
-                <span
-                  className="spec-swatch selected"
-                  style={{
-                    backgroundColor: NON_PRICE_COLORS.selected.fill,
-                    borderColor: NON_PRICE_COLORS.selected.stroke,
-                  }}
-                />
-                <span>Selected</span>
-              </div>
-              <div className="spec-legend-item">
-                <span className="spec-swatch emergency">
-                  <svg width="8" height="6" viewBox="0 0 8 6" fill="none" stroke="#D62828" strokeWidth="1.2">
-                    <path d="M1 3h5M4 1l2 2-2 2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span>Emergency exit</span>
+                <div className="legend-badge-item">
+                  <span className="legend-swatch booked" />
+                  <span>Booked</span>
+                </div>
+                <div className="legend-badge-item">
+                  <span className="legend-swatch selected" />
+                  <span>Selected</span>
+                </div>
+                <div className="legend-badge-item">
+                  <span className="legend-swatch exit-marker">
+                    <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
+                      <rect x="0.5" y="0.5" width="19" height="19" rx="3.5" fill="#FFFFFF" stroke="#E31E24" strokeWidth="1.6" />
+                      <circle cx="10" cy="5.2" r="1.8" fill="#E31E24" />
+                      <path d="M 9.5 7.2 L 10.8 9.2 L 13.8 8.4 M 9.2 9.2 L 7.2 11.2 M 10.5 9.8 L 9.5 13.2 L 7.2 15.2 M 9.5 13.2 L 12.5 15.6" stroke="#E31E24" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                  </span>
+                  <span>Emergency Exit</span>
+                </div>
               </div>
 
-              {/* Extended symbols present on this flight */}
-              {flightSymbols.map((sym) => {
-                const meta = getSymbolMeta(sym);
-                if (!meta) return null;
-                return (
-                  <div key={`legend-${sym}`} className="spec-legend-item">
-                    <SymbolBadge type={sym} size={16} isSvg={false} />
-                    <span>{meta.label}</span>
-                  </div>
-                );
-              })}
+              <div className="legend-divider" />
+
+              <div className="legend-section">
+                <span className="legend-section-title">Amenities</span>
+                <div className="legend-badge-item">
+                  <span className="legend-amenity-icon food-icon">
+                    <svg width="16" height="16" viewBox="0 0 26 26" fill="none">
+                      <path d="M 9 7.5 L 9 11.5 M 7 7.5 L 7 10.5 C 7 11.8 8 12.8 9 12.8 M 11 7.5 L 11 10.5 C 11 11.8 10 12.8 9 12.8 M 9 12.8 L 9 18.5" stroke="#E31E24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      <path d="M 16 7.5 C 14.2 9 14.2 12.2 15.2 13.5 L 15.2 18.5 M 16 7.5 L 16 18.5" stroke="#E31E24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                  </span>
+                  <span>Food / Meal</span>
+                </div>
+                <div className="legend-badge-item">
+                  <span className="legend-amenity-icon washroom-icon">
+                    <svg width="16" height="16" viewBox="0 0 26 26" fill="none">
+                      <circle cx="9" cy="8" r="1.6" fill="#2563EB" />
+                      <path d="M 7.5 10.8 L 10.5 10.8 L 10.5 14.5 L 9.8 14.5 L 9.8 18.5 L 8.2 18.5 L 8.2 14.5 L 7.5 14.5 Z" fill="#2563EB" />
+                      <circle cx="16.5" cy="8" r="1.6" fill="#2563EB" />
+                      <path d="M 15 10.8 L 18 10.8 L 19 15.2 L 17.5 15.2 L 17.5 18.5 L 15.5 18.5 L 15.5 15.2 L 14 15.2 Z" fill="#2563EB" />
+                    </svg>
+                  </span>
+                  <span>Washroom</span>
+                </div>
+              </div>
+
+              <div className="legend-note">
+                <Info size={15} className="legend-info-icon" />
+                <span>Seat price is shown below each seat.</span>
+              </div>
             </div>
 
-                <p className="flight-seat-hint" style={{ marginTop: 12 }}>
-                  Please select {travellers.seatRequired} seat(s). Window/Aisle and front/exit rows have surcharges.
-                </p>
-
-                {selectionError && (
-                  <p className="flight-flow-error" style={{ color: "var(--seat-exit-icon, #d97706)", margin: "8px 0" }}>
-                    <Info size={14} />
-                    {selectionError}
-                  </p>
-                )}
-
-                {/* Stepper Bar directly under Aircraft Fuselage */}
-                <div className="seat-leg-stepper-bar" style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginTop: "20px",
-                  padding: "14px 18px",
-                  backgroundColor: "#f8fafc",
-                  borderRadius: "10px",
-                  border: "1px solid #e2e8f0",
-                  flexWrap: "wrap",
-                  gap: "12px"
-                }}>
-                  <div>
-                    {activeSegmentIndex > 0 ? (
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "10px 18px",
-                          borderRadius: "8px",
-                          border: "1px solid #cbd5e1",
-                          background: "#ffffff",
-                          color: "#1e293b",
-                          fontWeight: 600,
-                          cursor: "pointer"
-                        }}
-                        onClick={() => {
-                          setActiveSegmentIndex((prev) => Math.max(0, prev - 1));
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }}
-                      >
-                        <ArrowLeft size={16} /> Previous Flight ({segments[activeSegmentIndex - 1]?.replace("-", " → ")})
-                      </button>
-                    ) : <span />}
-                  </div>
-
-                  <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    {activeSegmentIndex < segments.length - 1 && (
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          padding: "10px 22px",
-                          borderRadius: "8px",
-                          background: "#2563eb",
-                          color: "#ffffff",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          border: "none",
-                          boxShadow: "0 2px 6px rgba(37,99,235,0.3)"
-                        }}
-                        onClick={() => {
-                          setActiveSegmentIndex((prev) => prev + 1);
-                          window.scrollTo({ top: 0, behavior: "smooth" });
-                        }}
-                        disabled={selectedSeats.length > 0 && selectedSeats.length !== travellers.seatRequired}
-                      >
-                        {effectiveLegs[activeSegmentIndex + 1]?.isReturnLeg
-                          ? "Select Return Flight Seats"
-                          : `Next Flight Seats (${segments[activeSegmentIndex + 1]?.replace("-", " → ")})`} <ArrowRight size={16} />
-                      </button>
-                    )}
-                  </div>
-                </div>
+            {selectionError && (
+              <p className="flight-flow-error" style={{ color: "var(--seat-exit-icon, #d97706)", margin: "8px 0" }}>
+                <Info size={14} />
+                {selectionError}
+              </p>
+            )}
           </div>
 
-          {/* Meals & Baggage Selection Card */}
+          {/* ── ADD-ON SERVICES CARD ── */}
           <div className="flight-main-card addon-card">
-            <h2 className="flight-main-card-title">
-              <Utensils size={20} className="header-icon" />
-              Add-on Services
+            <h2 className="addon-card-title">
+              <Utensils size={18} className="addon-header-icon" />
+              <span>Add-on Services</span>
             </h2>
-            <div className="form-grid-2">
-              <div className="input-group">
+            <div className="addon-form-grid">
+              <div className="addon-input-group">
                 <label>Meal Preference</label>
                 <select
-                  className="input-control"
+                  className="addon-input-control"
                   value={mealPreference}
                   onChange={(event) => setMealPreference(event.target.value)}
                 >
@@ -1791,10 +1656,10 @@ export default function FlightSeatSelectionPage() {
                 </select>
               </div>
 
-              <div className="input-group">
+              <div className="addon-input-group">
                 <label>Checked Baggage Allowance</label>
                 <select
-                  className="input-control"
+                  className="addon-input-control"
                   value={baggagePlan}
                   onChange={(event) => setBaggagePlan(event.target.value)}
                 >
@@ -1808,35 +1673,10 @@ export default function FlightSeatSelectionPage() {
               </div>
             </div>
 
-            <div className="addon-card-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-              {activeSegmentIndex > 0 ? (
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "10px 18px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
-                    color: "#1e293b",
-                    fontWeight: 600,
-                    cursor: "pointer"
-                  }}
-                  onClick={() => {
-                    setActiveSegmentIndex((prev) => Math.max(0, prev - 1));
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                >
-                  <ArrowLeft size={16} /> Previous Flight
-                </button>
-              ) : <span />}
-
+            <div className="addon-card-footer">
               <button
                 type="button"
-                className="btn-primary addon-cta"
+                className="addon-cta-btn"
                 onClick={() => {
                   const isLastSegment = activeSegmentIndex >= segments.length - 1;
                   if (!isLastSegment) {
@@ -1846,11 +1686,14 @@ export default function FlightSeatSelectionPage() {
                     handleContinue();
                   }
                 }}
-                disabled={selectedSeats.length > 0 && selectedSeats.length !== travellers.seatRequired}
+                disabled={Boolean(!seatMapError && activeLayout && activeLayout.totalRows > 0 && selectedSeats.length > 0 && selectedSeats.length !== travellers.seatRequired)}
               >
-                {activeSegmentIndex < segments.length - 1
-                  ? (effectiveLegs[activeSegmentIndex + 1]?.isReturnLeg ? "Select Return Flight Seats" : "Next Flight Seats")
-                  : "Continue to Payment"} <ArrowRight size={16} />
+                <span>
+                  {activeSegmentIndex < segments.length - 1
+                    ? (effectiveLegs[activeSegmentIndex + 1]?.isReturnLeg ? "Select Return Flight Seats" : "Next Flight Seats")
+                    : "Continue to Payment"}
+                </span>
+                <ArrowRight size={16} />
               </button>
             </div>
           </div>

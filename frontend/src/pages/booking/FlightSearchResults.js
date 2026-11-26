@@ -68,6 +68,7 @@ import { toDisplayDate, toYyyyMmDd } from "../../utils/apiDateFormat";
 import { writeFlightBookingFlowState, clearFlightBookingFlowState, readFlightBookingFlowState } from "./flightBookingFlowStore";
 import FlightStepperHeader from "../../components/booking/FlightStepperHeader";
 import FlightSingleRangeSlider from "../../components/booking/FlightSingleRangeSlider";
+import { lookupAirport } from "../../utils/flightAirports";
 
 function formatFlightPillDate(dateStr) {
   if (!dateStr) return { date: "Select Date", day: "DATE OF TRAVEL" };
@@ -1098,6 +1099,43 @@ export default function FlightSearchResults() {
   const params = new URLSearchParams(location.search);
   const state = location.state || {};
 
+  // Extract source and destination from URL query params once with /\(([A-Z]{3})\)/
+  const { fromCode, toCode, fromCity, toCity, hasMissingCode } = useMemo(() => {
+    const sParam = params.get("source") || params.get("from") || "";
+    const dParam = params.get("destination") || params.get("to") || "";
+
+    const fromMatch = sParam.match(/\(([A-Z]{3})\)/i);
+    const toMatch = dParam.match(/\(([A-Z]{3})\)/i);
+
+    const fc = fromMatch
+      ? fromMatch[1].toUpperCase()
+      : (/^[A-Z]{3}$/i.test(sParam.trim())
+        ? sParam.trim().toUpperCase()
+        : (params.get("fromCode") || params.get("sourceCode") || ""));
+
+    const tc = toMatch
+      ? toMatch[1].toUpperCase()
+      : (/^[A-Z]{3}$/i.test(dParam.trim())
+        ? dParam.trim().toUpperCase()
+        : (params.get("toCode") || params.get("destCode") || ""));
+
+    const fCity = sParam.includes("(")
+      ? sParam.replace(/\s*\([A-Za-z]{3}\).*/, "").trim()
+      : (sParam.trim() && sParam.trim().length !== 3 ? sParam.trim() : (lookupAirport(fc)?.city || fc));
+
+    const tCity = dParam.includes("(")
+      ? dParam.replace(/\s*\([A-Za-z]{3}\).*/, "").trim()
+      : (dParam.trim() && dParam.trim().length !== 3 ? dParam.trim() : (lookupAirport(tc)?.city || tc));
+
+    return {
+      fromCode: fc,
+      toCode: tc,
+      fromCity: fCity,
+      toCity: tCity,
+      hasMissingCode: !fc || !tc,
+    };
+  }, [location.search]);
+
   const [activeDatePicker, setActiveDatePicker] = useState(null);
 
   const initialSourceName = readValue(params, state, "source");
@@ -1577,13 +1615,35 @@ export default function FlightSearchResults() {
     let isCurrent = true;
 
     async function runSearch() {
+      const searchKey = location.search;
       const startedAt = Date.now();
       setIsLoadingFlights(true);
       setSearchError("");
 
+      // 3. Make sure stale state is never used:
+      // Reset the search results, selected flight and seat state when a new search starts.
+      setApiFlights([]);
+      setReturnFlights([]);
+      setSelectedOnwardFlightId(null);
+      setSelectedReturnFlightId(null);
+      setSelectedMultiCityFlightIds({});
+      setSelectedClassByFlight({});
+      setSelectedFareTypeByFlight({});
+      setSelectedFareOptionIndexByFlight({});
+      latestSelectedOnwardFlightRef.current = null;
+      latestSelectedReturnFlightRef.current = null;
+      latestFareOptionIndexRef.current = {};
+      clearFlightBookingFlowState();
+
       try {
+        if (hasMissingCode) {
+          setIsLoadingFlights(false);
+          setSearchError("Origin and destination airport codes are required.");
+          return;
+        }
+
         if (!sourceName.trim() || !destinationName.trim() || !formatDateInput(selectedDate)) {
-          setApiFlights([]);
+          setIsLoadingFlights(false);
           setSearchError("Origin, destination and travel date are required.");
           return;
         }
@@ -1628,7 +1688,7 @@ export default function FlightSearchResults() {
           legs: legsParam,
         });
 
-        if (!isCurrent) {
+        if (!isCurrent || location.search !== searchKey) {
           return;
         }
 
@@ -1706,17 +1766,17 @@ export default function FlightSearchResults() {
           return next;
         });
       } catch (error) {
-        if (isCurrent) {
+        if (isCurrent && location.search === searchKey) {
           setApiFlights([]);
           setSearchError(error.message || "Unable to load flights right now.");
         }
       } finally {
         const elapsed = Date.now() - startedAt;
         const remaining = 3500 - elapsed;
-        if (remaining > 0 && isCurrent) {
+        if (remaining > 0 && isCurrent && location.search === searchKey) {
           await new Promise((resolve) => setTimeout(resolve, remaining));
         }
-        if (isCurrent) {
+        if (isCurrent && location.search === searchKey) {
           setIsLoadingFlights(false);
         }
       }
@@ -1726,7 +1786,7 @@ export default function FlightSearchResults() {
     return () => {
       isCurrent = false;
     };
-  }, [sourceName, destinationName, selectedDate, selectedReturnDate, tripType, cabinClass, travellerText, searchVersion, parsedMultiCityLegs]);
+  }, [sourceName, destinationName, selectedDate, selectedReturnDate, tripType, cabinClass, travellerText, searchVersion, parsedMultiCityLegs, location.search, hasMissingCode]);
 
   const activeFlightList = useMemo(() => {
     if (tripType === "twoway" && twoWayActiveTab === "return") {
@@ -2815,10 +2875,15 @@ export default function FlightSearchResults() {
     <main className={`flight-results-page${isLoadingFlights ? " is-loading" : ""}`}>
       {isLoadingFlights && (
         <FlightLoadingScreen
-          source={cityCode(sourceName, sourceName)}
-          dest={cityCode(destinationName, destinationName)}
-          sourceCity={sourceName}
-          destinationCity={destinationName}
+          key={location.search}
+          fromCode={fromCode}
+          toCode={toCode}
+          fromCity={fromCity}
+          toCity={toCity}
+          source={fromCode}
+          dest={toCode}
+          sourceCity={fromCity}
+          destinationCity={toCity}
         />
       )}
       <div className="flight-results-shell">

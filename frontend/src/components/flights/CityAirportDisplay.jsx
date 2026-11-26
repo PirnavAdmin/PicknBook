@@ -6,9 +6,9 @@ import "./CityAirportDisplay.css";
  * CityAirportDisplay
  * 
  * Standardized component across the flight booking flow to render:
- * - City Name (primary text, cleanly truncated with ellipsis when space is constrained)
+ * - City Name (primary text, complete unabbreviated city name without truncation or ellipsis)
  * - Three-letter IATA Airport Code in parentheses beside it (slightly smaller, subtle grey / muted text #64748b)
- * - Full interactive hover & mobile tap tooltip displaying the unabbreviated City, Airport Code, and Airport Name
+ * - Full interactive hover & mobile tap tooltip displaying the complete City, Airport Code, and Airport Name
  * - Accessible keyboard navigation (Enter / Space / Escape)
  */
 export default function CityAirportDisplay({
@@ -23,6 +23,7 @@ export default function CityAirportDisplay({
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const cityTextRef = useRef(null);
 
   // Normalize airport code
   let code = String(airportCode || "").trim().toUpperCase();
@@ -62,6 +63,9 @@ export default function CityAirportDisplay({
     resolvedAirportName = "";
   }
 
+  // Display complete city name received from the API without truncation or character limits
+  const displayCity = cleanCity;
+
   // Full accessible label and tooltip strings
   const tooltipHeader = code ? `${cleanCity} (${code})` : cleanCity;
   const fullTooltipText = resolvedAirportName ? `${tooltipHeader} • ${resolvedAirportName}` : tooltipHeader;
@@ -89,7 +93,7 @@ export default function CityAirportDisplay({
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
       onClick={(e) => {
-        // Support mobile tap to toggle full information
+        // Support mobile tap to toggle full airport information
         e.stopPropagation();
         setOpen((prev) => !prev);
       }}
@@ -106,8 +110,12 @@ export default function CityAirportDisplay({
         }
       }}
     >
-      <span className={`pb-city-name ${cityClassName}`}>
-        {cleanCity || "--"}
+      <span
+        ref={cityTextRef}
+        className={`pb-city-name ${cityClassName}`}
+        title={fullTooltipText}
+      >
+        {displayCity || "--"}
       </span>
       {code && (
         <span className={`pb-city-code ${codeClassName}`}>

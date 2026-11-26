@@ -76,7 +76,7 @@
   --fs-total: 20px;
   min-height: 100vh;
   padding: 16px 24px 60px;
-  background: var(--seat-map-bg, #f8fafc);
+  background: #FFF3F5 !important;
   color: #0f172a;
   font-size: var(--fs-body, 15px);
   font-weight: 500;
@@ -215,14 +215,14 @@
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
-  color: #1E3A9E !important;
+  color: var(--primary-color, #E31E24) !important;
 }
 
 .flight-seat-selection-page .fare-summary-total-row span:first-child,
 .fare-summary-total-row span:first-child {
   font-size: 18px !important;
-  font-weight: 700 !important;
-  color: #1E3A9E !important;
+  font-weight: 600 !important;
+  color: var(--primary-color, #E31E24) !important;
 }
 
 .flight-seat-selection-page .fare-summary-total-row span:last-child,
@@ -230,8 +230,8 @@
 .fare-summary-total-row span:last-child,
 .fare-summary-total-amount {
   font-size: 20px !important;
-  font-weight: 700 !important;
-  color: #1E3A9E !important;
+  font-weight: 600 !important;
+  color: var(--primary-color, #E31E24) !important;
   white-space: nowrap !important;
   font-variant-numeric: tabular-nums !important;
 }
@@ -459,9 +459,12 @@
   position: relative;
   border: 0.5px solid #cbd5e1;
   border-radius: 12px;
-  background: #F5F8FF;
+  background: #ffffff;
   padding: 10px 0;
   min-height: 280px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .aircraft-seatmap-container.fitted {
@@ -482,9 +485,19 @@
 }
 
 .seatmap-scalable-wrapper {
-  transform-origin: top left;
-  width: max-content;
+  transform-origin: top center;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.aircraft-seatmap-svg {
   display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  height: auto;
+  user-select: none;
 }
 
 .seatmap-dark-tooltip {
@@ -2829,28 +2842,28 @@
   color: #475569 !important;
 }
 
-/* ── TOTAL AMOUNT ROW (USE ACCENT COLOR, NOT RED) ── */
+/* ── TOTAL AMOUNT ROW ── */
 .fare-row.total-amount-row,
 .flight-seat-selection-page .fare-row.total-amount-row {
   margin-top: 10px;
   padding-top: 12px;
   border-top: 1px solid var(--seat-card-border, #e2e8f0);
   font-size: 18px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 .fare-row.total-amount-row span,
 .flight-seat-selection-page .fare-row.total-amount-row span {
-  color: #1E3A9E !important;
+  color: var(--primary-color, #E31E24) !important;
   font-size: 18px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 .fare-row.total-amount-row span:last-child,
 .flight-seat-selection-page .fare-row.total-amount-row span:last-child {
-  color: #1E3A9E !important;
+  color: var(--primary-color, #E31E24) !important;
   font-size: 20px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   white-space: nowrap !important;
   font-variant-numeric: tabular-nums !important;
 }
@@ -2917,10 +2930,12 @@
 }
 
 @media (max-width: 640px) {
+
   .flight-seat-selection-page .step-label,
   .flight-seat-selection-page .bks-step-label {
     display: none !important;
   }
+
   .flight-seat-selection-page .step-item.active .step-label,
   .flight-seat-selection-page .bks-step.active .bks-step-label {
     display: inline-block !important;
@@ -3147,4 +3162,425 @@
   height: 2px;
   background: #D62828;
   display: inline-block;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PICK&BOOK FLIGHT SEAT SELECTION UI RECREATION (EXACT SPECIFICATION)
+   ══════════════════════════════════════════════════════════════════ */
+
+.flight-flow-page.flight-seat-selection-page {
+  background-color: #FFF3F5 !important;
+  font-family: var(--app-font-family, inherit) !important;
+}
+
+/* ── 1. STEPPER PROGRESS HEADER WITH TOP TIMER ── */
+.flight-seat-selection-page .flight-stepper-header {
+  background: #ffffff !important;
+  border: 1px solid #f1e4e6 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  padding: 16px 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 12px !important;
+  position: relative !important;
+  min-height: 80px !important;
+  margin-bottom: 20px !important;
+}
+
+.flight-seat-selection-page .stepper-timer-slot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.booking-timer-stepper-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.booking-timer-stepper-inline .booking-timer-clock {
+  color: #E31E24;
+}
+
+.booking-timer-stepper-inline .booking-timer-val {
+  font-weight: 700;
+  color: #0f172a;
+  margin-left: 4px;
+}
+
+.flight-seat-selection-page .flight-stepper-stages {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+.flight-seat-selection-page .flight-stepper-header .step-item.active .step-circle {
+  border: 2px solid #E31E24 !important;
+  background-color: #E31E24 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.flight-seat-selection-page .flight-stepper-header .step-item.active .step-label {
+  color: #E31E24 !important;
+  font-weight: 700 !important;
+}
+
+.flight-seat-selection-page .flight-stepper-header .step-item.completed .step-circle {
+  border: 2px solid #E31E24 !important;
+  background-color: #E31E24 !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.flight-seat-selection-page .flight-stepper-header .stepper-back-btn {
+  position: absolute !important;
+  right: 20px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 7px 14px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.15s ease !important;
+}
+
+.flight-seat-selection-page .flight-stepper-header .stepper-back-btn:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* ── 2. CARDS STYLING ── */
+.flight-seat-selection-page .sidebar-card,
+.flight-seat-selection-page .flight-main-card {
+  background: #ffffff !important;
+  border: 1px solid #f1e4e6 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ── 3. TITLE ROW WITH AIRLINE SEAT ICON ── */
+.flight-seat-selection-page .seat-page-title-row {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  margin-bottom: 14px !important;
+}
+
+.flight-seat-selection-page .seat-page-title-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #E31E24;
+  margin-top: 1px;
+}
+
+.flight-seat-selection-page .seat-page-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0 0 3px 0 !important;
+}
+
+.flight-seat-selection-page .seat-page-subtitle {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+  margin: 0 !important;
+}
+
+/* ── 4. FLIGHT TABS ROW ── */
+.flight-seat-selection-page .flight-tabs-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+  flex-wrap: wrap !important;
+}
+
+.flight-seat-selection-page .flight-tabs-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.flight-seat-selection-page .flight-segment-tab-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 7px 16px !important;
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.flight-seat-selection-page .flight-segment-tab-btn.active {
+  border-color: #E31E24 !important;
+  background: #FFF1F2 !important;
+  color: #E31E24 !important;
+}
+
+.flight-seat-selection-page .fit-to-screen-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #E31E24 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.flight-seat-selection-page .fit-to-screen-btn:hover {
+  background: #FFF1F2 !important;
+}
+
+/* ── 5. SUB-HEADER ROW ABOVE AIRCRAFT ── */
+.flight-seat-selection-page .aircraft-seatmap-header-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 8px !important;
+  padding: 0 2px !important;
+}
+
+.flight-seat-selection-page .aircraft-seatmap-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flight-seat-selection-page .aircraft-seatmap-plane-icon {
+  color: #E31E24;
+  transform: rotate(-45deg);
+}
+
+.flight-seat-selection-page .aircraft-seatmap-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+}
+
+.flight-seat-selection-page .aircraft-seatmap-count-info {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+}
+
+/* ── 6. AIRCRAFT SEATMAP CONTAINER ── */
+.flight-seat-selection-page .aircraft-seatmap-container {
+  background: #ffffff !important;
+  border: none !important;
+  padding: 8px 0 !important;
+}
+
+/* ── 7. SEATMAP REFERENCE LEGEND BAR ── */
+.flight-seat-selection-page .seatmap-reference-legend-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  padding: 12px 18px !important;
+  border: 1px solid #f1e4e6 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  margin-top: 14px !important;
+}
+
+.flight-seat-selection-page .legend-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flight-seat-selection-page .legend-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.flight-seat-selection-page .legend-badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.flight-seat-selection-page .legend-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 3.5px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.flight-seat-selection-page .legend-swatch.available {
+  background: #EDE9FE;
+  border: 1.2px solid #C4B5FD;
+}
+
+.flight-seat-selection-page .legend-swatch.booked {
+  background: #CBD5E1;
+  border: 1.2px solid #94A3B8;
+}
+
+.flight-seat-selection-page .legend-swatch.selected {
+  background: #E31E24;
+  border: 1.2px solid #B91C1C;
+}
+
+.flight-seat-selection-page .legend-swatch.exit-marker {
+  width: auto;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flight-seat-selection-page .legend-divider {
+  width: 1px;
+  height: 18px;
+  background: #e2e8f0;
+}
+
+.flight-seat-selection-page .legend-amenity-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.flight-seat-selection-page .legend-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  margin-left: auto;
+}
+
+.flight-seat-selection-page .legend-info-icon {
+  color: #64748b;
+}
+
+/* ── 8. ADD-ON SERVICES CARD & BUTTON ── */
+.flight-seat-selection-page .addon-card {
+  margin-top: 16px !important;
+}
+
+.flight-seat-selection-page .addon-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin: 0 0 16px 0 !important;
+}
+
+.flight-seat-selection-page .addon-header-icon {
+  color: #E31E24;
+}
+
+.flight-seat-selection-page .addon-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.flight-seat-selection-page .addon-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.flight-seat-selection-page .addon-input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.flight-seat-selection-page .addon-input-control {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.flight-seat-selection-page .addon-input-control:focus {
+  border-color: #E31E24;
+}
+
+.flight-seat-selection-page .addon-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.flight-seat-selection-page .addon-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  background: #E31E24;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(227, 30, 36, 0.25);
+  transition: background 0.15s ease;
+}
+
+.flight-seat-selection-page .addon-cta-btn:hover {
+  background: #c5161b;
+}
+
+.flight-seat-selection-page .addon-cta-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

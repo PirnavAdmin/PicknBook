@@ -24,6 +24,7 @@ export default function FlightStepperHeader({
   className = "",
   compact = false,
   showBackButton = undefined,
+  timer = null,
 }) {
   const showBack =
     showBackButton !== undefined
@@ -34,8 +35,10 @@ export default function FlightStepperHeader({
     <div
       className={`flight-stepper-header ${compact ? "flight-stepper-header--compact" : ""} ${
         showBack ? "has-back-btn" : ""
-      } ${className}`.trim()}
+      } ${timer ? "has-stepper-timer" : ""} ${className}`.trim()}
     >
+      {timer && <div className="stepper-timer-slot">{timer}</div>}
+
       <div className="flight-stepper-stages">
         {STAGES.map((stage, idx) => {
           const isCompleted = currentStage > stage.id;

@@ -11,146 +11,123 @@ export { SymbolBadge } from "./SymbolBadge";
 export * from "./seatMeta";
 
 /**
- * Minimal Coffee Cup Galley Icon
+ * Emergency Exit Box with Running Person Icon
+ * Sits directly on the upper and lower cabin architectural boundary lines
  */
-export const GalleyIcon = ({ x, y, isVertical = false }) => {
-  const transform = isVertical
-    ? `translate(${y}, ${x})`
-    : `translate(${x}, ${y})`;
-  return (
-    <g transform={transform} stroke="#888780" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M -4 -3 L 2 -3 L 2 1 C 2 3.2 -0.2 4 -1 4 C -1.8 4 -4 3.2 -4 1 Z" />
-      <path d="M 2 -2 L 4 -2 C 4.8 -2 4.8 0.5 4 0.5 L 2 0.5" />
-      <line x1="-5" y1="5" x2="3" y2="5" />
-    </g>
-  );
-};
+export const EmergencyExit = ({ x, y, direction = "up" }) => {
+  const boxW = 22;
+  const boxH = 22;
 
-/**
- * Emergency Exit Box on Fuselage Edge:
- * Horizontal: 24x12 box, rx 3, white fill, stroke #D62828 1.5px
- * Arrow pointing OUT of fuselage: UP on top edge, DOWN on bottom edge.
- * Vertical: 12x24 box, rx 3, white fill, stroke #D62828 1.5px
- * Arrow pointing OUT of fuselage: LEFT on left edge, RIGHT on right edge.
- */
-export const EmergencyExit = ({ x, y, direction = "up", isVertical = false }) => {
-  if (isVertical) {
-    // x and y swapped: x is across fuselage, y is along fuselage
-    const isLeft = direction === "up"; // "up" was top edge in horizontal, now left edge
-    return (
-      <g transform={`translate(${x}, ${y})`}>
-        <rect
-          x={0}
-          y={0}
-          width={12}
-          height={24}
-          rx={3}
-          fill="#FFFFFF"
-          stroke="#D62828"
-          strokeWidth="1.5"
-        />
-        {isLeft ? (
-          // Arrow pointing LEFT (outward)
-          <path
-            d="M 9 12 L 3 12 M 6 9 L 3 12 L 6 15"
-            stroke="#D62828"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ) : (
-          // Arrow pointing RIGHT (outward)
-          <path
-            d="M 3 12 L 9 12 M 6 9 L 9 12 L 6 15"
-            stroke="#D62828"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
-      </g>
-    );
-  }
-
-  // Horizontal mode
-  const isUp = direction === "up";
   return (
-    <g transform={`translate(${x}, ${y})`}>
+    <g transform={`translate(${x}, ${y})`} className="aircraft-emergency-exit-marker">
+      {/* Crisp White background with Pick&book red rounded border */}
       <rect
         x={0}
         y={0}
-        width={24}
-        height={12}
-        rx={3}
+        width={boxW}
+        height={boxH}
+        rx={4}
         fill="#FFFFFF"
-        stroke="#D62828"
-        strokeWidth="1.5"
+        stroke="#E31E24"
+        strokeWidth="1.8"
       />
-      {isUp ? (
-        // Arrow pointing UP (outward)
-        <path
-          d="M 12 9 L 12 3 M 9 6 L 12 3 L 15 6"
-          stroke="#D62828"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : (
-        // Arrow pointing DOWN (outward)
-        <path
-          d="M 12 3 L 12 9 M 9 6 L 12 9 L 15 6"
-          stroke="#D62828"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
+      {/* Running Person Icon in Pick&book red */}
+      <circle cx="11" cy="6" r="2" fill="#E31E24" />
+      <path
+        d="M 10.5 8.2 L 11.8 10.2 L 15 9.4 M 10.2 10.2 L 8.2 12.2 M 11.5 10.8 L 10.5 14.2 L 8.2 16.5 M 10.5 14.2 L 13.8 16.8"
+        stroke="#E31E24"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
     </g>
   );
 };
 
 export const EmergencyExitBadge = EmergencyExit;
+export const DoorBox = EmergencyExit;
 
 /**
- * Passenger Door Box:
- * Horizontal: 14x12 box, rx 2, white fill, stroke #1D9E75 1.4px
- * Vertical: 12x14 box, rx 2, white fill, stroke #1D9E75 1.4px
+ * Food / Meal Amenity Badge (Soft pink rounded card with red fork & knife)
  */
-export const DoorBox = ({ x, y, isVertical = false }) => {
-  if (isVertical) {
-    return (
-      <rect
-        x={x}
-        y={y}
-        width={12}
-        height={14}
-        rx={2}
-        fill="#FFFFFF"
-        stroke="#1D9E75"
-        strokeWidth="1.4"
-      />
-    );
-  }
+export const FoodMealBadge = ({ x, y }) => {
   return (
-    <rect
-      x={x}
-      y={y}
-      width={14}
-      height={12}
-      rx={2}
-      fill="#FFFFFF"
-      stroke="#1D9E75"
-      strokeWidth="1.4"
-    />
+    <g transform={`translate(${x}, ${y})`} className="aircraft-amenity-badge food-badge">
+      <rect
+        x={0}
+        y={0}
+        width={28}
+        height={28}
+        rx={6}
+        fill="#FFF1F2"
+        stroke="#FECDD3"
+        strokeWidth="1.2"
+      />
+      {/* Fork */}
+      <path
+        d="M 10 8 L 10 12.5 M 8 8 L 8 11.5 C 8 12.8 9 13.8 10 13.8 M 12 8 L 12 11.5 C 12 12.8 11 13.8 10 13.8 M 10 13.8 L 10 20"
+        stroke="#E31E24"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      {/* Knife */}
+      <path
+        d="M 17.5 8 C 15.5 9.5 15.5 13 16.5 14.5 L 16.5 20 M 17.5 8 L 17.5 20"
+        stroke="#E31E24"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+    </g>
+  );
+};
+
+export const GalleyIcon = FoodMealBadge;
+export const LineIcon = FoodMealBadge;
+
+/**
+ * Washroom Amenity Badge (Soft blue rounded card with blue man & woman)
+ */
+export const WashroomBadge = ({ x, y }) => {
+  return (
+    <g transform={`translate(${x}, ${y})`} className="aircraft-amenity-badge washroom-badge">
+      <rect
+        x={0}
+        y={0}
+        width={28}
+        height={28}
+        rx={6}
+        fill="#EFF6FF"
+        stroke="#BFDBFE"
+        strokeWidth="1.2"
+      />
+      {/* Man */}
+      <circle cx="9.5" cy="8.5" r="1.8" fill="#2563EB" />
+      <path
+        d="M 8 11.5 L 11 11.5 L 11 15.5 L 10.2 15.5 L 10.2 20 L 8.8 20 L 8.8 15.5 L 8 15.5 Z"
+        fill="#2563EB"
+      />
+      {/* Woman */}
+      <circle cx="18" cy="8.5" r="1.8" fill="#2563EB" />
+      <path
+        d="M 16.5 11.5 L 19.5 11.5 L 20.8 16.2 L 19 16.2 L 19 20 L 17 20 L 17 16.2 L 15.2 16.2 Z"
+        fill="#2563EB"
+      />
+    </g>
   );
 };
 
 /**
  * ChairSeat Component
- * Realistic chair representation with back bar on the nose side.
- * In horizontal: back bar on left side.
- * In vertical: back bar on top side (chair faces forward/up towards cockpit).
- * Mobile tap hit target: minimum 24px invisible hit area.
+ * Exact 3D rounded appearance matching Image 2:
+ * - Available: soft lilac/lavender (#EDE9FE, border #C4B5FD, headrest cushion #DDD6FE)
+ * - Selected: Pick&book red (#E31E24, border #B91C1C, headrest cushion #DC2626)
+ * - Booked: Neutral grey (#CBD5E1, border #94A3B8, headrest cushion #94A3B8)
+ * - Price text rendered directly below available and selected seats.
  */
 export const ChairSeat = ({
   x,
@@ -158,9 +135,6 @@ export const ChairSeat = ({
   seat,
   status = "free",
   isSelected = false,
-  tierColors = null,
-  isMatchingFilter = true,
-  hasActiveFilters = false,
   isVertical = false,
   onSeatClick = () => { },
   onMouseEnter = () => { },
@@ -168,62 +142,41 @@ export const ChairSeat = ({
 }) => {
   const isBooked = status === "booked";
 
-  let fill = NON_PRICE_COLORS.free.fill;
-  let stroke = NON_PRICE_COLORS.free.stroke;
-  let chairBarColor = NON_PRICE_COLORS.free.chairBar;
+  let fill = "#EDE9FE";
+  let stroke = "#C4B5FD";
+  let backFill = "#DDD6FE";
+  let textColor = "#334155";
 
   if (isBooked) {
-    fill = NON_PRICE_COLORS.booked.fill;
-    stroke = NON_PRICE_COLORS.booked.stroke;
-    chairBarColor = NON_PRICE_COLORS.booked.chairBar;
+    fill = "#CBD5E1";
+    stroke = "#94A3B8";
+    backFill = "#94A3B8";
   } else if (isSelected) {
-    fill = NON_PRICE_COLORS.selected.fill;
-    stroke = "#2563EB";
-    chairBarColor = NON_PRICE_COLORS.selected.chairBar;
-  } else if (status === "paid" && tierColors) {
-    fill = tierColors.fill;
-    stroke = tierColors.stroke;
-    chairBarColor = tierColors.chairBar;
+    fill = "#E31E24";
+    stroke = "#B91C1C";
+    backFill = "#DC2626";
+    textColor = "#E31E24";
   }
 
-  // Filter highlighting and dimming
-  let groupOpacity = 1;
-  let groupPointerEvents = isBooked ? "not-allowed" : "pointer";
+  const seatX = x;
+  const seatY = y;
+  const S = 20;
 
-  if (hasActiveFilters && !isSelected) {
-    if (!isMatchingFilter) {
-      groupOpacity = 0.14;
-      groupPointerEvents = "none";
-    }
-  }
-
-  const isMatchingFilterActive = hasActiveFilters && isMatchingFilter && !isBooked;
-  const strokeWidth = (isMatchingFilterActive || isSelected) ? 1.8 : 1.6;
-
-  // Soft glow in tier colour for filter matches; blue glow for selected seat
-  let seatGlowStyle = undefined;
-  if (isSelected) {
-    seatGlowStyle = {
-      filter: "drop-shadow(0 0 3px #2563eb) drop-shadow(0 0 6px #2563eb)",
-    };
-  } else if (isMatchingFilterActive) {
-    const tierColor = tierColors?.baseColor || tierColors?.stroke || stroke;
-    seatGlowStyle = {
-      filter: `drop-shadow(0 0 3px ${tierColor}) drop-shadow(0 0 6px ${tierColor})`,
-    };
-  }
-
-  // Coordinate positioning based on orientation
-  const seatX = isVertical ? y : x;
-  const seatY = isVertical ? x : y;
+  const priceVal = seat.price;
+  const priceLabel =
+    priceVal > 0
+      ? `₹${priceVal}`
+      : status === "free"
+        ? "FREE"
+        : priceVal !== undefined
+          ? `₹${priceVal}`
+          : "";
 
   return (
     <g
       className={`aircraft-chair-seat ${status} ${isSelected ? "selected" : ""}`}
       style={{
-        cursor: groupPointerEvents,
-        opacity: groupOpacity,
-        pointerEvents: groupPointerEvents === "none" ? "none" : "auto",
+        cursor: isBooked ? "not-allowed" : "pointer",
         transition: "opacity 0.15s ease",
       }}
       onClick={(e) => {
@@ -235,50 +188,55 @@ export const ChairSeat = ({
       onMouseEnter={(e) => onMouseEnter(e, seat)}
       onMouseLeave={onMouseLeave}
     >
-      {/* 24px minimum hit area for mobile touches */}
+      {/* Hit target */}
       <rect
-        x={seatX - 4}
-        y={seatY - 4}
-        width={24}
-        height={24}
+        x={seatX - 3}
+        y={seatY - 3}
+        width={26}
+        height={34}
         fill="transparent"
-        style={{ pointerEvents: groupPointerEvents === "none" ? "none" : "all" }}
       />
 
       {/* Main Seat Cushion */}
       <rect
         x={seatX}
         y={seatY}
-        width={16}
-        height={16}
-        rx={3.5}
+        width={S}
+        height={S}
+        rx={4.5}
         fill={fill}
         stroke={stroke}
-        strokeWidth={strokeWidth}
-        style={seatGlowStyle}
+        strokeWidth={isSelected ? 1.8 : 1.3}
+        style={
+          isSelected
+            ? { filter: "drop-shadow(0 2px 4px rgba(227, 30, 36, 0.45))" }
+            : undefined
+        }
       />
 
-      {/* Chair Back Bar */}
-      {isVertical ? (
-        // Vertical mode: nose at top, so back bar is on top edge of chair
-        <rect
-          x={seatX + 2.5}
-          y={seatY + 1.5}
-          width={11}
-          height={3}
-          rx={1.5}
-          fill={chairBarColor}
-        />
-      ) : (
-        // Horizontal mode: nose at left, so back bar is on left edge of chair
-        <rect
-          x={seatX + 1.5}
-          y={seatY + 2.5}
-          width={3}
-          height={11}
-          rx={1.5}
-          fill={chairBarColor}
-        />
+      {/* Chair Back / Headrest Cushion on nose side (left) */}
+      <rect
+        x={seatX + 2}
+        y={seatY + 2.5}
+        width={3.5}
+        height={S - 5}
+        rx={1.75}
+        fill={backFill}
+      />
+
+      {/* Price below seat (only for available and selected seats) */}
+      {!isBooked && priceLabel && (
+        <text
+          x={seatX + S / 2}
+          y={seatY + S + 8.5}
+          textAnchor="middle"
+          fontSize="7.5"
+          fontWeight={isSelected ? "700" : "600"}
+          fill={textColor}
+          style={{ userSelect: "none", pointerEvents: "none" }}
+        >
+          {priceLabel}
+        </text>
       )}
     </g>
   );
@@ -286,8 +244,15 @@ export const ChairSeat = ({
 
 /**
  * AircraftSeatMap Component
- * High-fidelity, API-driven aircraft seat map with responsive orientation.
- * Supports horizontal rendering and vertical phone orientation (nose at top).
+ * Exact Pick&book horizontal aircraft seat selection UI recreation matching Image 2:
+ * - Complete, horizontally positioned airplane body: rounded nose on left, tail on right.
+ * - Upper and lower swept wings with red winglet accents and flap track fairings.
+ * - Visible turbofan engines mounted on pylons beneath the wings.
+ * - Panoramic dark cockpit windshield with blue reflection on the nose.
+ * - Cabin architectural floorplan framed with high-tech Pick&book red outline.
+ * - All seats, row letters (A-F), seat numbers, prices, emergency exits, and galley amenities
+ *   are contained strictly inside the main aircraft fuselage.
+ * - Responsive viewBox auto-scaling so it fills container width prominently on desktop.
  */
 export const AircraftSeatMap = ({
   layout,
@@ -303,7 +268,6 @@ export const AircraftSeatMap = ({
 }) => {
   const { cabins = [], rows = [], exitRows = [] } = layout || {};
 
-  // Responsive mode decision
   const isVertical =
     orientation === "vertical" ||
     (orientation === "auto" && containerWidth > 0 && containerWidth < 560);
@@ -312,43 +276,26 @@ export const AircraftSeatMap = ({
     return new Set(selectedSeats.map((s) => s.id || s.label || `${s.row}${s.col}`));
   }, [selectedSeats]);
 
-  // Distinct paid prices of THIS flight (ascending)
-  const distinctPaidPrices = useMemo(() => {
-    const prices = new Set();
-    rows.forEach((r) => {
-      (r.seats || []).forEach((s) => {
-        if (s.status === "paid" && s.price > 0) {
-          prices.add(s.price);
-        }
-      });
-    });
-    return Array.from(prices).sort((a, b) => a - b);
-  }, [rows]);
+  // Geometry Constants
+  const S = 20; // seat width and height
+  const G = 12; // vertical gap between seats in group (room for price text)
+  const A = 24; // central aisle gap between ABC and DEF
+  const colPitch = 25; // horizontal row pitch (seat width 20px + 5px gap)
 
-  // Constants per specification
-  const S = 16;
-  const G = 4;
-  const A = 14;
-  const cabinGap = 30;
-  const wingSpan = 66;
-  const fuselagePadding = 46;
-
-  // 1. Cabin Heights & Column Offsets
-  const { cabinHeights, cabinColYOffsets, maxL, aisleOffsets } = useMemo(() => {
-    const heights = new Map();
+  // 1. Cabin Heights & Column Y Offsets
+  const { cabinColYOffsets, maxL } = useMemo(() => {
     const offsets = new Map();
-    const aisles = new Map();
     let maxCabinL = 0;
 
     cabins.forEach((c) => {
-      const groups = c.groups || (c.columns ? [c.columns.filter((l) => l !== "_").join("")] : ["ABC", "DEF"]);
+      const groups =
+        c.groups ||
+        (c.columns ? [c.columns.filter((l) => l !== "_").join("")] : ["ABC", "DEF"]);
       let currY = 0;
       const colMap = new Map();
-      const cabinAisles = [];
 
       groups.forEach((groupStr, gIdx) => {
         if (gIdx > 0) {
-          cabinAisles.push(currY);
           currY += A;
         }
         for (let i = 0; i < groupStr.length; i++) {
@@ -361,160 +308,117 @@ export const AircraftSeatMap = ({
         }
       });
 
-      heights.set(c.name, currY);
       offsets.set(c.name, colMap);
-      aisles.set(c.name, cabinAisles);
       if (currY > maxCabinL) maxCabinL = currY;
     });
 
+    const standardL = 6 * S + 4 * G + A;
     return {
-      cabinHeights: heights,
       cabinColYOffsets: offsets,
-      maxL: maxCabinL > 0 ? maxCabinL : 4 * S + 3 * G + A,
-      aisleOffsets: aisles,
+      maxL: maxCabinL > 0 ? maxCabinL : standardL,
     };
   }, [cabins, S, G, A]);
 
-  // Fuselage Vertical Coordinates (across width in horizontal)
-  const H = maxL + fuselagePadding;
-  const tp = 82; // wingSpan (66) + 16 padding = 82
-  const bt = tp + H;
-  const md = tp + H / 2;
-  const totalSvgHeight = H + wingSpan * 2 + 20;
+  // Fuselage Vertical Coordinates (Fuselage & Cabin Centered at md = 254)
+  const md = 254; // fuselage centerline
+  const y0 = md - maxL / 2; // seat row A top coordinate (~158)
+  const cabinTopY = y0 - 24; // top edge of red cabin border (~134)
+  const cabinBotY = y0 + maxL + 24; // bottom edge of red cabin border (~374)
+  const tp = cabinTopY - 18; // fuselage exterior top edge (~116)
+  const bt = cabinBotY + 18; // fuselage exterior bottom edge (~392)
+  const wingSpan = 100; // swept wing vertical projection
+  const totalSvgHeight = 508; // total height accommodates wings and stabilizers
 
-  // Geometry: Seat grid centered in fuselage with nose & tail elements removed
-  // Symmetrical padding and smooth aerodynamic curved end caps
-  const outerPad = 25; // outer margin from SVG edge to fuselage apex
-  const capLength = 75; // distance from fuselage apex to first/last seat row
-  const x0 = outerPad + capLength; // first row X position = 100
-  const frontTip = outerPad; // 25
-  const nx = x0 - 28; // 72 - start of straight fuselage cylinder
+  // Horizontal Geometry (Dynamically adapts to rows length)
+  const frontTip = 35; // nose cone tip
+  const firstRowX = 236; // first seat column X (room for nose, cockpit, amenities & row letters)
 
-  const { rowPositions, cabinBands, cabinLetters, cabinAisleStrips, transitionGaps, endX, tail, totalSvgWidth } = useMemo(() => {
-    let currX = x0;
-    let prevCabin = null;
-    let cabinStartX = currX;
-    const rPositions = [];
-    const bands = [];
-    const gaps = [];
-    const cLetters = [];
-    const aisleStrips = [];
+  const { rowPositions, lastRowEnd, cabinLeftX, cabinRightX, endX, tail, totalSvgWidth } =
+    useMemo(() => {
+      let currX = firstRowX;
+      const rPositions = [];
 
-    rows.forEach((r) => {
-      if (prevCabin && r.cabin !== prevCabin) {
-        // Record previous cabin band and aisle strips
-        const cabinEndX = currX - 20 + S;
-        bands.push({
-          name: prevCabin,
-          startX: cabinStartX - 4,
-          endX: cabinEndX + 4,
+      rows.forEach((r) => {
+        rPositions.push({
+          ...r,
+          x: currX,
         });
-
-        const aisles = aisleOffsets.get(prevCabin) || [];
-        const hPrev = cabinHeights.get(prevCabin) || maxL;
-        const y0Prev = md - hPrev / 2 + 5;
-        aisles.forEach((aisleYRel) => {
-          aisleStrips.push({
-            cabin: prevCabin,
-            x: cabinStartX - 4,
-            y: y0Prev + aisleYRel,
-            width: cabinEndX - cabinStartX + 8,
-            height: A,
-          });
-        });
-
-        gaps.push(currX + (cabinGap - 20) / 2);
-        currX += cabinGap;
-        cabinStartX = currX;
-      }
-
-      if (r.cabin !== prevCabin) {
-        cLetters.push({
-          cabin: r.cabin,
-          firstSeatX: currX,
-        });
-      }
-
-      rPositions.push({
-        ...r,
-        x: currX,
+        currX += colPitch;
       });
 
-      prevCabin = r.cabin;
-      currX += 20; // rowPitch = 20
-    });
+      const lRowEnd =
+        rPositions.length > 0
+          ? rPositions[rPositions.length - 1].x + S
+          : firstRowX + 30 * colPitch + S;
 
-    if (prevCabin) {
-      const lastRowX = currX - 20;
-      const cabinEndX = lastRowX + S;
-      bands.push({
-        name: prevCabin,
-        startX: cabinStartX - 4,
-        endX: cabinEndX + 4,
-      });
+      const cLeftX = firstRowX - 86; // left curved edge of red cabin border
+      const cRightX = lRowEnd + 58; // right curved edge of red cabin border
+      const calculatedEndX = lRowEnd + 85; // end of straight fuselage section
+      const calculatedTail = calculatedEndX + 105; // tail cone tip
+      const calculatedTotalSvgWidth = calculatedTail + 55; // accommodates red tail fin & stabilizers
 
-      const aisles = aisleOffsets.get(prevCabin) || [];
-      const hPrev = cabinHeights.get(prevCabin) || maxL;
-      const y0Prev = md - hPrev / 2 + 5;
-      aisles.forEach((aisleYRel) => {
-        aisleStrips.push({
-          cabin: prevCabin,
-          x: cabinStartX - 4,
-          y: y0Prev + aisleYRel,
-          width: cabinEndX - cabinStartX + 8,
-          height: A,
-        });
-      });
-    }
+      return {
+        rowPositions: rPositions,
+        lastRowEnd: lRowEnd,
+        cabinLeftX: cLeftX,
+        cabinRightX: cRightX,
+        endX: calculatedEndX,
+        tail: calculatedTail,
+        totalSvgWidth: calculatedTotalSvgWidth,
+      };
+    }, [rows, firstRowX, S, colPitch]);
 
-    const lastRowEnd = rPositions.length > 0 ? rPositions[rPositions.length - 1].x + S : x0 + 200;
-    const calculatedEndX = lastRowEnd + 28; // end of straight fuselage cylinder
-    const calculatedTail = lastRowEnd + capLength; // rear fuselage apex (tail)
-    const calculatedTotalSvgWidth = calculatedTail + outerPad; // symmetrical outer margin
+  // Wing Root Coordinates (~32% to ~74% of cabin length)
+  const cabinSpan = lastRowEnd - firstRowX;
+  const wxRootLeading = firstRowX + cabinSpan * 0.32;
+  const wxRootTrailing = firstRowX + cabinSpan * 0.74;
+  const wingSweepDx = 220;
+  const tipLeadingX = wxRootLeading + wingSweepDx;
+  const tipTrailingX = tipLeadingX + 16;
 
-    return {
-      rowPositions: rPositions,
-      cabinBands: bands,
-      cabinLetters: cLetters,
-      cabinAisleStrips: aisleStrips,
-      transitionGaps: gaps,
-      endX: calculatedEndX,
-      tail: calculatedTail,
-      totalSvgWidth: calculatedTotalSvgWidth,
-    };
-  }, [rows, x0, S, cabinGap, aisleOffsets, cabinHeights, maxL, md, A]);
-
-  // Wing Root Coordinate (36% of cabin length)
-  const wx = x0 + (endX - x0) * 0.36;
-
-  // Check if seat matches active filters
-  const hasActiveFilters = activeFilters && activeFilters.size > 0;
-  const isSeatMatchingFilter = (seat) => {
-    if (!hasActiveFilters) return true;
-    if (seat.status === "booked") return false;
-    if (seat.status === "free" && activeFilters.has("FREE")) return true;
-    if (seat.status === "paid" && activeFilters.has(seat.price)) return true;
-    return false;
-  };
-
-  // Map exit row to X coordinate
+  // Row X Map
   const rowXMap = useMemo(() => {
     const map = new Map();
     rowPositions.forEach((r) => map.set(r.number, r.x));
     return map;
   }, [rowPositions]);
 
-  // Responsive SVG Dimensions: fixed natural width (the width of the full 39-column grid plus padding)
+  // Exactly 3 Exit Row Positions (Front, Middle/Overwing, Rear)
+  const exitRowNumbers = useMemo(() => {
+    if (rowPositions.length === 0) return [5, 15, 31];
+
+    const sortedNums = rowPositions.map((r) => r.number);
+    const minNum = sortedNums[0];
+    const maxNum = sortedNums[sortedNums.length - 1];
+
+    // 1. Front Exit (e.g. Row 5)
+    let front = exitRows.find((n) => n <= minNum + 6 && rowXMap.has(n));
+    if (!front) front = rowXMap.has(5) ? 5 : sortedNums[Math.min(4, sortedNums.length - 1)];
+
+    // 2. Middle Exit (e.g. Row 15)
+    let mid = exitRows.find((n) => n >= minNum + 10 && n <= maxNum - 8 && rowXMap.has(n));
+    if (!mid) {
+      const midIdx = Math.floor(sortedNums.length / 2);
+      mid = rowXMap.has(15) ? 15 : sortedNums[midIdx];
+    }
+
+    // 3. Rear Exit (e.g. Row 31 / last row)
+    let rear = exitRows.slice().reverse().find((n) => n >= maxNum - 4 && rowXMap.has(n));
+    if (!rear) rear = maxNum;
+
+    const list = [front, mid, rear].filter((n) => n !== undefined);
+    return Array.from(new Set(list)).sort((a, b) => a - b);
+  }, [rowPositions, exitRows, rowXMap]);
+
+  // SVG ViewBox and Dimensions
   const { renderedWidth, renderedHeight, viewBoxString } = useMemo(() => {
     if (isVertical) {
-      // Plane cross-section width is totalSvgHeight; length is totalSvgWidth
       return {
         renderedWidth: totalSvgHeight,
         renderedHeight: totalSvgWidth,
         viewBoxString: `0 0 ${totalSvgHeight} ${totalSvgWidth}`,
       };
     }
-    // Horizontal mode: fixed natural dimensions
     return {
       renderedWidth: totalSvgWidth,
       renderedHeight: totalSvgHeight,
@@ -522,96 +426,72 @@ export const AircraftSeatMap = ({
     };
   }, [isVertical, totalSvgWidth, totalSvgHeight]);
 
-  // ── 1. WINGS & WINGLETS POLYGONS ──
-  // Winglet: (188,1) (199,1.24) (196,1)
-  const topWingPoints = useMemo(() => {
-    // Points along [dx, fraction] where fraction 1 = wingSpan (66)
-    const pts = [
-      [wx, tp],
-      [wx + 150, tp - wingSpan],
-      [wx + 188, tp - wingSpan],
-      [wx + 199, tp - wingSpan * 1.24],
-      [wx + 196, tp - wingSpan],
-      [wx + 192, tp - wingSpan],
-      [wx + 125, tp],
-    ];
-    return isVertical
-      ? pts.map(([x, y]) => `${y},${x}`).join(" ")
-      : pts.map(([x, y]) => `${x},${y}`).join(" ");
-  }, [wx, tp, wingSpan, isVertical]);
+  // 1. TOP WING PATH
+  const topWingPath = useMemo(() => {
+    const tipY = tp - wingSpan + 6;
+    return `
+      M ${wxRootLeading - 14},${tp}
+      C ${wxRootLeading - 4},${tp - 6} ${wxRootLeading + 14},${tp - 18} ${wxRootLeading + 36},${tp - 30}
+      L ${tipLeadingX},${tipY}
+      L ${tipLeadingX + 16},${tipY - 14}
+      L ${tipLeadingX + 22},${tipY - 12}
+      L ${tipTrailingX},${tipY + 12}
+      L ${wxRootTrailing + 10},${tp - 8}
+      C ${wxRootTrailing},${tp - 3} ${wxRootTrailing - 6},${tp} ${wxRootTrailing - 14},${tp}
+      Z
+    `.trim();
+  }, [wxRootLeading, wxRootTrailing, tp, wingSpan, tipLeadingX, tipTrailingX]);
 
-  const bottomWingPoints = useMemo(() => {
-    const pts = [
-      [wx, bt],
-      [wx + 150, bt + wingSpan],
-      [wx + 188, bt + wingSpan],
-      [wx + 199, bt + wingSpan * 1.24],
-      [wx + 196, bt + wingSpan],
-      [wx + 192, bt + wingSpan],
-      [wx + 125, bt],
-    ];
-    return isVertical
-      ? pts.map(([x, y]) => `${y},${x}`).join(" ")
-      : pts.map(([x, y]) => `${x},${y}`).join(" ");
-  }, [wx, bt, wingSpan, isVertical]);
+  // 2. BOTTOM WING PATH
+  const bottomWingPath = useMemo(() => {
+    const tipY = bt + wingSpan - 6;
+    return `
+      M ${wxRootLeading - 14},${bt}
+      C ${wxRootLeading - 4},${bt + 6} ${wxRootLeading + 14},${bt + 18} ${wxRootLeading + 36},${bt + 30}
+      L ${tipLeadingX},${tipY}
+      L ${tipLeadingX + 16},${tipY + 14}
+      L ${tipLeadingX + 22},${tipY + 12}
+      L ${tipTrailingX},${tipY - 12}
+      L ${wxRootTrailing + 10},${bt + 8}
+      C ${wxRootTrailing},${bt + 3} ${wxRootTrailing - 6},${bt} ${wxRootTrailing - 14},${bt}
+      Z
+    `.trim();
+  }, [wxRootLeading, wxRootTrailing, bt, wingSpan, tipLeadingX, tipTrailingX]);
 
-  // Three flap lines along trailing edge (30px long, red, 0.9px, opacity .45)
-  const flapLines = useMemo(() => {
-    const lines = [];
-    const tValues = [0.28, 0.52, 0.78];
-    tValues.forEach((t) => {
-      // Top wing trailing edge: from (wx + 125, tp) to (wx + 192, tp - wingSpan)
-      const xt = wx + 125 + (192 - 125) * t;
-      const yt = tp - wingSpan * t;
-      const x2 = xt - 28;
-      const y2 = yt + 10;
-      lines.push({ x1: xt, y1: yt, x2, y2 });
-
-      // Bottom wing trailing edge
-      const yb = bt + wingSpan * t;
-      const yb2 = yb - 10;
-      lines.push({ x1: xt, y1: yb, x2, y2: yb2 });
-    });
-    return lines;
-  }, [wx, tp, bt, wingSpan]);
-
-  // ── 2. TAIL STABILISERS ──
-  // Stabilisers (-26,0) (16,.4) (42,.4) (30,0) at 60px scale
-  const topStabiliserPoints = useMemo(() => {
-    const pts = [
-      [endX - 26, tp],
-      [endX + 16, tp - 24],
-      [endX + 42, tp - 24],
-      [endX + 30, tp],
-    ];
-    return isVertical
-      ? pts.map(([x, y]) => `${y},${x}`).join(" ")
-      : pts.map(([x, y]) => `${x},${y}`).join(" ");
-  }, [endX, tp, isVertical]);
-
-  const bottomStabiliserPoints = useMemo(() => {
-    const pts = [
-      [endX - 26, bt],
-      [endX + 16, bt + 24],
-      [endX + 42, bt + 24],
-      [endX + 30, bt],
-    ];
-    return isVertical
-      ? pts.map(([x, y]) => `${y},${x}`).join(" ")
-      : pts.map(([x, y]) => `${x},${y}`).join(" ");
-  }, [endX, bt, isVertical]);
-
-  // ── 3. FUSELAGE PATH (centered, smooth aerodynamic curved end caps, no nose/tail dead zones) ──
+  // 3. FUSELAGE PATH (Aerodynamic realistic aircraft body)
   const fuselagePathD = useMemo(() => {
-    const frontCtrl = nx - (nx - frontTip) * 0.6;
-    const tailCtrl = endX + (tail - endX) * 0.6;
+    const nx = 145; // transition from nose curve to straight fuselage
+    return `
+      M ${frontTip},${md}
+      C ${frontTip + 22},${md - 72} ${frontTip + 70},${tp} ${nx},${tp}
+      L ${endX},${tp}
+      C ${endX + 45},${tp} ${tail - 20},${md - 14} ${tail},${md - 8}
+      L ${tail + 14},${md - 4}
+      C ${tail + 18},${md - 2} ${tail + 18},${md + 2} ${tail + 14},${md + 4}
+      L ${tail},${md + 8}
+      C ${tail - 20},${md + 14} ${endX + 45},${bt} ${endX},${bt}
+      L ${nx},${bt}
+      C ${frontTip + 70},${bt} ${frontTip + 22},${md + 72} ${frontTip},${md}
+      Z
+    `.trim();
+  }, [frontTip, md, tp, bt, endX, tail]);
 
-    if (isVertical) {
-      // Swapped (y, x): x is across width, y is along length
-      return `M ${tp},${nx} V ${endX} C ${tp},${tailCtrl} ${md - 16},${tail} ${md},${tail} C ${md + 16},${tail} ${bt},${tailCtrl} ${bt},${endX} V ${nx} C ${bt},${frontCtrl} ${md + 16},${frontTip} ${md},${frontTip} C ${md - 16},${frontTip} ${tp},${frontCtrl} ${tp},${nx} Z`;
-    }
-    return `M ${nx},${tp} H ${endX} C ${tailCtrl},${tp} ${tail},${md - 16} ${tail},${md} C ${tail},${md + 16} ${tailCtrl},${bt} ${endX},${bt} H ${nx} C ${frontCtrl},${bt} ${frontTip},${md + 16} ${frontTip},${md} C ${frontTip},${md - 16} ${frontCtrl},${tp} ${nx},${tp} Z`;
-  }, [isVertical, nx, tp, endX, tail, md, bt, frontTip]);
+  // 4. CABIN RED ARCHITECTURAL FLOORPLAN BORDER
+  const cabinRedBorderD = useMemo(() => {
+    const leftX = cabinLeftX;
+    const rightX = cabinRightX;
+    const topY = cabinTopY;
+    const botY = cabinBotY;
+
+    return `
+      M ${leftX + 20},${topY}
+      L ${rightX - 20},${topY}
+      C ${rightX + 12},${topY} ${rightX + 12},${botY} ${rightX - 20},${botY}
+      L ${leftX + 20},${botY}
+      C ${leftX - 12},${botY} ${leftX - 12},${topY} ${leftX + 20},${topY}
+      Z
+    `.trim();
+  }, [cabinLeftX, cabinRightX, cabinTopY, cabinBotY]);
 
   return (
     <svg
@@ -622,331 +502,605 @@ export const AircraftSeatMap = ({
       style={{
         display: "block",
         margin: "0 auto",
-        maxWidth: "none",
-        width: `${renderedWidth}px`,
-        height: `${renderedHeight}px`,
+        maxWidth: "100%",
+        height: "auto",
+        userSelect: "none",
       }}
     >
       <defs>
-        {/* Fuselage linear gradient across width */}
-        {isVertical ? (
-          <linearGradient id="fuselageGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#EEF1F7" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#E7EBF3" />
-          </linearGradient>
-        ) : (
-          <linearGradient id="fuselageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#EEF1F7" />
-            <stop offset="50%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#E7EBF3" />
-          </linearGradient>
-        )}
+        {/* Soft realistic aircraft elevation shadow */}
+        <filter id="aircraftDropShadow" x="-10%" y="-10%" width="125%" height="125%">
+          <feDropShadow dx="0" dy="6" stdDeviation="12" floodColor="#0F172A" floodOpacity="0.08" />
+        </filter>
 
-        {/* Wing gradient: fuselage (#FFF7F7) to tip (#F9D3D3) */}
-        {isVertical ? (
-          <>
-            <linearGradient id="topWingGrad" x1="100%" y1="0%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor="#FFF7F7" />
-              <stop offset="100%" stopColor="#F9D3D3" />
-            </linearGradient>
-            <linearGradient id="bottomWingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FFF7F7" />
-              <stop offset="100%" stopColor="#F9D3D3" />
-            </linearGradient>
-          </>
-        ) : (
-          <>
-            <linearGradient id="topWingGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor="#FFF7F7" />
-              <stop offset="100%" stopColor="#F9D3D3" />
-            </linearGradient>
-            <linearGradient id="bottomWingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="#FFF7F7" />
-              <stop offset="100%" stopColor="#F9D3D3" />
-            </linearGradient>
-          </>
-        )}
+        {/* Fuselage 3D cylindrical metallic lighting gradient */}
+        <linearGradient id="fuselage3DGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#CBD5E1" />
+          <stop offset="4%" stopColor="#E2E8F0" />
+          <stop offset="12%" stopColor="#F8FAFC" />
+          <stop offset="35%" stopColor="#FFFFFF" />
+          <stop offset="65%" stopColor="#FFFFFF" />
+          <stop offset="88%" stopColor="#F1F5F9" />
+          <stop offset="96%" stopColor="#E2E8F0" />
+          <stop offset="100%" stopColor="#CBD5E1" />
+        </linearGradient>
+
+        {/* Nose Dome 3D Highlight */}
+        <radialGradient id="noseDomeHighlight" cx="35%" cy="45%" r="65%">
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
+          <stop offset="60%" stopColor="#F8FAFC" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#CBD5E1" stopOpacity="0.1" />
+        </radialGradient>
+
+        {/* Upper Wing Gradient: Crisp white to subtle metallic silver */}
+        <linearGradient id="upperWingGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="40%" stopColor="#F8FAFC" />
+          <stop offset="80%" stopColor="#F1F5F9" />
+          <stop offset="100%" stopColor="#E2E8F0" />
+        </linearGradient>
+
+        {/* Lower Wing Gradient: Crisp white to subtle metallic silver */}
+        <linearGradient id="lowerWingGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="40%" stopColor="#F8FAFC" />
+          <stop offset="80%" stopColor="#F1F5F9" />
+          <stop offset="100%" stopColor="#E2E8F0" />
+        </linearGradient>
+
+        {/* Engine Cowl 3D Cylindrical Gradient */}
+        <linearGradient id="engineCowlGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#94A3B8" />
+          <stop offset="14%" stopColor="#E2E8F0" />
+          <stop offset="40%" stopColor="#FFFFFF" />
+          <stop offset="70%" stopColor="#F8FAFC" />
+          <stop offset="88%" stopColor="#E2E8F0" />
+          <stop offset="100%" stopColor="#64748B" />
+        </linearGradient>
+
+        {/* Cockpit Windshield Gradient: Deep dark navy/charcoal glass */}
+        <linearGradient id="cockpitGlassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0B132B" />
+          <stop offset="50%" stopColor="#1E293B" />
+          <stop offset="100%" stopColor="#0F172A" />
+        </linearGradient>
+
+        {/* Cockpit Sky Reflection Glare */}
+        <linearGradient id="cockpitGlassReflection" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#38BDF8" stopOpacity="0.75" />
+          <stop offset="60%" stopColor="#BAE6FD" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+        </linearGradient>
+
+        {/* Vertical Tail Fin Vibrant Pick&book Red Gradient */}
+        <linearGradient id="tailFinRedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#EF4444" />
+          <stop offset="35%" stopColor="#E31E24" />
+          <stop offset="100%" stopColor="#B91C1C" />
+        </linearGradient>
       </defs>
 
-      {/* ── DRAW ORDER STEP 1: WINGS & STABILISERS ── */}
-      <g className="aircraft-wings-layer">
-        {/* Top Wing */}
-        <polygon
-          points={topWingPoints}
-          fill="url(#topWingGrad)"
-          stroke="#D62828"
+      {/* ── 1. WINGS, ENGINES & TAIL STABILIZERS LAYER (Flanking the fuselage) ── */}
+      <g className="aircraft-wings-layer" filter="url(#aircraftDropShadow)">
+        {/* ── TOP WING ── */}
+        <path
+          d={topWingPath}
+          fill="url(#upperWingGrad)"
+          stroke="#CBD5E1"
           strokeWidth="1.6"
           strokeLinejoin="round"
         />
 
-        {/* Bottom Wing */}
-        <polygon
-          points={bottomWingPoints}
-          fill="url(#bottomWingGrad)"
-          stroke="#D62828"
-          strokeWidth="1.6"
-          strokeLinejoin="round"
+        {/* Top Wing Leading Edge Slat Line */}
+        <line
+          x1={wxRootLeading + 25}
+          y1={tp - 20}
+          x2={tipLeadingX - 6}
+          y2={tp - wingSpan + 10}
+          stroke="#94A3B8"
+          strokeWidth="1.2"
+          strokeDasharray="160 3"
         />
 
-        {/* Three Flap Lines along trailing edge */}
-        {flapLines.map((line, idx) => (
-          <line
-            key={`flap-${idx}`}
-            x1={isVertical ? line.y1 : line.x1}
-            y1={isVertical ? line.x1 : line.y1}
-            x2={isVertical ? line.y2 : line.x2}
-            y2={isVertical ? line.x2 : line.y2}
-            stroke="#D62828"
-            strokeWidth="0.9"
-            strokeOpacity="0.45"
-            strokeLinecap="round"
+        {/* Top Wing Flap Division Lines */}
+        <line
+          x1={wxRootLeading + 85}
+          y1={tp - 38}
+          x2={wxRootLeading + 102}
+          y2={tp - 8}
+          stroke="#CBD5E1"
+          strokeWidth="1.2"
+        />
+        <line
+          x1={wxRootLeading + 135}
+          y1={tp - 62}
+          x2={wxRootLeading + 150}
+          y2={tp - 8}
+          stroke="#CBD5E1"
+          strokeWidth="1.2"
+        />
+
+        {/* Top Wing Flap Track Fairing Canoes */}
+        {[
+          { x: wxRootLeading + 85, y: tp - 36 },
+          { x: wxRootLeading + 132, y: tp - 60 },
+          { x: wxRootLeading + 172, y: tp - 84 },
+        ].map((c, i) => (
+          <ellipse
+            key={`top-canoe-${i}`}
+            cx={c.x}
+            cy={c.y}
+            rx={8}
+            ry={2.5}
+            transform={`rotate(-28 ${c.x} ${c.y})`}
+            fill="#E2E8F0"
+            stroke="#94A3B8"
+            strokeWidth="0.8"
           />
         ))}
 
-        {/* Engines: Top & Bottom */}
+        {/* Top Winglet / Sharklet in Pick&book red */}
+        <polygon
+          points={`
+            ${tipLeadingX - 2},${tp - wingSpan + 6}
+            ${tipLeadingX + 16},${tp - wingSpan - 8}
+            ${tipLeadingX + 22},${tp - wingSpan - 6}
+            ${tipLeadingX + 10},${tp - wingSpan + 14}
+          `}
+          fill="#E31E24"
+          stroke="#B91C1C"
+          strokeWidth="1.2"
+        />
+
+        {/* ── BOTTOM WING ── */}
+        <path
+          d={bottomWingPath}
+          fill="url(#lowerWingGrad)"
+          stroke="#CBD5E1"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+
+        {/* Bottom Wing Leading Edge Slat Line */}
+        <line
+          x1={wxRootLeading + 25}
+          y1={bt + 20}
+          x2={tipLeadingX - 6}
+          y2={bt + wingSpan - 10}
+          stroke="#94A3B8"
+          strokeWidth="1.2"
+          strokeDasharray="160 3"
+        />
+
+        {/* Bottom Wing Flap Division Lines */}
+        <line
+          x1={wxRootLeading + 85}
+          y1={bt + 38}
+          x2={wxRootLeading + 102}
+          y2={bt + 8}
+          stroke="#CBD5E1"
+          strokeWidth="1.2"
+        />
+        <line
+          x1={wxRootLeading + 135}
+          y1={bt + 62}
+          x2={wxRootLeading + 150}
+          y2={bt + 8}
+          stroke="#CBD5E1"
+          strokeWidth="1.2"
+        />
+
+        {/* Bottom Wing Flap Track Fairing Canoes */}
         {[
-          { yEng: tp - 33, pylonY: tp - 18, isTop: true },
-          { yEng: bt + 33, pylonY: bt + 18, isTop: false },
+          { x: wxRootLeading + 85, y: bt + 36 },
+          { x: wxRootLeading + 132, y: bt + 60 },
+          { x: wxRootLeading + 172, y: bt + 84 },
+        ].map((c, i) => (
+          <ellipse
+            key={`bot-canoe-${i}`}
+            cx={c.x}
+            cy={c.y}
+            rx={8}
+            ry={2.5}
+            transform={`rotate(28 ${c.x} ${c.y})`}
+            fill="#E2E8F0"
+            stroke="#94A3B8"
+            strokeWidth="0.8"
+          />
+        ))}
+
+        {/* Bottom Winglet / Sharklet in Pick&book red */}
+        <polygon
+          points={`
+            ${tipLeadingX - 2},${bt + wingSpan - 6}
+            ${tipLeadingX + 16},${bt + wingSpan + 8}
+            ${tipLeadingX + 22},${bt + wingSpan + 6}
+            ${tipLeadingX + 10},${bt + wingSpan - 14}
+          `}
+          fill="#E31E24"
+          stroke="#B91C1C"
+          strokeWidth="1.2"
+        />
+
+        {/* ── ENGINES MOUNTED ON PYLONS UNDER WINGS ── */}
+        {[
+          { engY: tp - 36, pylonY: tp - 12, isTop: true },
+          { engY: bt + 36, pylonY: bt + 12, isTop: false },
         ].map((eng, idx) => {
-          const nacelleX = wx + 98;
-          const intakeX = wx + 84;
+          const engCenterX = wxRootLeading + 42;
+          const engW = 54;
+          const engH = 24;
+          const intakeX = engCenterX - engW / 2;
+          const exhaustX = engCenterX + engW / 2;
+
           return (
-            <g key={`engine-${idx}`}>
-              {/* Pylon line to dx 114 */}
-              <line
-                x1={isVertical ? eng.yEng : nacelleX}
-                y1={isVertical ? nacelleX : eng.yEng}
-                x2={isVertical ? eng.pylonY : wx + 114}
-                y2={isVertical ? wx + 114 : eng.pylonY}
-                stroke="#D62828"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              {/* Nacelle ellipse: rx 19, ry 8 */}
-              <ellipse
-                cx={isVertical ? eng.yEng : nacelleX}
-                cy={isVertical ? nacelleX : eng.yEng}
-                rx={isVertical ? 8 : 19}
-                ry={isVertical ? 19 : 8}
-                fill="#FFFFFF"
-                stroke="#D62828"
-                strokeWidth="1.5"
-              />
-              {/* Intake ellipse: rx 4.5, ry 5.5, fill #FBE3E3 */}
-              <ellipse
-                cx={isVertical ? eng.yEng : intakeX}
-                cy={isVertical ? intakeX : eng.yEng}
-                rx={isVertical ? 5.5 : 4.5}
-                ry={isVertical ? 4.5 : 5.5}
-                fill="#FBE3E3"
-                stroke="#D62828"
+            <g key={`turbofan-engine-${idx}`}>
+              {/* Engine Mounting Pylon */}
+              <polygon
+                points={`
+                  ${engCenterX - 12},${eng.engY}
+                  ${engCenterX + 20},${eng.engY}
+                  ${engCenterX + 14},${eng.pylonY}
+                  ${engCenterX - 6},${eng.pylonY}
+                `}
+                fill="#CBD5E1"
+                stroke="#94A3B8"
                 strokeWidth="1.2"
+              />
+
+              {/* Engine Exhaust Nozzle Cone */}
+              <ellipse
+                cx={exhaustX}
+                cy={eng.engY}
+                rx={5.5}
+                ry={engH / 2 - 3}
+                fill="#475569"
+                stroke="#334155"
+                strokeWidth="1.2"
+              />
+              <polygon
+                points={`
+                  ${exhaustX},${eng.engY - 4}
+                  ${exhaustX + 9},${eng.engY}
+                  ${exhaustX},${eng.engY + 4}
+                `}
+                fill="#334155"
+              />
+
+              {/* Engine Main Nacelle Cowling */}
+              <rect
+                x={intakeX}
+                y={eng.engY - engH / 2}
+                width={engW - 5}
+                height={engH}
+                rx={7}
+                fill="url(#engineCowlGrad)"
+                stroke="#94A3B8"
+                strokeWidth="1.3"
+              />
+
+              {/* Nacelle Cowl Separation Line */}
+              <line
+                x1={intakeX + 16}
+                y1={eng.engY - engH / 2}
+                x2={intakeX + 16}
+                y2={eng.engY + engH / 2}
+                stroke="#CBD5E1"
+                strokeWidth="1"
+              />
+
+              {/* Turbine Fan Intake Interior */}
+              <ellipse
+                cx={intakeX}
+                cy={eng.engY}
+                rx={5}
+                ry={engH / 2 - 1.5}
+                fill="#0F172A"
+                stroke="#64748B"
+                strokeWidth="1"
+              />
+
+              {/* Fan Spinner Center Cone */}
+              <polygon
+                points={`
+                  ${intakeX + 1},${eng.engY - 2.5}
+                  ${intakeX + 6},${eng.engY}
+                  ${intakeX + 1},${eng.engY + 2.5}
+                `}
+                fill="#E2E8F0"
+              />
+              <circle cx={intakeX + 6} cy={eng.engY} r={1.2} fill="#FFFFFF" />
+
+              {/* Polished Silver Intake Lip Ring */}
+              <ellipse
+                cx={intakeX}
+                cy={eng.engY}
+                rx={3.2}
+                ry={engH / 2 - 1.5}
+                fill="none"
+                stroke="#E2E8F0"
+                strokeWidth="1.5"
               />
             </g>
           );
         })}
 
-        {/* Tail Stabilisers */}
+        {/* ── TAIL STABILIZERS & VERTICAL TAIL FIN ── */}
+        {/* Top Horizontal Stabilizer */}
         <polygon
-          points={topStabiliserPoints}
-          fill="url(#topWingGrad)"
-          stroke="#D62828"
-          strokeWidth="1.6"
+          points={`
+            ${endX - 16},${tp + 4}
+            ${endX + 68},${tp - 38}
+            ${endX + 78},${tp - 35}
+            ${endX + 44},${tp + 8}
+          `}
+          fill="url(#upperWingGrad)"
+          stroke="#CBD5E1"
+          strokeWidth="1.5"
           strokeLinejoin="round"
         />
+        {/* Top Stabilizer Red Leading Tip Accent */}
         <polygon
-          points={bottomStabiliserPoints}
-          fill="url(#bottomWingGrad)"
-          stroke="#D62828"
-          strokeWidth="1.6"
+          points={`
+            ${endX + 58},${tp - 32}
+            ${endX + 68},${tp - 38}
+            ${endX + 78},${tp - 35}
+            ${endX + 66},${tp - 24}
+          `}
+          fill="#E31E24"
+        />
+
+        {/* Bottom Horizontal Stabilizer */}
+        <polygon
+          points={`
+            ${endX - 16},${bt - 4}
+            ${endX + 68},${bt + 38}
+            ${endX + 78},${bt + 35}
+            ${endX + 44},${bt - 8}
+          `}
+          fill="url(#lowerWingGrad)"
+          stroke="#CBD5E1"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        {/* Bottom Stabilizer Red Leading Tip Accent */}
+        <polygon
+          points={`
+            ${endX + 58},${bt + 32}
+            ${endX + 68},${bt + 38}
+            ${endX + 78},${bt + 35}
+            ${endX + 66},${bt + 24}
+          `}
+          fill="#E31E24"
+        />
+
+        {/* Vertical Tail Fin in Pick&book Red */}
+        <g className="aircraft-vertical-tail-fin">
+          {/* White Tail Root Fairing */}
+          <polygon
+            points={`
+              ${endX - 8},${md}
+              ${endX + 24},${md - 12}
+              ${tail + 24},${md}
+              ${endX + 24},${md + 12}
+            `}
+            fill="#F8FAFC"
+            stroke="#CBD5E1"
+            strokeWidth="1.2"
+          />
+
+          {/* Bold Red Vertical Stabilizer Fin */}
+          <polygon
+            points={`
+              ${endX + 16},${md - 5}
+              ${tail + 38},${md - 30}
+              ${tail + 44},${md - 24}
+              ${tail + 26},${md + 16}
+              ${endX + 34},${md}
+            `}
+            fill="url(#tailFinRedGrad)"
+            stroke="#B91C1C"
+            strokeWidth="1.4"
+            strokeLinejoin="round"
+          />
+
+          {/* Rudder Hinge Line */}
+          <line
+            x1={tail + 28}
+            y1={md - 22}
+            x2={tail + 16}
+            y2={md + 10}
+            stroke="#991B1B"
+            strokeWidth="1.3"
+          />
+
+          {/* Fin Leading Edge Highlight */}
+          <line
+            x1={endX + 20}
+            y1={md - 5}
+            x2={tail + 37}
+            y2={md - 28}
+            stroke="#FCA5A5"
+            strokeWidth="1.2"
+          />
+        </g>
+      </g>
+
+      {/* ── 2. MAIN FUSELAGE BODY LAYER ── */}
+      <g className="aircraft-fuselage-layer" filter="url(#aircraftDropShadow)">
+        {/* Fuselage Exterior Aerodynamic Shell */}
+        <path
+          d={fuselagePathD}
+          fill="url(#fuselage3DGrad)"
+          stroke="#CBD5E1"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+
+        {/* Nose Dome 3D Radial Highlight */}
+        <path
+          d={`
+            M ${frontTip},${md}
+            C ${frontTip + 22},${md - 72} ${frontTip + 70},${tp} 145,${tp}
+            L 145,${bt}
+            C ${frontTip + 70},${bt} ${frontTip + 22},${md + 72} ${frontTip},${md}
+            Z
+          `}
+          fill="url(#noseDomeHighlight)"
+        />
+
+        {/* Radome Nose Separation Curve */}
+        <path
+          d={`
+            M ${frontTip + 28},${md - 28}
+            C ${frontTip + 32},${md} ${frontTip + 32},${md} ${frontTip + 28},${md + 28}
+          `}
+          stroke="#CBD5E1"
+          strokeWidth="1.2"
+          fill="none"
+        />
+
+        {/* ── COCKPIT WINDSHIELD (Dark aviation glass with blue reflection) ── */}
+        <g className="aircraft-cockpit-windshield">
+          <path
+            d={`
+              M ${frontTip + 42},${md - 18}
+              C ${frontTip + 54},${md - 34} ${frontTip + 74},${md - 34} ${frontTip + 86},${md - 18}
+              L ${frontTip + 80},${md + 3}
+              C ${frontTip + 70},${md - 10} ${frontTip + 56},${md - 10} ${frontTip + 46},${md + 3}
+              Z
+            `}
+            fill="url(#cockpitGlassGrad)"
+            stroke="#0F172A"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          />
+
+          {/* Windshield Center Divider & Side Window Pillars */}
+          <line
+            x1={frontTip + 64}
+            y1={md - 31}
+            x2={frontTip + 63}
+            y2={md - 7}
+            stroke="#475569"
+            strokeWidth="1.6"
+          />
+          <line
+            x1={frontTip + 50}
+            y1={md - 25}
+            x2={frontTip + 50}
+            y2={md - 5}
+            stroke="#475569"
+            strokeWidth="1.2"
+          />
+          <line
+            x1={frontTip + 77}
+            y1={md - 25}
+            x2={frontTip + 76}
+            y2={md - 5}
+            stroke="#475569"
+            strokeWidth="1.2"
+          />
+
+          {/* Cockpit Sky Reflection Glare */}
+          <path
+            d={`
+              M ${frontTip + 44},${md - 16}
+              C ${frontTip + 54},${md - 30} ${frontTip + 72},${md - 30} ${frontTip + 82},${md - 16}
+              L ${frontTip + 78},${md - 12}
+              C ${frontTip + 70},${md - 24} ${frontTip + 56},${md - 24} ${frontTip + 48},${md - 12}
+              Z
+            `}
+            fill="url(#cockpitGlassReflection)"
+          />
+        </g>
+      </g>
+
+      {/* ── 3. CABIN FLOORPLAN RED ARCHITECTURAL BORDER ── */}
+      <g className="aircraft-cabin-floorplan-border">
+        {/* Red outline framing passenger cabin exactly as shown in Image 2 */}
+        <path
+          d={cabinRedBorderD}
+          fill="#FFFFFF"
+          stroke="#E31E24"
+          strokeWidth="2.2"
           strokeLinejoin="round"
         />
       </g>
 
-      {/* ── DRAW ORDER STEP 2: FUSELAGE ── */}
-      <path
-        d={fuselagePathD}
-        fill="url(#fuselageGrad)"
-        stroke="#D62828"
-        strokeWidth="2.6"
-        strokeLinejoin="round"
-      />
+      {/* ── 4. CABIN AMENITIES (FOOD & WASHROOM BADGES) ── */}
+      <g className="aircraft-amenities-layer">
+        {/* Front Cabin Amenities: Meal on top, Washroom on bottom */}
+        <FoodMealBadge x={firstRowX - 58} y={md - 50} />
+        <WashroomBadge x={firstRowX - 58} y={md + 22} />
 
-      {/* ── DRAW ORDER STEP 4: CABIN BANDS ── */}
-      <g className="aircraft-cabin-bands">
-        {cabinBands.map((band) => {
-          if (!band.name.toLowerCase().includes("business")) return null;
-          if (isVertical) {
-            return (
-              <rect
-                key={`band-${band.name}`}
-                x={tp + 2}
-                y={band.startX}
-                width={H - 4}
-                height={band.endX - band.startX}
-                rx={4}
-                fill="#E1E9FE"
-              />
-            );
-          }
+        {/* Rear Cabin Amenities: Washroom on top, Meal on bottom */}
+        <WashroomBadge x={lastRowEnd + 18} y={md - 50} />
+        <FoodMealBadge x={lastRowEnd + 18} y={md + 22} />
+      </g>
+
+      {/* ── 5. EMERGENCY EXITS (Positioned neatly on cabin red border) ── */}
+      <g className="aircraft-emergency-exits">
+        {exitRowNumbers.map((rNum) => {
+          const rowX = rowXMap.get(rNum);
+          if (rowX === undefined) return null;
+          const exitX = rowX + S / 2 - 11;
+
           return (
-            <rect
-              key={`band-${band.name}`}
-              x={band.startX}
-              y={tp + 2}
-              width={band.endX - band.startX}
-              height={H - 4}
-              rx={4}
-              fill="#E1E9FE"
-            />
+            <g key={`exit-marker-${rNum}`}>
+              {/* Top Emergency Exit Box */}
+              <EmergencyExit
+                x={exitX}
+                y={cabinTopY - 11}
+                direction="up"
+              />
+              {/* Bottom Emergency Exit Box */}
+              <EmergencyExit
+                x={exitX}
+                y={cabinBotY - 11}
+                direction="down"
+              />
+            </g>
           );
         })}
       </g>
 
-      {/* ── DRAW ORDER STEP 5: AISLE STRIPS (#E9EEF8 rectangle 14px high) ── */}
-      <g className="aircraft-aisle-strips">
-        {cabinAisleStrips.map((strip, sIdx) => {
-          if (isVertical) {
-            return (
-              <rect
-                key={`aisle-${sIdx}`}
-                x={strip.y}
-                y={strip.x}
-                width={strip.height}
-                height={strip.width}
-                rx={2}
-                fill="#E9EEF8"
-              />
-            );
-          }
-          return (
-            <rect
-              key={`aisle-${sIdx}`}
-              x={strip.x}
-              y={strip.y}
-              width={strip.width}
-              height={strip.height}
-              rx={2}
-              fill="#E9EEF8"
-            />
-          );
-        })}
-      </g>
-
-      {/* Galley Icons at Cabin Gaps */}
-      <g className="aircraft-galley-icons">
-        {transitionGaps.map((gapX, idx) => (
-          <GalleyIcon key={`galley-${idx}`} x={gapX} y={md} isVertical={isVertical} />
+      {/* ── 6. ROW NUMBERS ABOVE CABIN (Inside red border, above row A) ── */}
+      <g className="aircraft-row-numbers" style={{ pointerEvents: "none" }}>
+        {rowPositions.map((r) => (
+          <text
+            key={`row-num-${r.number}`}
+            x={r.x + S / 2}
+            y={cabinTopY + 16}
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="700"
+            fill="#0F172A"
+          >
+            {r.number}
+          </text>
         ))}
       </g>
 
-      {/* ── DRAW ORDER STEP 6: EXITS & DOORS ── */}
-      {/* Doors: 14x12 boxes on both edges at nx - 6 and endX - 8 */}
-      <g className="aircraft-doors">
-        <DoorBox x={isVertical ? tp - 6 : nx - 6} y={isVertical ? nx - 6 : tp - 6} isVertical={isVertical} />
-        <DoorBox x={isVertical ? bt - 6 : nx - 6} y={isVertical ? nx - 6 : bt - 6} isVertical={isVertical} />
-        <DoorBox x={isVertical ? tp - 6 : endX - 8} y={isVertical ? endX - 8 : tp - 6} isVertical={isVertical} />
-        <DoorBox x={isVertical ? bt - 6 : endX - 8} y={isVertical ? endX - 8 : bt - 6} isVertical={isVertical} />
-      </g>
-
-      {/* Emergency Exits at EVERY exit row from API, on BOTH edges */}
-      <g className="aircraft-emergency-exits">
-        {exitRows.map((rNum) => {
-          const rowX = rowXMap.get(rNum);
-          if (rowX === undefined) return null;
-          const exitBoxX = rowX + S / 2 - 12;
-
-          return (
-            <g key={`exit-${rNum}`}>
-              <EmergencyExit
-                x={isVertical ? tp - 6 : exitBoxX}
-                y={isVertical ? exitBoxX : tp - 6}
-                direction="up"
-                isVertical={isVertical}
-              />
-              <EmergencyExit
-                x={isVertical ? bt - 6 : exitBoxX}
-                y={isVertical ? exitBoxX : bt - 6}
-                direction="down"
-                isVertical={isVertical}
-              />
-            </g>
-          );
-        })}
-      </g>
-
-      {/* ── DRAW ORDER STEP 7: ROW NUMBERS & SEAT LETTERS (NEVER ROTATED) ── */}
-      <g className="aircraft-row-numbers" style={{ pointerEvents: "none" }}>
-        {rowPositions.map((r) => {
-          if (isVertical) {
-            // Left band beside each row
-            return (
-              <text
-                key={`num-${r.number}`}
-                x={tp - 10}
-                y={r.x + S / 2 + 4}
-                textAnchor="end"
-                fontSize="14"
-                fontWeight="500"
-                fill="#5b6472"
-              >
-                {r.number}
-              </text>
-            );
-          }
-          return (
-            <text
-              key={`num-${r.number}`}
-              x={r.x + S / 2}
-              y={tp + 17}
-              textAnchor="middle"
-              fontSize="14"
-              fontWeight="500"
-              fill="#5b6472"
-            >
-              {r.number}
-            </text>
-          );
-        })}
-      </g>
-
+      {/* ── 7. SEAT LETTERS (A, B, C | D, E, F) ON LEFT (Inside red border) ── */}
       <g className="aircraft-seat-letters" style={{ pointerEvents: "none" }}>
-        {cabinLetters.map((cl, clIdx) => {
-          const colMap = cabinColYOffsets.get(cl.cabin);
-          const h = cabinHeights.get(cl.cabin) || maxL;
-          const y0 = md - h / 2 + 5;
+        {cabins.map((cl, clIdx) => {
+          const colMap = cabinColYOffsets.get(cl.name);
           if (!colMap) return null;
 
           return (
             <g key={`letters-${clIdx}`}>
               {Array.from(colMap.entries()).map(([letter, yRel]) => {
                 const seatY = y0 + yRel;
-                if (isVertical) {
-                  // Above the first row of each cabin
-                  return (
-                    <text
-                      key={`let-${cl.cabin}-${letter}`}
-                      x={seatY + S / 2}
-                      y={cl.firstSeatX - 8}
-                      textAnchor="middle"
-                      fontSize="14"
-                      fontWeight="500"
-                      fill="#5b6472"
-                    >
-                      {letter}
-                    </text>
-                  );
-                }
                 return (
                   <text
-                    key={`let-${cl.cabin}-${letter}`}
-                    x={cl.firstSeatX - 6}
+                    key={`let-${cl.name}-${letter}`}
+                    x={firstRowX - 18}
                     y={seatY + S / 2 + 4}
-                    textAnchor="end"
-                    fontSize="14"
-                    fontWeight="500"
-                    fill="#5b6472"
+                    textAnchor="middle"
+                    fontSize="12"
+                    fontWeight="700"
+                    fill="#0F172A"
                   >
                     {letter}
                   </text>
@@ -957,28 +1111,19 @@ export const AircraftSeatMap = ({
         })}
       </g>
 
-      {/* ── DRAW ORDER STEP 8: SEATS (CHAIR SHAPE, NO TEXT INSIDE) ── */}
+      {/* ── 8. SEATS LAYER (Seats with prices below, inside cabin border) ── */}
       <g className="aircraft-seats-layer">
         {rowPositions.map((r) => {
           const colMap = cabinColYOffsets.get(r.cabin);
-          const h = cabinHeights.get(r.cabin) || maxL;
-          const y0 = md - h / 2 + 5;
 
           return (
             <g key={`row-seats-${r.number}`}>
-              {r.seats.map((seat) => {
+              {(r.seats || []).map((seat) => {
                 const yRel = colMap ? colMap.get(seat.col) : undefined;
                 if (yRel === undefined) return null;
 
                 const seatY = y0 + yRel;
                 const isSelected = selectedSeatIds.has(seat.id);
-                const isMatchingFilter = isSeatMatchingFilter(seat);
-
-                let tierColors = null;
-                if (seat.status === "paid") {
-                  const rankIndex = distinctPaidPrices.indexOf(seat.price);
-                  tierColors = getTierSeatColors(rankIndex, palette, seatFill);
-                }
 
                 return (
                   <ChairSeat
@@ -988,9 +1133,6 @@ export const AircraftSeatMap = ({
                     seat={seat}
                     status={seat.status}
                     isSelected={isSelected}
-                    tierColors={tierColors}
-                    isMatchingFilter={isMatchingFilter}
-                    hasActiveFilters={hasActiveFilters}
                     isVertical={isVertical}
                     onSeatClick={onSeatClick}
                     onMouseEnter={onSeatHover}
@@ -1002,27 +1144,9 @@ export const AircraftSeatMap = ({
           );
         })}
       </g>
-
-      {/* ── DRAW ORDER STEP 9: SYMBOL OVERLAY LAYER ── */}
-      <SymbolLayer
-        layout={layout}
-        rowPositions={rowPositions}
-        cabinHeights={cabinHeights}
-        cabinColYOffsets={cabinColYOffsets}
-        isVertical={isVertical}
-        md={md}
-        tp={tp}
-        bt={bt}
-        nx={nx}
-        endX={endX}
-        tail={tail}
-        maxL={maxL}
-      />
     </svg>
   );
 };
 
 export const AirlinerBackgroundSVG = AircraftSeatMap;
-export const LineIcon = GalleyIcon;
-
 export default AircraftSeatMap;

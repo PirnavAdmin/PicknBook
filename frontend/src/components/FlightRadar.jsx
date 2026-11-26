@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import precomputedMapData from '../data/precomputedWorldMap.json';
 import indiaStatesMapData from '../data/indiaStatesMap.json';
-import { resolveLocation } from '../utils/flightAirports';
+import { lookupAirport, isDomestic as checkIsDomestic } from '../utils/flightAirports';
 import pickNBookLogo from '../assets/images/brand/pick-n-book-logo.png';
 import '../STYLES/FlightRadar.css';
 
@@ -127,22 +127,19 @@ export function AirportMapMarker({
 }) {
   const pinFill = isDest ? '#E53935' : '#1B2A5C';
 
-  // Badge positioning: place cleanly away from route and map bounds
   const { offsetX, offsetY } = useMemo(() => {
     const topLimit = isDomestic ? 165 : 60;
     let oy = -36;
     let ox = 0;
 
     if (y < topLimit) {
-      oy = 18; // Place below pin if near top boundary
+      oy = 18;
     } else if (otherY !== undefined && otherY < y - 40 && Math.abs(otherX - x) < 35) {
-      // Route heads almost vertically upwards, place label below pin
       oy = 18;
     } else {
-      oy = -36; // Default sits above pin
+      oy = -36;
     }
 
-    // Keep label within horizontal map boundaries
     const minX = isDomestic ? 120 : 60;
     const maxX = isDomestic ? 530 : 940;
     if (x < minX) {
@@ -239,11 +236,13 @@ export function AirportMapMarker({
 export function DomesticFlightLoader({
   srcLoc,
   destLoc,
-  sourceCity,
-  destinationCity
+  fromCode,
+  toCode,
+  fromCity,
+  toCity
 }) {
-  const [domX0, domY0] = useMemo(() => projectIndiaPoint(srcLoc.coords || [78.4294, 17.2403]), [srcLoc]);
-  const [domX2, domY2] = useMemo(() => projectIndiaPoint(destLoc.coords || [75.8122, 26.8242]), [destLoc]);
+  const [domX0, domY0] = useMemo(() => projectIndiaPoint([srcLoc.lon, srcLoc.lat]), [srcLoc]);
+  const [domX2, domY2] = useMemo(() => projectIndiaPoint([destLoc.lon, destLoc.lat]), [destLoc]);
 
   // Curved red dashed flight route: quadratic Bezier lifted towards North
   const domesticArcD = useMemo(() => {
@@ -285,7 +284,7 @@ export function DomesticFlightLoader({
       {/* Ocean background */}
       <rect x="0" y="0" width="680" height="800" fill="#FDF1F1" opacity="0.9" />
 
-      {/* Elegant flowing wave curves along ocean sides & bottom */}
+      {/* Flowing wave curves along ocean sides */}
       <g className="fr-decor-waves">
         <path d="M 40 210 Q 180 180 340 230 T 640 190" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.4" />
         <path d="M 40 330 Q 160 370 320 310 T 640 350" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.35" />
@@ -294,7 +293,7 @@ export function DomesticFlightLoader({
         <path d="M 40 680 Q 200 640 380 710 T 640 660" fill="none" stroke="#fecdd3" strokeWidth="1.2" opacity="0.4" />
       </g>
 
-      {/* Indian States Layer: pastel colors with thin boundaries */}
+      {/* Indian States Layer */}
       <g id="domestic-states-layer">
         {indiaStatesMapData.states.map((s) => (
           <path
@@ -336,24 +335,24 @@ export function DomesticFlightLoader({
         </animateMotion>
       </g>
 
-      {/* Origin Marker (Navy Pin + White Pill Label) */}
+      {/* Origin Marker */}
       <AirportMapMarker
         x={domX0}
         y={domY0}
-        code={srcLoc.code}
-        city={srcLoc.city || sourceCity}
+        code={fromCode || srcLoc.iata || srcLoc.code}
+        city={fromCity || srcLoc.city}
         isDest={false}
         otherX={domX2}
         otherY={domY2}
         isDomestic={true}
       />
 
-      {/* Destination Marker (Red Pin + White Pill Label) */}
+      {/* Destination Marker */}
       <AirportMapMarker
         x={domX2}
         y={domY2}
-        code={destLoc.code}
-        city={destLoc.city || destinationCity}
+        code={toCode || destLoc.iata || destLoc.code}
+        city={toCity || destLoc.city}
         isDest={true}
         otherX={domX0}
         otherY={domY0}
@@ -369,13 +368,15 @@ export function DomesticFlightLoader({
 export function InternationalFlightLoader({
   srcLoc,
   destLoc,
-  sourceCity,
-  destinationCity
+  fromCode,
+  toCode,
+  fromCity,
+  toCity
 }) {
-  const [intlX0, intlY0] = useMemo(() => projectPoint(srcLoc.coords || [78.4294, 17.2403]), [srcLoc]);
-  const [intlX2, intlY2] = useMemo(() => projectPoint(destLoc.coords || [-0.4543, 51.4700]), [destLoc]);
+  const [intlX0, intlY0] = useMemo(() => projectPoint([srcLoc.lon, srcLoc.lat]), [srcLoc]);
+  const [intlX2, intlY2] = useMemo(() => projectPoint([destLoc.lon, destLoc.lat]), [destLoc]);
 
-  // Curved red dashed flight route: great-circle quadratic Bezier lifted towards North
+  // Curved red dashed flight route: quadratic Bezier lifted towards North
   const intlArcD = useMemo(() => {
     const dx = intlX2 - intlX0;
     const dy = intlY2 - intlY0;
@@ -415,7 +416,7 @@ export function InternationalFlightLoader({
       {/* Ocean Background */}
       <rect x="0" y="0" width="1000" height="500" fill={precomputedMapData.seaColor || '#fff1f0'} opacity="0.9" />
 
-      {/* Elegant flowing wave curves across ocean background */}
+      {/* Flowing wave curves across ocean background */}
       <g className="fr-decor-waves">
         <path d="M 0 100 Q 250 60 500 110 T 1000 80" fill="none" stroke="#fecdd3" strokeWidth="1.4" opacity="0.35" />
         <path d="M 0 200 Q 220 250 500 190 T 1000 230" fill="none" stroke="#fecdd3" strokeWidth="1.4" opacity="0.3" />
@@ -423,7 +424,7 @@ export function InternationalFlightLoader({
         <path d="M 0 420 Q 260 460 510 400 T 1000 440" fill="none" stroke="#fecdd3" strokeWidth="1.4" opacity="0.4" />
       </g>
 
-      {/* World Countries Layer: pastel colors with thin boundaries */}
+      {/* World Countries Layer */}
       <g id="intl-countries-layer">
         {precomputedMapData.countries.map((c) => (
           <path
@@ -465,24 +466,24 @@ export function InternationalFlightLoader({
         </animateMotion>
       </g>
 
-      {/* Origin Marker (Navy Pin + White Pill Label) */}
+      {/* Origin Marker */}
       <AirportMapMarker
         x={intlX0}
         y={intlY0}
-        code={srcLoc.code}
-        city={srcLoc.city || sourceCity}
+        code={fromCode || srcLoc.iata || srcLoc.code}
+        city={fromCity || srcLoc.city}
         isDest={false}
         otherX={intlX2}
         otherY={intlY2}
         isDomestic={false}
       />
 
-      {/* Destination Marker (Red Pin + White Pill Label) */}
+      {/* Destination Marker */}
       <AirportMapMarker
         x={intlX2}
         y={intlY2}
-        code={destLoc.code}
-        city={destLoc.city || destinationCity}
+        code={toCode || destLoc.iata || destLoc.code}
+        city={toCity || destLoc.city}
         isDest={true}
         otherX={intlX0}
         otherY={intlY0}
@@ -494,26 +495,24 @@ export function InternationalFlightLoader({
 
 /**
  * Bottom Route Information Pill
- * Displays: ✈ [SRC] [Src City]  →  ✈ [DEST] [Dest City]
+ * Shows "{FROM} {city} → {TO} {city}" from the props.
  */
 export function FlightRouteInfo({
-  srcLoc,
-  destLoc,
-  sourceCity,
-  destinationCity
+  fromCode,
+  toCode,
+  fromCity,
+  toCity
 }) {
   return (
     <div className="fr-route-chip">
-      <span className="fr-route-plane-icon" aria-hidden="true">✈</span>
       <span className="fr-route-segment">
-        <strong className="fr-route-code">{srcLoc.code}</strong>
-        <span className="fr-route-city">{srcLoc.city || sourceCity}</span>
+        <strong className="fr-route-code">{fromCode}</strong>
+        <span className="fr-route-city">{fromCity}</span>
       </span>
       <span className="fr-route-arrow" aria-hidden="true">→</span>
-      <span className="fr-route-plane-icon" aria-hidden="true">✈</span>
       <span className="fr-route-segment">
-        <strong className="fr-route-code">{destLoc.code}</strong>
-        <span className="fr-route-city">{destLoc.city || destinationCity}</span>
+        <strong className="fr-route-code">{toCode}</strong>
+        <span className="fr-route-city">{toCity}</span>
       </span>
     </div>
   );
@@ -521,10 +520,21 @@ export function FlightRouteInfo({
 
 /**
  * Main FlightRadar Component (Also exported as FlightSearchLoader)
+ * Approved design:
+ * - Pick&book logo at the top center
+ * - Light pink wave background
+ * - Pastel India/world map
+ * - Source and destination airport markers and labels
+ * - Realistic animated airplane following the dashed route
+ * - Bottom route information pill
  */
 export default function FlightRadar({
-  source = 'HYD',
-  dest = 'BOM',
+  fromCode = '',
+  toCode = '',
+  fromCity = '',
+  toCity = '',
+  source = '',
+  dest = '',
   sourceCity = '',
   destinationCity = ''
 }) {
@@ -535,25 +545,83 @@ export default function FlightRadar({
     return () => cancelAnimationFrame(timer);
   }, []);
 
-  // Dynamically resolve locations
-  const srcLoc = useMemo(() => resolveLocation(source || sourceCity, 'HYD'), [source, sourceCity]);
-  const destLoc = useMemo(() => resolveLocation(dest || destinationCity, 'BOM'), [dest, destinationCity]);
+  // Resolve airport codes and cities from explicit props, without hardcoded fallbacks
+  const resolvedFromCode = useMemo(() => {
+    if (fromCode && fromCode.trim()) return fromCode.trim().toUpperCase();
+    if (source && typeof source === 'string') {
+      const match = source.match(/\(([A-Z]{3})\)/i);
+      if (match) return match[1].toUpperCase();
+      if (/^[A-Z]{3}$/i.test(source.trim())) return source.trim().toUpperCase();
+    }
+    return '';
+  }, [fromCode, source]);
 
-  // Automatic Domestic vs. International Selection:
-  // Domestic = Both airports are within India ('IN')
-  // International = Either source or destination is outside India
-  const isIndiaDomestic = useMemo(() => {
-    return Boolean(
-      srcLoc &&
-      destLoc &&
-      srcLoc.country === 'IN' &&
-      destLoc.country === 'IN'
+  const resolvedToCode = useMemo(() => {
+    if (toCode && toCode.trim()) return toCode.trim().toUpperCase();
+    if (dest && typeof dest === 'string') {
+      const match = dest.match(/\(([A-Z]{3})\)/i);
+      if (match) return match[1].toUpperCase();
+      if (/^[A-Z]{3}$/i.test(dest.trim())) return dest.trim().toUpperCase();
+    }
+    return '';
+  }, [toCode, dest]);
+
+  // Airport lookup for origin & destination
+  const srcAirport = useMemo(() => lookupAirport(resolvedFromCode), [resolvedFromCode]);
+  const destAirport = useMemo(() => lookupAirport(resolvedToCode), [resolvedToCode]);
+
+  const resolvedFromCity = useMemo(() => {
+    if (fromCity && fromCity.trim()) return fromCity.trim();
+    if (sourceCity && sourceCity.trim()) return sourceCity.trim();
+    if (source && typeof source === 'string' && source.includes('(')) {
+      const city = source.replace(/\s*\([A-Za-z]{3}\).*/, '').trim();
+      if (city) return city;
+    }
+    return srcAirport?.city || resolvedFromCode;
+  }, [fromCity, sourceCity, source, srcAirport, resolvedFromCode]);
+
+  const resolvedToCity = useMemo(() => {
+    if (toCity && toCity.trim()) return toCity.trim();
+    if (destinationCity && destinationCity.trim()) return destinationCity.trim();
+    if (dest && typeof dest === 'string' && dest.includes('(')) {
+      const city = dest.replace(/\s*\([A-Za-z]{3}\).*/, '').trim();
+      if (city) return city;
+    }
+    return destAirport?.city || resolvedToCode;
+  }, [toCity, destinationCity, dest, destAirport, resolvedToCode]);
+
+  // If a code is missing, show an error state with logo and clean pill, never a default
+  if (!resolvedFromCode || !resolvedToCode || !srcAirport || !destAirport) {
+    return (
+      <div
+        className={`flight-radar-screen flight-radar-fullscreen ${isLoaded ? 'is-loaded' : ''}`}
+        role="alert"
+        aria-label="Flight route error"
+      >
+        <div className="fr-top-logo-container">
+          <img
+            src={pickNBookLogo}
+            alt="Pick&Book"
+            className="fr-top-logo"
+          />
+        </div>
+        <div className="fr-route-chip fr-route-chip--error">
+          <span className="fr-route-city">
+            {!resolvedFromCode || !resolvedToCode
+              ? "Airport code is missing. Please provide valid origin and destination airports."
+              : "Airport coordinates not found for the requested route."}
+          </span>
+        </div>
+      </div>
     );
-  }, [srcLoc, destLoc]);
+  }
+
+  // Domestic check via helper: both airports must have country === 'IN'
+  const isDomesticRoute = checkIsDomestic(resolvedFromCode, resolvedToCode);
 
   return (
     <div
-      className={`flight-radar-screen flight-radar-fullscreen ${isLoaded ? 'is-loaded' : ''} ${isIndiaDomestic ? 'is-domestic' : 'is-international'}`}
+      className={`flight-radar-screen flight-radar-fullscreen ${isLoaded ? 'is-loaded' : ''} ${isDomesticRoute ? 'is-domestic' : 'is-international'}`}
       role="region"
       aria-label="Flight search loading screen"
     >
@@ -567,28 +635,32 @@ export default function FlightRadar({
       </div>
 
       {/* ── CENTRAL MAP: Domestic India Map vs International World Map ── */}
-      {isIndiaDomestic ? (
+      {isDomesticRoute ? (
         <DomesticFlightLoader
-          srcLoc={srcLoc}
-          destLoc={destLoc}
-          sourceCity={sourceCity}
-          destinationCity={destinationCity}
+          srcLoc={srcAirport}
+          destLoc={destAirport}
+          fromCode={resolvedFromCode}
+          toCode={resolvedToCode}
+          fromCity={resolvedFromCity}
+          toCity={resolvedToCity}
         />
       ) : (
         <InternationalFlightLoader
-          srcLoc={srcLoc}
-          destLoc={destLoc}
-          sourceCity={sourceCity}
-          destinationCity={destinationCity}
+          srcLoc={srcAirport}
+          destLoc={destAirport}
+          fromCode={resolvedFromCode}
+          toCode={resolvedToCode}
+          fromCity={resolvedFromCity}
+          toCity={resolvedToCity}
         />
       )}
 
-      {/* ── BOTTOM CENTRE: Large Rounded Route Information Pill ── */}
+      {/* ── BOTTOM CENTRE: Route Information Pill ── */}
       <FlightRouteInfo
-        srcLoc={srcLoc}
-        destLoc={destLoc}
-        sourceCity={sourceCity}
-        destinationCity={destinationCity}
+        fromCode={resolvedFromCode}
+        toCode={resolvedToCode}
+        fromCity={resolvedFromCity}
+        toCity={resolvedToCity}
       />
     </div>
   );

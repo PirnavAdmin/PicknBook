@@ -1,16 +1,17 @@
 .pb-city-airport-box {
   position: relative;
   display: inline-flex;
+  flex-wrap: wrap !important;
   align-items: baseline;
   gap: 4px;
-  min-width: 0;
+  min-width: 0 !important;
   max-width: 100%;
   cursor: pointer;
-  user-select: none;
+  user-select: text;
   vertical-align: middle;
   outline: none;
-  transition: opacity 0.15s ease;
   box-sizing: border-box;
+  white-space: normal !important;
 }
 
 .pb-city-airport-box:focus-visible {
@@ -36,27 +37,36 @@
   margin: 0 auto;
 }
 
-/* Primary city name: trimmed cleanly with ellipsis when space is constrained */
+/* Primary city name: bold dark navy, complete name without truncation or ellipsis */
 .pb-city-name {
-  font-weight: 800;
-  color: #1e293b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  min-width: 0 !important;
   max-width: 100%;
   line-height: 1.25;
+  flex: 0 1 auto;
+  display: inline !important;
 }
 
-/* Three-letter airport code beside city name in smaller muted font */
+.pb-city-airport-box--right .pb-city-name {
+  text-align: right;
+}
+
+/* Three-letter airport code beside city name in smaller lighter grey/navy font, normal font weight */
 .pb-city-code {
   font-size: 0.82em;
-  font-weight: 600;
+  font-weight: 500;
   color: #64748b;
-  flex-shrink: 0;
-  white-space: nowrap;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
   line-height: 1.25;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  display: inline-block !important;
 }
 
 /* Rich Floating Tooltip Above Other Elements */
@@ -83,6 +93,7 @@
     opacity: 0;
     transform: translateY(3px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -167,4 +178,18 @@
 .fcd-segment-card,
 .flight-card-modern:has(.pb-city-tooltip) {
   overflow: visible !important;
+}
+
+/* Universal guarantee: full city names displayed without truncation or ellipsis */
+.pb-city-name,
+.yf-seg__city,
+.fcd-seg-city-name {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  display: inline !important;
 }

@@ -2,6 +2,7 @@ import { flightIdentity, supplierBoolean, normalizeFareQuote, assertFlightRespon
 import { getCountryCode } from "../utils/countries.js";
 import { clearFlightBookingFlowState } from "../pages/booking/flightBookingFlowStore.js";
 import { extractRelevantSegments } from "../utils/flightSegmentUtils.js";
+import { expandCityCode } from "../utils/flightAirports.js";
 import { parseSrdvSeatMap } from "../utils/seatMapUtils.js";
 
 const IS_LOCAL_DEV = process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
@@ -2105,17 +2106,19 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
   } else if (resolvedJourneyType === 2) {
     if (!validReturnDate) throw new Error("Select a return date.");
     const returnDateStr = formatIsoDateTime(returnDate);
+    const primaryFrom = expandCityCode(from)[0] || from;
+    const primaryTo = expandCityCode(to)[0] || to;
     segments = [
       {
-        Origin: String(from).toUpperCase(),
-        Destination: String(to).toUpperCase(),
+        Origin: String(primaryFrom).toUpperCase(),
+        Destination: String(primaryTo).toUpperCase(),
         FlightCabinClass: String(cabinClassCode),
         PreferredDepartureTime: outboundDateStr,
         PreferredArrivalTime: outboundDateStr,
       },
       {
-        Origin: String(to).toUpperCase(),
-        Destination: String(from).toUpperCase(),
+        Origin: String(primaryTo).toUpperCase(),
+        Destination: String(primaryFrom).toUpperCase(),
         FlightCabinClass: String(cabinClassCode),
         PreferredDepartureTime: returnDateStr,
         PreferredArrivalTime: returnDateStr,
@@ -2123,10 +2126,12 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
     ];
   } else {
     resolvedJourneyType = 1;
+    const primaryFrom = expandCityCode(from)[0] || from;
+    const primaryTo = expandCityCode(to)[0] || to;
     segments = [
       {
-        Origin: String(from).toUpperCase(),
-        Destination: String(to).toUpperCase(),
+        Origin: String(primaryFrom).toUpperCase(),
+        Destination: String(primaryTo).toUpperCase(),
         FlightCabinClass: String(cabinClassCode),
         PreferredDepartureTime: outboundDateStr,
         PreferredArrivalTime: outboundDateStr,
@@ -2140,15 +2145,7 @@ export function buildFlightSearchSegments({ from, to, date, returnDate, tripType
   };
 }
 
-export async function searchFlights(searchParams) {
-  clearFlightBookingFlowState();
-
-  const fromCode = searchParams.sourceCode || searchParams.fromCode || searchParams.originCode;
-  const toCode = searchParams.destinationCode || searchParams.toCode || searchParams.destinationCode;
-
-  if (!fromCode || !toCode) {
-    throw new Error("All flight sectors require a valid airport selection from the suggestions.");
-  }
+async function executeSingleSupplierSearch(fromCode, toCode, searchParams) {
   const journeyDate = searchParams.date;
   if (!journeyDate) throw new Error("Select a departure date.");
   const tripTypeStr = String(searchParams.tripType || "").toLowerCase();
@@ -2217,6 +2214,71 @@ export async function searchFlights(searchParams) {
     logFlightApiError("POST", endpoint, error);
     throw error;
   }
+}
+
+export async function searchFlights(searchParams) {
+  clearFlightBookingFlowState();
+
+  const fromCode = searchParams.sourceCode || searchParams.fromCode || searchParams.originCode;
+  const toCode = searchParams.destinationCode || searchParams.toCode || searchParams.destinationCode;
+
+  if (!fromCode || !toCode) {
+    throw new Error("All flight sectors require a valid airport selection from the suggestions.");
+  }
+
+  // Expand city codes (e.g. TYO -> [NRT, HND], LON -> [LHR, LGW], NYC -> [JFK, EWR], PAR -> [CDG, ORY])
+  // before calling the supplier to avoid "Selected Result Index not found"
+  const fromExpanded = expandCityCode(fromCode);
+  const toExpanded = expandCityCode(toCode);
+
+  if (fromExpanded.length > 1 || toExpanded.length > 1) {
+    const searchPairs = [];
+    for (const fc of fromExpanded) {
+      for (const tc of toExpanded) {
+        searchPairs.push({ fc, tc });
+      }
+    }
+
+    const settled = await Promise.allSettled(
+      searchPairs.map(({ fc, tc }) =>
+        executeSingleSupplierSearch(fc, tc, {
+          ...searchParams,
+          fromCode: fc,
+          toCode: tc,
+          sourceCode: fc,
+          destinationCode: tc,
+        })
+      )
+    );
+
+    const successful = settled
+      .filter((s) => s.status === "fulfilled" && s.value)
+      .map((s) => s.value);
+
+    if (successful.length === 0) {
+      const firstError = settled.find((s) => s.status === "rejected")?.reason;
+      if (firstError) throw firstError;
+      return [];
+    }
+
+    if (successful[0]?.isTwoWay) {
+      const mergedOnward = successful.flatMap((res) => res.onward || []);
+      const mergedReturn = successful.flatMap((res) => res.return || []);
+      const combined = [...mergedOnward, ...mergedReturn];
+      combined.isTwoWay = true;
+      combined.onward = mergedOnward;
+      combined.return = mergedReturn;
+      combined.traceId = successful[0].traceId;
+      return combined;
+    }
+
+    if (Array.isArray(successful[0])) {
+      return successful.flat();
+    }
+    return successful[0];
+  }
+
+  return executeSingleSupplierSearch(fromCode, toCode, searchParams);
 }
 
 // ============================================================================

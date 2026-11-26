@@ -2443,10 +2443,14 @@
 }
 
 .premium-airport-desc {
-  font-size: 0.64rem;
+  font-size: 0.78rem;
   color: #64748b;
-  max-width: 220px;
-  line-height: 1.1;
+  max-width: 100%;
+  line-height: 1.25;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  word-break: normal !important;
 }
 
 .premium-airport-desc strong {
@@ -4055,21 +4059,38 @@
 }
 
 .fcd-seg-place-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: baseline !important;
+  gap: 4px !important;
   margin: 4px 0 2px 0;
-  flex-wrap: wrap;
+  min-width: 0 !important;
+  max-width: 100%;
+  white-space: normal !important;
+  overflow: visible !important;
 }
 
 .fcd-seg-col--arr .fcd-seg-place-row {
-  justify-content: flex-end;
+  justify-content: flex-end !important;
+  text-align: right !important;
 }
 
 .fcd-seg-city-name {
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: #1e293b;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  display: inline !important;
+}
+
+.fcd-seg-col--arr .fcd-seg-city-name {
+  text-align: right !important;
 }
 
 .fcd-seg-airport-code {

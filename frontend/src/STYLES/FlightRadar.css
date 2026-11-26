@@ -122,10 +122,8 @@ body:has(.flight-loader-fullscreen-wrapper)::-webkit-scrollbar {
   }
 
   .fr-top-logo {
-    height: 42px;
     height: 44px;
     width: auto;
-    max-width: 220px;
     max-width: 240px;
     object-fit: contain;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.04));
@@ -205,18 +203,20 @@ body:has(.flight-loader-fullscreen-wrapper)::-webkit-scrollbar {
     pointer-events: none;
     display: inline-flex;
     align-items: center;
-    gap: 14px;
     gap: 12px;
     background-color: #ffffff;
     border: 1.5px solid #e5322d;
     font-size: 16px;
     color: #1e293b;
-    padding: 11px 32px;
     padding: 10px 28px;
     border-radius: 9999px;
-    box-shadow: 0 8px 24px rgba(229, 50, 45, 0.14);
     box-shadow: 0 8px 24px rgba(229, 50, 45, 0.16);
     white-space: nowrap;
+  }
+
+  .fr-route-chip--error {
+    border-color: #ef4444;
+    color: #b91c1c;
   }
 
   .fr-route-plane-icon {
@@ -256,160 +256,160 @@ body:has(.flight-loader-fullscreen-wrapper)::-webkit-scrollbar {
     display: inline-block;
   }
 
-    /* ── Domestic India Map Styling ── */
-    .fr-domestic-state {
-      vector-effect: non-scaling-stroke;
-      transition: opacity 0.3s ease;
+  /* ── Domestic India Map Styling ── */
+  .fr-domestic-state {
+    vector-effect: non-scaling-stroke;
+    transition: opacity 0.3s ease;
+  }
+
+  .fr-domestic-city-label {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    fill: #807272;
+    paint-order: stroke fill;
+    stroke: rgba(255, 255, 255, 0.9);
+    stroke-width: 2.2px;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+
+  .fr-domestic-arc {
+    fill: none;
+    stroke: #E53935;
+    stroke-width: 2.2px;
+    stroke-dasharray: 6 6;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  /* ── Departure & Arrival Marker Labels (Airport Code + City Name) ── */
+  .fr-marker-code {
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 800;
+    paint-order: stroke fill;
+    stroke: #ffffff;
+    stroke-width: 3.2px;
+    stroke-linejoin: round;
+    letter-spacing: 0.03em;
+    pointer-events: none;
+  }
+
+  .fr-marker-code--navy {
+    fill: #1B2A5C;
+  }
+
+  .fr-marker-code--red {
+    fill: #E53935;
+  }
+
+  .fr-marker-city {
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    fill: #334155;
+    paint-order: stroke fill;
+    stroke: #ffffff;
+    stroke-width: 2.6px;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+
+  /* ── International World Map Styling ── */
+  .fr-country {
+    transition: stroke 0.3s ease;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fr-route-path {
+    fill: none;
+    stroke: #e5322d;
+    stroke-width: 2px;
+    stroke-dasharray: 6 5;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .fr-pin-code {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    fill: #e5322d;
+    paint-order: stroke fill;
+    stroke: #ffffff;
+    stroke-width: 2.6px;
+    stroke-linejoin: round;
+    text-anchor: middle;
+    dominant-baseline: hanging;
+  }
+
+  /* ── Mobile and Tablet Responsiveness ── */
+  @media (max-width: 768px) {
+    .fr-top-logo-container {
+      top: 18px;
     }
 
-    .fr-domestic-city-label {
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 500;
-      fill: #807272;
-      paint-order: stroke fill;
-      stroke: rgba(255, 255, 255, 0.9);
-      stroke-width: 2.2px;
-      stroke-linejoin: round;
-      pointer-events: none;
+    .fr-top-logo {
+      height: 32px;
+      height: 36px;
     }
 
-    .fr-domestic-arc {
-      fill: none;
-      stroke: #E53935;
-      stroke-width: 2.2px;
-      stroke-dasharray: 6 6;
-      stroke-linecap: round;
-      vector-effect: non-scaling-stroke;
+    .fr-route-chip {
+      font-size: 13px;
+      padding: 9px 20px;
+      gap: 8px;
+      bottom: 20px;
+      gap: 9px;
+      bottom: 22px;
+      max-width: 92vw;
     }
 
-    /* ── Departure & Arrival Marker Labels (Airport Code + City Name) ── */
-    .fr-marker-code {
-      font-family: inherit;
+    .fr-route-code {
+      font-size: 15px;
+    }
+
+    .fr-route-city {
+      font-size: 13px;
       font-size: 13.5px;
-      font-weight: 800;
-      paint-order: stroke fill;
-      stroke: #ffffff;
-      stroke-width: 3.2px;
-      stroke-linejoin: round;
-      letter-spacing: 0.03em;
-      pointer-events: none;
     }
 
-    .fr-marker-code--navy {
-      fill: #1B2A5C;
+    .fr-route-plane-icon {
+      font-size: 14px;
     }
 
-    .fr-marker-code--red {
-      fill: #E53935;
+    .fr-route-arrow {
+      font-size: 16px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .fr-top-logo {
+      height: 30px;
     }
 
-    .fr-marker-city {
-      font-family: inherit;
-      font-size: 10.5px;
-      font-weight: 700;
-      fill: #334155;
-      paint-order: stroke fill;
-      stroke: #ffffff;
-      stroke-width: 2.6px;
-      stroke-linejoin: round;
-      pointer-events: none;
+    .fr-route-chip {
+      padding: 8px 16px;
+      padding: 7px 16px;
+      gap: 6px;
+      bottom: 18px;
+      max-width: 94vw;
     }
 
-    /* ── International World Map Styling ── */
-    .fr-country {
-      transition: stroke 0.3s ease;
-      vector-effect: non-scaling-stroke;
+
+    .fr-route-code {
+      font-size: 14px;
     }
 
-    .fr-route-path {
-      fill: none;
-      stroke: #e5322d;
-      stroke-width: 2px;
-      stroke-dasharray: 6 5;
-      stroke-linecap: round;
-      vector-effect: non-scaling-stroke;
+    .fr-route-city {
+      font-size: 12px;
     }
 
-    .fr-pin-code {
-      font-family: inherit;
-      font-size: 11px;
-      font-weight: 700;
-      fill: #e5322d;
-      paint-order: stroke fill;
-      stroke: #ffffff;
-      stroke-width: 2.6px;
-      stroke-linejoin: round;
-      text-anchor: middle;
-      dominant-baseline: hanging;
+    .fr-route-plane-icon {
+      font-size: 13px;
     }
 
-    /* ── Mobile and Tablet Responsiveness ── */
-    @media (max-width: 768px) {
-      .fr-top-logo-container {
-        top: 18px;
-      }
-
-      .fr-top-logo {
-        height: 32px;
-        height: 36px;
-      }
-
-      .fr-route-chip {
-        font-size: 13px;
-        padding: 9px 20px;
-        gap: 8px;
-        bottom: 20px;
-        gap: 9px;
-        bottom: 22px;
-        max-width: 92vw;
-      }
-
-      .fr-route-code {
-        font-size: 15px;
-      }
-
-      .fr-route-city {
-        font-size: 13px;
-        font-size: 13.5px;
-      }
-
-      .fr-route-plane-icon {
-        font-size: 14px;
-      }
-
-      .fr-route-arrow {
-        font-size: 16px;
-      }
+    .fr-route-arrow {
+      font-size: 14px;
     }
-
-    @media (max-width: 480px) {
-      .fr-top-logo {
-        height: 30px;
-      }
-
-      .fr-route-chip {
-        padding: 8px 16px;
-        padding: 7px 16px;
-        gap: 6px;
-        bottom: 18px;
-        max-width: 94vw;
-      }
-
-
-      .fr-route-code {
-        font-size: 14px;
-      }
-
-      .fr-route-city {
-        font-size: 12px;
-      }
-
-      .fr-route-plane-icon {
-        font-size: 13px;
-      }
-
-      .fr-route-arrow {
-        font-size: 14px;
-      }
-    }
+  }

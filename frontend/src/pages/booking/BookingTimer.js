@@ -87,6 +87,22 @@ export default function BookingTimer({ mode = "banner", hideBanner = false, onRe
   const formattedTime = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   const isUrgent = timeLeft < 120; // less than 2 minutes
 
+  if (mode === "stepper" || mode === "header") {
+    return (
+      <div className={`booking-timer-stepper-inline${isUrgent ? " is-urgent" : ""}`}>
+        <Clock size={15} className={`booking-timer-clock${isUrgent ? " animate-pulse" : ""}`} />
+        <span className="booking-timer-text">
+          {isUrgent ? (
+            <strong>Time is running out! Complete booking in: </strong>
+          ) : (
+            "Complete your booking within: "
+          )}
+          <strong className="booking-timer-val">{formattedTime}</strong>
+        </span>
+      </div>
+    );
+  }
+
   const containerClass = mode === "compact" 
     ? `booking-timer-compact${isUrgent ? " is-urgent" : ""}`
     : `booking-timer-banner${isUrgent ? " is-urgent" : ""}`;

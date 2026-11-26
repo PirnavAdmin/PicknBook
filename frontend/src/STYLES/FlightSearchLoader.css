@@ -158,10 +158,13 @@ body:has(.fl-loading-screen) .topbar .brand-logo {
 }
 
 @keyframes flRadarPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.4;
     transform: scale(1.3);
@@ -195,6 +198,7 @@ body:has(.fl-loading-screen) .topbar .brand-logo {
 }
 
 @media (prefers-color-scheme: dark) {
+
   .fl-title,
   .fl-subtitle {
     text-shadow: 0 0 4px var(--card-bg, #1e293b), 0 0 10px var(--card-bg, #1e293b), 0 0 18px var(--card-bg, #1e293b);
@@ -301,6 +305,7 @@ body:has(.fl-loading-screen) .topbar .brand-logo {
     transform: scale(0.12);
     opacity: 0.95;
   }
+
   100% {
     transform: scale(1);
     opacity: 0;
@@ -390,21 +395,26 @@ body:has(.fl-loading-screen) .topbar .brand-logo {
   .fl-top-block {
     top: 10px;
   }
+
   .fl-title {
     font-size: 17px;
   }
+
   .fl-subtitle {
     font-size: 12px;
     margin-bottom: 8px;
   }
+
   .fl-progress-track {
     width: 280px;
   }
+
   .fl-watermark-logo {
     height: 32px;
     bottom: 12px;
     right: 14px;
   }
+
   .fl-bottom-chip {
     font-size: 11.5px;
     padding: 5px 14px;

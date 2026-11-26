@@ -63,8 +63,8 @@ function formatLayoverText(seg, nextSeg) {
   }
   const rawCity = seg?.destCity ? String(seg.destCity).trim() : "";
   const code = seg?.destAirportCode ? String(seg.destAirportCode).trim().toUpperCase() : (rawCity.toUpperCase() || "AIRPORT");
-  const city = rawCity ? toTitleCase(rawCity) : "";
-  const cityLabel = city && city.toUpperCase() !== code ? `${city} (${code})` : code;
+  const fullCity = rawCity ? toTitleCase(rawCity) : "";
+  const cityLabel = fullCity && fullCity.toUpperCase() !== code ? `${fullCity} (${code})` : code;
   if (layover) {
     return `Connection at ${cityLabel} • Layover: ${layover}`;
   }
@@ -72,7 +72,28 @@ function formatLayoverText(seg, nextSeg) {
 }
 
 function formatLayoverFullText(seg, nextSeg) {
-  return formatLayoverText(seg, nextSeg);
+  let layover = "";
+  if (seg?.layoverTime && typeof seg.layoverTime === "string" && seg.layoverTime.trim()) {
+    layover = seg.layoverTime.trim().toLowerCase().replace(/h\s*/i, "h ").replace(/m\s*/i, "m").trim();
+  } else if (seg?.arrTime && nextSeg?.depTime) {
+    try {
+      const diffMs = new Date(nextSeg.depTime).getTime() - new Date(seg.arrTime).getTime();
+      if (diffMs > 0) {
+        const totalM = Math.floor(diffMs / 60000);
+        const lh = Math.floor(totalM / 60);
+        const lm = totalM % 60;
+        layover = lh > 0 ? `${lh}h ${lm}m` : `${lm}m`;
+      }
+    } catch (e) { }
+  }
+  const rawCity = seg?.destCity ? String(seg.destCity).trim() : "";
+  const code = seg?.destAirportCode ? String(seg.destAirportCode).trim().toUpperCase() : (rawCity.toUpperCase() || "AIRPORT");
+  const fullCity = rawCity ? toTitleCase(rawCity) : "";
+  const cityLabel = fullCity && fullCity.toUpperCase() !== code ? `${fullCity} (${code})` : code;
+  if (layover) {
+    return `Connection at ${cityLabel} • Layover: ${layover}`;
+  }
+  return `Connection at ${cityLabel}`;
 }
 
 function formatSegmentDate(timeVal, fallbackDate) {

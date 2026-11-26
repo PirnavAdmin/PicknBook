@@ -248,7 +248,12 @@
   font-size: 13.5px;
   font-weight: 800;
   color: #0f172a;
-  overflow: visible;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  max-width: 100%;
 }
 
 .pb-flight-route-airport {
