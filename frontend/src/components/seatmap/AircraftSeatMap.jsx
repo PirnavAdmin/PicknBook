@@ -960,59 +960,28 @@ export const AircraftSeatMap = ({
           fill="none"
         />
 
-        {/* ── COCKPIT WINDSHIELD (Dark aviation glass with blue reflection) ── */}
+        {/* Four angled cockpit panes, narrowing toward the nose */}
         <g className="aircraft-cockpit-windshield">
           <path
             d={`
-              M ${frontTip + 42},${md - 18}
-              C ${frontTip + 54},${md - 34} ${frontTip + 74},${md - 34} ${frontTip + 86},${md - 18}
-              L ${frontTip + 80},${md + 3}
-              C ${frontTip + 70},${md - 10} ${frontTip + 56},${md - 10} ${frontTip + 46},${md + 3}
+              M ${frontTip + 42},${md - 15}
+              L ${frontTip + 82},${md - 18}
+              L ${frontTip + 78},${md + 3}
+              L ${frontTip + 46},${md + 3}
               Z
             `}
-            fill="url(#cockpitGlassGrad)"
-            stroke="#0F172A"
-            strokeWidth="1.6"
+            fill="#2B3445"
+            stroke="#FFFFFF"
+            strokeWidth="1"
             strokeLinejoin="round"
           />
-
-          {/* Windshield Center Divider & Side Window Pillars */}
-          <line
-            x1={frontTip + 64}
-            y1={md - 31}
-            x2={frontTip + 63}
-            y2={md - 7}
-            stroke="#475569"
-            strokeWidth="1.6"
-          />
-          <line
-            x1={frontTip + 50}
-            y1={md - 25}
-            x2={frontTip + 50}
-            y2={md - 5}
-            stroke="#475569"
-            strokeWidth="1.2"
-          />
-          <line
-            x1={frontTip + 77}
-            y1={md - 25}
-            x2={frontTip + 76}
-            y2={md - 5}
-            stroke="#475569"
-            strokeWidth="1.2"
-          />
-
-          {/* Cockpit Sky Reflection Glare */}
-          <path
-            d={`
-              M ${frontTip + 44},${md - 16}
-              C ${frontTip + 54},${md - 30} ${frontTip + 72},${md - 30} ${frontTip + 82},${md - 16}
-              L ${frontTip + 78},${md - 12}
-              C ${frontTip + 70},${md - 24} ${frontTip + 56},${md - 24} ${frontTip + 48},${md - 12}
-              Z
-            `}
-            fill="url(#cockpitGlassReflection)"
-          />
+          <path d={`M ${frontTip + 42},${md - 15} L ${frontTip + 52},${md - 15.75} L ${frontTip + 51},${md + 3} L ${frontTip + 46},${md + 3} Z`} fill="#718096" opacity="0.55" />
+          <path d={`M ${frontTip + 52},${md - 15.75} L ${frontTip + 62},${md - 16.5} L ${frontTip + 60},${md + 3} L ${frontTip + 51},${md + 3} Z`} fill="#718096" opacity="0.45" />
+          <path d={`M ${frontTip + 62},${md - 16.5} L ${frontTip + 72},${md - 17.25} L ${frontTip + 69},${md + 3} L ${frontTip + 60},${md + 3} Z`} fill="#718096" opacity="0.4" />
+          <path d={`M ${frontTip + 72},${md - 17.25} L ${frontTip + 82},${md - 18} L ${frontTip + 78},${md + 3} L ${frontTip + 69},${md + 3} Z`} fill="#718096" opacity="0.5" />
+          <line x1={frontTip + 52} y1={md - 15.75} x2={frontTip + 51} y2={md + 3} stroke="#FFFFFF" strokeWidth="1" />
+          <line x1={frontTip + 62} y1={md - 16.5} x2={frontTip + 60} y2={md + 3} stroke="#FFFFFF" strokeWidth="1" />
+          <line x1={frontTip + 72} y1={md - 17.25} x2={frontTip + 69} y2={md + 3} stroke="#FFFFFF" strokeWidth="1" />
         </g>
       </g>
 

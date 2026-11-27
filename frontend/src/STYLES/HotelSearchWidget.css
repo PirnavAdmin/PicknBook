@@ -1,7 +1,7 @@
 /* ── Sleek Hotel Capsule Search Bar (Pixel-perfect to reference UI) ── */
 .hotel-capsule-wrapper {
   width: 100%;
-  max-width: 1140px;
+  max-width: 1220px;
   margin: 0 auto;
   position: relative;
   z-index: 30;
@@ -12,23 +12,20 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 64px;
-  height: 64px;
-  padding: 6px 8px 6px 24px;
+  min-height: 62px;
+  height: 62px;
+  padding: 6px 8px 6px 20px;
   border-radius: 9999px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(246, 244, 240, 0.58)) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.85) !important;
-  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.12) !important;
   box-sizing: border-box;
   position: relative;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hotel-capsule-searchbar:hover {
-  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.16), inset 0 1px 0 #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.16) !important;
 }
 
 /* Individual Data Cells */
@@ -41,7 +38,11 @@
 }
 
 .hotel-capsule-destination {
-  flex: 1.45 1 0;
+  flex: 1.8 1 auto;
+  min-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   cursor: text;
 }
 
@@ -90,11 +91,11 @@
 
 /* Small Uppercase Label Header — muted slate-blue */
 .hotel-capsule-label {
-  font-size: 13.5px !important;
-  font-weight: 600 !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
   color: #64748b !important;
   white-space: nowrap !important;
-  line-height: 1.1 !important;
+  line-height: 1.2 !important;
   margin-bottom: 2px !important;
   text-shadow: none !important;
 }
@@ -103,13 +104,147 @@
 .hotel-capsule-val {
   font-size: 13.5px !important;
   font-weight: 600 !important;
-  color: #1e293b !important;
+  color: #0f172a !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  line-height: 1.25 !important;
+  line-height: 1.2 !important;
   text-shadow: none !important;
   font-family: inherit !important;
+}
+
+/* Near Me Button */
+.hotel-near-me-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #e51a2e;
+  border: 1.5px solid #e51a2e;
+  border-radius: 9999px;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.hotel-near-me-btn:hover {
+  background: #fff5f5;
+  box-shadow: 0 2px 8px rgba(229, 26, 46, 0.15);
+}
+
+.hotel-near-me-btn.active {
+  background: #fff5f5;
+  border-color: #e51a2e;
+  box-shadow: 0 0 0 2px rgba(229, 26, 46, 0.12);
+}
+
+.hotel-near-me-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+/* Distance Radius Dropdown */
+.hotel-distance-dropdown-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hotel-distance-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.hotel-distance-btn:hover,
+.hotel-distance-btn.open {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.hotel-distance-btn .radius-chevron {
+  transition: transform 0.2s ease;
+}
+
+.hotel-distance-btn .radius-chevron.open {
+  transform: rotate(180deg);
+}
+
+.hotel-distance-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 110px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+  padding: 6px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: hotelDropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes hotelDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hotel-distance-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hotel-distance-dropdown-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.hotel-distance-dropdown-item.selected {
+  background: #fff5f5;
+  color: #e51a2e;
+  font-weight: 600;
 }
 
 /* Destination Autocomplete & Input */
@@ -138,8 +273,8 @@
   outline: none !important;
   box-shadow: none !important;
   font-size: 13.5px !important;
-  font-weight: 600 !important;
-  color: #1e293b !important;
+  font-weight: 500 !important;
+  color: #0f172a !important;
   padding: 0 !important;
   margin: 0 !important;
   width: 100% !important;
@@ -152,33 +287,9 @@
 
 .hotel-capsule-autocomplete input.place-input::placeholder,
 .hotel-capsule-autocomplete .field-control::placeholder {
-  color: #556987 !important;
-  opacity: 0.95 !important;
-  font-weight: 600 !important;
-  text-shadow: none !important;
-}
-
-/* Clean Destination Text Input */
-.hotel-capsule-input {
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  font-size: 13.5px !important;
-  font-weight: 600 !important;
-  color: #1e293b !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  width: 100% !important;
-  line-height: 1.25 !important;
-  font-family: inherit !important;
-  text-shadow: none !important;
-}
-
-.hotel-capsule-input::placeholder {
-  color: #556987 !important;
-  opacity: 0.95 !important;
-  font-weight: 600 !important;
+  color: #64748b !important;
+  opacity: 0.9 !important;
+  font-weight: 500 !important;
   text-shadow: none !important;
 }
 
@@ -186,19 +297,18 @@
 .hotel-capsule-divider {
   width: 1px !important;
   height: 32px !important;
-  background: rgba(148, 163, 184, 0.4) !important;
-  margin: 0 16px !important;
+  background: #e2e8f0 !important;
+  margin: 0 14px !important;
   flex-shrink: 0 !important;
 }
 
 /* Caret on Guests dropdown */
 .hotel-capsule-chevron {
-  color: #556987 !important;
+  color: #64748b !important;
   margin-left: 8px !important;
   margin-right: 2px !important;
   flex-shrink: 0 !important;
   transition: transform 0.2s ease !important;
-  filter: none !important;
 }
 
 .hotel-capsule-chevron.open {
@@ -209,12 +319,12 @@
 .hotel-capsule-btn {
   border-radius: 9999px !important;
   height: 48px !important;
-  padding: 0 26px !important;
-  background: #ff0000 !important;
+  padding: 0 24px !important;
+  background: #e51a2e !important;
   color: #ffffff !important;
   font-size: 13.5px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.05em !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
   border: none !important;
   cursor: pointer !important;
@@ -222,35 +332,37 @@
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  box-shadow: 0 4px 14px rgba(255, 0, 0, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(229, 26, 46, 0.35) !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: all 0.2s ease !important;
   margin-left: 6px !important;
 }
 
 .hotel-capsule-btn:hover {
-  background: #ff0000 !important;
+  background: #dc2626 !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 8px 20px rgba(255, 0, 0, 0.5) !important;
+  box-shadow: 0 6px 18px rgba(229, 26, 46, 0.45) !important;
 }
 
 .hotel-capsule-btn:active {
   transform: translateY(0) !important;
-  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(229, 26, 46, 0.3) !important;
 }
 
 .hotel-capsule-error-text {
   position: absolute;
   top: calc(100% + 6px);
   left: 24px;
-  color: #ff0000;
+  color: #e51a2e;
   font-size: 12px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 2px 10px;
+  background: #ffffff;
+  padding: 3px 10px;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #fee2e2;
+  z-index: 10;
 }
 
 /* Hidden Datepicker Input Helper */
@@ -266,42 +378,66 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 1040px) {
+@media (max-width: 1180px) {
   .hotel-capsule-searchbar {
     padding: 6px 8px 6px 16px;
-    height: auto;
-    min-height: 58px;
   }
+
   .hotel-capsule-divider {
-    margin: 0 8px;
+    margin: 0 10px !important;
   }
+
   .hotel-capsule-btn {
-    padding: 0 20px;
-    font-size: 12.5px;
-  }
-  .hotel-capsule-val {
-    font-size: 14px;
+    padding: 0 20px !important;
+    font-size: 13px !important;
   }
 }
 
-@media (max-width: 820px) {
+@media (max-width: 900px) {
   .hotel-capsule-searchbar {
-    flex-direction: column;
-    align-items: stretch;
-    border-radius: 24px;
-    padding: 16px;
-    height: auto;
+    flex-wrap: wrap;
+    border-radius: 28px !important;
+    padding: 16px !important;
+    height: auto !important;
+    min-height: unset !important;
     gap: 12px;
   }
-  .hotel-capsule-divider {
+
+  .hotel-capsule-destination {
     width: 100%;
-    height: 1px;
-    margin: 0;
+    flex: 1 1 100%;
   }
+
+  .hotel-capsule-divider {
+    display: none !important;
+  }
+
+  .hotel-capsule-date {
+    flex: 1 1 calc(50% - 10px);
+  }
+
+  .hotel-capsule-guests {
+    flex: 1 1 calc(50% - 10px);
+  }
+
   .hotel-capsule-btn {
     width: 100%;
     height: 48px;
-    margin-left: 0;
+    margin-left: 0 !important;
     margin-top: 6px;
+  }
+}
+
+@media (max-width: 600px) {
+  .hotel-capsule-destination {
+    flex-wrap: wrap;
+  }
+
+  .hotel-capsule-date {
+    flex: 1 1 100%;
+  }
+
+  .hotel-capsule-guests {
+    flex: 1 1 100%;
   }
 }

@@ -39,3 +39,10 @@ export function formatStageValue(value) {
   if (value == null || value === "") return "--";
   return typeof value === "object" ? JSON.stringify(value, null, 2) : String(value);
 }
+
+export function formatMetaKey(key) {
+  if (key === "gatewayPaid" || key === "gateway_paid" || key === "gatewayPaidAmount") {
+    return "Total Paid";
+  }
+  return key;
+}

@@ -51,11 +51,36 @@ async function requestHotelJson(urlOrPath, options = {}, fallbackMessage = "Hote
 // NEW HOTEL API ENDPOINTS
 // ==========================================
 
-export async function searchHotels(options) {
-  const { cityId, countryCode, city, destination, checkInDate, checkOutDate, roomsConfig } = options;
+export async function searchHotels(options = {}) {
+  const {
+    cityId,
+    countryCode,
+    city,
+    destination,
+    checkInDate,
+    checkOutDate,
+    roomsConfig,
+    hotelCodes,
+    hotelCode,
+    latitude,
+    longitude,
+    radiusMeters,
+    batchIndex,
+    batchSize,
+    maxBatches,
+    destinationName,
+    searchKind,
+  } = options;
 
-  const cityName = String(destination || city || "").trim();
-  if (!cityName) {
+  const hasCoordinates = latitude != null && longitude != null && !isNaN(Number(latitude)) && !isNaN(Number(longitude));
+  const hasHotelCodes = Boolean(
+    (Array.isArray(hotelCodes) && hotelCodes.length > 0) ||
+    (typeof hotelCodes === "string" && hotelCodes.trim()) ||
+    hotelCode
+  );
+
+  const cityName = String(destinationName || destination || city || "").trim();
+  if (!hasCoordinates && !hasHotelCodes && !cityName) {
     throw new Error("A valid destination city must be provided.");
   }
 
@@ -71,7 +96,7 @@ export async function searchHotels(options) {
     CheckOutDate: checkOutDate,
     NoOfNights: String(nights),
     BookingMode: "5",
-    CountryCode: "IN",
+    CountryCode: countryCode || "IN",
     CityId: normalizedCityId,
     ResultCount: "500",
     PreferredCurrency: "INR",
@@ -89,6 +114,32 @@ export async function searchHotels(options) {
     IsNearBySearchAllowed: true
   };
 
+  if (hasHotelCodes) {
+    const rawCodes = hotelCodes || hotelCode;
+    const codes = Array.isArray(rawCodes)
+      ? rawCodes.map(String).filter(Boolean)
+      : String(rawCodes).split(",").map(s => s.trim()).filter(Boolean);
+    if (codes.length > 0) {
+      payload.HotelCodes = codes;
+      payload.PreferredHotel = codes.join(",");
+    }
+  }
+
+  if (hasCoordinates) {
+    payload.Latitude = Number(latitude);
+    payload.Longitude = Number(longitude);
+  }
+
+  if (radiusMeters != null) {
+    payload.RadiusMeters = Number(radiusMeters);
+  }
+
+  if (batchIndex != null) payload.BatchIndex = Number(batchIndex);
+  if (batchSize != null) payload.BatchSize = Number(batchSize);
+  if (maxBatches != null) payload.MaxBatches = Number(maxBatches);
+  if (destinationName || cityName) payload.DestinationName = destinationName || cityName;
+  if (searchKind) payload.SearchKind = searchKind;
+
   try {
     const response = await requestHotelJson(
       `/api/Hotels/SearchHotels`,
@@ -102,6 +153,8 @@ export async function searchHotels(options) {
 
     if (response?.results && Array.isArray(response.results)) {
       hotels = response.results;
+    } else if (response?.hotels && Array.isArray(response.hotels)) {
+      hotels = response.hotels;
     } else if (response?.HotelSearchResult?.HotelResults) {
       hotels = response.HotelSearchResult.HotelResults;
     } else if (Array.isArray(response)) {
@@ -111,6 +164,7 @@ export async function searchHotels(options) {
     return hotels.map(h => {
       const normalizedHotel = {
         ...h,
+        distanceMeters: h.distanceMeters ?? h.DistanceMeters ?? null,
         hotelLocation: h.hotelLocation || h.hotelAddress || h.hotelDescription || h.location || h.area || "",
         hotelAddress: h.hotelAddress || h.hotelLocation || h.hotelDescription || h.address || "",
         hotelDescription: h.hotelDescription || h.hotelAddress || h.location || h.description || "",
@@ -126,6 +180,155 @@ export async function searchHotels(options) {
     });
   } catch (err) {
     console.error("Backend hotel search failed:", err);
+    throw err;
+  }
+}
+
+/**
+ * Reusable coordinate-based hotel search
+ * Endpoint: POST /api/Hotels/SearchNearby
+ */
+export async function searchNearbyHotels(options = {}) {
+  const {
+    latitude,
+    longitude,
+    radiusMeters = 5000,
+    batchIndex = 1,
+    batchSize = 200,
+    maxBatches,
+    destinationName = "Near my current location",
+    checkInDate,
+    checkOutDate,
+    noOfNights,
+    guestNationality = "IN",
+    roomsConfig,
+    roomGuests,
+    minRating = "1",
+    maxRating = "5",
+  } = options;
+
+  if (latitude == null || longitude == null || isNaN(Number(latitude)) || isNaN(Number(longitude))) {
+    throw new Error("Valid latitude and longitude are required for nearby hotel search.");
+  }
+
+  const config = Array.isArray(roomsConfig) && roomsConfig.length > 0
+    ? roomsConfig
+    : [{ adults: 2, children: 0, childAges: [] }];
+
+  const nights = noOfNights || Math.max(1, Math.ceil((new Date(checkOutDate) - new Date(checkInDate)) / 86400000));
+
+  const payload = {
+    Latitude: Number(latitude),
+    Longitude: Number(longitude),
+    RadiusMeters: Number(radiusMeters || 5000),
+    BatchIndex: Number(batchIndex || 1),
+    BatchSize: Number(batchSize || 200),
+    DestinationName: destinationName || "Near my current location",
+    CheckInDate: checkInDate,
+    CheckOutDate: checkOutDate,
+    NoOfNights: String(nights),
+    BookingMode: "5",
+    CountryCode: "IN",
+    PreferredCurrency: "INR",
+    GuestNationality: guestNationality || "IN",
+    NoOfRooms: String(config.length),
+    RoomGuests: roomGuests || config.map(room => ({
+      NoOfAdults: String(room.adults || 1),
+      NoOfChild: String(room.children || 0),
+      ChildAge: Array.isArray(room.childAges) ? room.childAges.map(String) : []
+    })),
+    PreferredHotel: "",
+    MinRating: String(minRating || "1"),
+    MaxRating: String(maxRating || "5"),
+    ReviewScore: 0,
+    IsNearBySearchAllowed: true
+  };
+
+  if (maxBatches != null) {
+    payload.MaxBatches = Number(maxBatches);
+  }
+
+  try {
+    const response = await requestHotelJson(
+      `/api/Hotels/SearchNearby`,
+      { method: "POST", body: JSON.stringify(payload) },
+      "Unable to search nearby hotels."
+    );
+
+    let hotels = [];
+    const traceId = response?.traceId || response?.TraceId || response?.HotelSearchResult?.TraceId || "";
+    const srdvType = response?.srdvType || response?.SrdvType || response?.HotelSearchResult?.SrdvType || "MixAPI";
+
+    if (response?.results && Array.isArray(response.results)) {
+      hotels = response.results;
+    } else if (response?.hotels && Array.isArray(response.hotels)) {
+      hotels = response.hotels;
+    } else if (response?.HotelSearchResult?.HotelResults) {
+      hotels = response.HotelSearchResult.HotelResults;
+    } else if (Array.isArray(response)) {
+      hotels = response;
+    }
+
+    const mappedHotels = hotels.map(h => ({
+      ...h,
+      distanceMeters: h.distanceMeters ?? h.DistanceMeters ?? null,
+      hotelLocation: h.hotelLocation || h.hotelAddress || h.hotelDescription || h.location || h.area || "",
+      hotelAddress: h.hotelAddress || h.hotelLocation || h.hotelDescription || h.address || "",
+      hotelDescription: h.hotelDescription || h.hotelAddress || h.location || h.description || "",
+      hotelPromotion: h.hotelPromotion || h.HotelPromotion || h.hotelPolicy || h.HotelPolicy || "",
+      hotelCategory: h.hotelCategory || h.HotelCategory || h.propertyType || h.propertyCategory || "",
+      roomCategory: h.roomCategory || h.RoomCategory || h.cateogry || h.category || h.rooms?.[0]?.cateogry || h.rooms?.[0]?.category || "",
+      TraceId: h.TraceId || h.traceId || traceId,
+      traceId: h.traceId || h.TraceId || traceId,
+      SrdvType: h.SrdvType || h.srdvType || srdvType || "MixAPI",
+      srdvType: h.srdvType || h.SrdvType || srdvType || "MixAPI"
+    }));
+
+    const nearbyMetadata = response?.nearbyMetadata || response?.NearbyMetadata || {
+      latitude: Number(latitude),
+      longitude: Number(longitude),
+      radiusMeters: Number(radiusMeters || 5000),
+      totalBatches: response?.totalBatches || response?.TotalBatches || 1,
+      batchIndex: Number(batchIndex || 1),
+    };
+
+    mappedHotels.hotels = mappedHotels;
+    mappedHotels.nearbyMetadata = nearbyMetadata;
+    mappedHotels.traceId = traceId;
+    mappedHotels.error = null;
+
+    return mappedHotels;
+  } catch (err) {
+    console.error("Backend nearby hotel search failed:", err);
+    throw err;
+  }
+}
+
+/**
+ * Fetch nearby hotel codes and distance without triggering full pricing
+ * Endpoint: POST /api/Hotels/NearbyHotel
+ */
+export async function getNearbyHotelCodes(options = {}) {
+  const { latitude, longitude, radiusMeters = 5000 } = options;
+  if (latitude == null || longitude == null || isNaN(Number(latitude)) || isNaN(Number(longitude))) {
+    throw new Error("Valid latitude and longitude are required to fetch nearby hotel codes.");
+  }
+
+  const payload = {
+    Latitude: Number(latitude),
+    Longitude: Number(longitude),
+    RadiusMeters: Number(radiusMeters || 5000),
+  };
+
+  try {
+    const response = await requestHotelJson(
+      `/api/Hotels/NearbyHotel`,
+      { method: "POST", body: JSON.stringify(payload) },
+      "Unable to fetch nearby hotel codes."
+    );
+    return response;
+  } catch (err) {
+    console.error("Backend getNearbyHotelCodes failed:", err);
     throw err;
   }
 }

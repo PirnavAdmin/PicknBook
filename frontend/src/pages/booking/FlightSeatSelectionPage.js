@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Armchair,
   CircleDot,
@@ -14,8 +14,7 @@ import {
   ShieldCheck,
   User,
   ArrowRight,
-  ArrowLeft,
-  Maximize2
+  ArrowLeft
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import BookingConfirmationModal from "../../components/booking/BookingConfirmationModal";
@@ -439,17 +438,25 @@ export default function FlightSeatSelectionPage() {
   const [selectionError, setSelectionError] = useState("");
   const [seatMapError, setSeatMapError] = useState("");
   const [isSeatMapLoading, setIsSeatMapLoading] = useState(false);
+  const seatMapRequestCache = useRef(new Map());
+  const ssrRequestCache = useRef(new Map());
+  const requestControllers = useRef(new Set());
+  const [seatMapRetryNonce, setSeatMapRetryNonce] = useState(0);
+  const [seatMapFailureKey, setSeatMapFailureKey] = useState("");
+
+  useEffect(() => () => {
+    requestControllers.current.forEach((controller) => controller.abort());
+    requestControllers.current.clear();
+  }, []);
 
   const [activeTab, setActiveTab] = useState("seat");
   const [activeSeatFilter, setActiveSeatFilter] = useState(null);
   const [priceFiltersBySegment, setPriceFiltersBySegment] = useState({});
-  const [isFitToScreen, setIsFitToScreen] = useState(false);
   const [containerWidth, setContainerWidth] = useState(800);
   const [palette, setPalette] = useState("spectrum");
   const [seatFill, setSeatFill] = useState("tinted");
   const [tappedSeat, setTappedSeat] = useState(null);
   const mapContainerRef = useRef(null);
-  const seatMapRef = useRef(null);
 
   useEffect(() => {
     const el = mapContainerRef.current;
@@ -473,7 +480,7 @@ export default function FlightSeatSelectionPage() {
     return () => observer.disconnect();
   }, []);
 
-  const isVertical = !isFitToScreen && containerWidth < 560;
+  const isVertical = containerWidth < 560;
 
   const activeFilters = useMemo(() => {
     const list = priceFiltersBySegment[activeSegmentIndex];
@@ -665,8 +672,20 @@ export default function FlightSeatSelectionPage() {
       return () => { isCurrent = false; };
     }
 
-    // Check if we already fetched seat map for this leg
-    if (seatMapCabinByLeg[activeSegmentIndex]) {
+    const itineraryResultIndex = flowState.ResultIndex || flowState.resultIndex ||
+      effectiveLegs[0]?.ResultIndex || effectiveLegs[0]?.resultIndex || resolvedResultIndex;
+    const bookingKey = `${resolvedTraceId}:${itineraryResultIndex}`;
+    const failureStorageKey = `flight_seatmap_unavailable:${bookingKey}`;
+
+    if (window.sessionStorage.getItem(failureStorageKey) === "1") {
+      setIsSeatMapLoading(false);
+      setSeatMapError("unavailable");
+      setSeatMapFailureKey(bookingKey);
+      return () => { isCurrent = false; };
+    }
+
+    // Check cached state and request-level guards before starting network work.
+    if (seatMapCabinByLeg[activeSegmentIndex] || seatMapRequestCache.current.has(bookingKey)) {
       setIsSeatMapLoading(false);
       setSeatMapError("");
       return () => {
@@ -692,14 +711,31 @@ export default function FlightSeatSelectionPage() {
           srdvIndex: resolvedSrdvIndex,
           journeyType: 1
         };
-        const [seatMap, ssr] = await Promise.all([
-          getFlightSeatMap(legPayload),
-          getFlightSSR(legPayload)
-        ]);
-        if (!isCurrent) return;
-
+        const controller = new AbortController();
+        requestControllers.current.add(controller);
+        let seatMapRequest = seatMapRequestCache.current.get(bookingKey);
+        if (!seatMapRequest) {
+          seatMapRequest = getFlightSeatMap({ ...legPayload, signal: controller.signal });
+          seatMapRequestCache.current.set(bookingKey, seatMapRequest);
+        }
+        let ssrRequest = ssrRequestCache.current.get(bookingKey);
+        if (!ssrRequest) {
+          ssrRequest = getFlightSSR({ ...legPayload, signal: controller.signal });
+          ssrRequestCache.current.set(bookingKey, ssrRequest);
+        }
+        const [seatMap, ssr] = await Promise.all([seatMapRequest, ssrRequest]);
+        requestControllers.current.delete(controller);
         console.log("[SeatMap] raw response:", seatMap);
         console.log("[SSR] raw response:", ssr);
+
+        if (seatMap?.code === "SUPPLIER_TRACE_NOT_FOUND" || seatMap?.code === "SEATMAP_UNAVAILABLE" ||
+            (seatMap?.error?.ErrorCode != null && Number(seatMap.error.ErrorCode) !== 0)) {
+          console.warn("[SeatMap] Seat map unavailable:", seatMap?.message || seatMap?.error?.ErrorMessage);
+          window.sessionStorage.setItem(failureStorageKey, "1");
+          setSeatMapFailureKey(bookingKey);
+          setSeatMapError("unavailable");
+          return;
+        }
 
         // The service already returns normalized baggage/meal arrays in ssr.baggage and ssr.meal.
         // Fall back to raw arrays and filter by route only if normalized arrays are empty.
@@ -716,11 +752,11 @@ export default function FlightSeatSelectionPage() {
 
         // Fallback: try raw arrays and route-filter them
         if (baggageList.length === 0) {
-          const flatBag = flattenSeatEntries(ssr?.Baggage);
+          const flatBag = flattenSeatEntries(ssr?.data?.Baggage?.[0] ?? []);
           baggageList = flatBag.filter(matchesRoute).length > 0 ? flatBag.filter(matchesRoute) : flatBag;
         }
         if (mealList.length === 0) {
-          const flatMeal = flattenSeatEntries(ssr?.MealDynamic || ssr?.Meal);
+          const flatMeal = flattenSeatEntries(ssr?.data?.MealDynamic ?? ssr?.data?.Meal ?? []);
           mealList = flatMeal.filter(matchesRoute).length > 0 ? flatMeal.filter(matchesRoute) : flatMeal;
         }
 
@@ -758,19 +794,20 @@ export default function FlightSeatSelectionPage() {
             return (origin === leg.sourceCode && dest === leg.destinationCode) ||
               (origin === journeyOrigin && dest === journeyDest);
           };
-          let legBaggage = baggageList.filter(legMatchesSsr);
-          if (legBaggage.length === 0) legBaggage = baggageList;
-          let legMeal = mealList.filter(legMatchesSsr);
-          if (legMeal.length === 0) legMeal = mealList;
-          setSsrOptionsByLeg(prev => ({
-            ...prev,
-            [lIdx]: { baggage: legBaggage, meal: legMeal }
-          }));
+          const legBaggage = baggageList.filter(legMatchesSsr);
+          const legMeal = mealList.filter(legMatchesSsr);
+          if (legBaggage.length || legMeal.length) {
+            setSsrOptionsByLeg(prev => ({ ...prev, [lIdx]: {
+              baggage: legBaggage.length ? legBaggage : (prev[lIdx]?.baggage ?? []),
+              meal: legMeal.length ? legMeal : (prev[lIdx]?.meal ?? []),
+            }}));
+          }
         });
       } catch (error) {
         if (!isCurrent) return;
         console.error("[SeatMap/SSR] Fetch error:", error);
-        setSeatMapError("Seat map not available for this leg");
+        setSeatMapFailureKey(bookingKey);
+        setSeatMapError("unavailable");
       } finally {
         if (isCurrent) {
           setIsSeatMapLoading(false);
@@ -781,7 +818,7 @@ export default function FlightSeatSelectionPage() {
     return () => {
       isCurrent = false;
     };
-  }, [currentLeg, activeSegmentIndex, travelClass, seatMapCabinByLeg]);
+  }, [activeSegmentIndex, currentLeg?.id, currentLeg?.ResultIndex, currentLeg?.resultIndex, currentLeg?.traceId, currentLeg?.TraceId, currentLeg?.sourceCode, currentLeg?.destinationCode, currentLeg?.srdvIndex, currentLeg?.SrdvIndex, currentLeg?.srdvType, currentLeg?.SrdvType, flowState.TraceId, flowState.traceId, flowState.ResultIndex, flowState.resultIndex, travelClass, seatMapRetryNonce]);
 
   const seatMapCabin = seatMapCabinByLeg[activeSegmentIndex] || null;
   const ssrOptions = ssrOptionsByLeg[activeSegmentIndex] || { baggage: [], meal: [] };
@@ -794,67 +831,6 @@ export default function FlightSeatSelectionPage() {
   const activeLayout = useMemo(() => {
     return getCachedNormalizedSeatMap(cacheKey, rawSeatMap);
   }, [cacheKey, rawSeatMap]);
-
-  const applyFitScale = useCallback(() => {
-    const viewport = mapContainerRef.current;
-    const seatMap = seatMapRef.current;
-    if (!viewport || !seatMap) return;
-
-    const viewportWidth = viewport.clientWidth;
-    const seatMapWidth = seatMap.scrollWidth;
-    const seatMapHeight = seatMap.scrollHeight;
-    if (!seatMapWidth || !seatMapHeight) return;
-
-    const scale = Math.min(1, viewportWidth / seatMapWidth);
-    seatMap.style.transform = `scale(${scale})`;
-    seatMap.style.transformOrigin = "top center";
-    viewport.style.height = `${Math.round(seatMapHeight * scale)}px`;
-    viewport.style.overflowX = "hidden";
-    viewport.scrollLeft = 0;
-  }, []);
-
-  const resetFitScale = useCallback(() => {
-    const viewport = mapContainerRef.current;
-    const seatMap = seatMapRef.current;
-    if (seatMap) {
-      seatMap.style.transform = "none";
-      seatMap.style.transformOrigin = "top center";
-    }
-    if (viewport) {
-      viewport.style.height = "auto";
-      viewport.style.overflowX = containerWidth < 560 ? "hidden" : "auto";
-    }
-  }, [containerWidth]);
-
-  const handleToggleFitToScreen = () => {
-    if (isFitToScreen) {
-      resetFitScale();
-      setIsFitToScreen(false);
-    } else {
-      setIsFitToScreen(true);
-    }
-  };
-
-  useEffect(() => {
-    if (!isFitToScreen) {
-      resetFitScale();
-      return;
-    }
-
-    applyFitScale();
-
-    const viewport = mapContainerRef.current;
-    if (!viewport) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      applyFitScale();
-    });
-    resizeObserver.observe(viewport);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [isFitToScreen, applyFitScale, resetFitScale, activeSegmentIndex, activeLayout]);
 
   const seatStats = useMemo(() => {
     if (!activeLayout || !activeLayout.rows) {
@@ -1409,7 +1385,7 @@ export default function FlightSeatSelectionPage() {
               </div>
             </div>
 
-            {/* Flight tabs row with Fit to screen at upper right */}
+            {/* Flight tabs row */}
             <div className="flight-tabs-row">
               <div className="flight-tabs-left">
                 {effectiveLegs.map((leg, idx) => {
@@ -1428,14 +1404,6 @@ export default function FlightSeatSelectionPage() {
                   );
                 })}
               </div>
-              <button
-                type="button"
-                className={`fit-to-screen-btn ${isFitToScreen ? "fitted" : ""}`}
-                onClick={handleToggleFitToScreen}
-              >
-                <Maximize2 size={14} className="fit-icon" />
-                <span>{isFitToScreen ? "Reset zoom" : "Fit to screen"}</span>
-              </button>
             </div>
 
             {/* Row: "Aircraft seat map" left with red plane icon; right side text */}
@@ -1451,10 +1419,10 @@ export default function FlightSeatSelectionPage() {
 
             {/* MAP CONTAINER (position relative, 0.5px border, radius 12px, background #FFFFFF, responsive overflow) */}
             <div
-              className={`aircraft-seatmap-container ${isVertical ? "vertical" : "horizontal"} ${isFitToScreen ? "fitted" : ""}`}
+              className={`aircraft-seatmap-container ${isVertical ? "vertical" : "horizontal"}`}
               ref={mapContainerRef}
               style={{
-                overflowX: isFitToScreen ? "hidden" : (isVertical ? "hidden" : "auto"),
+                overflowX: isVertical ? "hidden" : "auto",
                 overflowY: isVertical ? "visible" : "hidden",
                 width: "100%",
                 position: "relative",
@@ -1473,13 +1441,29 @@ export default function FlightSeatSelectionPage() {
               {seatMapError && !isSeatMapLoading && (
                 <div className="seatmap-error-box">
                   <Info size={16} />
-                  <span>Seat map not available for this leg</span>
+                  <span>
+                    Seat selection isn't available for this airline.<br />
+                    You can continue without choosing seats. Seats may be assigned at check-in.<br />
+                    <button
+                      type="button"
+                      style={{ border: 0, background: "transparent", padding: 0, color: "inherit", font: "inherit", cursor: "pointer" }}
+                      onClick={() => {
+                        const key = seatMapFailureKey;
+                        if (!key) return;
+                        window.sessionStorage.removeItem(`flight_seatmap_unavailable:${key}`);
+                        seatMapRequestCache.current.delete(key);
+                        setSeatMapError("");
+                        setSeatMapRetryNonce((value) => value + 1);
+                      }}
+                    >
+                      Try again
+                    </button>
+                  </span>
                 </div>
               )}
 
               {!isSeatMapLoading && !seatMapError && activeLayout && activeLayout.totalRows > 0 && (
                 <div
-                  ref={seatMapRef}
                   className="seatmap-scalable-wrapper"
                   style={{
                     transformOrigin: "top center",
@@ -1566,7 +1550,7 @@ export default function FlightSeatSelectionPage() {
             </div>
 
             {/* ── SEAT MAP REFERENCE LEGEND BAR (Exact match to screenshot) ── */}
-            <div className="seatmap-reference-legend-bar">
+            {!seatMapError && <div className="seatmap-reference-legend-bar">
               <div className="legend-section">
                 <span className="legend-section-title">Seat Status</span>
                 <div className="legend-badge-item">
@@ -1623,7 +1607,7 @@ export default function FlightSeatSelectionPage() {
                 <Info size={15} className="legend-info-icon" />
                 <span>Seat price is shown below each seat.</span>
               </div>
-            </div>
+            </div>}
 
             {selectionError && (
               <p className="flight-flow-error" style={{ color: "var(--seat-exit-icon, #d97706)", margin: "8px 0" }}>

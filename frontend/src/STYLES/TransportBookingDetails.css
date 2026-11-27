@@ -16,6 +16,10 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
 }
 .transport-booking-details .ops-modal > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   padding: 18px 24px;
   border-bottom: 1px solid #f1f5f9;
   background: #ffffff;
@@ -26,18 +30,63 @@
   font-size: 1.25rem;
   font-weight: 800;
   color: #0f172a;
+  margin: 0;
+  white-space: nowrap;
 }
-.transport-booking-details .ops-modal > header button {
-  background: transparent;
-  border: none;
-  color: #64748b;
-  padding: 6px;
+.transport-booking-details .ops-modal > header .modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.transport-booking-details .ops-modal > header button.btn-download-voucher {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 36px !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+.transport-booking-details .ops-modal > header button.btn-download-voucher:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+.transport-booking-details .ops-modal > header button.btn-download-voucher:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+}
+.transport-booking-details .ops-modal > header button.modal-close-btn,
+.transport-booking-details .ops-modal > header button:not(.btn-download-voucher) {
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
-.transport-booking-details .ops-modal > header button:hover {
+.transport-booking-details .ops-modal > header button.modal-close-btn:hover,
+.transport-booking-details .ops-modal > header button:not(.btn-download-voucher):hover {
   background: #f1f5f9;
   color: #0f172a;
 }
@@ -128,5 +177,19 @@
   .transport-booking-details .ops-modal-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .transport-booking-details .ops-modal > header {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+  .transport-booking-details .ops-modal > header h3 {
+    font-size: 1.05rem;
+  }
+  .transport-booking-details .ops-modal > header button.btn-download-voucher {
+    padding: 6px 12px !important;
+    font-size: 0.8rem !important;
   }
 }

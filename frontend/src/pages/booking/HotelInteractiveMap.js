@@ -167,9 +167,9 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
             options={
               typeof window !== "undefined" && window.google?.maps
                 ? {
-                    maxWidth: 290,
-                    pixelOffset: new window.google.maps.Size(0, -10),
-                  }
+                  maxWidth: 290,
+                  pixelOffset: new window.google.maps.Size(0, -10),
+                }
                 : { maxWidth: 290 }
             }
           >
@@ -197,7 +197,14 @@ export default function HotelInteractiveMap({ hotels = [], onSelectHotel }) {
                     ) : (
                       <span className="hotel-map-location-image-placeholder" />
                     )}
-                    <span className="hotel-map-location-hotel-name">{hotel.name}</span>
+                    <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                      <span className="hotel-map-location-hotel-name">{hotel.name}</span>
+                      {hotel.distanceMeters != null && (
+                        <span style={{ fontSize: "11px", color: "#059669", fontWeight: 600 }}>
+                          {hotel.distanceMeters < 1000 ? `${Math.round(hotel.distanceMeters)}m away` : `${(hotel.distanceMeters / 1000).toFixed(1)}km away`}
+                        </span>
+                      )}
+                    </div>
                     <strong>{formatCurrency(hotel.price)}</strong>
                   </button>
                 ))}

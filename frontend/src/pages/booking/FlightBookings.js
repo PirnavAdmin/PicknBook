@@ -550,38 +550,65 @@ export default function FlightBookings() {
       {selectedBooking && (
         <div className="ops-modal-backdrop booking-details-scrollbar transport-booking-details" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
           <div className="ops-modal" onClick={(event) => event.stopPropagation()}>
-            <header>
-              <h3>{bookingCategory(selectedBooking) === "cancelled" ? "Flight Cancellation Details" : "Flight Booking Details"}</h3>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+              <h3 style={{ margin: 0, whiteSpace: "nowrap" }}>{bookingCategory(selectedBooking) === "cancelled" ? "Flight Cancellation Details" : "Flight Booking Details"}</h3>
+              <div className="modal-header-actions" style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                 {bookingCategory(selectedBooking) !== "cancelled" && bookingCategory(selectedBooking) !== "payment failed" && (
                   <button
                     type="button"
+                    className="btn-download-voucher"
                     onClick={() => handleDownloadVoucher(selectedBooking)}
                     disabled={downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.bookingReference || selectedBooking.pnr || selectedBooking.id)}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: 6,
+                      justifyContent: "center",
+                      gap: 8,
                       background: "#2563eb",
-                      color: "#fff",
+                      color: "#ffffff",
                       border: "none",
-                      padding: "6px 12px",
+                      padding: "8px 16px",
                       borderRadius: 6,
-                      fontSize: "0.82rem",
+                      fontSize: "0.85rem",
                       fontWeight: 600,
-                      cursor: "pointer"
+                      cursor: downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.bookingReference || selectedBooking.pnr || selectedBooking.id) ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
+                      width: "auto",
+                      height: "auto",
+                      minHeight: 36,
+                      boxSizing: "border-box",
+                      flexShrink: 0
                     }}
                   >
                     {downloadingVoucherId === (selectedBooking.bookingId || selectedBooking.bookingReference || selectedBooking.pnr || selectedBooking.id) ? (
-                      <Loader2 size={14} className="spin" />
+                      <Loader2 size={15} className="spin" />
                     ) : (
-                      <Download size={14} />
+                      <Download size={15} />
                     )}
                     <span>Download Voucher</span>
                   </button>
                 )}
-                <button type="button" onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}>
-                  <X size={16} />
+                <button
+                  type="button"
+                  className="modal-close-btn"
+                  onClick={() => { setSelectedBooking(null); setSelectedPassengerIds([]); setCancelReason(""); }}
+                  aria-label="Close"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 32,
+                    height: 32,
+                    padding: 0,
+                    borderRadius: 8,
+                    border: "none",
+                    background: "transparent",
+                    color: "#64748b",
+                    cursor: "pointer",
+                    flexShrink: 0
+                  }}
+                >
+                  <X size={18} />
                 </button>
               </div>
             </header>

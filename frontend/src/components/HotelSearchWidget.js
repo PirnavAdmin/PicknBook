@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { CalendarDays, Search, Users, ChevronDown, Plus, Minus, BedDouble, Baby, MapPin } from "lucide-react";
+import { CalendarDays, Search, Users, ChevronDown, Plus, Minus, BedDouble, Baby, MapPin, LocateFixed, Loader2, Check } from "lucide-react";
 import PlaceAutocomplete from "./PlaceAutocomplete";
 import HotelDatePicker from "./HotelDatePicker";
 import { getDefaultDateString } from "../utils/apiDateFormat";
@@ -30,12 +30,28 @@ export default function HotelSearchWidget({
   initialCheckOut = "",
   initialRoomsConfig = null,
   initialInternalCityId = null,
+  initialSearchMode = "city",
+  initialLatitude = null,
+  initialLongitude = null,
+  initialRadiusMeters = 5000,
+  initialHotelCodes = [],
   onSearch,
   isInline = false
 }) {
   const [destination, setDestination] = useState(() => initialDestination || "");
   const [destinationError, setDestinationError] = useState("");
   const [internalCityId, setInternalCityId] = useState(() => initialInternalCityId || null);
+
+  const [searchMode, setSearchMode] = useState(() => initialSearchMode || "city");
+  const [selectedHotelCode, setSelectedHotelCode] = useState(() => {
+    if (initialHotelCodes && initialHotelCodes.length > 0) return initialHotelCodes[0];
+    return null;
+  });
+  const [latitude, setLatitude] = useState(() => initialLatitude || null);
+  const [longitude, setLongitude] = useState(() => initialLongitude || null);
+  const [radiusMeters, setRadiusMeters] = useState(() => initialRadiusMeters || 5000);
+  const [geoStatus, setGeoStatus] = useState("idle");
+  const [geoError, setGeoError] = useState("");
 
   const [checkInDate, setCheckInDate] = useState(() => initialCheckIn || getDefaultDateString(0));
   const [checkOutDate, setCheckOutDate] = useState(() => initialCheckOut || getDefaultDateString(1));
@@ -45,7 +61,7 @@ export default function HotelSearchWidget({
     if (initialRoomsConfig) {
       let parsed = null;
       if (typeof initialRoomsConfig === "string") {
-        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) { }
       } else if (Array.isArray(initialRoomsConfig)) {
         parsed = initialRoomsConfig;
       }
@@ -60,7 +76,7 @@ export default function HotelSearchWidget({
     if (initialRoomsConfig) {
       let parsed = null;
       if (typeof initialRoomsConfig === "string") {
-        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) { }
       } else if (Array.isArray(initialRoomsConfig)) {
         parsed = initialRoomsConfig;
       }
@@ -75,7 +91,7 @@ export default function HotelSearchWidget({
     if (initialRoomsConfig) {
       let parsed = null;
       if (typeof initialRoomsConfig === "string") {
-        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) { }
       } else if (Array.isArray(initialRoomsConfig)) {
         parsed = initialRoomsConfig;
       }
@@ -90,7 +106,7 @@ export default function HotelSearchWidget({
     if (initialRoomsConfig) {
       let parsed = null;
       if (typeof initialRoomsConfig === "string") {
-        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) {}
+        try { parsed = JSON.parse(initialRoomsConfig); } catch (e) { }
       } else if (Array.isArray(initialRoomsConfig)) {
         parsed = initialRoomsConfig;
       }
@@ -149,6 +165,9 @@ export default function HotelSearchWidget({
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const guestsFieldRef = useRef(null);
 
+  const [showRadiusDropdown, setShowRadiusDropdown] = useState(false);
+  const radiusDropdownRef = useRef(null);
+
   const toggleGuestsDropdown = () => {
     setShowGuestsDropdown((prev) => !prev);
   };
@@ -157,6 +176,9 @@ export default function HotelSearchWidget({
     const handleClickOutside = (event) => {
       if (guestsFieldRef.current && !guestsFieldRef.current.contains(event.target)) {
         setShowGuestsDropdown(false);
+      }
+      if (radiusDropdownRef.current && !radiusDropdownRef.current.contains(event.target)) {
+        setShowRadiusDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -174,6 +196,26 @@ export default function HotelSearchWidget({
   }, [initialInternalCityId]);
 
   useEffect(() => {
+    if (initialSearchMode) setSearchMode(initialSearchMode);
+  }, [initialSearchMode]);
+
+  useEffect(() => {
+    if (initialLatitude !== undefined && initialLatitude !== null) setLatitude(initialLatitude);
+  }, [initialLatitude]);
+
+  useEffect(() => {
+    if (initialLongitude !== undefined && initialLongitude !== null) setLongitude(initialLongitude);
+  }, [initialLongitude]);
+
+  useEffect(() => {
+    if (initialRadiusMeters) setRadiusMeters(initialRadiusMeters);
+  }, [initialRadiusMeters]);
+
+  useEffect(() => {
+    if (initialHotelCodes && initialHotelCodes.length > 0) setSelectedHotelCode(initialHotelCodes[0]);
+  }, [initialHotelCodes]);
+
+  useEffect(() => {
     if (initialCheckIn) setCheckInDate(initialCheckIn);
   }, [initialCheckIn]);
 
@@ -181,21 +223,83 @@ export default function HotelSearchWidget({
     if (initialCheckOut) setCheckOutDate(initialCheckOut);
   }, [initialCheckOut]);
 
-  const handleDestinationChange = (value, cityId) => {
+  const handleDestinationChange = (value, cityId, item) => {
     setDestination(value);
     setDestinationError("");
-    if (cityId) {
-      setInternalCityId(cityId);
+    setGeoError("");
+
+    if (item && item.locationType === "HOTEL" && (item.hotelId || item.hotelCode)) {
+      setSearchMode("hotel");
+      setSelectedHotelCode(item.hotelId || item.hotelCode);
+      setInternalCityId(cityId || item.cityId || null);
+      setLatitude(null);
+      setLongitude(null);
     } else {
-      setInternalCityId(null);
+      setSearchMode("city");
+      setSelectedHotelCode(null);
+      setLatitude(null);
+      setLongitude(null);
+      if (cityId) {
+        setInternalCityId(cityId);
+      } else {
+        setInternalCityId(null);
+      }
     }
+  };
+
+  const handleRadiusSelect = (meters) => {
+    setRadiusMeters(meters);
+    setShowRadiusDropdown(false);
+  };
+
+  const handleNearMeClick = () => {
+    if (!navigator.geolocation) {
+      setGeoError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setGeoStatus("loading");
+    setGeoError("");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        setLatitude(userLat);
+        setLongitude(userLng);
+        setSearchMode("nearby");
+        setSelectedHotelCode(null);
+        setInternalCityId(null);
+        setDestination("Near my current location");
+        setDestinationError("");
+        setGeoStatus("success");
+      },
+      (error) => {
+        setGeoStatus("error");
+        let msg = "Could not retrieve your location.";
+        if (error.code === error.PERMISSION_DENIED) {
+          msg = "Location permission denied. Please allow location access or type a city.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          msg = "Location information is currently unavailable.";
+        } else if (error.code === error.TIMEOUT) {
+          msg = "Location request timed out. Please try again.";
+        }
+        setGeoError(msg);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
   };
 
   const guestSummary = `${rooms} Room${rooms > 1 ? 's' : ''}, ${adults} Adult${adults > 1 ? 's' : ''}${children > 0 ? `, ${children} Child${children > 1 ? 'ren' : ''}` : ""}`;
 
   const handleSubmit = () => {
     const destVal = destination.trim();
-    if (!destVal) {
+    if (searchMode === "nearby") {
+      if (latitude === null || longitude === null) {
+        setDestinationError("Please enable location access for nearby hotel search.");
+        return;
+      }
+    } else if (!destVal) {
       setDestinationError("Destination city is required.");
       return;
     }
@@ -208,7 +312,12 @@ export default function HotelSearchWidget({
         childAges: childAges
       }];
       onSearch({
-        destination: destVal,
+        destination: destVal || (searchMode === "nearby" ? "Near my current location" : ""),
+        searchMode,
+        hotelCodes: selectedHotelCode ? [selectedHotelCode] : [],
+        latitude,
+        longitude,
+        radiusMeters,
         checkInDate,
         checkOutDate,
         rooms: String(rooms || 1),
@@ -227,21 +336,73 @@ export default function HotelSearchWidget({
     <div className={`hotel-capsule-wrapper ${isInline ? "is-inline" : ""}`}>
       <div className={`hotel-capsule-searchbar ${isInline ? "is-inline" : ""}`}>
         {/* DESTINATION */}
-        <div className="hotel-capsule-cell hotel-capsule-destination">
+        <div className="hotel-capsule-cell hotel-capsule-destination" style={{ position: "relative" }}>
           <MapPin size={20} className="hotel-capsule-icon" color="#e51a2e" strokeWidth={1.8} />
-          <div className="hotel-capsule-field">
+          <div className="hotel-capsule-field" style={{ flex: 1, minWidth: 0 }}>
             <PlaceAutocomplete
               label=""
               value={destination}
               onChange={handleDestinationChange}
               tripType="hotel"
               field="destination"
-              placeholder="City or hotel area"
+              placeholder={searchMode === "nearby" ? "Near my current location" : "City or hotel area"}
               error={destinationError}
               className="hotel-capsule-autocomplete"
               hideIcon={true}
             />
           </div>
+
+          {/* NEAR ME BUTTON */}
+          <button
+            type="button"
+            className={`hotel-near-me-btn ${searchMode === "nearby" ? "active" : ""}`}
+            onClick={handleNearMeClick}
+            disabled={geoStatus === "loading"}
+            title="Search hotels near my current location"
+          >
+            {geoStatus === "loading" ? (
+              <Loader2 size={14} className="spin-icon" style={{ animation: "spin 1s linear infinite" }} />
+            ) : (
+              <LocateFixed size={14} color="#e51a2e" strokeWidth={2} />
+            )}
+            <span>Near Me</span>
+          </button>
+
+          {/* DISTANCE RADIUS DROPDOWN (Shown when nearby is active) */}
+          {(searchMode === "nearby" || (latitude !== null && longitude !== null)) && (
+            <div className="hotel-distance-dropdown-wrap" ref={radiusDropdownRef}>
+              <button
+                type="button"
+                className={`hotel-distance-btn ${showRadiusDropdown ? "open" : ""}`}
+                onClick={() => setShowRadiusDropdown((prev) => !prev)}
+                title="Select distance radius"
+                aria-expanded={showRadiusDropdown}
+              >
+                <span>{radiusMeters >= 1000 ? `${radiusMeters / 1000} km` : `${radiusMeters} m`}</span>
+                <ChevronDown size={14} color="#64748b" className={`radius-chevron ${showRadiusDropdown ? "open" : ""}`} />
+              </button>
+
+              {showRadiusDropdown && (
+                <div className="hotel-distance-dropdown-menu">
+                  {[1000, 3000, 5000, 10000].map((meters) => {
+                    const isSelected = radiusMeters === meters;
+                    const label = `${meters / 1000} km`;
+                    return (
+                      <button
+                        key={meters}
+                        type="button"
+                        className={`hotel-distance-dropdown-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => handleRadiusSelect(meters)}
+                      >
+                        <span>{label}</span>
+                        {isSelected && <Check size={14} color="#e51a2e" strokeWidth={2.5} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="hotel-capsule-divider" />
@@ -355,6 +516,9 @@ export default function HotelSearchWidget({
         </button>
       </div>
 
+      {geoError && (
+        <span className="hotel-capsule-error-text" style={{ color: "#d97706" }}>{geoError}</span>
+      )}
       {destinationError && (
         <span className="hotel-capsule-error-text">{destinationError}</span>
       )}
@@ -413,8 +577,10 @@ function GuestsDropdown({ rooms, adults, children, childAges, onRoomsChange, onA
 
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
         <button type="button" onClick={onClose}
-          style={{ background: "#ff0000", color: "#ffffff", border: "none", borderRadius: "8px", padding: "6px 20px",
-            fontWeight: "600", cursor: "pointer", fontSize: "0.85rem", boxShadow: "0 4px 10px rgba(220,38,38,0.3)" }}>
+          style={{
+            background: "#ff0000", color: "#ffffff", border: "none", borderRadius: "8px", padding: "6px 20px",
+            fontWeight: "600", cursor: "pointer", fontSize: "0.85rem", boxShadow: "0 4px 10px rgba(220,38,38,0.3)"
+          }}>
           Done
         </button>
       </div>
@@ -424,8 +590,10 @@ function GuestsDropdown({ rooms, adults, children, childAges, onRoomsChange, onA
 
 function GuestRow({ icon, label, sub, count, min, max, onChange, noBorder }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px",
-      borderBottom: noBorder ? "none" : "1px solid #e2e8f0", marginBottom: noBorder ? 0 : "10px" }}>
+    <div style={{
+      display: "flex", alignItems: "center", gap: "8px", paddingBottom: "10px",
+      borderBottom: noBorder ? "none" : "1px solid #e2e8f0", marginBottom: noBorder ? 0 : "10px"
+    }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "20px", color: "#475569" }}>{icon}</div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "1px" }}>
         <span style={{ fontSize: "0.85rem", fontWeight: "600", color: "#1e293b" }}>{label}</span>
@@ -433,16 +601,20 @@ function GuestRow({ icon, label, sub, count, min, max, onChange, noBorder }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", border: "1px solid #d32f2f", borderRadius: "6px", padding: "2px 6px", gap: "6px" }}>
         <button type="button" onClick={() => onChange(Math.max(min, count - 1))} disabled={count <= min}
-          style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center",
+          style={{
+            background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center",
             justifyContent: "center", color: "#d32f2f", cursor: count <= min ? "not-allowed" : "pointer",
-            opacity: count <= min ? 0.4 : 1, padding: 0 }}>
+            opacity: count <= min ? 0.4 : 1, padding: 0
+          }}>
           <Minus size={14} strokeWidth={2} />
         </button>
         <span style={{ fontSize: "0.9rem", fontWeight: "600", minWidth: "16px", textAlign: "center", color: "#d32f2f" }}>{count}</span>
         <button type="button" onClick={() => onChange(Math.min(max, count + 1))} disabled={count >= max}
-          style={{ background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center",
+          style={{
+            background: "transparent", border: "none", width: "20px", height: "20px", display: "flex", alignItems: "center",
             justifyContent: "center", color: "#d32f2f", cursor: count >= max ? "not-allowed" : "pointer",
-            opacity: count >= max ? 0.4 : 1, padding: 0 }}>
+            opacity: count >= max ? 0.4 : 1, padding: 0
+          }}>
           <Plus size={14} strokeWidth={2} />
         </button>
       </div>

@@ -55,7 +55,7 @@ export default function FlightStepperHeader({
                     stage.id
                   )}
                 </span>
-                <span className="step-label">{stage.label}</span>
+                <span className={`step-label step-label--${stage.id}`}>{stage.label}</span>
               </div>
               {idx < STAGES.length - 1 && (
                 <div

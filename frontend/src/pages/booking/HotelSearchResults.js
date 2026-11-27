@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toDisplayDate, getDefaultDateString } from "../../utils/apiDateFormat";
-import { searchHotels } from "../../services/hotelBookingService";
+import { searchHotels, searchNearbyHotels } from "../../services/hotelBookingService";
 import { buildStayFacts, getHotelVisuals } from "./hotelPresentation";
 import HotelInteractiveMap from "./HotelInteractiveMap";
 import HotelSearchWidget from "../../components/HotelSearchWidget";
@@ -177,6 +177,18 @@ function hotelMatchesAmenity(hotel, amenity) {
   return rawHotelAmenities(hotel).some((item) => regex.test(typeof item === "object" ? item.name || item.Name || "" : item));
 }
 
+function readNumber(params, state, key, fallback = null) {
+  const queryVal = params.get(key);
+  if (queryVal !== null && queryVal !== "" && !isNaN(Number(queryVal))) {
+    return Number(queryVal);
+  }
+  const stateVal = state?.[key];
+  if (stateVal !== null && stateVal !== undefined && stateVal !== "" && !isNaN(Number(stateVal))) {
+    return Number(stateVal);
+  }
+  return fallback;
+}
+
 function readValue(params, state, key, fallback = "") {
   const queryValue = params.get(key);
  
@@ -185,7 +197,13 @@ function readValue(params, state, key, fallback = "") {
   }
  
   const stateValue = state?.[key];
-  return typeof stateValue === "string" && stateValue.trim() ? stateValue.trim() : fallback;
+  if (typeof stateValue === "string" && stateValue.trim()) {
+    return stateValue.trim();
+  }
+  if (typeof stateValue === "number") {
+    return String(stateValue);
+  }
+  return fallback;
 }
  
 function formatCurrency(value) {
@@ -245,6 +263,16 @@ export default function HotelSearchResults() {
  
   const destination = readValue(searchParams, state, "destination") || readValue(searchParams, state, "city") || "";
   const internalCityId = readValue(searchParams, state, "internalCityId") || readValue(searchParams, state, "cityId") || "";
+  const searchMode = readValue(searchParams, state, "searchMode") || (readValue(searchParams, state, "latitude") ? "nearby" : "city");
+  const latitude = readNumber(searchParams, state, "latitude");
+  const longitude = readNumber(searchParams, state, "longitude");
+  const radiusMeters = readNumber(searchParams, state, "radiusMeters", 5000);
+  const rawHotelCodes = readValue(searchParams, state, "hotelCodes");
+  const hotelCodes = useMemo(() => {
+    if (Array.isArray(state?.hotelCodes) && state.hotelCodes.length > 0) return state.hotelCodes;
+    if (rawHotelCodes) return rawHotelCodes.split(",").map((c) => c.trim()).filter(Boolean);
+    return [];
+  }, [rawHotelCodes, state?.hotelCodes]);
   const checkInDate = readValue(searchParams, state, "checkInDate") || readValue(searchParams, state, "checkIn") || getDefaultDateString(0);
   const checkOutDate = readValue(searchParams, state, "checkOutDate") || readValue(searchParams, state, "checkOut") || getDefaultDateString(1);
     const rawRooms = readValue(searchParams, state, "rooms");
@@ -352,10 +380,38 @@ export default function HotelSearchResults() {
     if (params.guests) {
       urlParams.set("guests", params.guests);
     }
+
+    const activeSearchMode = params.searchMode || searchMode || "city";
+    urlParams.set("searchMode", activeSearchMode);
+
+    const activeLat = params.latitude !== undefined ? params.latitude : latitude;
+    const activeLng = params.longitude !== undefined ? params.longitude : longitude;
+    if (activeLat !== null && activeLat !== undefined) {
+      urlParams.set("latitude", String(activeLat));
+    }
+    if (activeLng !== null && activeLng !== undefined) {
+      urlParams.set("longitude", String(activeLng));
+    }
+
+    const activeRadius = params.radiusMeters || radiusMeters;
+    if (activeRadius) {
+      urlParams.set("radiusMeters", String(activeRadius));
+    }
+
+    const activeCodes = (params.hotelCodes && params.hotelCodes.length > 0) ? params.hotelCodes : hotelCodes;
+    if (activeCodes && activeCodes.length > 0) {
+      urlParams.set("hotelCodes", activeCodes.join(","));
+    }
+
     navigate(`/search/hotels?${urlParams.toString()}`, { 
       state: { 
         ...params, 
-        internalCityId: resolvedCityId 
+        internalCityId: resolvedCityId,
+        searchMode: activeSearchMode,
+        latitude: activeLat,
+        longitude: activeLng,
+        radiusMeters: activeRadius,
+        hotelCodes: activeCodes
       } 
     });
   };
@@ -545,12 +601,14 @@ export default function HotelSearchResults() {
   };
 
   const availableLocalities = useMemo(() => {
-    const list = apiHotels.map(h => getHotelLocality(h));
+    const safeHotels = Array.isArray(apiHotels) ? apiHotels : [];
+    const list = safeHotels.map(h => getHotelLocality(h));
     return Array.from(new Set(list.filter(Boolean)));
   }, [apiHotels]);
 
   const filterCounts = useMemo(() => {
-    const count = (matcher) => apiHotels.filter(matcher).length;
+    const safeHotels = Array.isArray(apiHotels) ? apiHotels : [];
+    const count = (matcher) => safeHotels.filter(matcher).length;
     return {
       propertyType: Object.fromEntries(PROPERTY_TYPE_FILTERS.map((item) => [item.id, count((hotel) => hotelMatchesPropertyType(hotel, item.id))])),
       price: Object.fromEntries(PRICE_FILTERS.map((item) => [item.id, count((hotel) => hotelMatchesPrice(hotel, item.id))])),
@@ -577,16 +635,48 @@ export default function HotelSearchResults() {
       setActionError("");
  
       try {
-        const data = await searchHotels({
-          city: destination,
-          cityId: internalCityId ? Number(internalCityId) : null,
-          checkInDate,
-          checkOutDate,
-          roomsConfig
-        });
- 
+        let rawData = null;
+        if (searchMode === "nearby" || (latitude !== null && longitude !== null)) {
+          rawData = await searchNearbyHotels({
+            latitude,
+            longitude,
+            radiusMeters,
+            destinationName: destination || "Current Location",
+            checkInDate,
+            checkOutDate,
+            roomsConfig,
+            cityId: internalCityId ? Number(internalCityId) : null,
+          });
+        } else if (searchMode === "hotel" && hotelCodes.length > 0) {
+          rawData = await searchHotels({
+            city: destination,
+            cityId: internalCityId ? Number(internalCityId) : null,
+            hotelCodes,
+            checkInDate,
+            checkOutDate,
+            roomsConfig,
+            searchKind: "hotel",
+          });
+        } else {
+          rawData = await searchHotels({
+            city: destination,
+            cityId: internalCityId ? Number(internalCityId) : null,
+            checkInDate,
+            checkOutDate,
+            roomsConfig,
+          });
+        }
+
+        const hotelList = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData?.hotels)
+          ? rawData.hotels
+          : Array.isArray(rawData?.results)
+          ? rawData.results
+          : [];
+
         if (isCurrent) {
-          setApiHotels(data || []);
+          setApiHotels(hotelList);
         }
       } catch (err) {
         if (isCurrent) {
@@ -598,15 +688,16 @@ export default function HotelSearchResults() {
         }
       }
     }
- 
+
     fetchHotelResults();
     return () => {
       isCurrent = false;
     };
-  }, [destination, checkInDate, checkOutDate, roomsConfig]);
+  }, [destination, internalCityId, checkInDate, checkOutDate, roomsConfig, searchMode, latitude, longitude, radiusMeters, JSON.stringify(hotelCodes)]);
  
   const hotels = useMemo(() => {
-    return [...apiHotels]
+    const safeHotels = Array.isArray(apiHotels) ? apiHotels : [];
+    return [...safeHotels]
       .map((hotelRecord, index) => {
         const hotelName = hotelRecord.hotelName || hotelRecord.name || "Hotel stay";
         // Use ?? (nullish coalescing) to avoid skipping valid 0 values from the API
@@ -653,6 +744,7 @@ export default function HotelSearchResults() {
           city: hotelRecord.city || hotelRecord.cityCode || destination,
           area: getHotelLocality(hotelRecord),
           address: hotelRecord.hotelAddress || hotelRecord.address || hotelRecord.hotelLocation || destination,
+          distanceMeters: hotelRecord.distanceMeters ?? hotelRecord.DistanceMeters ?? null,
           rating,
           reviewCount,
           tag:
@@ -894,7 +986,8 @@ export default function HotelSearchResults() {
     </article>
   );
   const localFavouritesCount = useMemo(() => {
-    return apiHotels.filter(hotelRecord => {
+    const safeHotels = Array.isArray(apiHotels) ? apiHotels : [];
+    return safeHotels.filter(hotelRecord => {
       const hotelName = hotelRecord.hotelName || hotelRecord.name || "Hotel stay";
       const id = hotelRecord.hotelCode || hotelRecord.hotelId || `hotel-${String(hotelName).toLowerCase().replace(/\s+/g, "-")}`;
       return savedStayIds.includes(id);
@@ -930,7 +1023,7 @@ export default function HotelSearchResults() {
             </p>
           </div>
 
-          <div className="inline-modify-container" style={{ padding: 0, width: "100%", maxWidth: "1100px", margin: "0 auto" }}>
+          <div className="inline-modify-container" style={{ padding: 0, width: "100%", maxWidth: "1220px", margin: "0 auto" }}>
             <HotelSearchWidget
               isInline={true}
               initialDestination={destination}
@@ -938,6 +1031,11 @@ export default function HotelSearchResults() {
               initialCheckIn={checkInDate}
               initialCheckOut={checkOutDate}
               initialRoomsConfig={roomsConfig}
+              initialSearchMode={searchMode}
+              initialLatitude={latitude}
+              initialLongitude={longitude}
+              initialRadiusMeters={radiusMeters}
+              initialHotelCodes={hotelCodes}
               onSearch={handleModifySearch}
             />
           </div>
@@ -1283,8 +1381,18 @@ export default function HotelSearchResults() {
                           <p className="hotel-stay-address" style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", color: "#64748b", fontSize: "0.78rem" }}>
                             <MapPin size={12} color="#ff0000" />
                             <span>{hotel.area}, {hotel.city}</span>
+                            {hotel.distanceMeters != null && (
+                              <span style={{ color: "#059669", fontWeight: 600, marginLeft: "4px" }}>
+                                • {hotel.distanceMeters < 1000 ? `${Math.round(hotel.distanceMeters)}m` : `${(hotel.distanceMeters / 1000).toFixed(1)}km`}
+                              </span>
+                            )}
                           </p>
                           <div className="hotel-result-badges" style={{ display: "flex", alignItems: "center", flexWrap: "nowrap", gap: "6px", marginTop: "8px", height: "22px", overflow: "hidden" }}>
+                            {hotel.distanceMeters != null && (
+                              <span className="hotel-distance-badge" style={{ backgroundColor: "#ecfdf5", color: "#059669", border: "1px solid #a7f3d0", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                                {hotel.distanceMeters < 1000 ? `${Math.round(hotel.distanceMeters)} m away` : `${(hotel.distanceMeters / 1000).toFixed(1)} km away`}
+                              </span>
+                            )}
                             {hotel.hotelPromotion === "Breakfast" && <span className="hotel-meal-badge" style={{ backgroundColor: "#ff0000", color: "#fff", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>Breakfast Included</span>}
                             {hotel.hotelPromotion === "Room Only" && <span className="hotel-meal-badge" style={{ backgroundColor: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap" }}>Room Only</span>}
                             {hotel.roomCategory && <span className="hotel-room-category-badge" style={{ backgroundColor: "#e2e8f0", color: "#334155", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{hotel.roomCategory}</span>}

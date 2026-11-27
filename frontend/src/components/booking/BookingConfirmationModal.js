@@ -378,19 +378,19 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: "#ffffff",
-          width: "100%",
-          maxWidth: bookingType === "Flight" ? "740px" : "600px",
+          width: "min(900px, calc(100vw - 40px))",
+          maxWidth: "900px",
           borderRadius: "16px",
-          padding: "24px 28px 26px 28px",
-          maxHeight: "90vh",
+          padding: "16px 24px 20px 24px",
+          maxHeight: "calc(100vh - 32px)",
           overflowY: "auto",
           position: "relative",
           boxShadow: "0 24px 48px -12px rgba(15, 23, 42, 0.25), 0 12px 24px -8px rgba(15, 23, 42, 0.12)",
           boxSizing: "border-box",
         }}
       >
-        {/* Dedicated Top-Right Close Button Header */}
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "6px" }}>
+        {/* Dedicated Close Button Header Row */}
+        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: "4px" }}>
           <button
             onClick={onClose}
             aria-label="Close modal"
@@ -402,25 +402,25 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#0f172a",
+              color: "#64748b",
               borderRadius: "6px",
               lineHeight: 1,
-              transition: "background-color 0.15s ease",
+              transition: "all 0.15s ease",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f1f5f9"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#f1f5f9"; e.currentTarget.style.color = "#0f172a"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = "#64748b"; }}
           >
             <X size={20} strokeWidth={2.2} />
           </button>
         </div>
 
         {bookingType === "Flight" && (
-          <div style={{ marginBottom: "18px" }}>
+          <div style={{ marginBottom: "14px", width: "100%", boxSizing: "border-box" }}>
             <FlightStepperHeader currentStage={4} compact={true} />
           </div>
         )}
 
-        <h2 style={{ marginTop: 0, marginBottom: "16px", fontSize: "1.25rem", fontWeight: "800", color: "#0f172a", letterSpacing: "-0.01em" }}>
+        <h2 style={{ marginTop: 0, marginBottom: "12px", fontSize: "1.2rem", fontWeight: "800", color: "#0f172a", letterSpacing: "-0.01em" }}>
           Review Booking ({bookingType})
         </h2>
 
@@ -429,14 +429,14 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
             style={{
               backgroundColor: "#fff3cd",
               color: "#856404",
-              padding: "8px 12px",
+              padding: "6px 12px",
               borderRadius: "8px",
-              marginBottom: "12px",
+              marginBottom: "10px",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
               border: "1px solid #ffeeba",
-              fontSize: "0.85rem",
+              fontSize: "0.82rem",
             }}
           >
             <strong>{bookingType === "Hotel" ? "Room Blocked!" : "Seats Blocked!"}</strong>
@@ -447,28 +447,28 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         {/* Passenger Summary */}
         <div
           style={{
-            marginBottom: "16px",
-            padding: "16px 18px",
+            marginBottom: "10px",
+            padding: "10px 14px",
             background: "#ffffff",
             border: "1px solid #e2e8f0",
-            borderRadius: "12px",
+            borderRadius: "10px",
             boxShadow: "0 1px 2px rgba(0, 0, 0, 0.02)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-            <User size={18} color="#E31E24" strokeWidth={2.2} />
-            <h3 style={{ fontSize: "0.98rem", fontWeight: "700", margin: 0, color: "#0f172a" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+            <User size={16} color="#E31E24" strokeWidth={2.2} />
+            <h3 style={{ fontSize: "0.92rem", fontWeight: "700", margin: 0, color: "#0f172a" }}>
               Passenger Details
             </h3>
           </div>
 
           {passengers.length > 0 ? (
             passengers.map((p, idx) => (
-              <div key={idx} style={{ marginBottom: idx < passengers.length - 1 ? "8px" : "0" }}>
-                <div style={{ fontSize: "1rem", fontWeight: "700", color: "#0f172a" }}>
+              <div key={idx} style={{ marginBottom: idx < passengers.length - 1 ? "4px" : "0" }}>
+                <div style={{ fontSize: "0.94rem", fontWeight: "700", color: "#0f172a" }}>
                   {p.firstName || p.FirstName} {p.lastName || p.LastName}
                 </div>
-                <div style={{ fontSize: "0.86rem", color: "#64748b", marginTop: "2px" }}>
+                <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "1px" }}>
                   Age: {bookingType === "Flight" ? (p.isChild ? "Child" : p.isInfant ? "Infant" : "Adult") : p.age || p.Age || "Adult"}
                   {p.gender || p.Gender ? ` | ${p.gender || p.Gender}` : ""}
                 </div>
@@ -476,10 +476,10 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
             ))
           ) : (
             <div>
-              <div style={{ fontSize: "1rem", fontWeight: "700", color: "#0f172a" }}>
+              <div style={{ fontSize: "0.94rem", fontWeight: "700", color: "#0f172a" }}>
                 {flowState.guestName || "Harish Gangireddy"}
               </div>
-              <div style={{ fontSize: "0.86rem", color: "#64748b", marginTop: "2px" }}>
+              <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "1px" }}>
                 Age: Adult
               </div>
             </div>
@@ -487,24 +487,24 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
 
           <div
             style={{
-              marginTop: "12px",
-              paddingTop: "12px",
+              marginTop: "8px",
+              paddingTop: "8px",
               borderTop: "1px solid #f1f5f9",
               display: "flex",
               alignItems: "center",
               gap: "12px",
-              fontSize: "0.88rem",
+              fontSize: "0.84rem",
               color: "#334155",
               flexWrap: "wrap",
             }}
           >
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-              <Phone size={15} color="#E31E24" strokeWidth={2} />
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+              <Phone size={14} color="#E31E24" strokeWidth={2} />
               <span>Contact: {contact?.mobile || flowState.guestPhone || "--"}</span>
             </div>
             <span style={{ color: "#cbd5e1" }}>|</span>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-              <Mail size={15} color="#E31E24" strokeWidth={2} />
+            <div style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+              <Mail size={14} color="#E31E24" strokeWidth={2} />
               <span>{contact?.email || flowState.guestEmail || "--"}</span>
             </div>
           </div>
@@ -513,31 +513,31 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         {/* Fare Summary */}
         <div
           style={{
-            marginBottom: "16px",
-            padding: "16px 18px",
+            marginBottom: "10px",
+            padding: "10px 14px",
             border: "1px solid #e2e8f0",
-            borderRadius: "12px",
+            borderRadius: "10px",
             background: "#ffffff",
             boxShadow: "0 1px 2px rgba(0, 0, 0, 0.02)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-            <Ticket size={18} color="#E31E24" strokeWidth={2.2} />
-            <h3 style={{ fontSize: "0.98rem", fontWeight: "700", margin: 0, color: "#0f172a" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+            <Ticket size={16} color="#E31E24" strokeWidth={2.2} />
+            <h3 style={{ fontSize: "0.92rem", fontWeight: "700", margin: 0, color: "#0f172a" }}>
               Fare Summary
             </h3>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "0.92rem", color: "#334155" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", fontSize: "0.88rem", color: "#334155" }}>
             <span>Base Fare</span>
             <span style={{ fontWeight: "600", color: "#0f172a" }}>₹{formatCurrency(fareSummary?.baseFare || 0)}</span>
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "0.92rem", color: "#334155" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", fontSize: "0.88rem", color: "#334155" }}>
             <span>{bookingType === "Bus" ? "Operator GST" : "Taxes & Fees"}</span>
             <span style={{ fontWeight: "600", color: "#0f172a" }}>₹{formatCurrency(taxesAndFees)}</span>
           </div>
           {(flowState?.couponDiscount > 0 || fareSummary?.discount > 0) && (
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", fontSize: "0.92rem", color: "#16a34a" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px", fontSize: "0.88rem", color: "#16a34a" }}>
               <span>Discount</span>
               <span style={{ fontWeight: "600" }}>- ₹{formatCurrency(flowState?.couponDiscount || fareSummary?.discount || 0)}</span>
             </div>
@@ -546,8 +546,8 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           {/* Highlighted Total Payable Row */}
           <div
             style={{
-              marginTop: "12px",
-              padding: "12px 16px",
+              marginTop: "8px",
+              padding: "8px 12px",
               background: "#FFF1F2",
               borderRadius: "8px",
               display: "flex",
@@ -555,10 +555,10 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
               alignItems: "center",
             }}
           >
-            <span style={{ fontWeight: "700", fontSize: "1.05rem", color: "#E31E24" }}>
+            <span style={{ fontWeight: "700", fontSize: "1rem", color: "#E31E24" }}>
               Total Payable
             </span>
-            <span style={{ fontWeight: "800", fontSize: "1.25rem", color: "#E31E24" }}>
+            <span style={{ fontWeight: "800", fontSize: "1.18rem", color: "#E31E24" }}>
               ₹{formatCurrency(totalPayable)}
             </span>
           </div>
@@ -568,11 +568,11 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         {walletBalance > 0 && (walletStatus === "Active" || !b2cWallet) && (
           <div
             style={{
-              marginBottom: "16px",
-              padding: "12px 18px",
+              marginBottom: "10px",
+              padding: "8px 14px",
               background: "#fff5f5",
               border: "1px solid #fecaca",
-              borderRadius: "10px",
+              borderRadius: "8px",
               boxSizing: "border-box",
             }}
           >
@@ -580,8 +580,8 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                fontSize: "0.92rem",
+                gap: "8px",
+                fontSize: "0.88rem",
                 color: "#0f172a",
                 whiteSpace: "nowrap",
               }}
@@ -592,8 +592,8 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
                 checked={walletAppliedAmount > 0 || useWallet}
                 onChange={(e) => setUseWallet(e.target.checked)}
                 style={{
-                  width: "18px",
-                  height: "18px",
+                  width: "16px",
+                  height: "16px",
                   cursor: "pointer",
                   accentColor: "#E31E24",
                   flexShrink: 0,
@@ -605,11 +605,11 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "10px",
+                  gap: "8px",
                   cursor: "pointer",
                   margin: 0,
                   userSelect: "none",
-                  fontSize: "0.92rem",
+                  fontSize: "0.88rem",
                 }}
               >
                 <span style={{ fontWeight: "700", color: "#0f172a" }}>Use Wallet Balance</span>
@@ -624,10 +624,10 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
                 style={{
                   display: "grid",
                   gap: "4px",
-                  marginTop: "8px",
-                  paddingTop: "8px",
+                  marginTop: "6px",
+                  paddingTop: "6px",
                   borderTop: "1px dashed #fecaca",
-                  fontSize: "0.85rem",
+                  fontSize: "0.82rem",
                   color: "#475569",
                 }}
               >
@@ -645,7 +645,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
         )}
 
         {(localError || paymentError) && (
-          <div style={{ padding: "10px 14px", background: "#fee2e2", color: "#b91c1c", borderRadius: "8px", marginBottom: "14px", fontSize: "0.88rem", fontWeight: "500" }}>
+          <div style={{ padding: "8px 12px", background: "#fee2e2", color: "#b91c1c", borderRadius: "8px", marginBottom: "10px", fontSize: "0.85rem", fontWeight: "500" }}>
             {localError || paymentError}
           </div>
         )}
@@ -655,19 +655,19 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
           disabled={isProcessing || cfIsSubmitting || (!isBusBooking && useWallet && (walletStatus !== "Active" || walletBalance <= 0))}
           style={{
             width: "100%",
-            padding: "13px 20px",
+            padding: "10px 16px",
             backgroundColor: "#E31E24",
             color: "#ffffff",
             border: "none",
-            borderRadius: "10px",
-            fontSize: "1.08rem",
+            borderRadius: "8px",
+            fontSize: "1rem",
             fontWeight: "700",
             cursor: isProcessing || cfIsSubmitting ? "not-allowed" : "pointer",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             gap: "8px",
-            boxShadow: "0 4px 14px rgba(227, 30, 36, 0.25)",
+            boxShadow: "0 4px 12px rgba(227, 30, 36, 0.22)",
             transition: "background-color 0.15s ease, transform 0.1s ease",
           }}
           onMouseEnter={(e) => {
@@ -677,7 +677,7 @@ export default function BookingConfirmationModal({ isOpen, onClose, bookingType,
             if (!isProcessing && !cfIsSubmitting) e.currentTarget.style.backgroundColor = "#E31E24";
           }}
         >
-          {isProcessing || cfIsSubmitting ? <Loader2 className="spinner" size={20} /> : "Pay Now"}
+          {isProcessing || cfIsSubmitting ? <Loader2 className="spinner" size={18} /> : "Pay Now"}
         </button>
       </div>
     </div>

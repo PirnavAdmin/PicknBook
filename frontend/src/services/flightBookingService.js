@@ -2433,6 +2433,7 @@ export async function getFlightSSR(params = {}) {
     const rawData = await requestJson(endpoint, {
       method: "POST",
       body: JSON.stringify(payload),
+      signal: params.signal,
     });
 
     logFlightApiResponse("POST", endpoint, 200, rawData);
@@ -2564,6 +2565,7 @@ export async function getFlightSeatMap(paramsOrTrace = {}, resultIdx = null, srd
     const rawData = await requestJson(endpoint, {
       method: "POST",
       body: JSON.stringify(payload),
+      signal: paramObj.signal,
     });
 
     logFlightApiResponse("POST", endpoint, 200, rawData);

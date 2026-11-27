@@ -1788,6 +1788,8 @@ export default function AdminB2CBookingListPage() {
                       fontSize: "0.85rem",
                       fontWeight: "600",
                       cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
                       boxShadow: "0 2px 6px rgba(37, 99, 235, 0.3)"
                     }}
                   >

@@ -1,7 +1,7 @@
 import React from "react";
 import { Check, Circle, Loader2, AlertTriangle, X, Minus } from "lucide-react";
 import { formatDateTime } from "../../utils/apiDateFormat";
-import { formatStageValue, getBookingStages, getStageState } from "../../utils/bookingLifecycle";
+import { formatMetaKey, formatStageValue, getBookingStages, getStageState } from "../../utils/bookingLifecycle";
 import "../../STYLES/BookingLifecycle.css";
 
 const STATE_ICONS = {
@@ -48,7 +48,7 @@ export default function BookingLifecycle({ booking }) {
                     <dl className="booking-lifecycle-meta">
                       {metadata.map(([key, value]) => (
                         <div key={key}>
-                          <dt>{key}</dt>
+                          <dt>{formatMetaKey(key)}</dt>
                           <dd>{formatStageValue(value)}</dd>
                         </div>
                       ))}

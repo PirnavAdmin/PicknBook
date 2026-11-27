@@ -3557,14 +3557,19 @@ export default function HomePage() {
     const hotelParams = new URLSearchParams();
 
     Object.entries(hotelPayload).forEach(([key, value]) => {
-      if (typeof value === "string" && value.trim()) {
-        hotelParams.set(key, value.trim());
+      if (value !== undefined && value !== null) {
+        if (typeof value === "string" && value.trim()) {
+          hotelParams.set(key, value.trim());
+        } else if (typeof value === "number" && !isNaN(value)) {
+          hotelParams.set(key, String(value));
+        } else if (Array.isArray(value) && value.length > 0) {
+          hotelParams.set(key, value.join(","));
+        }
       }
     });
 
     navigate(
-      `/search/hotels${hotelParams.toString() ? `?${hotelParams.toString()}` : ""
-      }`,
+      `/search/hotels${hotelParams.toString() ? `?${hotelParams.toString()}` : ""}`,
       { state: hotelPayload },
     );
   };

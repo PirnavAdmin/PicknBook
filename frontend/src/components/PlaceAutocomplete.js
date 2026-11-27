@@ -28,6 +28,7 @@ export default function PlaceAutocomplete({
   isInline = false,
   sublabel,
   hideLabel = false,
+  hideIcon = false,
 }) {
   const [inputValue, setInputValue] = useState(value || "");
   const [results, setResults] = useState([]);
@@ -78,47 +79,83 @@ export default function PlaceAutocomplete({
 
       try {
 
-          const endpoint = new URL(PLACES_API_URL, window.location.origin);
-          endpoint.searchParams.set("query", query);
-          endpoint.searchParams.set("tripType", tripType);
-          endpoint.searchParams.set("field", "all");
-          endpoint.searchParams.set("limit", "20");
+        const endpoint = new URL(PLACES_API_URL, window.location.origin);
+        endpoint.searchParams.set("query", query);
+        endpoint.searchParams.set("tripType", tripType);
+        endpoint.searchParams.set("field", "all");
+        endpoint.searchParams.set("limit", "20");
 
-          const needsNgrokBypass =
-            endpoint.hostname.includes("ngrok-free.dev") ||
-            endpoint.hostname.includes("ngrok.io");
+        const needsNgrokBypass =
+          endpoint.hostname.includes("ngrok-free.dev") ||
+          endpoint.hostname.includes("ngrok.io");
 
-          const response = await fetch(endpoint.toString(), {
-            signal: controller.signal,
-            headers: needsNgrokBypass
-              ? { "ngrok-skip-browser-warning": "true" }
-              : undefined,
-          });
+        const response = await fetch(endpoint.toString(), {
+          signal: controller.signal,
+          headers: needsNgrokBypass
+            ? { "ngrok-skip-browser-warning": "true" }
+            : undefined,
+        });
 
-          if (!response.ok) {
-            throw new Error(`Place API failed with status ${response.status}`);
-          }
+        if (!response.ok) {
+          throw new Error(`Place API failed with status ${response.status}`);
+        }
 
-          const payload = await response.json();
+        const payload = await response.json();
 
-          const rawList = Array.isArray(payload)
-            ? payload
-            : Array.isArray(payload?.value)
-              ? payload.value
-              : [];
+        const rawList = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.value)
+            ? payload.value
+            : [];
 
-          const normalized = rawList
-            .map((item) => ({
-              cityName:    typeof item === "string" ? item : item?.cityName    || "",
-              cityId:      typeof item === "object"  ? String(item.cityId || item.cityCode || item.CityId || item.cico_id || item.id || item.place_id || "") : "",
-              stateName:   typeof item === "object"  ? (item.stateName   || item.StateName   || "") : "",
-              airportCode: typeof item === "object"  ? (item.airportCode || item.AirportCode || item.iataCode || "") : "",
-              airportName: typeof item === "object"  ? (item.airportName || item.AirportName || "") : "",
-              usageCount:  typeof item === "object" && item?.usageCount ? item.usageCount : 0,
-            }))
-            .filter((item) => item.cityName);
+        const normalized = rawList
+          .map((item) => {
+            const isObj = typeof item === "object" && item !== null;
+            const locationType = isObj
+              ? String(item.locationType || item.LocationType || (item.hotelId || item.HotelId ? "HOTEL" : "CITY")).toUpperCase()
+              : "CITY";
+            const hotelId = isObj
+              ? String(item.hotelId || item.HotelId || item.hotelCode || item.HotelCode || "")
+              : "";
+            const hotelName = isObj
+              ? (item.hotelName || item.HotelName || "")
+              : "";
+            const parentCityName = isObj
+              ? (item.parentCityName || item.ParentCityName || "")
+              : "";
+            const fullName = isObj
+              ? (item.fullName || item.FullName || "")
+              : "";
+            const searchCityId = isObj
+              ? String(item.searchCityId || item.SearchCityId || "")
+              : "";
+            const source = isObj
+              ? (item.source || item.Source || "")
+              : "";
 
-          setResults(normalized);
+            const rawCityName = typeof item === "string" ? item : (item?.cityName || item?.CityName || item?.name || item?.Name || hotelName || "");
+            const rawCityId = isObj ? String(item.cityId || item.cityCode || item.CityId || item.cico_id || item.id || item.place_id || searchCityId || "") : "";
+
+            return {
+              cityName: rawCityName,
+              cityId: rawCityId,
+              stateName: isObj ? (item.stateName || item.StateName || "") : "",
+              airportCode: isObj ? (item.airportCode || item.AirportCode || item.iataCode || "") : "",
+              airportName: isObj ? (item.airportName || item.AirportName || "") : "",
+              usageCount: isObj && item?.usageCount ? item.usageCount : 0,
+              locationType,
+              hotelId,
+              hotelName,
+              fullName,
+              parentCityName,
+              searchCityId,
+              source,
+              rawItem: item,
+            };
+          })
+          .filter((item) => item.cityName || item.hotelName);
+
+        setResults(normalized);
 
       } catch (error) {
         if (error.name !== "AbortError") {
@@ -148,10 +185,12 @@ export default function PlaceAutocomplete({
 
   const handleSelect = (item) => {
     console.log(`[DEBUG PlaceAutocomplete] handleSelect: item=`, item);
-    const name = item.cityName || item;
+    const name = (item.locationType === "HOTEL" && item.hotelName) ? item.hotelName : (item.cityName || item);
     const displayName = tripType === "flight" && item.airportCode ? `${item.cityName} (${item.airportCode})` : name;
     setInputValue(displayName);
-    onChange(displayName, item.cityId);
+    if (typeof onChange === "function") {
+      onChange(displayName, item.cityId, item);
+    }
     setOpen(false);
   };
 
@@ -161,7 +200,7 @@ export default function PlaceAutocomplete({
     <div className={`${isInline ? "" : "field"} place-autocomplete ${className || ""}`} ref={wrapperRef} style={{ position: "relative", width: isInline ? "100%" : undefined, minWidth: 0 }}>
       {label && !isInline && !hideLabel && <label>{label}</label>}
       <div className={isInline ? "inline-autocomplete-wrap" : "control-wrap"} style={isInline ? { display: 'flex', alignItems: 'center', width: '100%', minWidth: 0 } : {}}>
-        {!isInline && (
+        {!isInline && !hideIcon && (
           tripType === "flight" ? (
             <Plane size={18} color="currentColor" style={{ flexShrink: 0 }} />
           ) : tripType === "hotel" ? (
@@ -248,7 +287,7 @@ export default function PlaceAutocomplete({
           ) : results.length > 0 ? (
             results.map((item, idx) => (
               <button
-                key={`${item.cityName}-${item.usageCount || idx}`}
+                key={`${item.locationType || "place"}-${item.hotelId || item.cityId || idx}-${item.cityName || item.hotelName}`}
                 type="button"
                 className="pnb-place-option"
                 onMouseDown={(event) => event.preventDefault()}
@@ -258,27 +297,51 @@ export default function PlaceAutocomplete({
                   {tripType === "flight" ? (
                     <Plane size={15} color="#ff0000" strokeWidth={2.5} />
                   ) : tripType === "hotel" ? (
-                    <Building2 size={15} color="#ff0000" strokeWidth={2.5} />
+                    item.locationType === "LOCALITY" ? (
+                      <MapPin size={15} color="#ff0000" strokeWidth={2.5} />
+                    ) : (
+                      <Building2 size={15} color="#ff0000" strokeWidth={2.5} />
+                    )
                   ) : (
                     <Bus size={15} color="#ff0000" strokeWidth={2.5} />
                   )}
                 </div>
                 <div className="pnb-place-text">
-                  <div className="pnb-place-primary">
-                    <span className="pnb-place-city">{item.cityName}</span>
+                  <div className="pnb-place-primary" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span className="pnb-place-city">
+                      {tripType === "hotel" && item.locationType === "HOTEL" && item.hotelName
+                        ? item.hotelName
+                        : item.cityName}
+                    </span>
                     {tripType === "flight" && item.airportCode && (
                       <span className="pnb-place-code">{item.airportCode}</span>
                     )}
+                    {tripType === "hotel" && item.locationType === "HOTEL" && (
+                      <span style={{ fontSize: '10px', background: '#fee2e2', color: '#dc2626', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>HOTEL</span>
+                    )}
+                    {tripType === "hotel" && item.locationType === "LOCALITY" && (
+                      <span style={{ fontSize: '10px', background: '#fef3c7', color: '#d97706', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>AREA</span>
+                    )}
                   </div>
-                  {(tripType === "flight"
-                    ? [item.airportName, item.stateName].filter(Boolean).join(", ")
-                    : item.stateName
-                  ) && (
+                  {tripType === "hotel" ? (
                     <div className="pnb-place-secondary">
-                      {tripType === "flight"
-                        ? [item.airportName, item.stateName].filter(Boolean).join(", ")
-                        : item.stateName}
+                      {item.locationType === "HOTEL"
+                        ? (item.cityName ? `Hotel • ${item.cityName}` : "Hotel")
+                        : item.locationType === "LOCALITY"
+                          ? `Area • ${[item.parentCityName || item.cityName, item.stateName].filter(Boolean).join(", ")}`
+                          : [item.stateName, item.source ? `(${item.source})` : ""].filter(Boolean).join(" ")}
                     </div>
+                  ) : (
+                    (tripType === "flight"
+                      ? [item.airportName, item.stateName].filter(Boolean).join(", ")
+                      : item.stateName
+                    ) && (
+                      <div className="pnb-place-secondary">
+                        {tripType === "flight"
+                          ? [item.airportName, item.stateName].filter(Boolean).join(", ")
+                          : item.stateName}
+                      </div>
+                    )
                   )}
                 </div>
               </button>
